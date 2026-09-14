@@ -23,7 +23,7 @@ const usd = new Intl.NumberFormat("en-US", {
 })
 
 async function fetchTickers(): Promise<Record<string, Ticker24hr>> {
-  const res = await fetch("/api/ticker")
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/ticker`)
   if (!res.ok) throw new Error(`Ticker request failed with status ${res.status}`)
   const data: { tickers: Ticker24hr[] } = await res.json()
   return Object.fromEntries(data.tickers.map((t) => [t.symbol, t]))

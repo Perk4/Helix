@@ -5,3 +5,5 @@ __pycache__/
 .next/
 node_modules/
 .env.local
+out/
+*.zip
