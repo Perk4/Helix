@@ -1,0 +1,296 @@
+DEBUG: cli.knack.cli: Command arguments: ['webapp', 'deployment', 'source', 'config-zip', '-g', 'titanium-rg03', '-n', 'lgts1tetamapp06', '--src', 'frontend.zip', '--debug']
+DEBUG: cli.knack.cli: __init__ debug log:
+Cannot enable color.
+DEBUG: cli.knack.cli: Event: Cli.PreExecute []
+DEBUG: cli.knack.cli: Event: CommandParser.OnGlobalArgumentsCreate [<function CLILogging.on_global_arguments at 0x0000027FA0C69A60>, <function OutputProducer.on_global_arguments at 0x0000027FA11849E0>, <function CLIQuery.on_global_arguments at 0x0000027FA11B3060>]
+DEBUG: cli.knack.cli: Event: CommandInvoker.OnPreCommandTableCreate []
+DEBUG: cli.azure.cli.core: Using packaged command index for profile 'latest'.
+DEBUG: cli.azure.cli.core: Modules found from index for 'webapp': ['azure.cli.command_modules.appservice', 'azure.cli.command_modules.serviceconnector']
+DEBUG: cli.azure.cli.core: Loading command modules...
+DEBUG: cli.azure.cli.core: Name                  Load Time    Groups  Commands
+DEBUG: cli.azure.cli.core: appservice                0.532        93       306
+DEBUG: cli.azure.cli.core: serviceconnector          0.054        20       331
+DEBUG: cli.azure.cli.core: Loaded command modules:
+DEBUG: cli.azure.cli.core: Total (2)                 0.587       113       637
+DEBUG: cli.azure.cli.core: Loaded 111 groups, 637 commands.
+DEBUG: cli.azure.cli.core: Found a match in the command table.
+DEBUG: cli.azure.cli.core: Raw command  : webapp deployment source config-zip
+DEBUG: cli.azure.cli.core: Command table: webapp deploy
+DEBUG: cli.azure.cli.core: remaining    :               ent source config-zip
+DEBUG: cli.knack.cli: Event: CommandInvoker.OnPreCommandTableTruncate [<function AzCliLogging.init_command_file_logging at 0x0000027FA139F950>]
+DEBUG: cli.azure.cli.core.azlogging: metadata file logging enabled - writing logs to 'C:\Users\s.mihneva-chotalal\.azure\commands\2026-09-14.16-00-21.webapp_deployment_source_config-zip.34708.log'.
+INFO: az_command_data_logger: command args: webapp deployment source config-zip -g {} -n {} --src {} --debug
+DEBUG: cli.knack.cli: Event: CommandInvoker.OnPreArgumentLoad [<function register_global_subscription_argument.<locals>.add_subscription_parameter at 0x0000027FA1281B10>]
+DEBUG: cli.knack.cli: Event: CommandInvoker.OnPostArgumentLoad []
+DEBUG: cli.knack.cli: Event: CommandInvoker.OnPostCommandTableCreate [<function register_ids_argument.<locals>.add_ids_arguments at 0x0000027FA1282140>, <function register_global_policy_argument.<locals>.add_global_policy_argument at 0x0000027FA13EC510>, <function register_cache_arguments.<locals>.add_cache_arguments at 0x0000027FA13EC5C0>, <function register_upcoming_breaking_change_info.<locals>.update_breaking_change_info at 0x0000027FA13EC670>]
+DEBUG: cli.knack.cli: Event: CommandInvoker.OnCommandTableLoaded []
+DEBUG: cli.knack.cli: Event: CommandInvoker.OnPreParseArgs []
+DEBUG: cli.knack.cli: Event: CommandInvoker.OnPostParseArgs [<function OutputProducer.handle_output_argument at 0x0000027FA1184A90>, <function CLIQuery.handle_query_parameter at 0x0000027FA11B3110>, <function register_ids_argument.<locals>.parse_ids_arguments at 0x0000027FA13EC460>]
+WARNING: This command has been deprecated and will be removed in a future release. Use 'az webapp deploy' instead.
+WARNING: cli.azure.cli.command_modules.appservice.custom: Getting scm site credentials for zip deployment
+DEBUG: cli.azure.cli.core.commands.client_factory: Getting management service client client_type=WebSiteManagementClient
+DEBUG: cli.azure.cli.core.auth.persistence: build_persistence: location='C:\\Users\\s.mihneva-chotalal\\.azure\\msal_token_cache.bin', encrypt=True
+DEBUG: cli.azure.cli.core.auth.binary_cache: load: C:\Users\s.mihneva-chotalal\.azure\msal_http_cache.bin
+DEBUG: urllib3.util.retry: Converted retries value: 1 -> Retry(total=1, connect=None, read=None, redirect=None, status=None)
+DEBUG: msal.application: Broker enabled? True
+DEBUG: cli.azure.cli.core.auth.credential_adaptor: CredentialAdaptor.get_token_info: scopes=('https://management.core.windows.net//.default',), options={}
+DEBUG: cli.azure.cli.core.auth.msal_credentials: UserCredential.acquire_token: scopes=['https://management.core.windows.net//.default'], claims_challenge=None, kwargs={}
+DEBUG: msal.application: Cache hit an AT
+DEBUG: msal.telemetry: Generate or reuse correlation_id: 8bc3a570-8cef-40ea-8ba2-2ad602bded8a
+DEBUG: cli.azure.cli.core.sdk.policies: Request URL: 'https://management.azure.com/subscriptions/c83ece78-043b-4b2f-bf91-dbba505b368b/resourceGroups/titanium-rg03/providers/Microsoft.Web/sites/lgts1tetamapp06?api-version=2025-05-01'
+DEBUG: cli.azure.cli.core.sdk.policies: Request method: 'GET'
+DEBUG: cli.azure.cli.core.sdk.policies: Request headers:
+DEBUG: cli.azure.cli.core.sdk.policies:     'Accept': 'application/json'
+DEBUG: cli.azure.cli.core.sdk.policies:     'x-ms-client-request-id': 'ea7ab82e-b076-11f1-b878-fcb3aae485f3'
+DEBUG: cli.azure.cli.core.sdk.policies:     'CommandName': 'webapp deployment source config-zip'
+DEBUG: cli.azure.cli.core.sdk.policies:     'ParameterSetName': '-g -n --src --debug'
+DEBUG: cli.azure.cli.core.sdk.policies:     'User-Agent': 'AZURECLI/2.90.0 (MSI) azsdk-python-core/1.39.0 Python/3.14.6 (Windows-11-10.0.26200-SP0)'
+DEBUG: cli.azure.cli.core.sdk.policies:     'Authorization': '*****'
+DEBUG: cli.azure.cli.core.sdk.policies: Request body:
+DEBUG: cli.azure.cli.core.sdk.policies: This request has no body
+DEBUG: urllib3.connectionpool: Starting new HTTPS connection (1): management.azure.com:443
+DEBUG: urllib3.connectionpool: https://management.azure.com:443 "GET /subscriptions/c83ece78-043b-4b2f-bf91-dbba505b368b/resourceGroups/titanium-rg03/providers/Microsoft.Web/sites/lgts1tetamapp06?api-version=2025-05-01 HTTP/1.1" 200 8311
+DEBUG: cli.azure.cli.core.sdk.policies: Response status: 200
+DEBUG: cli.azure.cli.core.sdk.policies: Response headers:
+DEBUG: cli.azure.cli.core.sdk.policies:     'Cache-Control': 'no-cache'
+DEBUG: cli.azure.cli.core.sdk.policies:     'Pragma': 'no-cache'
+DEBUG: cli.azure.cli.core.sdk.policies:     'Content-Length': '8311'
+DEBUG: cli.azure.cli.core.sdk.policies:     'Content-Type': 'application/json'
+DEBUG: cli.azure.cli.core.sdk.policies:     'Expires': '-1'
+DEBUG: cli.azure.cli.core.sdk.policies:     'ETag': '1DD447F2FBE02E0'
+DEBUG: cli.azure.cli.core.sdk.policies:     'Strict-Transport-Security': 'max-age=31536000; includeSubDomains'
+DEBUG: cli.azure.cli.core.sdk.policies:     'x-ms-request-id': 'cb7fd936-f68c-4429-9284-cea3d4c6fc8d'
+DEBUG: cli.azure.cli.core.sdk.policies:     'X-AspNet-Version': '4.0.30319'
+DEBUG: cli.azure.cli.core.sdk.policies:     'X-Powered-By': 'ASP.NET'
+DEBUG: cli.azure.cli.core.sdk.policies:     'x-ms-ratelimit-remaining-subscription-reads': '249'
+DEBUG: cli.azure.cli.core.sdk.policies:     'x-ms-ratelimit-remaining-subscription-global-reads': '3749'
+DEBUG: cli.azure.cli.core.sdk.policies:     'x-ms-correlation-request-id': 'c9added9-9daf-46ca-8713-f545a8df0d8f'
+DEBUG: cli.azure.cli.core.sdk.policies:     'x-ms-routing-request-id': 'EASTUS:20260914T200045Z:c9added9-9daf-46ca-8713-f545a8df0d8f'
+DEBUG: cli.azure.cli.core.sdk.policies:     'X-Content-Type-Options': 'nosniff'
+DEBUG: cli.azure.cli.core.sdk.policies:     'X-Cache': 'CONFIG_NOCACHE'
+DEBUG: cli.azure.cli.core.sdk.policies:     'X-MSEdge-Ref': 'Ref A: C6A616C11A7D4AEF8A83D723A79ECE3E Ref B: BL2AA2011002060 Ref C: 2026-09-14T20:00:45Z'
+DEBUG: cli.azure.cli.core.sdk.policies:     'Date': 'Mon, 14 Sep 2026 20:00:45 GMT'
+DEBUG: cli.azure.cli.core.sdk.policies: Response content:
+DEBUG: cli.azure.cli.core.sdk.policies: {"id":"/subscriptions/c83ece78-043b-4b2f-bf91-dbba505b368b/resourceGroups/titanium-rg03/providers/Microsoft.Web/sites/lgts1tetamapp06","name":"lgts1tetamapp06","type":"Microsoft.Web/sites","kind":"app,linux","location":"East US","properties":{"name":"lgts1tetamapp06","state":"Running","hostNames":["lgts1tetamapp06.azurewebsites.net"],"webSpace":"titanium-rg03-EastUSwebspace-Linux","selfLink":"https://waws-prod-blu-131.api.azurewebsites.windows.net:455/subscriptions/c83ece78-043b-4b2f-bf91-dbba505b368b/webspaces/titanium-rg03-EastUSwebspace-Linux/sites/lgts1tetamapp06","repositorySiteName":"lgts1tetamapp06","owner":null,"usageState":"Normal","enabled":true,"adminEnabled":true,"siteScopedCertificatesEnabled":false,"afdEnabled":false,"enabledHostNames":["lgts1tetamapp06.azurewebsites.net","lgts1tetamapp06.scm.azurewebsites.net"],"siteProperties":{"metadata":null,"properties":[{"name":"LinuxFxVersion","value":"NODE|24-lts"},{"name":"WindowsFxVersion","value":null}],"appSettings":null},"availabilityState":"Normal","sslCertificates":null,"csrs":[],"cers":null,"siteMode":null,"hostNameSslStates":[{"name":"lgts1tetamapp06.azurewebsites.net","sslState":"Disabled","ipBasedSslResult":null,"virtualIP":null,"virtualIPv6":null,"thumbprint":null,"certificateResourceId":null,"toUpdate":null,"toUpdateIpBasedSsl":null,"ipBasedSslState":"NotConfigured","hostType":"Standard"},{"name":"lgts1tetamapp06.scm.azurewebsites.net","sslState":"Disabled","ipBasedSslResult":null,"virtualIP":null,"virtualIPv6":null,"thumbprint":null,"certificateResourceId":null,"toUpdate":null,"toUpdateIpBasedSsl":null,"ipBasedSslState":"NotConfigured","hostType":"Repository"}],"hostNamePrivateStates":[],"computeMode":null,"serverFarm":null,"serverFarmId":"/subscriptions/c83ece78-043b-4b2f-bf91-dbba505b368b/resourceGroups/titanium-rg03/providers/Microsoft.Web/serverfarms/lgts1tetamapp-ASP03","reserved":true,"isXenon":false,"hyperV":false,"sandboxType":null,"lastModifiedTimeUtc":"2026-09-14T19:28:14.35","storageRecoveryDefaultState":"Running","contentAvailabilityState":"Normal","runtimeAvailabilityState":"Normal","dnsConfiguration":{},"containerAllocationSubnet":null,"useContainerLocalhostBindings":null,"outboundVnetRouting":{"allTraffic":false,"applicationTraffic":true,"contentShareTraffic":false,"imagePullTraffic":false,"backupRestoreTraffic":false,"managedIdentityTraffic":false},"legacyServiceEndpointTrafficEvaluation":null,"siteConfig":{"numberOfWorkers":1,"defaultDocuments":null,"netFrameworkVersion":null,"phpVersion":null,"pythonVersion":null,"nodeVersion":null,"powerShellVersion":null,"linuxFxVersion":"NODE|24-lts","windowsFxVersion":null,"sandboxType":null,"windowsConfiguredStacks":null,"requestTracingEnabled":null,"remoteDebuggingEnabled":null,"remoteDebuggingVersion":null,"httpLoggingEnabled":null,"azureMonitorLogCategories":null,"acrUseManagedIdentityCreds":false,"acrUserManagedIdentityID":null,"logsDirectorySizeLimit":null,"detailedErrorLoggingEnabled":null,"publishingUsername":null,"publishingPassword":null,"appSettings":null,"metadata":null,"connectionStrings":null,"machineKey":null,"handlerMappings":null,"documentRoot":null,"scmType":null,"use32BitWorkerProcess":null,"webSocketsEnabled":null,"alwaysOn":false,"javaVersion":null,"javaContainer":null,"javaContainerVersion":null,"appCommandLine":null,"managedPipelineMode":null,"virtualApplications":null,"winAuthAdminState":null,"winAuthTenantState":null,"customAppPoolIdentityAdminState":null,"customAppPoolIdentityTenantState":null,"runtimeADUser":null,"runtimeADUserPassword":null,"loadBalancing":null,"routingRules":null,"experiments":null,"limits":null,"autoHealEnabled":null,"autoHealRules":null,"tracingOptions":null,"vnetName":null,"vnetRouteAllEnabled":null,"vnetPrivatePortsCount":null,"publicNetworkAccess":null,"cors":null,"push":null,"apiDefinition":null,"apiManagementConfig":null,"autoSwapSlotName":null,"localMySqlEnabled":null,"managedServiceIdentityId":null,"xManagedServiceIdentityId":null,"keyVaultReferenceIdentity":null,"ipSecurityRestrictions":null,"ipSecurityRestrictionsDefaultAction":null,"scmIpSecurityRestrictions":null,"scmIpSecurityRestrictionsDefaultAction":null,"scmIpSecurityRestrictionsUseMain":null,"http20Enabled":false,"minTlsVersion":null,"minTlsCipherSuite":null,"scmMinTlsCipherSuite":null,"supportedTlsCipherSuites":null,"scmSupportedTlsCipherSuites":null,"scmMinTlsVersion":null,"ftpsState":null,"preWarmedInstanceCount":null,"functionAppScaleLimit":0,"elasticWebAppScaleLimit":null,"healthCheckPath":null,"fileChangeAuditEnabled":null,"functionsRuntimeScaleMonitoringEnabled":null,"websiteTimeZone":null,"minimumElasticInstanceCount":1,"azureStorageAccounts":null,"http20ProxyFlag":null,"sitePort":null,"antivirusScanEnabled":null,"storageType":null,"sitePrivateLinkHostEnabled":null,"clusteringEnabled":false,"webJobsEnabled":false},"functionAppConfig":null,"daprConfig":null,"aiIntegration":null,"deploymentId":"lgts1tetamapp06","slotName":null,"trafficManagerHostNames":null,"sku":"Basic","scmSiteAlsoStopped":false,"targetSwapSlot":null,"hostingEnvironment":null,"hostingEnvironmentProfile":null,"clientAffinityEnabled":false,"clientAffinityProxyEnabled":false,"useQueryStringAffinity":false,"blockPathTraversal":false,"jA4Forwarding":false,"clientCertEnabled":false,"clientCertMode":"Required","clientCertExclusionPaths":null,"clientCertExclusionEndPoints":null,"hostNamesDisabled":false,"ipMode":"IPv4","domainVerificationIdentifiers":null,"customDomainVerificationId":"6762854E45A88B5EF6832E840627CFD9840BD2635766E949E714B4A62A89ED1A","kind":"app,linux","managedEnvironmentId":null,"workloadProfileName":null,"resourceConfig":null,"inboundIpAddress":"40.71.11.130","possibleInboundIpAddresses":"40.71.11.130","inboundIpv6Address":"2603:1030:210:9::1f","possibleInboundIpv6Addresses":"2603:1030:210:9::1f","ftpUsername":"lgts1tetamapp06\\$lgts1tetamapp06","ftpsHostName":"ftps://waws-prod-blu-131.ftp.azurewebsites.windows.net/site/wwwroot","outboundIpAddresses":"20.83.137.194,40.76.1.251,40.71.11.130","possibleOutboundIpAddresses":"20.83.137.194,40.76.1.251,40.76.3.198,40.76.22.161,23.96.84.113,40.76.25.24,13.82.132.49,20.246.210.161,20.246.211.82,20.246.211.119,20.246.211.126,20.246.211.135,20.246.211.141,20.246.160.110,20.246.161.155,20.246.162.6,20.246.165.74,20.246.165.147,20.246.167.95,40.71.11.130","outboundIpv6Addresses":"2603:1030:20e:15::9a,2603:1030:20e:15::9b,2603:1030:210:9::1f,2603:10e1:100:2::2847:b82,2603:1030:210:8::7b,2603:10e1:100:2::1477:79","possibleOutboundIpv6Addresses":"2603:1030:20e:15::9a,2603:1030:20e:15::9b,2603:1030:20e:1e::84,2603:1030:20c:f::ca1,2603:1030:20e:16::90,2603:1030:20e:d::4c,2603:1030:20e:8::194,2603:1030:20e:21::9b,2603:1030:20c:f::ca2,2603:1030:20e:17::72,2603:1030:20e:14::ae,2603:1030:20e:7::4e,2603:1030:20e:a::27,2603:1030:20e:20::96,2603:1030:20e:1a::9e,2603:1030:20e:e::c4,2603:1030:20e:24::8d,2603:1030:20e:1a::9f,2603:1030:20e:a::8f,2603:1030:210:9::1f,2603:10e1:100:2::2847:b82,2603:1030:210:8::7b,2603:10e1:100:2::1477:79","containerSize":0,"dailyMemoryTimeQuota":0,"suspendedTill":null,"siteDisabledReason":0,"functionExecutionUnitsCache":null,"maxNumberOfWorkers":null,"homeStamp":"waws-prod-blu-131","cloningInfo":null,"hostingEnvironmentId":null,"tags":null,"resourceGroup":"titanium-rg03","defaultHostName":"lgts1tetamapp06.azurewebsites.net","slotSwapStatus":null,"httpsOnly":true,"endToEndEncryptionEnabled":false,"functionsRuntimeAdminIsolationEnabled":false,"redundancyMode":"None","inProgressOperationId":null,"geoDistributions":null,"privateEndpointConnections":[],"publicNetworkAccess":"Enabled","buildVersion":null,"targetBuildVersion":null,"migrationState":null,"eligibleLogCategories":"AppServiceAppLogs,AppServiceConsoleLogs,AppServiceHTTPLogs,AppServicePlatformLogs,ScanLogs,AppServiceAuthenticationLogs,AppServiceAuditLogs,AppServiceIPSecAuditLogs","inFlightFeatures":["SiteContainers"],"platformVersion":"109.0.7.36","storageAccountRequired":false,"virtualNetworkSubnetId":"/subscriptions/c83ece78-043b-4b2f-bf91-dbba505b368b/resourceGroups/lgts1tetarg/providers/Microsoft.Network/virtualNetworks/lgts1tetapvpc01/subnets/sub-visualization","keyVaultReferenceIdentity":"SystemAssigned","autoGeneratedDomainNameLabelScope":null,"privateLinkIdentifiers":null,"sshEnabled":true,"maintenanceEnabled":false}}
+DEBUG: cli.azure.cli.core.commands.client_factory: Getting management service client client_type=WebSiteManagementClient
+DEBUG: urllib3.util.retry: Converted retries value: 1 -> Retry(total=1, connect=None, read=None, redirect=None, status=None)
+DEBUG: msal.application: Broker enabled? True
+DEBUG: cli.azure.cli.core.auth.credential_adaptor: CredentialAdaptor.get_token_info: scopes=('https://management.core.windows.net//.default',), options={}
+DEBUG: cli.azure.cli.core.auth.msal_credentials: UserCredential.acquire_token: scopes=['https://management.core.windows.net//.default'], claims_challenge=None, kwargs={}
+DEBUG: msal.application: Cache hit an AT
+DEBUG: msal.telemetry: Generate or reuse correlation_id: f370e4f7-376e-41cd-aae1-2f1d0f1b073a
+DEBUG: cli.azure.cli.core.sdk.policies: Request URL: 'https://management.azure.com/subscriptions/c83ece78-043b-4b2f-bf91-dbba505b368b/resourceGroups/titanium-rg03/providers/Microsoft.Web/sites/lgts1tetamapp06?api-version=2025-05-01'
+DEBUG: cli.azure.cli.core.sdk.policies: Request method: 'GET'
+DEBUG: cli.azure.cli.core.sdk.policies: Request headers:
+DEBUG: cli.azure.cli.core.sdk.policies:     'Accept': 'application/json'
+DEBUG: cli.azure.cli.core.sdk.policies:     'x-ms-client-request-id': 'ea7ab82e-b076-11f1-b878-fcb3aae485f3'
+DEBUG: cli.azure.cli.core.sdk.policies:     'CommandName': 'webapp deployment source config-zip'
+DEBUG: cli.azure.cli.core.sdk.policies:     'ParameterSetName': '-g -n --src --debug'
+DEBUG: cli.azure.cli.core.sdk.policies:     'User-Agent': 'AZURECLI/2.90.0 (MSI) azsdk-python-core/1.39.0 Python/3.14.6 (Windows-11-10.0.26200-SP0)'
+DEBUG: cli.azure.cli.core.sdk.policies:     'Authorization': '*****'
+DEBUG: cli.azure.cli.core.sdk.policies: Request body:
+DEBUG: cli.azure.cli.core.sdk.policies: This request has no body
+DEBUG: urllib3.connectionpool: Starting new HTTPS connection (1): management.azure.com:443
+DEBUG: urllib3.connectionpool: https://management.azure.com:443 "GET /subscriptions/c83ece78-043b-4b2f-bf91-dbba505b368b/resourceGroups/titanium-rg03/providers/Microsoft.Web/sites/lgts1tetamapp06?api-version=2025-05-01 HTTP/1.1" 200 8311
+DEBUG: cli.azure.cli.core.sdk.policies: Response status: 200
+DEBUG: cli.azure.cli.core.sdk.policies: Response headers:
+DEBUG: cli.azure.cli.core.sdk.policies:     'Cache-Control': 'no-cache'
+DEBUG: cli.azure.cli.core.sdk.policies:     'Pragma': 'no-cache'
+DEBUG: cli.azure.cli.core.sdk.policies:     'Content-Length': '8311'
+DEBUG: cli.azure.cli.core.sdk.policies:     'Content-Type': 'application/json'
+DEBUG: cli.azure.cli.core.sdk.policies:     'Expires': '-1'
+DEBUG: cli.azure.cli.core.sdk.policies:     'ETag': '1DD447F2FBE02E0'
+DEBUG: cli.azure.cli.core.sdk.policies:     'Strict-Transport-Security': 'max-age=31536000; includeSubDomains'
+DEBUG: cli.azure.cli.core.sdk.policies:     'x-ms-request-id': 'b6d9ec7d-775a-41f9-8af3-64edcc04ed58'
+DEBUG: cli.azure.cli.core.sdk.policies:     'X-AspNet-Version': '4.0.30319'
+DEBUG: cli.azure.cli.core.sdk.policies:     'X-Powered-By': 'ASP.NET'
+DEBUG: cli.azure.cli.core.sdk.policies:     'x-ms-ratelimit-remaining-subscription-reads': '249'
+DEBUG: cli.azure.cli.core.sdk.policies:     'x-ms-ratelimit-remaining-subscription-global-reads': '3749'
+DEBUG: cli.azure.cli.core.sdk.policies:     'x-ms-correlation-request-id': '4abe0469-1982-4288-a1e4-36731883afdb'
+DEBUG: cli.azure.cli.core.sdk.policies:     'x-ms-routing-request-id': 'EASTUS:20260914T200107Z:4abe0469-1982-4288-a1e4-36731883afdb'
+DEBUG: cli.azure.cli.core.sdk.policies:     'X-Content-Type-Options': 'nosniff'
+DEBUG: cli.azure.cli.core.sdk.policies:     'X-Cache': 'CONFIG_NOCACHE'
+DEBUG: cli.azure.cli.core.sdk.policies:     'X-MSEdge-Ref': 'Ref A: E3644F4A44DE428B9D7BA5BC937F796C Ref B: BL2AA2010205035 Ref C: 2026-09-14T20:01:07Z'
+DEBUG: cli.azure.cli.core.sdk.policies:     'Date': 'Mon, 14 Sep 2026 20:01:06 GMT'
+DEBUG: cli.azure.cli.core.sdk.policies: Response content:
+DEBUG: cli.azure.cli.core.sdk.policies: {"id":"/subscriptions/c83ece78-043b-4b2f-bf91-dbba505b368b/resourceGroups/titanium-rg03/providers/Microsoft.Web/sites/lgts1tetamapp06","name":"lgts1tetamapp06","type":"Microsoft.Web/sites","kind":"app,linux","location":"East US","properties":{"name":"lgts1tetamapp06","state":"Running","hostNames":["lgts1tetamapp06.azurewebsites.net"],"webSpace":"titanium-rg03-EastUSwebspace-Linux","selfLink":"https://waws-prod-blu-131.api.azurewebsites.windows.net:455/subscriptions/c83ece78-043b-4b2f-bf91-dbba505b368b/webspaces/titanium-rg03-EastUSwebspace-Linux/sites/lgts1tetamapp06","repositorySiteName":"lgts1tetamapp06","owner":null,"usageState":"Normal","enabled":true,"adminEnabled":true,"siteScopedCertificatesEnabled":false,"afdEnabled":false,"enabledHostNames":["lgts1tetamapp06.azurewebsites.net","lgts1tetamapp06.scm.azurewebsites.net"],"siteProperties":{"metadata":null,"properties":[{"name":"LinuxFxVersion","value":"NODE|24-lts"},{"name":"WindowsFxVersion","value":null}],"appSettings":null},"availabilityState":"Normal","sslCertificates":null,"csrs":[],"cers":null,"siteMode":null,"hostNameSslStates":[{"name":"lgts1tetamapp06.azurewebsites.net","sslState":"Disabled","ipBasedSslResult":null,"virtualIP":null,"virtualIPv6":null,"thumbprint":null,"certificateResourceId":null,"toUpdate":null,"toUpdateIpBasedSsl":null,"ipBasedSslState":"NotConfigured","hostType":"Standard"},{"name":"lgts1tetamapp06.scm.azurewebsites.net","sslState":"Disabled","ipBasedSslResult":null,"virtualIP":null,"virtualIPv6":null,"thumbprint":null,"certificateResourceId":null,"toUpdate":null,"toUpdateIpBasedSsl":null,"ipBasedSslState":"NotConfigured","hostType":"Repository"}],"hostNamePrivateStates":[],"computeMode":null,"serverFarm":null,"serverFarmId":"/subscriptions/c83ece78-043b-4b2f-bf91-dbba505b368b/resourceGroups/titanium-rg03/providers/Microsoft.Web/serverfarms/lgts1tetamapp-ASP03","reserved":true,"isXenon":false,"hyperV":false,"sandboxType":null,"lastModifiedTimeUtc":"2026-09-14T19:28:14.35","storageRecoveryDefaultState":"Running","contentAvailabilityState":"Normal","runtimeAvailabilityState":"Normal","dnsConfiguration":{},"containerAllocationSubnet":null,"useContainerLocalhostBindings":null,"outboundVnetRouting":{"allTraffic":false,"applicationTraffic":true,"contentShareTraffic":false,"imagePullTraffic":false,"backupRestoreTraffic":false,"managedIdentityTraffic":false},"legacyServiceEndpointTrafficEvaluation":null,"siteConfig":{"numberOfWorkers":1,"defaultDocuments":null,"netFrameworkVersion":null,"phpVersion":null,"pythonVersion":null,"nodeVersion":null,"powerShellVersion":null,"linuxFxVersion":"NODE|24-lts","windowsFxVersion":null,"sandboxType":null,"windowsConfiguredStacks":null,"requestTracingEnabled":null,"remoteDebuggingEnabled":null,"remoteDebuggingVersion":null,"httpLoggingEnabled":null,"azureMonitorLogCategories":null,"acrUseManagedIdentityCreds":false,"acrUserManagedIdentityID":null,"logsDirectorySizeLimit":null,"detailedErrorLoggingEnabled":null,"publishingUsername":null,"publishingPassword":null,"appSettings":null,"metadata":null,"connectionStrings":null,"machineKey":null,"handlerMappings":null,"documentRoot":null,"scmType":null,"use32BitWorkerProcess":null,"webSocketsEnabled":null,"alwaysOn":false,"javaVersion":null,"javaContainer":null,"javaContainerVersion":null,"appCommandLine":null,"managedPipelineMode":null,"virtualApplications":null,"winAuthAdminState":null,"winAuthTenantState":null,"customAppPoolIdentityAdminState":null,"customAppPoolIdentityTenantState":null,"runtimeADUser":null,"runtimeADUserPassword":null,"loadBalancing":null,"routingRules":null,"experiments":null,"limits":null,"autoHealEnabled":null,"autoHealRules":null,"tracingOptions":null,"vnetName":null,"vnetRouteAllEnabled":null,"vnetPrivatePortsCount":null,"publicNetworkAccess":null,"cors":null,"push":null,"apiDefinition":null,"apiManagementConfig":null,"autoSwapSlotName":null,"localMySqlEnabled":null,"managedServiceIdentityId":null,"xManagedServiceIdentityId":null,"keyVaultReferenceIdentity":null,"ipSecurityRestrictions":null,"ipSecurityRestrictionsDefaultAction":null,"scmIpSecurityRestrictions":null,"scmIpSecurityRestrictionsDefaultAction":null,"scmIpSecurityRestrictionsUseMain":null,"http20Enabled":false,"minTlsVersion":null,"minTlsCipherSuite":null,"scmMinTlsCipherSuite":null,"supportedTlsCipherSuites":null,"scmSupportedTlsCipherSuites":null,"scmMinTlsVersion":null,"ftpsState":null,"preWarmedInstanceCount":null,"functionAppScaleLimit":0,"elasticWebAppScaleLimit":null,"healthCheckPath":null,"fileChangeAuditEnabled":null,"functionsRuntimeScaleMonitoringEnabled":null,"websiteTimeZone":null,"minimumElasticInstanceCount":1,"azureStorageAccounts":null,"http20ProxyFlag":null,"sitePort":null,"antivirusScanEnabled":null,"storageType":null,"sitePrivateLinkHostEnabled":null,"clusteringEnabled":false,"webJobsEnabled":false},"functionAppConfig":null,"daprConfig":null,"aiIntegration":null,"deploymentId":"lgts1tetamapp06","slotName":null,"trafficManagerHostNames":null,"sku":"Basic","scmSiteAlsoStopped":false,"targetSwapSlot":null,"hostingEnvironment":null,"hostingEnvironmentProfile":null,"clientAffinityEnabled":false,"clientAffinityProxyEnabled":false,"useQueryStringAffinity":false,"blockPathTraversal":false,"jA4Forwarding":false,"clientCertEnabled":false,"clientCertMode":"Required","clientCertExclusionPaths":null,"clientCertExclusionEndPoints":null,"hostNamesDisabled":false,"ipMode":"IPv4","domainVerificationIdentifiers":null,"customDomainVerificationId":"6762854E45A88B5EF6832E840627CFD9840BD2635766E949E714B4A62A89ED1A","kind":"app,linux","managedEnvironmentId":null,"workloadProfileName":null,"resourceConfig":null,"inboundIpAddress":"40.71.11.130","possibleInboundIpAddresses":"40.71.11.130","inboundIpv6Address":"2603:1030:210:9::1f","possibleInboundIpv6Addresses":"2603:1030:210:9::1f","ftpUsername":"lgts1tetamapp06\\$lgts1tetamapp06","ftpsHostName":"ftps://waws-prod-blu-131.ftp.azurewebsites.windows.net/site/wwwroot","outboundIpAddresses":"20.83.137.194,40.76.1.251,40.71.11.130","possibleOutboundIpAddresses":"20.83.137.194,40.76.1.251,40.76.3.198,40.76.22.161,23.96.84.113,40.76.25.24,13.82.132.49,20.246.210.161,20.246.211.82,20.246.211.119,20.246.211.126,20.246.211.135,20.246.211.141,20.246.160.110,20.246.161.155,20.246.162.6,20.246.165.74,20.246.165.147,20.246.167.95,40.71.11.130","outboundIpv6Addresses":"2603:1030:20e:15::9a,2603:1030:20e:15::9b,2603:1030:210:9::1f,2603:10e1:100:2::2847:b82,2603:1030:210:8::7b,2603:10e1:100:2::1477:79","possibleOutboundIpv6Addresses":"2603:1030:20e:15::9a,2603:1030:20e:15::9b,2603:1030:20e:1e::84,2603:1030:20c:f::ca1,2603:1030:20e:16::90,2603:1030:20e:d::4c,2603:1030:20e:8::194,2603:1030:20e:21::9b,2603:1030:20c:f::ca2,2603:1030:20e:17::72,2603:1030:20e:14::ae,2603:1030:20e:7::4e,2603:1030:20e:a::27,2603:1030:20e:20::96,2603:1030:20e:1a::9e,2603:1030:20e:e::c4,2603:1030:20e:24::8d,2603:1030:20e:1a::9f,2603:1030:20e:a::8f,2603:1030:210:9::1f,2603:10e1:100:2::2847:b82,2603:1030:210:8::7b,2603:10e1:100:2::1477:79","containerSize":0,"dailyMemoryTimeQuota":0,"suspendedTill":null,"siteDisabledReason":0,"functionExecutionUnitsCache":null,"maxNumberOfWorkers":null,"homeStamp":"waws-prod-blu-131","cloningInfo":null,"hostingEnvironmentId":null,"tags":null,"resourceGroup":"titanium-rg03","defaultHostName":"lgts1tetamapp06.azurewebsites.net","slotSwapStatus":null,"httpsOnly":true,"endToEndEncryptionEnabled":false,"functionsRuntimeAdminIsolationEnabled":false,"redundancyMode":"None","inProgressOperationId":null,"geoDistributions":null,"privateEndpointConnections":[],"publicNetworkAccess":"Enabled","buildVersion":null,"targetBuildVersion":null,"migrationState":null,"eligibleLogCategories":"AppServiceAppLogs,AppServiceConsoleLogs,AppServiceHTTPLogs,AppServicePlatformLogs,ScanLogs,AppServiceAuthenticationLogs,AppServiceAuditLogs,AppServiceIPSecAuditLogs","inFlightFeatures":["SiteContainers"],"platformVersion":"109.0.7.36","storageAccountRequired":false,"virtualNetworkSubnetId":"/subscriptions/c83ece78-043b-4b2f-bf91-dbba505b368b/resourceGroups/lgts1tetarg/providers/Microsoft.Network/virtualNetworks/lgts1tetapvpc01/subnets/sub-visualization","keyVaultReferenceIdentity":"SystemAssigned","autoGeneratedDomainNameLabelScope":null,"privateLinkIdentifiers":null,"sshEnabled":true,"maintenanceEnabled":false}}
+DEBUG: cli.azure.cli.core.util: Found subscription ID c83ece78-043b-4b2f-bf91-dbba505b368b in the URL https://management.azure.com/subscriptions/c83ece78-043b-4b2f-bf91-dbba505b368b/resourceGroups/titanium-rg03/providers/Microsoft.Web/sites/lgts1tetamapp06?api-version=2023-12-01
+DEBUG: cli.azure.cli.core.util: Retrieving token for resource https://management.core.windows.net/, subscription c83ece78-043b-4b2f-bf91-dbba505b368b
+DEBUG: urllib3.util.retry: Converted retries value: 1 -> Retry(total=1, connect=None, read=None, redirect=None, status=None)
+DEBUG: msal.application: Broker enabled? True
+DEBUG: cli.azure.cli.core.auth.msal_credentials: UserCredential.acquire_token: scopes=['https://management.core.windows.net//.default'], claims_challenge=None, kwargs={}
+DEBUG: msal.application: Cache hit an AT
+DEBUG: msal.telemetry: Generate or reuse correlation_id: 45c441c5-7d36-402f-9b8d-65d80246592a
+INFO: cli.azure.cli.core.util: Request URL: 'https://management.azure.com/subscriptions/c83ece78-043b-4b2f-bf91-dbba505b368b/resourceGroups/titanium-rg03/providers/Microsoft.Web/sites/lgts1tetamapp06?api-version=2023-12-01'
+INFO: cli.azure.cli.core.util: Request method: 'GET'
+INFO: cli.azure.cli.core.util: Request headers:
+INFO: cli.azure.cli.core.util:     'User-Agent': 'python/3.14.6 (Windows-11-10.0.26200-SP0) AZURECLI/2.90.0 (MSI)'
+INFO: cli.azure.cli.core.util:     'Accept-Encoding': 'gzip, deflate, zstd'
+INFO: cli.azure.cli.core.util:     'Accept': '*/*'
+INFO: cli.azure.cli.core.util:     'Connection': 'keep-alive'
+INFO: cli.azure.cli.core.util:     'x-ms-client-request-id': '7115e2b4-1d38-43a5-91a7-1e9fb653f001'
+INFO: cli.azure.cli.core.util:     'CommandName': 'webapp deployment source config-zip'
+INFO: cli.azure.cli.core.util:     'ParameterSetName': '-g -n --src --debug'
+INFO: cli.azure.cli.core.util:     'Authorization': 'Bearer eyJ0eXAiOiJKV...'
+INFO: cli.azure.cli.core.util: Request body:
+INFO: cli.azure.cli.core.util: None
+DEBUG: urllib3.connectionpool: Starting new HTTPS connection (1): management.azure.com:443
+DEBUG: urllib3.connectionpool: https://management.azure.com:443 "GET /subscriptions/c83ece78-043b-4b2f-bf91-dbba505b368b/resourceGroups/titanium-rg03/providers/Microsoft.Web/sites/lgts1tetamapp06?api-version=2023-12-01 HTTP/1.1" 200 8250
+INFO: cli.azure.cli.core.util: Response status: 200
+INFO: cli.azure.cli.core.util: Response headers:
+INFO: cli.azure.cli.core.util:     'Cache-Control': 'no-cache'
+INFO: cli.azure.cli.core.util:     'Pragma': 'no-cache'
+INFO: cli.azure.cli.core.util:     'Content-Length': '8250'
+INFO: cli.azure.cli.core.util:     'Content-Type': 'application/json'
+INFO: cli.azure.cli.core.util:     'Expires': '-1'
+INFO: cli.azure.cli.core.util:     'ETag': '1DD447F2FBE02E0'
+INFO: cli.azure.cli.core.util:     'Strict-Transport-Security': 'max-age=31536000; includeSubDomains'
+INFO: cli.azure.cli.core.util:     'x-ms-request-id': 'a1202915-6eab-46ff-87b3-265a19b97750'
+INFO: cli.azure.cli.core.util:     'X-AspNet-Version': '4.0.30319'
+INFO: cli.azure.cli.core.util:     'X-Powered-By': 'ASP.NET'
+INFO: cli.azure.cli.core.util:     'x-ms-ratelimit-remaining-subscription-reads': '249'
+INFO: cli.azure.cli.core.util:     'x-ms-ratelimit-remaining-subscription-global-reads': '3749'
+INFO: cli.azure.cli.core.util:     'x-ms-correlation-request-id': '765a4267-edc6-4bb7-b579-d860cb4561f6'
+INFO: cli.azure.cli.core.util:     'x-ms-routing-request-id': 'EASTUS:20260914T200128Z:765a4267-edc6-4bb7-b579-d860cb4561f6'
+INFO: cli.azure.cli.core.util:     'X-Content-Type-Options': 'nosniff'
+INFO: cli.azure.cli.core.util:     'X-Cache': 'CONFIG_NOCACHE'
+INFO: cli.azure.cli.core.util:     'X-MSEdge-Ref': 'Ref A: 7576B748C95643909D668BC15D904CF9 Ref B: BL2AA2010205023 Ref C: 2026-09-14T20:01:28Z'
+INFO: cli.azure.cli.core.util:     'Date': 'Mon, 14 Sep 2026 20:01:28 GMT'
+INFO: cli.azure.cli.core.util: Response content:
+INFO: cli.azure.cli.core.util: {"id":"/subscriptions/c83ece78-043b-4b2f-bf91-dbba505b368b/resourceGroups/titanium-rg03/providers/Microsoft.Web/sites/lgts1tetamapp06","name":"lgts1tetamapp06","type":"Microsoft.Web/sites","kind":"app,linux","location":"East US","properties":{"name":"lgts1tetamapp06","state":"Running","hostNames":["lgts1tetamapp06.azurewebsites.net"],"webSpace":"titanium-rg03-EastUSwebspace-Linux","selfLink":"https://waws-prod-blu-131.api.azurewebsites.windows.net:455/subscriptions/c83ece78-043b-4b2f-bf91-dbba505b368b/webspaces/titanium-rg03-EastUSwebspace-Linux/sites/lgts1tetamapp06","repositorySiteName":"lgts1tetamapp06","owner":null,"usageState":"Normal","enabled":true,"adminEnabled":true,"siteScopedCertificatesEnabled":false,"afdEnabled":false,"enabledHostNames":["lgts1tetamapp06.azurewebsites.net","lgts1tetamapp06.scm.azurewebsites.net"],"siteProperties":{"metadata":null,"properties":[{"name":"LinuxFxVersion","value":"NODE|24-lts"},{"name":"WindowsFxVersion","value":null}],"appSettings":null},"availabilityState":"Normal","sslCertificates":null,"csrs":[],"cers":null,"siteMode":null,"hostNameSslStates":[{"name":"lgts1tetamapp06.azurewebsites.net","sslState":"Disabled","ipBasedSslResult":null,"virtualIP":null,"virtualIPv6":null,"thumbprint":null,"certificateResourceId":null,"toUpdate":null,"toUpdateIpBasedSsl":null,"ipBasedSslState":"NotConfigured","hostType":"Standard"},{"name":"lgts1tetamapp06.scm.azurewebsites.net","sslState":"Disabled","ipBasedSslResult":null,"virtualIP":null,"virtualIPv6":null,"thumbprint":null,"certificateResourceId":null,"toUpdate":null,"toUpdateIpBasedSsl":null,"ipBasedSslState":"NotConfigured","hostType":"Repository"}],"hostNamePrivateStates":[],"computeMode":null,"serverFarm":null,"serverFarmId":"/subscriptions/c83ece78-043b-4b2f-bf91-dbba505b368b/resourceGroups/titanium-rg03/providers/Microsoft.Web/serverfarms/lgts1tetamapp-ASP03","reserved":true,"isXenon":false,"hyperV":false,"sandboxType":null,"lastModifiedTimeUtc":"2026-09-14T19:28:14.35","storageRecoveryDefaultState":"Running","contentAvailabilityState":"Normal","runtimeAvailabilityState":"Normal","dnsConfiguration":{},"vnetRouteAllEnabled":true,"containerAllocationSubnet":null,"useContainerLocalhostBindings":null,"vnetImagePullEnabled":false,"vnetContentShareEnabled":false,"legacyServiceEndpointTrafficEvaluation":null,"siteConfig":{"numberOfWorkers":1,"defaultDocuments":null,"netFrameworkVersion":null,"phpVersion":null,"pythonVersion":null,"nodeVersion":null,"powerShellVersion":null,"linuxFxVersion":"NODE|24-lts","windowsFxVersion":null,"sandboxType":null,"windowsConfiguredStacks":null,"requestTracingEnabled":null,"remoteDebuggingEnabled":null,"remoteDebuggingVersion":null,"httpLoggingEnabled":null,"azureMonitorLogCategories":null,"acrUseManagedIdentityCreds":false,"acrUserManagedIdentityID":null,"logsDirectorySizeLimit":null,"detailedErrorLoggingEnabled":null,"publishingUsername":null,"publishingPassword":null,"appSettings":null,"metadata":null,"connectionStrings":null,"machineKey":null,"handlerMappings":null,"documentRoot":null,"scmType":null,"use32BitWorkerProcess":null,"webSocketsEnabled":null,"alwaysOn":false,"javaVersion":null,"javaContainer":null,"javaContainerVersion":null,"appCommandLine":null,"managedPipelineMode":null,"virtualApplications":null,"winAuthAdminState":null,"winAuthTenantState":null,"customAppPoolIdentityAdminState":null,"customAppPoolIdentityTenantState":null,"runtimeADUser":null,"runtimeADUserPassword":null,"loadBalancing":null,"routingRules":null,"experiments":null,"limits":null,"autoHealEnabled":null,"autoHealRules":null,"tracingOptions":null,"vnetName":null,"vnetRouteAllEnabled":null,"vnetPrivatePortsCount":null,"publicNetworkAccess":null,"cors":null,"push":null,"apiDefinition":null,"apiManagementConfig":null,"autoSwapSlotName":null,"localMySqlEnabled":null,"managedServiceIdentityId":null,"xManagedServiceIdentityId":null,"keyVaultReferenceIdentity":null,"ipSecurityRestrictions":null,"ipSecurityRestrictionsDefaultAction":null,"scmIpSecurityRestrictions":null,"scmIpSecurityRestrictionsDefaultAction":null,"scmIpSecurityRestrictionsUseMain":null,"http20Enabled":false,"minTlsVersion":null,"minTlsCipherSuite":null,"scmMinTlsCipherSuite":null,"supportedTlsCipherSuites":null,"scmSupportedTlsCipherSuites":null,"scmMinTlsVersion":null,"ftpsState":null,"preWarmedInstanceCount":null,"functionAppScaleLimit":0,"elasticWebAppScaleLimit":null,"healthCheckPath":null,"fileChangeAuditEnabled":null,"functionsRuntimeScaleMonitoringEnabled":null,"websiteTimeZone":null,"minimumElasticInstanceCount":1,"azureStorageAccounts":null,"http20ProxyFlag":null,"sitePort":null,"antivirusScanEnabled":null,"storageType":null,"sitePrivateLinkHostEnabled":null,"clusteringEnabled":false,"webJobsEnabled":false},"functionAppConfig":null,"daprConfig":null,"aiIntegration":null,"deploymentId":"lgts1tetamapp06","slotName":null,"trafficManagerHostNames":null,"sku":"Basic","scmSiteAlsoStopped":false,"targetSwapSlot":null,"hostingEnvironment":null,"hostingEnvironmentProfile":null,"clientAffinityEnabled":false,"clientAffinityProxyEnabled":false,"useQueryStringAffinity":false,"blockPathTraversal":false,"jA4Forwarding":false,"clientCertEnabled":false,"clientCertMode":"Required","clientCertExclusionPaths":null,"clientCertExclusionEndPoints":null,"hostNamesDisabled":false,"ipMode":"IPv4","vnetBackupRestoreEnabled":false,"domainVerificationIdentifiers":null,"customDomainVerificationId":"6762854E45A88B5EF6832E840627CFD9840BD2635766E949E714B4A62A89ED1A","kind":"app,linux","managedEnvironmentId":null,"workloadProfileName":null,"resourceConfig":null,"inboundIpAddress":"40.71.11.130","possibleInboundIpAddresses":"40.71.11.130","inboundIpv6Address":"2603:1030:210:9::1f","possibleInboundIpv6Addresses":"2603:1030:210:9::1f","ftpUsername":"lgts1tetamapp06\\$lgts1tetamapp06","ftpsHostName":"ftps://waws-prod-blu-131.ftp.azurewebsites.windows.net/site/wwwroot","outboundIpAddresses":"20.83.137.194,40.76.1.251,40.71.11.130","possibleOutboundIpAddresses":"20.83.137.194,40.76.1.251,40.76.3.198,40.76.22.161,23.96.84.113,40.76.25.24,13.82.132.49,20.246.210.161,20.246.211.82,20.246.211.119,20.246.211.126,20.246.211.135,20.246.211.141,20.246.160.110,20.246.161.155,20.246.162.6,20.246.165.74,20.246.165.147,20.246.167.95,40.71.11.130","outboundIpv6Addresses":"2603:1030:20e:15::9a,2603:1030:20e:15::9b,2603:1030:210:9::1f,2603:10e1:100:2::2847:b82,2603:1030:210:8::7b,2603:10e1:100:2::1477:79","possibleOutboundIpv6Addresses":"2603:1030:20e:15::9a,2603:1030:20e:15::9b,2603:1030:20e:1e::84,2603:1030:20c:f::ca1,2603:1030:20e:16::90,2603:1030:20e:d::4c,2603:1030:20e:8::194,2603:1030:20e:21::9b,2603:1030:20c:f::ca2,2603:1030:20e:17::72,2603:1030:20e:14::ae,2603:1030:20e:7::4e,2603:1030:20e:a::27,2603:1030:20e:20::96,2603:1030:20e:1a::9e,2603:1030:20e:e::c4,2603:1030:20e:24::8d,2603:1030:20e:1a::9f,2603:1030:20e:a::8f,2603:1030:210:9::1f,2603:10e1:100:2::2847:b82,2603:1030:210:8::7b,2603:10e1:100:2::1477:79","containerSize":0,"dailyMemoryTimeQuota":0,"suspendedTill":null,"siteDisabledReason":0,"functionExecutionUnitsCache":null,"maxNumberOfWorkers":null,"homeStamp":"waws-prod-blu-131","cloningInfo":null,"hostingEnvironmentId":null,"tags":null,"resourceGroup":"titanium-rg03","defaultHostName":"lgts1tetamapp06.azurewebsites.net","slotSwapStatus":null,"httpsOnly":true,"endToEndEncryptionEnabled":false,"functionsRuntimeAdminIsolationEnabled":false,"redundancyMode":"None","inProgressOperationId":null,"geoDistributions":null,"privateEndpointConnections":[],"publicNetworkAccess":"Enabled","buildVersion":null,"targetBuildVersion":null,"migrationState":null,"eligibleLogCategories":"AppServiceAppLogs,AppServiceConsoleLogs,AppServiceHTTPLogs,AppServicePlatformLogs,ScanLogs,AppServiceAuthenticationLogs,AppServiceAuditLogs,AppServiceIPSecAuditLogs","inFlightFeatures":["SiteContainers"],"platformVersion":"109.0.7.36","storageAccountRequired":false,"virtualNetworkSubnetId":"/subscriptions/c83ece78-043b-4b2f-bf91-dbba505b368b/resourceGroups/lgts1tetarg/providers/Microsoft.Network/virtualNetworks/lgts1tetapvpc01/subnets/sub-visualization","keyVaultReferenceIdentity":"SystemAssigned","autoGeneratedDomainNameLabelScope":null,"privateLinkIdentifiers":null,"sshEnabled":true,"maintenanceEnabled":false}}
+DEBUG: cli.azure.cli.core.commands.client_factory: Getting management service client client_type=WebSiteManagementClient
+DEBUG: urllib3.util.retry: Converted retries value: 1 -> Retry(total=1, connect=None, read=None, redirect=None, status=None)
+DEBUG: msal.application: Broker enabled? True
+DEBUG: cli.azure.cli.core.auth.credential_adaptor: CredentialAdaptor.get_token_info: scopes=('https://management.core.windows.net//.default',), options={}
+DEBUG: cli.azure.cli.core.auth.msal_credentials: UserCredential.acquire_token: scopes=['https://management.core.windows.net//.default'], claims_challenge=None, kwargs={}
+DEBUG: msal.application: Cache hit an AT
+DEBUG: msal.telemetry: Generate or reuse correlation_id: f6d7eede-0d4f-41d2-ae22-391c2fa96204
+DEBUG: cli.azure.cli.core.sdk.policies: Request URL: 'https://management.azure.com/subscriptions/c83ece78-043b-4b2f-bf91-dbba505b368b/resourceGroups/titanium-rg03/providers/Microsoft.Web/sites/lgts1tetamapp06/basicPublishingCredentialsPolicies/scm?api-version=2025-05-01'
+DEBUG: cli.azure.cli.core.sdk.policies: Request method: 'GET'
+DEBUG: cli.azure.cli.core.sdk.policies: Request headers:
+DEBUG: cli.azure.cli.core.sdk.policies:     'Accept': 'application/json'
+DEBUG: cli.azure.cli.core.sdk.policies:     'x-ms-client-request-id': 'ea7ab82e-b076-11f1-b878-fcb3aae485f3'
+DEBUG: cli.azure.cli.core.sdk.policies:     'CommandName': 'webapp deployment source config-zip'
+DEBUG: cli.azure.cli.core.sdk.policies:     'ParameterSetName': '-g -n --src --debug'
+DEBUG: cli.azure.cli.core.sdk.policies:     'User-Agent': 'AZURECLI/2.90.0 (MSI) azsdk-python-core/1.39.0 Python/3.14.6 (Windows-11-10.0.26200-SP0)'
+DEBUG: cli.azure.cli.core.sdk.policies:     'Authorization': '*****'
+DEBUG: cli.azure.cli.core.sdk.policies: Request body:
+DEBUG: cli.azure.cli.core.sdk.policies: This request has no body
+DEBUG: urllib3.connectionpool: Starting new HTTPS connection (1): management.azure.com:443
+DEBUG: urllib3.connectionpool: https://management.azure.com:443 "GET /subscriptions/c83ece78-043b-4b2f-bf91-dbba505b368b/resourceGroups/titanium-rg03/providers/Microsoft.Web/sites/lgts1tetamapp06/basicPublishingCredentialsPolicies/scm?api-version=2025-05-01 HTTP/1.1" 200 300
+DEBUG: cli.azure.cli.core.sdk.policies: Response status: 200
+DEBUG: cli.azure.cli.core.sdk.policies: Response headers:
+DEBUG: cli.azure.cli.core.sdk.policies:     'Cache-Control': 'no-cache'
+DEBUG: cli.azure.cli.core.sdk.policies:     'Pragma': 'no-cache'
+DEBUG: cli.azure.cli.core.sdk.policies:     'Content-Length': '300'
+DEBUG: cli.azure.cli.core.sdk.policies:     'Content-Type': 'application/json'
+DEBUG: cli.azure.cli.core.sdk.policies:     'Expires': '-1'
+DEBUG: cli.azure.cli.core.sdk.policies:     'Strict-Transport-Security': 'max-age=31536000; includeSubDomains'
+DEBUG: cli.azure.cli.core.sdk.policies:     'x-ms-request-id': 'c56512b7-1cb9-4084-8554-4bc0f8125b4f'
+DEBUG: cli.azure.cli.core.sdk.policies:     'X-AspNet-Version': '4.0.30319'
+DEBUG: cli.azure.cli.core.sdk.policies:     'X-Powered-By': 'ASP.NET'
+DEBUG: cli.azure.cli.core.sdk.policies:     'x-ms-operation-identifier': 'tenantId=621ce54a-d3c1-4fce-b449-7acaa62bd248,objectId=fef32aa2-5b2f-42e8-877c-cfb73d21c3d6/eastus/2005da5e-33cf-4b94-99ff-77961e9aca65'
+DEBUG: cli.azure.cli.core.sdk.policies:     'x-ms-ratelimit-remaining-subscription-reads': '249'
+DEBUG: cli.azure.cli.core.sdk.policies:     'x-ms-ratelimit-remaining-subscription-global-reads': '3749'
+DEBUG: cli.azure.cli.core.sdk.policies:     'x-ms-correlation-request-id': '12c9b3a5-a3e8-40c8-822f-07927143176c'
+DEBUG: cli.azure.cli.core.sdk.policies:     'x-ms-routing-request-id': 'EASTUS:20260914T200150Z:12c9b3a5-a3e8-40c8-822f-07927143176c'
+DEBUG: cli.azure.cli.core.sdk.policies:     'X-Content-Type-Options': 'nosniff'
+DEBUG: cli.azure.cli.core.sdk.policies:     'X-Cache': 'CONFIG_NOCACHE'
+DEBUG: cli.azure.cli.core.sdk.policies:     'X-MSEdge-Ref': 'Ref A: 5B8570490768476396BBCA82535601BE Ref B: BL2AA2010204035 Ref C: 2026-09-14T20:01:50Z'
+DEBUG: cli.azure.cli.core.sdk.policies:     'Date': 'Mon, 14 Sep 2026 20:01:49 GMT'
+DEBUG: cli.azure.cli.core.sdk.policies: Response content:
+DEBUG: cli.azure.cli.core.sdk.policies: {"id":"/subscriptions/c83ece78-043b-4b2f-bf91-dbba505b368b/resourceGroups/titanium-rg03/providers/Microsoft.Web/sites/lgts1tetamapp06/basicPublishingCredentialsPolicies/scm","name":"scm","type":"Microsoft.Web/sites/basicPublishingCredentialsPolicies","location":"East US","properties":{"allow":true}}
+INFO: cli.azure.cli.command_modules.appservice.custom: [AUTH]: basic
+DEBUG: cli.azure.cli.core.commands.client_factory: Getting management service client client_type=WebSiteManagementClient
+DEBUG: urllib3.util.retry: Converted retries value: 1 -> Retry(total=1, connect=None, read=None, redirect=None, status=None)
+DEBUG: msal.application: Broker enabled? True
+DEBUG: cli.azure.cli.core.auth.credential_adaptor: CredentialAdaptor.get_token_info: scopes=('https://management.core.windows.net//.default',), options={}
+DEBUG: cli.azure.cli.core.auth.msal_credentials: UserCredential.acquire_token: scopes=['https://management.core.windows.net//.default'], claims_challenge=None, kwargs={}
+DEBUG: msal.application: Cache hit an AT
+DEBUG: msal.telemetry: Generate or reuse correlation_id: 4fee4f79-1294-49ed-9566-542301eeb2ae
+DEBUG: cli.azure.cli.core.sdk.policies: Request URL: 'https://management.azure.com/subscriptions/c83ece78-043b-4b2f-bf91-dbba505b368b/resourceGroups/titanium-rg03/providers/Microsoft.Web/sites/lgts1tetamapp06/config/publishingcredentials/list?api-version=2025-05-01'
+DEBUG: cli.azure.cli.core.sdk.policies: Request method: 'POST'
+DEBUG: cli.azure.cli.core.sdk.policies: Request headers:
+DEBUG: cli.azure.cli.core.sdk.policies:     'Accept': 'application/json'
+DEBUG: cli.azure.cli.core.sdk.policies:     'x-ms-client-request-id': 'ea7ab82e-b076-11f1-b878-fcb3aae485f3'
+DEBUG: cli.azure.cli.core.sdk.policies:     'CommandName': 'webapp deployment source config-zip'
+DEBUG: cli.azure.cli.core.sdk.policies:     'ParameterSetName': '-g -n --src --debug'
+DEBUG: cli.azure.cli.core.sdk.policies:     'User-Agent': 'AZURECLI/2.90.0 (MSI) azsdk-python-core/1.39.0 Python/3.14.6 (Windows-11-10.0.26200-SP0)'
+DEBUG: cli.azure.cli.core.sdk.policies:     'Authorization': '*****'
+DEBUG: cli.azure.cli.core.sdk.policies: Request body:
+DEBUG: cli.azure.cli.core.sdk.policies: This request has no body
+DEBUG: urllib3.connectionpool: Starting new HTTPS connection (1): management.azure.com:443
+DEBUG: urllib3.connectionpool: https://management.azure.com:443 "POST /subscriptions/c83ece78-043b-4b2f-bf91-dbba505b368b/resourceGroups/titanium-rg03/providers/Microsoft.Web/sites/lgts1tetamapp06/config/publishingcredentials/list?api-version=2025-05-01 HTTP/1.1" 200 655
+DEBUG: cli.azure.cli.core.sdk.policies: Response status: 200
+DEBUG: cli.azure.cli.core.sdk.policies: Response headers:
+DEBUG: cli.azure.cli.core.sdk.policies:     'Cache-Control': 'no-cache'
+DEBUG: cli.azure.cli.core.sdk.policies:     'Pragma': 'no-cache'
+DEBUG: cli.azure.cli.core.sdk.policies:     'Content-Length': '655'
+DEBUG: cli.azure.cli.core.sdk.policies:     'Content-Type': 'application/json'
+DEBUG: cli.azure.cli.core.sdk.policies:     'Expires': '-1'
+DEBUG: cli.azure.cli.core.sdk.policies:     'Strict-Transport-Security': 'max-age=31536000; includeSubDomains'
+DEBUG: cli.azure.cli.core.sdk.policies:     'x-ms-request-id': '5cb764b8-f462-4ef2-ad90-455814bec902'
+DEBUG: cli.azure.cli.core.sdk.policies:     'X-AspNet-Version': '4.0.30319'
+DEBUG: cli.azure.cli.core.sdk.policies:     'X-Powered-By': 'ASP.NET'
+DEBUG: cli.azure.cli.core.sdk.policies:     'x-ms-operation-identifier': 'tenantId=621ce54a-d3c1-4fce-b449-7acaa62bd248,objectId=fef32aa2-5b2f-42e8-877c-cfb73d21c3d6/eastus/92191806-45e1-434c-b42a-1f4d366d13e3'
+DEBUG: cli.azure.cli.core.sdk.policies:     'x-ms-ratelimit-remaining-subscription-resource-requests': '199'
+DEBUG: cli.azure.cli.core.sdk.policies:     'x-ms-correlation-request-id': 'd4000421-ad19-4dfa-a843-da3f70477052'
+DEBUG: cli.azure.cli.core.sdk.policies:     'x-ms-routing-request-id': 'EASTUS:20260914T200211Z:d4000421-ad19-4dfa-a843-da3f70477052'
+DEBUG: cli.azure.cli.core.sdk.policies:     'X-Content-Type-Options': 'nosniff'
+DEBUG: cli.azure.cli.core.sdk.policies:     'X-Cache': 'CONFIG_NOCACHE'
+DEBUG: cli.azure.cli.core.sdk.policies:     'X-MSEdge-Ref': 'Ref A: 99D97DB61A2E4D12BA9D00C149BE95BF Ref B: BL2AA2011006036 Ref C: 2026-09-14T20:02:11Z'
+DEBUG: cli.azure.cli.core.sdk.policies:     'Date': 'Mon, 14 Sep 2026 20:02:10 GMT'
+DEBUG: cli.azure.cli.core.sdk.policies: Response content:
+DEBUG: cli.azure.cli.core.sdk.policies: Body is streamable
+DEBUG: cli.azure.cli.core.azclierror: Traceback (most recent call last):
+  File "D:\a\_work\1\s\build_scripts\windows\artifacts\cli\Lib\site-packages\knack/cli.py", line 233, in invoke
+  File "D:\a\_work\1\s\build_scripts\windows\artifacts\cli\Lib\site-packages\azure/cli/core/commands/__init__.py", line 677, in execute
+  File "D:\a\_work\1\s\build_scripts\windows\artifacts\cli\Lib\site-packages\azure/cli/core/commands/__init__.py", line 820, in _run_jobs_serially
+  File "D:\a\_work\1\s\build_scripts\windows\artifacts\cli\Lib\site-packages\azure/cli/core/commands/__init__.py", line 812, in _run_job
+  File "D:\a\_work\1\s\build_scripts\windows\artifacts\cli\Lib\site-packages\azure/cli/command_modules/appservice/commands.py", line 137, in _ex_handler
+  File "D:\a\_work\1\s\build_scripts\windows\artifacts\cli\Lib\site-packages\azure/cli/core/commands/__init__.py", line 789, in _run_job
+  File "D:\a\_work\1\s\build_scripts\windows\artifacts\cli\Lib\site-packages\azure/cli/core/commands/__init__.py", line 335, in __call__
+  File "D:\a\_work\1\s\build_scripts\windows\artifacts\cli\Lib\site-packages\azure/cli/core/commands/command_operation.py", line 120, in handler
+  File "D:\a\_work\1\s\build_scripts\windows\artifacts\cli\Lib\site-packages\azure/cli/command_modules/appservice/custom.py", line 840, in enable_zip_deploy_webapp
+  File "D:\a\_work\1\s\build_scripts\windows\artifacts\cli\Lib\site-packages\azure/cli/command_modules/appservice/custom.py", line 959, in enable_zip_deploy
+FileNotFoundError: [Errno 2] No such file or directory: 'C:\\TitaniumEngineer\\Titanium_Engineer-04_Team_3\\Stela_Mihneva-Chotalal\\frontend\\frontend.zip'
+
+ERROR: cli.azure.cli.core.azclierror: The command failed with an unexpected error. Here is the traceback:
+ERROR: az_command_data_logger: The command failed with an unexpected error. Here is the traceback:
+ERROR: cli.azure.cli.core.azclierror: [Errno 2] No such file or directory: 'C:\\TitaniumEngineer\\Titanium_Engineer-04_Team_3\\Stela_Mihneva-Chotalal\\frontend\\frontend.zip'
+Traceback (most recent call last):
+  File "D:\a\_work\1\s\build_scripts\windows\artifacts\cli\Lib\site-packages\knack/cli.py", line 233, in invoke
+  File "D:\a\_work\1\s\build_scripts\windows\artifacts\cli\Lib\site-packages\azure/cli/core/commands/__init__.py", line 677, in execute
+  File "D:\a\_work\1\s\build_scripts\windows\artifacts\cli\Lib\site-packages\azure/cli/core/commands/__init__.py", line 820, in _run_jobs_serially
+  File "D:\a\_work\1\s\build_scripts\windows\artifacts\cli\Lib\site-packages\azure/cli/core/commands/__init__.py", line 812, in _run_job
+  File "D:\a\_work\1\s\build_scripts\windows\artifacts\cli\Lib\site-packages\azure/cli/command_modules/appservice/commands.py", line 137, in _ex_handler
+  File "D:\a\_work\1\s\build_scripts\windows\artifacts\cli\Lib\site-packages\azure/cli/core/commands/__init__.py", line 789, in _run_job
+  File "D:\a\_work\1\s\build_scripts\windows\artifacts\cli\Lib\site-packages\azure/cli/core/commands/__init__.py", line 335, in __call__
+  File "D:\a\_work\1\s\build_scripts\windows\artifacts\cli\Lib\site-packages\azure/cli/core/commands/command_operation.py", line 120, in handler
+  File "D:\a\_work\1\s\build_scripts\windows\artifacts\cli\Lib\site-packages\azure/cli/command_modules/appservice/custom.py", line 840, in enable_zip_deploy_webapp
+  File "D:\a\_work\1\s\build_scripts\windows\artifacts\cli\Lib\site-packages\azure/cli/command_modules/appservice/custom.py", line 959, in enable_zip_deploy
+FileNotFoundError: [Errno 2] No such file or directory: 'C:\\TitaniumEngineer\\Titanium_Engineer-04_Team_3\\Stela_Mihneva-Chotalal\\frontend\\frontend.zip'
+ERROR: az_command_data_logger: [Errno 2] No such file or directory: 'C:\\TitaniumEngineer\\Titanium_Engineer-04_Team_3\\Stela_Mihneva-Chotalal\\frontend\\frontend.zip'
+Traceback (most recent call last):
+  File "D:\a\_work\1\s\build_scripts\windows\artifacts\cli\Lib\site-packages\knack/cli.py", line 233, in invoke
+  File "D:\a\_work\1\s\build_scripts\windows\artifacts\cli\Lib\site-packages\azure/cli/core/commands/__init__.py", line 677, in execute
+  File "D:\a\_work\1\s\build_scripts\windows\artifacts\cli\Lib\site-packages\azure/cli/core/commands/__init__.py", line 820, in _run_jobs_serially
+  File "D:\a\_work\1\s\build_scripts\windows\artifacts\cli\Lib\site-packages\azure/cli/core/commands/__init__.py", line 812, in _run_job
+  File "D:\a\_work\1\s\build_scripts\windows\artifacts\cli\Lib\site-packages\azure/cli/command_modules/appservice/commands.py", line 137, in _ex_handler
+  File "D:\a\_work\1\s\build_scripts\windows\artifacts\cli\Lib\site-packages\azure/cli/core/commands/__init__.py", line 789, in _run_job
+  File "D:\a\_work\1\s\build_scripts\windows\artifacts\cli\Lib\site-packages\azure/cli/core/commands/__init__.py", line 335, in __call__
+  File "D:\a\_work\1\s\build_scripts\windows\artifacts\cli\Lib\site-packages\azure/cli/core/commands/command_operation.py", line 120, in handler
+  File "D:\a\_work\1\s\build_scripts\windows\artifacts\cli\Lib\site-packages\azure/cli/command_modules/appservice/custom.py", line 840, in enable_zip_deploy_webapp
+  File "D:\a\_work\1\s\build_scripts\windows\artifacts\cli\Lib\site-packages\azure/cli/command_modules/appservice/custom.py", line 959, in enable_zip_deploy
+FileNotFoundError: [Errno 2] No such file or directory: 'C:\\TitaniumEngineer\\Titanium_Engineer-04_Team_3\\Stela_Mihneva-Chotalal\\frontend\\frontend.zip'
+To check existing issues, please visit: https://github.com/Azure/azure-cli/issues
+DEBUG: cli.knack.cli: Event: Cli.PostExecute [<function AzCliLogging.deinit_cmd_metadata_logging at 0x0000027FA139FC10>]
+INFO: az_command_data_logger: exit code: 1
+INFO: cli.__main__: Command ran in 110.894 seconds (init: 0.216, invoke: 110.678)
+INFO: telemetry.main: Begin splitting cli events and extra events, total events: 1
+INFO: telemetry.main: Finish splitting cli events and extra events, cli events: 1
+INFO: telemetry.save: Save telemetry record of length 8346 in cache file under C:\Users\s.mihneva-chotalal\.azure\telemetry\20260914160211874
+INFO: telemetry.main: Begin creating telemetry upload process.
+INFO: telemetry.process: Creating upload process: "C:\Program Files\Microsoft SDKs\Azure\CLI2\python.exe C:\Program Files\Microsoft SDKs\Azure\CLI2\Lib\site-packages\azure\cli\telemetry\__init__.pyc C:\Users\s.mihneva-chotalal\.azure C:\Users\s.mihneva-chotalal\.azure\telemetry\20260914160211874"
+INFO: telemetry.process: Return from creating process 12804
+INFO: telemetry.main: Finish creating telemetry upload process.
