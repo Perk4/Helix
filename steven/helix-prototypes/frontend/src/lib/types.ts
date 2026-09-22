@@ -1,0 +1,12 @@
+import type { components } from "./api-schema";
+
+export type Workspace = components["schemas"]["WorkspaceResponse"];
+export type ValidationRun = components["schemas"]["ValidationRun"];
+export type ValidationResult = components["schemas"]["ValidationResult"];
+export type EvidenceChainData = components["schemas"]["EvidenceChain"];
+export type Claim = components["schemas"]["Claim"];
+export type Stage = components["schemas"]["Stage"];
+export type AssembledSection = components["schemas"]["AssembledSection"];
+export type ApprovalRole = components["schemas"]["ApprovalRole"];
+export type ExportReceipt = components["schemas"]["ExportReceipt"];
+export type PlannerMode = components["schemas"]["PlannerMode"];

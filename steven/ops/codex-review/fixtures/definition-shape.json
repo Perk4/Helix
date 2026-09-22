@@ -1,0 +1,67 @@
+{
+  "identity": {
+    "name": "Codex PR Review",
+    "path": "\\",
+    "type": "build",
+    "quality": "definition",
+    "queueStatus": "enabled",
+    "jobAuthorizationScope": "project",
+    "jobTimeoutInMinutes": 60,
+    "jobCancelTimeoutInMinutes": 5,
+    "badgeEnabled": false,
+    "variables": {},
+    "variableGroups": [],
+    "triggers": []
+  },
+  "repository": {
+    "id": "be68a2ca-fba3-4202-989e-e8f00003e11e",
+    "name": "Titanium_Engineer-04_Team_3",
+    "type": "TfsGit",
+    "url": "https://dev.azure.com/LLMGenAITitaniumEngineering/LLMGenAITitaniumEngineering/_git/Titanium_Engineer-04_Team_3",
+    "defaultBranch": "refs/heads/main",
+    "clean": "true",
+    "checkoutSubmodules": false,
+    "properties": {
+      "cleanOptions": "3",
+      "checkoutNestedSubmodules": "false",
+      "fetchDepth": "0",
+      "fetchTags": "true",
+      "gitLfsSupport": "false",
+      "reportBuildStatus": "false",
+      "skipSyncSource": "false"
+    }
+  },
+  "process": {
+    "type": 1,
+    "image": "ubuntu-24.04",
+    "authorizationScope": "project",
+    "oauthEnabled": true,
+    "tasks": [
+      {
+        "name": "Admit pull request",
+        "taskId": "6c731c3c-3c68-459a-a5c9-bde6e6595b5b",
+        "version": "3.*",
+        "environment": ["SYSTEM_ACCESSTOKEN"],
+        "alwaysRun": false
+      },
+      {
+        "name": "Run Codex review",
+        "taskId": "6c731c3c-3c68-459a-a5c9-bde6e6595b5b",
+        "version": "3.*",
+        "environment": ["CODEX_API_KEY"],
+        "alwaysRun": false
+      },
+      {
+        "name": "Publish Codex review",
+        "taskId": "6c731c3c-3c68-459a-a5c9-bde6e6595b5b",
+        "version": "3.*",
+        "environment": ["SYSTEM_ACCESSTOKEN"],
+        "alwaysRun": true
+      }
+    ]
+  },
+  "queue": {
+    "id": 9,
+    "name": "Azure Pipelines"
+  }
+}
