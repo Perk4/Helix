@@ -1,0 +1,186 @@
+from collections.abc import Callable, Iterator
+from contextlib import asynccontextmanager
+from typing import Annotated
+
+from fastapi import Depends, FastAPI, HTTPException, Response, status
+from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import Engine, text
+from sqlalchemy.orm import Session
+
+from .config import Settings, get_settings
+from .database import create_database_engine, create_schema, create_session_factory
+from .repository import StudyNotFoundError
+from .schemas import (
+    ApprovalCommand,
+    DispositionCommand,
+    EvidenceChain,
+    ExportCommand,
+    ExportReceipt,
+    StudyListItem,
+    ValidationRequest,
+    ValidationRun,
+    WorkspaceResponse,
+)
+from .seed import seed_database
+from .service import InvalidCommandError, StudyService, WorkflowConflictError
+from .validation import PlannerUnavailableError
+
+
+def create_app(settings: Settings | None = None, engine: Engine | None = None) -> FastAPI:
+    active_settings = settings or get_settings()
+    active_engine = engine or create_database_engine(active_settings)
+    session_factory = create_session_factory(active_engine)
+
+    @asynccontextmanager
+    async def lifespan(_: FastAPI):
+        create_schema(active_engine)
+        if active_settings.auto_seed:
+            with session_factory() as session:
+                seed_database(session, active_settings)
+        yield
+        active_engine.dispose()
+
+    app = FastAPI(
+        title="HELIX synthetic nonclinical workflow API",
+        version="0.1.0",
+        description=(
+            "A synthetic pattern-testing API. It does not certify GLP, Part 11, SEND, eCTD, "
+            "or FDA acceptance."
+        ),
+        lifespan=lifespan,
+    )
+    app.state.settings = active_settings
+    app.state.engine = active_engine
+    app.state.session_factory = session_factory
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=active_settings.cors_origins,
+        allow_credentials=True,
+        allow_methods=["GET", "POST", "OPTIONS"],
+        allow_headers=["Content-Type", "Idempotency-Key"],
+    )
+
+    def get_session() -> Iterator[Session]:
+        with session_factory() as session:
+            yield session
+
+    SessionDependency = Annotated[Session, Depends(get_session)]
+
+    def service(session: SessionDependency) -> StudyService:
+        return StudyService(session, active_settings)
+
+    ServiceDependency = Annotated[StudyService, Depends(service)]
+
+    @app.get("/health", tags=["system"])
+    def health(session: SessionDependency) -> dict[str, str]:
+        session.execute(text("SELECT 1"))
+        return {"status": "ok", "storage": active_engine.dialect.name}
+
+    @app.get("/api/v1/studies", response_model=list[StudyListItem], tags=["studies"])
+    def list_studies(study_service: ServiceDependency) -> list[StudyListItem]:
+        return study_service.list_studies()
+
+    @app.get(
+        "/api/v1/studies/{study_id}/workspace",
+        response_model=WorkspaceResponse,
+        tags=["workspace"],
+    )
+    def get_workspace(study_id: str, study_service: ServiceDependency) -> WorkspaceResponse:
+        return _call(lambda: study_service.workspace(study_id))
+
+    @app.post(
+        "/api/v1/studies/{study_id}/validation-runs",
+        response_model=ValidationRun,
+        status_code=status.HTTP_201_CREATED,
+        tags=["validation"],
+    )
+    def run_validation(
+        study_id: str,
+        request: ValidationRequest,
+        study_service: ServiceDependency,
+    ) -> ValidationRun:
+        return _call(lambda: study_service.run_validation(study_id, request))
+
+    @app.get(
+        "/api/v1/studies/{study_id}/claims/{claim_id}/evidence",
+        response_model=EvidenceChain,
+        tags=["evidence"],
+    )
+    def get_evidence(
+        study_id: str,
+        claim_id: str,
+        study_service: ServiceDependency,
+    ) -> EvidenceChain:
+        return _call(lambda: study_service.evidence(study_id, claim_id))
+
+    @app.post(
+        "/api/v1/studies/{study_id}/validation-results/{result_id}/dispositions",
+        response_model=WorkspaceResponse,
+        tags=["review"],
+    )
+    def record_disposition(
+        study_id: str,
+        result_id: str,
+        command: DispositionCommand,
+        study_service: ServiceDependency,
+    ) -> WorkspaceResponse:
+        return _call(lambda: study_service.disposition(study_id, result_id, command))
+
+    @app.post(
+        "/api/v1/studies/{study_id}/approvals",
+        response_model=WorkspaceResponse,
+        tags=["review"],
+    )
+    def record_approval(
+        study_id: str,
+        command: ApprovalCommand,
+        study_service: ServiceDependency,
+    ) -> WorkspaceResponse:
+        return _call(lambda: study_service.approve(study_id, command))
+
+    @app.get(
+        "/api/v1/studies/{study_id}/exports/{artifact_id}",
+        response_class=Response,
+        tags=["export"],
+    )
+    def download_artifact(
+        study_id: str,
+        artifact_id: str,
+        study_service: ServiceDependency,
+    ) -> Response:
+        generated = _call(lambda: study_service.artifact(study_id, artifact_id))
+        return Response(
+            content=generated.content,
+            media_type=generated.media_type,
+            headers={"Content-Disposition": f'attachment; filename="{generated.filename}"'},
+        )
+
+    @app.post(
+        "/api/v1/studies/{study_id}/exports",
+        response_model=ExportReceipt,
+        tags=["export"],
+    )
+    def export_package(
+        study_id: str,
+        command: ExportCommand,
+        study_service: ServiceDependency,
+    ) -> ExportReceipt:
+        return _call(lambda: study_service.export(study_id, command))
+
+    return app
+
+
+def _call[ResponseT](operation: Callable[[], ResponseT]) -> ResponseT:
+    try:
+        return operation()
+    except StudyNotFoundError as error:
+        raise HTTPException(status_code=404, detail=f"Unknown study {error.args[0]}") from error
+    except InvalidCommandError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    except WorkflowConflictError as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+    except PlannerUnavailableError as error:
+        raise HTTPException(status_code=503, detail=str(error)) from error
+
+
+app = create_app()

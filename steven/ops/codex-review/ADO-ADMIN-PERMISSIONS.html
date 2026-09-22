@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Azure DevOps permission request — Titanium Engineer Team 3</title>
+  <style>
+    :root { color-scheme: light; --ink:#172033; --muted:#596579; --line:#d9e0ea; --blue:#0969da; --navy:#102a43; --soft:#f5f8fc; --ok:#137333; --warn:#9a5b00; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:#eef3f8; color:var(--ink); font:15px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif; }
+    main { max-width:940px; margin:36px auto; background:#fff; border:1px solid var(--line); border-radius:14px; box-shadow:0 12px 35px rgba(16,42,67,.08); overflow:hidden; }
+    header { padding:38px 44px 30px; color:#fff; background:linear-gradient(135deg,#102a43,#075ea8); }
+    header p { margin:8px 0 0; color:#dceeff; }
+    article { padding:34px 44px 48px; }
+    h1 { margin:0; font-size:29px; line-height:1.2; }
+    h2 { margin:34px 0 13px; padding-top:24px; border-top:1px solid var(--line); color:var(--navy); font-size:20px; }
+    h2:first-of-type { margin-top:0; padding-top:0; border:0; }
+    a { color:var(--blue); }
+    table { width:100%; border-collapse:collapse; margin:12px 0 22px; }
+    th,td { padding:10px 12px; border:1px solid var(--line); text-align:left; vertical-align:top; }
+    th { width:27%; background:var(--soft); }
+    ol,ul { padding-left:24px; }
+    li { margin:5px 0; }
+    code { padding:2px 5px; border-radius:4px; background:#eef2f6; font:13px ui-monospace,SFMono-Regular,Consolas,monospace; }
+    .permissions { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:12px; margin:14px 0; }
+    .card { padding:15px 17px; border:1px solid var(--line); border-radius:9px; background:var(--soft); }
+    .card strong { display:block; margin-bottom:7px; color:var(--navy); }
+    .allow { border-left:4px solid var(--ok); }
+    .deny { border-left:4px solid #b42318; }
+    .note { padding:13px 16px; border-left:4px solid var(--blue); background:#eef6ff; }
+    .warning { padding:13px 16px; border-left:4px solid var(--warn); background:#fff8e8; }
+    blockquote { margin:14px 0; padding:15px 18px; border-left:4px solid var(--ok); background:#effaf2; }
+    .button { display:inline-block; padding:9px 14px; border-radius:7px; color:#fff; background:var(--blue); text-decoration:none; font-weight:650; }
+    footer { margin-top:36px; color:var(--muted); font-size:13px; }
+    @media print { body { background:#fff; } main { margin:0; border:0; box-shadow:none; } a { color:inherit; } }
+    @media (max-width:650px) { main { margin:0; border-radius:0; } header,article { padding:26px 22px; } }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Azure DevOps administrator permission request</h1>
+    <p>Least-privilege access for Codex review automation, pull requests, and work items</p>
+  </header>
+  <article>
+    <h2>Scope</h2>
+    <table>
+      <tr><th>Organization</th><td><a href="https://dev.azure.com/LLMGenAITitaniumEngineering">LLMGenAITitaniumEngineering</a></td></tr>
+      <tr><th>Project</th><td><a href="https://dev.azure.com/LLMGenAITitaniumEngineering/LLMGenAITitaniumEngineering">LLMGenAITitaniumEngineering</a></td></tr>
+      <tr><th>Repository</th><td><a href="https://dev.azure.com/LLMGenAITitaniumEngineering/LLMGenAITitaniumEngineering/_git/Titanium_Engineer-04_Team_3">Titanium_Engineer-04_Team_3</a></td></tr>
+      <tr><th>User</th><td><code>steven.espaillat@accenture.com</code></td></tr>
+      <tr><th>Target branch</th><td><a href="https://dev.azure.com/LLMGenAITitaniumEngineering/LLMGenAITitaniumEngineering/_git/Titanium_Engineer-04_Team_3?version=GBmain">main</a></td></tr>
+    </table>
+    <a class="button" href="https://dev.azure.com/LLMGenAITitaniumEngineering/LLMGenAITitaniumEngineering/_git/Titanium_Engineer-04_Team_3">Open repository</a>
+
+    <h2>1. Access level</h2>
+    <ol>
+      <li>Open <strong>Organization settings → Users</strong>.</li>
+      <li>Find <code>steven.espaillat@accenture.com</code>.</li>
+      <li>Confirm the access level is <strong>Basic</strong> or higher and the user has access to the <strong>LLMGenAITitaniumEngineering</strong> project.</li>
+    </ol>
+    <p class="warning">Stakeholder access is not sufficient for creating pull requests or updating work-item state and tags.</p>
+
+    <h2>2. Repository and pull-request permissions</h2>
+    <ol>
+      <li>Open <a href="https://dev.azure.com/LLMGenAITitaniumEngineering/LLMGenAITitaniumEngineering/_settings/repositories"><strong>Project settings → Repositories</strong></a>.</li>
+      <li>Select <strong>Titanium_Engineer-04_Team_3</strong>, then <strong>Security</strong>.</li>
+      <li>Search for <code>steven.espaillat@accenture.com</code>.</li>
+      <li>Set the following permissions to <strong>Allow</strong> and save.</li>
+    </ol>
+    <div class="permissions">
+      <div class="card allow"><strong>Allow</strong>Read<br>Contribute<br>Create branch<br>Contribute to pull requests<br>Edit policies</div>
+      <div class="card deny"><strong>Do not grant</strong>Force push<br>Bypass policies<br>Manage permissions<br>Repository administration</div>
+    </div>
+    <p class="note">This permits ordinary branch pushes, pull-request creation and updates, and pull-request labels without allowing history rewriting or policy bypass. Where practical, scope <strong>Contribute</strong> to Steven’s source-branch namespace instead of protected branches.</p>
+
+    <h2>3. Pipeline permissions</h2>
+    <ol>
+      <li>Open <a href="https://dev.azure.com/LLMGenAITitaniumEngineering/LLMGenAITitaniumEngineering/_build"><strong>Pipelines → Pipelines</strong></a>.</li>
+      <li>For <strong>All pipelines</strong> or the root folder, select <strong>More actions (…) → Manage security</strong>.</li>
+      <li>Search for <code>steven.espaillat@accenture.com</code>.</li>
+      <li>Set to <strong>Allow</strong>: View build pipeline, Create build pipeline, Edit build pipeline, and Queue builds.</li>
+    </ol>
+    <p class="warning"><strong>Known gap:</strong> View, Create, and Queue currently appear inherited. <strong>Edit build pipeline</strong> is currently not set and must be granted.</p>
+
+    <h2>4. One-time Classic pipeline setting</h2>
+    <ol>
+      <li>Open <a href="https://dev.azure.com/LLMGenAITitaniumEngineering/LLMGenAITitaniumEngineering/_settings/pipelinessettings"><strong>Project settings → Pipelines → Settings</strong></a>.</li>
+      <li>Temporarily turn off <strong>Disable creation of classic build pipelines</strong>.</li>
+      <li>Notify Steven that creation is enabled.</li>
+      <li>After Steven confirms that <code>Codex PR Review</code> was created, turn the setting back on.</li>
+    </ol>
+    <p class="note">This is preferred over granting broad Project Administrator access. The server-controlled definition prevents pull-request code from altering the credential-bearing review task.</p>
+
+    <h2>5. Work-item and tag permissions</h2>
+    <ol>
+      <li>Open <a href="https://dev.azure.com/LLMGenAITitaniumEngineering/LLMGenAITitaniumEngineering/_settings/work-team"><strong>Project settings → Project configuration → Areas</strong></a>.</li>
+      <li>Open security for the root <strong>LLMGenAITitaniumEngineering</strong> area path.</li>
+      <li>For <code>steven.espaillat@accenture.com</code>, set <strong>View work items in this node</strong> and <strong>Edit work items in this node</strong> to Allow.</li>
+      <li>Ensure the permissions inherit to child area paths.</li>
+      <li>In <a href="https://dev.azure.com/LLMGenAITitaniumEngineering/LLMGenAITitaniumEngineering/_settings/permissions"><strong>Project settings → Permissions</strong></a>, ensure Steven or one of his groups can <strong>Enumerate tag definitions</strong> and <strong>Create tag definition</strong>.</li>
+    </ol>
+    <div class="permissions">
+      <div class="card allow"><strong>Allows</strong>View and update work items<br>Change work-item state<br>Add existing tags<br>Create new tag names<br>Maintain work-item links</div>
+      <div class="card deny"><strong>Do not grant</strong>Delete work items<br>Bypass work-item rules<br>Change project process<br>Delete tag definitions</div>
+    </div>
+
+    <h2>6. Build-service runtime permissions</h2>
+    <ol>
+      <li>Return to <a href="https://dev.azure.com/LLMGenAITitaniumEngineering/LLMGenAITitaniumEngineering/_settings/repositories"><strong>Project settings → Repositories</strong></a>, select the repository, and open <strong>Security</strong>.</li>
+      <li>Search for <code>LLMGenAITitaniumEngineering Build Service (LLMGenAITitaniumEngineering)</code>.</li>
+      <li>Set only <strong>Read</strong> and <strong>Contribute to pull requests</strong> to Allow.</li>
+    </ol>
+    <p>The project-scoped <code>System.AccessToken</code> can then read PR data and publish review threads and statuses, but cannot push code.</p>
+
+    <h2>7. Security settings to retain</h2>
+    <p>Under <a href="https://dev.azure.com/LLMGenAITitaniumEngineering/LLMGenAITitaniumEngineering/_settings/pipelinessettings"><strong>Project settings → Pipelines → Settings</strong></a>, confirm:</p>
+    <ul>
+      <li>Limit job authorization scope to the current project is enabled.</li>
+      <li>Referenced-repository protection remains enabled.</li>
+      <li>Access to secrets from fork builds remains restricted.</li>
+    </ul>
+
+    <h2>8. Credential scopes, if a PAT or OAuth token is used</h2>
+    <ul>
+      <li><strong>Code: Read &amp; write</strong> — <code>vso.code_write</code></li>
+      <li><strong>Work Items: Read &amp; write</strong> — <code>vso.work_write</code></li>
+      <li><strong>Build: Read &amp; execute</strong> — <code>vso.build_execute</code></li>
+      <li><strong>Project and Team: Read &amp; write</strong> — <code>vso.project_write</code>, only if Steven will change the Classic-pipeline setting</li>
+    </ul>
+    <p class="note">Token scopes do not override Azure DevOps security permissions. Store all credentials as secrets and never commit them to the repository.</p>
+
+    <h2>9. References</h2>
+    <ul>
+      <li><a href="https://learn.microsoft.com/en-us/azure/devops/organizations/security/permissions?view=azure-devops">Azure DevOps permissions and groups reference</a></li>
+      <li><a href="https://learn.microsoft.com/en-us/azure/devops/repos/git/set-git-repository-permissions?view=azure-devops">Set Git repository permissions</a></li>
+      <li><a href="https://learn.microsoft.com/en-us/azure/devops/repos/git/pull-requests?view=azure-devops">Create pull requests</a></li>
+      <li><a href="https://learn.microsoft.com/en-us/rest/api/azure/devops/git/pull-request-labels/create?view=azure-devops-rest-7.1">PR label REST API</a></li>
+      <li><a href="https://learn.microsoft.com/en-us/azure/devops/organizations/security/set-permissions-access-work-tracking?view=azure-devops">Set work-tracking and tag permissions</a></li>
+      <li><a href="https://learn.microsoft.com/en-us/azure/devops/boards/backlogs/connect-work-items-to-git-dev-ops?view=azure-devops">Link work items to development objects</a></li>
+      <li><a href="https://learn.microsoft.com/en-us/azure/devops/pipelines/policies/permissions?view=azure-devops">Pipeline permissions</a></li>
+      <li><a href="https://learn.microsoft.com/en-us/azure/devops/pipelines/process/access-tokens?view=azure-devops">Pipeline job access tokens</a></li>
+    </ul>
+
+    <h2>10. Confirmation</h2>
+    <p>Please send the following after completing the steps:</p>
+    <blockquote>Repository, pull-request, work-item, tag, pipeline, and build-service permissions are configured for <code>steven.espaillat@accenture.com</code> on <code>Titanium_Engineer-04_Team_3</code>. Classic build-definition creation is temporarily enabled and may now be used to create <code>Codex PR Review</code>.</blockquote>
+
+    <footer>Prepared as a least-privilege Azure DevOps administrator handoff. No organization-wide or collection-scoped build token is required.</footer>
+  </article>
+</main>
+</body>
+</html>
