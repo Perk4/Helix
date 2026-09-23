@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
+description: Compare Gemini 3.8 Live models
+
+prompts:
+  - 'Answer briefly: {{question}}'
+
+providers:
+  - google:live:gemini-3.8-live
+  - google:live:gemini-3.8-live-extended-thinking
+
+defaultTest:
+  assert:
+    - type: icontains
+      value: '{{answer}}'
+      transform: output.text
+
+tests:
+  - vars:
+      question: What is the capital of France?
+      answer: Paris
+  - vars:
+      question: Which planet is known as the Red Planet?
+      answer: Mars

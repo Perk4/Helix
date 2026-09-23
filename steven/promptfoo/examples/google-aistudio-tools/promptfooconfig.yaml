@@ -1,0 +1,57 @@
+# yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
+
+# Learn more about building a configuration: https://promptfoo.dev/docs/configuration/guide
+
+description: 'Function calling with Google AI Studio Gemini models'
+
+prompts:
+  - What is the weather in {{location}}?
+
+providers:
+  - id: 'google:gemini-3.8-flash'
+    config:
+      tools: file://tools.json
+
+  - id: 'google:gemini-3.5-flash-lite'
+    config:
+      tools: file://tools.json
+      generationConfig:
+        thinkingConfig:
+          thinkingLevel: MEDIUM
+
+defaultTest:
+  options:
+    # This overrides the default grading providers with native Gemini API models
+    provider:
+      embedding: 'google:embedding:gemini-embedding-001'
+      text:
+        id: 'google:gemini-3.8-flash'
+        config:
+          tools: [] # Keep grading separate from the target's weather tool.
+
+tests:
+  # Function calling tests
+  - vars:
+      location: San Francisco
+    assert:
+      - type: is-valid-function-call
+      - type: equals
+        value: get_current_weather
+        # Transform is a cleaner way to pick out specific properties
+        transform: output[0].functionCall.name
+      - type: icontains
+        value: '{{location}}'
+        # Transform returns only the parsed location argument.
+        # The model may normalize locations, e.g. "San Francisco, CA".
+        transform: output[0].functionCall.args.location
+
+  - vars:
+      location: New York
+    assert:
+      - type: is-valid-function-call
+      - type: equals
+        value: get_current_weather
+        transform: output[0].functionCall.name
+      - type: icontains
+        value: '{{location}}'
+        transform: output[0].functionCall.args.location
