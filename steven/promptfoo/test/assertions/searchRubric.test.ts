@@ -1,0 +1,311 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { handleSearchRubric } from '../../src/assertions/searchRubric';
+import { matchesSearchRubric } from '../../src/matchers/search';
+import { createMockProvider } from '../factories/provider';
+
+import type { Assertion, AssertionParams, GradingResult } from '../../src/types/index';
+
+vi.mock('../../src/matchers/search');
+
+describe('handleSearchRubric', () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+  });
+
+  const mockMatchesSearchRubric = vi.mocked(matchesSearchRubric);
+
+  const defaultParams: AssertionParams = {
+    assertion: {
+      type: 'search-rubric',
+      value: 'test rubric',
+    } as Assertion,
+    baseType: 'search-rubric',
+    assertionValueContext: {
+      prompt: 'test prompt',
+      vars: {},
+      test: {
+        vars: {},
+      },
+      logProbs: undefined,
+      provider: undefined,
+      providerResponse: undefined,
+    },
+    inverse: false,
+    output: 'test output',
+    outputString: 'test output string',
+    test: {
+      vars: { city: 'Tokyo' },
+    },
+    providerResponse: {
+      output: 'The weather in Tokyo is sunny',
+    },
+  };
+
+  // Shared by the `not-search-rubric` cases below. Safe to reuse across tests:
+  // handleSearchRubric does not mutate its params.
+  const inverseParams: AssertionParams = {
+    ...defaultParams,
+    inverse: true,
+    renderedValue: 'Contains outdated information',
+  };
+
+  it.each([
+    { renderedValue: undefined },
+    { renderedValue: null },
+    { renderedValue: 123 },
+    { renderedValue: false },
+    { renderedValue: { rubric: 'test' } },
+    { renderedValue: ['test'] },
+  ])('rejects non-string rubric %j before calling the grader', async ({ renderedValue }) => {
+    const params = { ...defaultParams, renderedValue } as AssertionParams;
+
+    await expect(handleSearchRubric(params)).rejects.toThrow(
+      'search-rubric assertion type must have a string value',
+    );
+    expect(mockMatchesSearchRubric).not.toHaveBeenCalled();
+  });
+
+  it('should call matchesSearchRubric with correct parameters', async () => {
+    const params: AssertionParams = {
+      ...defaultParams,
+      renderedValue: 'Contains accurate weather for Tokyo',
+    };
+
+    const expectedResult: GradingResult = {
+      pass: true,
+      score: 1,
+      reason: 'The output correctly states the weather in Tokyo',
+    };
+
+    mockMatchesSearchRubric.mockResolvedValue(expectedResult);
+
+    const result = await handleSearchRubric(params);
+
+    expect(result).toEqual(expectedResult);
+    expect(mockMatchesSearchRubric).toHaveBeenCalledWith(
+      'Contains accurate weather for Tokyo',
+      'The weather in Tokyo is sunny',
+      params.test.options,
+      { city: 'Tokyo' },
+      params.assertion,
+      undefined,
+      undefined, // providerCallContext
+    );
+  });
+
+  it('should handle passing result', async () => {
+    const params: AssertionParams = {
+      ...defaultParams,
+      renderedValue: 'Correctly identifies Satya Nadella as CEO',
+    };
+
+    const expectedResult: GradingResult = {
+      pass: true,
+      score: 1,
+      reason: 'Web search confirmed Satya Nadella is the current CEO of Microsoft',
+    };
+
+    mockMatchesSearchRubric.mockResolvedValue(expectedResult);
+
+    const result = await handleSearchRubric(params);
+
+    expect(result.pass).toBe(true);
+    expect(result.score).toBe(1);
+  });
+
+  it('should handle failing result', async () => {
+    const params: AssertionParams = {
+      ...defaultParams,
+      renderedValue: 'States correct Bitcoin price within 5%',
+    };
+
+    const expectedResult: GradingResult = {
+      pass: false,
+      score: 0,
+      reason: 'The stated price is off by more than 50%',
+    };
+
+    mockMatchesSearchRubric.mockResolvedValue(expectedResult);
+
+    const result = await handleSearchRubric(params);
+
+    expect(result.pass).toBe(false);
+    expect(result.score).toBe(0);
+  });
+
+  it('should handle inverse assertion (not:search-rubric)', async () => {
+    const originalResult: GradingResult = {
+      pass: true,
+      score: 1,
+      reason: 'Information is current',
+    };
+
+    mockMatchesSearchRubric.mockResolvedValue(originalResult);
+
+    const result = await handleSearchRubric(inverseParams);
+
+    // Inverse should flip the pass value
+    expect(result.pass).toBe(false);
+    expect(result.reason).toContain('requires web search verification');
+  });
+
+  it('should invert score along with pass, not just pass/reason', async () => {
+    const originalResult: GradingResult = {
+      pass: true,
+      score: 0.9,
+      reason: 'Strong match',
+    };
+
+    mockMatchesSearchRubric.mockResolvedValue(originalResult);
+
+    const result = await handleSearchRubric(inverseParams);
+
+    expect(result.pass).toBe(false);
+    // A failed inverse assertion must not still carry the original high
+    // score into weighted/threshold aggregation.
+    expect(result.score).toBeCloseTo(0.1);
+  });
+
+  it('should clamp inverted score when grader emits an out-of-range score', async () => {
+    mockMatchesSearchRubric.mockResolvedValue({ pass: true, score: 5, reason: 'matched' });
+
+    const result = await handleSearchRubric(inverseParams);
+
+    expect(result.pass).toBe(false);
+    expect(result.score).toBe(0);
+  });
+
+  it('should treat NaN scores as 0 when inverting', async () => {
+    mockMatchesSearchRubric.mockResolvedValue({
+      pass: false,
+      score: Number.NaN,
+      reason: 'malformed',
+    });
+
+    const result = await handleSearchRubric(inverseParams);
+
+    expect(result.pass).toBe(true);
+    expect(result.score).toBe(1);
+  });
+
+  it('should propagate grader failures verbatim instead of inverting them', async () => {
+    const graderFailure: GradingResult = {
+      pass: false,
+      score: 0,
+      reason: 'Search rubric evaluation failed: search unavailable',
+      metadata: { graderError: true },
+    };
+    mockMatchesSearchRubric.mockResolvedValue(graderFailure);
+
+    const result = await handleSearchRubric(inverseParams);
+
+    // A grader transport failure is not evidence about the criterion; it must
+    // not flip into a spurious pass (or a full inverted score) under `not-`.
+    // Assert literals rather than comparing to `graderFailure`: the early
+    // return hands back the matcher's own object, so an identity comparison
+    // would pass even if the inversion branch had rewritten it.
+    expect(result.pass).toBe(false);
+    expect(result.score).toBe(0);
+    expect(result.metadata?.graderError).toBe(true);
+    expect(result.reason).toBe('Search rubric evaluation failed: search unavailable');
+  });
+
+  it('should handle inverse assertion when original fails', async () => {
+    const originalResult: GradingResult = {
+      pass: false,
+      score: 0,
+      reason: 'Information is outdated',
+    };
+
+    mockMatchesSearchRubric.mockResolvedValue(originalResult);
+
+    const result = await handleSearchRubric(inverseParams);
+
+    // Inverse should flip the pass value
+    expect(result.pass).toBe(true);
+    expect(result.reason).toContain('does not require web search verification');
+  });
+
+  it.each([false, true])(
+    'preserves the full grader failure result (inverse=%s)',
+    async (inverse) => {
+      const params: AssertionParams = {
+        ...defaultParams,
+        assertion: {
+          ...defaultParams.assertion,
+          type: inverse ? 'not-search-rubric' : 'search-rubric',
+        },
+        inverse,
+        renderedValue: 'Contains outdated information',
+      };
+
+      const errorResult: GradingResult = {
+        assertion: params.assertion,
+        pass: false,
+        score: 0,
+        reason: 'Search rubric evaluation failed: Request timed out',
+        tokensUsed: { total: 5, prompt: 3, completion: 2 },
+        metadata: { graderError: true },
+      };
+
+      // Keep the expected result independent so an in-place mutation cannot hide a regression.
+      mockMatchesSearchRubric.mockResolvedValue(structuredClone(errorResult));
+
+      const result = await handleSearchRubric(params);
+
+      expect(result).toEqual(errorResult);
+    },
+  );
+
+  it('should pass provider to matchesSearchRubric', async () => {
+    const mockProvider = createMockProvider();
+
+    const params: AssertionParams = {
+      ...defaultParams,
+      renderedValue: 'test rubric',
+      provider: mockProvider as any,
+    };
+
+    const expectedResult: GradingResult = {
+      pass: true,
+      score: 1,
+      reason: 'test',
+    };
+
+    mockMatchesSearchRubric.mockResolvedValue(expectedResult);
+
+    await handleSearchRubric(params);
+
+    // Verify provider is passed as the 6th argument
+    const calls = mockMatchesSearchRubric.mock.calls;
+    expect(calls[0][5]).toBe(mockProvider);
+  });
+
+  it('should handle test.options being passed correctly', async () => {
+    const params: AssertionParams = {
+      ...defaultParams,
+      renderedValue: 'test rubric',
+      test: {
+        vars: { city: 'New York' },
+        options: {
+          provider: 'anthropic:messages:claude-opus-4-6',
+        },
+      },
+    };
+
+    const expectedResult: GradingResult = {
+      pass: true,
+      score: 1,
+      reason: 'test',
+    };
+
+    mockMatchesSearchRubric.mockResolvedValue(expectedResult);
+
+    await handleSearchRubric(params);
+
+    // Verify the options and vars are passed correctly
+    const calls = mockMatchesSearchRubric.mock.calls;
+    expect(calls[0][2]).toEqual({ provider: 'anthropic:messages:claude-opus-4-6' });
+    expect(calls[0][3]).toEqual({ city: 'New York' });
+  });
+});

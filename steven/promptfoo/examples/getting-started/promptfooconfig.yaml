@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
+description: 'Getting started'
+# Optionally set API keys here instead of exporting environment variables.
+# Never commit real keys to source control.
+# env:
+#   OPENAI_API_KEY: sk-...
+prompts:
+  - 'Convert the following English text to {{language}}: {{input}}'
+
+providers:
+  - openai:responses:gpt-5.6-sol
+  - openai:responses:gpt-5.6-luna
+  # Or set up models from other providers
+  # - anthropic:messages:claude-sonnet-5
+  # - google:gemini-3.8-flash
+
+tests:
+  - vars:
+      language: French
+      input: Hello world
+    assert:
+      - type: contains
+        value: 'Bonjour le monde'
+  - vars:
+      language: Spanish
+      input: Where is the library?
+    assert:
+      - type: icontains
+        value: 'Dónde está la biblioteca'

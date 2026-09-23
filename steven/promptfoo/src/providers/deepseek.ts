@@ -1,0 +1,218 @@
+import logger from '../logger';
+import { OpenAiChatCompletionProvider } from './openai/chat';
+import { clampCachedTokens } from './shared';
+
+import type { ApiProvider, ProviderOptions } from '../types/index';
+import type { OpenAiCompletionOptions } from './openai/types';
+
+type DeepSeekConfig = OpenAiCompletionOptions;
+
+type DeepSeekProviderOptions = Omit<ProviderOptions, 'config'> & {
+  config?: {
+    config?: DeepSeekConfig;
+    env?: ProviderOptions['env'];
+  };
+};
+
+export const DEEPSEEK_CHAT_MODELS = [
+  {
+    id: 'deepseek-v4-flash',
+    cost: {
+      input: 0.14 / 1e6,
+      output: 0.28 / 1e6,
+      cache_read: 0.0028 / 1e6,
+    },
+  },
+  {
+    id: 'deepseek-v4-pro',
+    cost: {
+      input: 0.435 / 1e6,
+      output: 0.87 / 1e6,
+      cache_read: 0.003625 / 1e6,
+    },
+  },
+  // Legacy aliases retained for compatibility.
+  {
+    id: 'deepseek-chat',
+    cost: {
+      input: 0.14 / 1e6,
+      output: 0.28 / 1e6,
+      cache_read: 0.0028 / 1e6,
+    },
+  },
+  {
+    id: 'deepseek-reasoner',
+    cost: {
+      input: 0.14 / 1e6,
+      output: 0.28 / 1e6,
+      cache_read: 0.0028 / 1e6,
+    },
+  },
+];
+
+/**
+ * Calculate DeepSeek cost based on model name and token usage
+ */
+export function calculateDeepSeekCost(
+  modelName: string,
+  config: any,
+  promptTokens?: number,
+  completionTokens?: number,
+  cachedTokens?: number,
+): number | undefined {
+  if (
+    typeof promptTokens !== 'number' ||
+    !Number.isFinite(promptTokens) ||
+    promptTokens < 0 ||
+    typeof completionTokens !== 'number' ||
+    !Number.isFinite(completionTokens) ||
+    completionTokens < 0
+  ) {
+    return undefined;
+  }
+
+  const model = DEEPSEEK_CHAT_MODELS.find((m) => m.id === modelName);
+  if (
+    !model &&
+    config.inputCost === undefined &&
+    config.outputCost === undefined &&
+    config.cost === undefined &&
+    config.cacheReadCost === undefined
+  ) {
+    return undefined;
+  }
+
+  const billableCachedTokens = clampCachedTokens(cachedTokens, promptTokens);
+  const uncachedPromptTokens = promptTokens - billableCachedTokens;
+  const inputCost = config.inputCost ?? config.cost ?? model?.cost.input;
+  const outputCost = config.outputCost ?? config.cost ?? model?.cost.output;
+  const cacheReadCost = config.cacheReadCost ?? model?.cost.cache_read ?? inputCost;
+  if (
+    (uncachedPromptTokens > 0 && inputCost === undefined) ||
+    (billableCachedTokens > 0 && cacheReadCost === undefined) ||
+    (completionTokens > 0 && outputCost === undefined)
+  ) {
+    return undefined;
+  }
+
+  const inputCostTotal = (inputCost ?? 0) * uncachedPromptTokens;
+  const cacheReadCostTotal = (cacheReadCost ?? 0) * billableCachedTokens;
+  const outputCostTotal = (outputCost ?? 0) * completionTokens;
+
+  logger.debug(
+    `DeepSeek cost calculation for ${modelName}: ` +
+      `promptTokens=${promptTokens}, completionTokens=${completionTokens}, ` +
+      `cachedTokens=${billableCachedTokens}, ` +
+      `inputCost=${inputCostTotal}, cacheReadCost=${cacheReadCostTotal}, outputCost=${outputCostTotal}`,
+  );
+
+  return inputCostTotal + cacheReadCostTotal + outputCostTotal;
+}
+
+class DeepSeekProvider extends OpenAiChatCompletionProvider {
+  private originalConfig?: DeepSeekConfig;
+
+  protected get apiKey(): string | undefined {
+    return this.config?.apiKey;
+  }
+
+  constructor(modelName: string, providerOptions: DeepSeekProviderOptions) {
+    // Extract the nested config
+    const deepseekConfig = providerOptions.config?.config;
+
+    super(modelName, {
+      ...providerOptions,
+      env: providerOptions.config?.env ?? providerOptions.env,
+      config: {
+        ...providerOptions.config,
+        ...deepseekConfig,
+        apiKeyEnvar: 'DEEPSEEK_API_KEY',
+        apiBaseUrl: 'https://api.deepseek.com/v1',
+      },
+    });
+
+    this.originalConfig = deepseekConfig;
+  }
+
+  id(): string {
+    return `deepseek:${this.modelName}`;
+  }
+
+  toString(): string {
+    return `[DeepSeek Provider ${this.modelName}]`;
+  }
+
+  toJSON() {
+    return {
+      provider: 'deepseek',
+      model: this.modelName,
+      config: {
+        ...this.config,
+        ...(this.apiKey && { apiKey: undefined }),
+      },
+    };
+  }
+
+  async callApi(prompt: string, context?: any, callApiOptions?: any): Promise<any> {
+    const response = await super.callApi(prompt, context, callApiOptions);
+
+    if (!response || response.error) {
+      return response;
+    }
+
+    // Extract cache hit information if available
+    let cachedTokens = 0;
+    if (typeof response.raw === 'string') {
+      try {
+        const rawData = JSON.parse(response.raw);
+        if (rawData?.usage?.prompt_tokens_details?.cached_tokens) {
+          cachedTokens = rawData.usage.prompt_tokens_details.cached_tokens;
+        }
+      } catch (err) {
+        logger.debug(`Failed to parse raw response for cache info: ${err}`);
+      }
+    } else if (typeof response.raw === 'object' && response.raw !== null) {
+      const rawData = response.raw;
+      if (rawData?.usage?.prompt_tokens_details?.cached_tokens) {
+        cachedTokens = rawData.usage.prompt_tokens_details.cached_tokens;
+      }
+    }
+
+    // Calculate cost with cache information
+    if (response.tokenUsage && !response.cached) {
+      response.cost = calculateDeepSeekCost(
+        this.modelName,
+        this.config || {},
+        response.tokenUsage.prompt,
+        response.tokenUsage.completion,
+        cachedTokens,
+      );
+    }
+
+    return response;
+  }
+}
+
+export function createDeepSeekProvider(
+  providerPath: string,
+  options: DeepSeekProviderOptions = {},
+): ApiProvider {
+  const splits = providerPath.split(':');
+  const modelName = splits.slice(1).join(':');
+  if (modelName) {
+    return new DeepSeekProvider(modelName, options);
+  }
+
+  // The retired shorthand used non-thinking mode; the replacement defaults to thinking.
+  const config = options.config?.config;
+  return new DeepSeekProvider('deepseek-flash', {
+    ...options,
+    config: {
+      ...options.config,
+      config: {
+        ...config,
+        passthrough: { thinking: { type: 'disabled' }, ...config?.passthrough },
+      },
+    },
+  });
+}

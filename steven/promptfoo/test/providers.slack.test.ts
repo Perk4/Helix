@@ -1,0 +1,661 @@
+import { WebAPIPlatformError, WebAPIRateLimitedError, WebClient } from '@slack/web-api';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ProviderEnvOverridesSchema } from '../src/contracts/env';
+import { loadApiProvider } from '../src/providers/index';
+import { SlackProvider } from '../src/providers/slack';
+import { fetchWithProxy } from '../src/util/fetch/index';
+import { mockProcessEnv } from './util/utils';
+
+import type { ApiProvider } from '../src/types/index';
+
+const slackMocks = vi.hoisted(() => ({
+  fetchWithProxy: vi.fn(),
+  webClientImpl: vi.fn(),
+}));
+
+vi.mock('@slack/web-api', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@slack/web-api')>();
+  const WebClientMock = vi.fn(function WebClientMock(...args: any[]) {
+    return slackMocks.webClientImpl(...args);
+  });
+
+  return { ...actual, WebClient: WebClientMock };
+});
+
+vi.mock('../src/util/fetch/index', () => ({
+  fetchWithProxy: slackMocks.fetchWithProxy,
+}));
+
+describe('SlackProvider', () => {
+  let mockWebClient: any;
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.clearAllMocks();
+    slackMocks.fetchWithProxy.mockReset();
+    slackMocks.webClientImpl.mockReset();
+    mockProcessEnv({ SLACK_BOT_TOKEN: 'xoxb-test-token' });
+
+    mockWebClient = {
+      chat: {
+        postMessage: vi.fn(),
+      },
+      conversations: {
+        history: vi.fn(),
+      },
+    };
+
+    slackMocks.webClientImpl.mockReturnValue(mockWebClient);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.clearAllMocks();
+    mockProcessEnv({ SLACK_BOT_TOKEN: undefined });
+  });
+
+  describe('constructor', () => {
+    it('should throw error if no token is provided', () => {
+      mockProcessEnv({ SLACK_BOT_TOKEN: undefined });
+      expect(() => new SlackProvider({ config: { channel: 'C123' } })).toThrow(
+        'Slack provider requires a token',
+      );
+    });
+
+    it('should throw error if no channel is provided', () => {
+      expect(() => new SlackProvider({ config: { token: 'xoxb-test' } })).toThrow(
+        'Slack provider requires a channel ID',
+      );
+    });
+
+    it('should use token from config over environment variable', () => {
+      const provider = new SlackProvider({
+        config: {
+          token: 'xoxb-config-token',
+          channel: 'C123',
+        },
+      });
+      expect(WebClient).toHaveBeenCalledWith('xoxb-config-token', { fetch: expect.any(Function) });
+      expect(provider).toBeDefined();
+    });
+
+    it('should use token from environment variable if not in config', () => {
+      const provider = new SlackProvider({
+        config: {
+          channel: 'C123',
+        },
+      });
+      expect(WebClient).toHaveBeenCalledWith('xoxb-test-token', { fetch: expect.any(Function) });
+      expect(provider).toBeDefined();
+    });
+
+    it('uses a scoped token before the process token', () => {
+      new SlackProvider({
+        config: { channel: 'C123' },
+        env: { SLACK_BOT_TOKEN: 'xoxb-scoped-token' },
+      });
+      expect(WebClient).toHaveBeenCalledWith('xoxb-scoped-token', { fetch: expect.any(Function) });
+    });
+
+    it('uses the explicit token before scoped and process tokens', () => {
+      new SlackProvider({
+        config: { channel: 'C123', token: 'xoxb-explicit-token' },
+        env: { SLACK_BOT_TOKEN: 'xoxb-scoped-token' },
+      });
+      expect(WebClient).toHaveBeenCalledWith('xoxb-explicit-token', {
+        fetch: expect.any(Function),
+      });
+    });
+
+    it.each(['slack', 'slack:C123', 'slack:user:U456'])(
+      'preserves validated scoped tokens through the %s loader',
+      async (providerPath) => {
+        mockProcessEnv({ SLACK_BOT_TOKEN: undefined });
+        const env = ProviderEnvOverridesSchema.parse({ SLACK_BOT_TOKEN: 'xoxb-scoped-token' });
+        const provider = await loadApiProvider(providerPath, {
+          env: { SLACK_BOT_TOKEN: 'xoxb-suite-token' },
+          options: { config: { channel: 'C123' }, env },
+        });
+        expect(provider).toBeInstanceOf(SlackProvider);
+        expect(WebClient).toHaveBeenCalledWith('xoxb-scoped-token', {
+          fetch: expect.any(Function),
+        });
+      },
+    );
+
+    it('rejects non-string scoped tokens at the public schema boundary', () => {
+      expect(() => ProviderEnvOverridesSchema.parse({ SLACK_BOT_TOKEN: 123 })).toThrow();
+    });
+
+    it('routes Slack requests through the proxy-aware fetch implementation', async () => {
+      new SlackProvider({ config: { channel: 'C123' } });
+
+      const clientOptions = vi.mocked(WebClient).mock.calls[0]?.[1];
+      const requestUrl = new URL('https://slack.com/api/chat.postMessage');
+      const requestOptions = {
+        method: 'POST',
+        headers: { Authorization: 'Bearer xoxb-test-token' },
+      };
+      const response = new Response(JSON.stringify({ ok: true }));
+
+      slackMocks.fetchWithProxy.mockResolvedValueOnce(response);
+
+      await expect(clientOptions?.fetch?.(requestUrl, requestOptions)).resolves.toBe(response);
+      expect(fetchWithProxy).toHaveBeenCalledWith(
+        requestUrl.toString(),
+        expect.objectContaining({ method: 'POST', headers: expect.any(Headers) }),
+      );
+
+      const forwardedHeaders = new Headers(vi.mocked(fetchWithProxy).mock.calls[0]?.[1]?.headers);
+      expect(forwardedHeaders.get('Authorization')).toBe('Bearer xoxb-test-token');
+      expect(forwardedHeaders.get('x-promptfoo-silent')).toBe('true');
+    });
+  });
+
+  describe('id()', () => {
+    it('should return default id if not provided', () => {
+      const provider = new SlackProvider({ config: { channel: 'C123' } });
+      expect(provider.id()).toBe('slack');
+    });
+
+    it('should return custom id if provided', () => {
+      const provider = new SlackProvider({
+        id: 'custom-slack',
+        config: { channel: 'C123' },
+      });
+      expect(provider.id()).toBe('custom-slack');
+    });
+  });
+
+  describe('callApi()', () => {
+    let provider: ApiProvider;
+
+    beforeEach(() => {
+      provider = new SlackProvider({
+        config: {
+          channel: 'C123',
+          timeout: 1000,
+        },
+      });
+    });
+
+    it('should post message to Slack and return first response', async () => {
+      // Set a longer timeout for this test
+      provider = new SlackProvider({
+        config: {
+          channel: 'C123',
+          timeout: 3000,
+        },
+      });
+
+      mockWebClient.chat.postMessage.mockResolvedValue({
+        ok: true,
+        ts: '1234567890.123456',
+      } as any);
+
+      mockWebClient.conversations.history
+        .mockResolvedValueOnce({
+          messages: [],
+        } as any)
+        .mockResolvedValueOnce({
+          messages: [
+            {
+              type: 'message',
+              ts: '1234567890.123457',
+              text: 'Hello from user',
+              user: 'U123',
+            },
+          ],
+        } as any);
+
+      const resultPromise = provider.callApi('Test prompt');
+      await vi.runAllTimersAsync();
+      const result = await resultPromise;
+
+      expect(mockWebClient.chat.postMessage).toHaveBeenCalledWith({
+        channel: 'C123',
+        text: 'Test prompt',
+        thread_ts: undefined,
+        mrkdwn: true,
+      });
+
+      expect(result.output).toBe('Hello from user');
+      expect(result.metadata).toMatchObject({
+        messageTs: '1234567890.123456',
+        channel: 'C123',
+      });
+      expect(result.metadata?.responseTime).toBeDefined();
+      expect(typeof result.metadata?.responseTime).toBe('number');
+    });
+
+    it('should filter out bot messages', async () => {
+      mockWebClient.chat.postMessage.mockResolvedValue({
+        ok: true,
+        ts: '1234567890.123456',
+      } as any);
+
+      mockWebClient.conversations.history.mockResolvedValue({
+        messages: [
+          {
+            type: 'message',
+            ts: '1234567890.123457',
+            text: 'Bot message',
+            bot_id: 'B123',
+          },
+          {
+            type: 'message',
+            ts: '1234567890.123458',
+            text: 'User message',
+            user: 'U123',
+          },
+        ],
+      } as any);
+
+      const result = await provider.callApi('Test prompt');
+
+      expect(result.output).toBe('User message');
+    });
+
+    it('should handle timeout', async () => {
+      mockWebClient.chat.postMessage.mockResolvedValue({
+        ok: true,
+        ts: '1234567890.123456',
+      } as any);
+
+      mockWebClient.conversations.history.mockResolvedValue({
+        messages: [],
+      } as any);
+
+      const resultPromise = provider.callApi('Test prompt');
+      await vi.runAllTimersAsync();
+      const result = await resultPromise;
+
+      expect(result.error).toContain('Timeout waiting for Slack response');
+    });
+
+    it('should handle post message failure', async () => {
+      mockWebClient.chat.postMessage.mockResolvedValue({
+        ok: false,
+      } as any);
+
+      const result = await provider.callApi('Test prompt');
+
+      expect(result.error).toBe('Failed to post message to Slack');
+    });
+
+    it('maps typed Slack platform errors to actionable messages', async () => {
+      mockWebClient.chat.postMessage.mockRejectedValue(
+        new WebAPIPlatformError({ ok: false, error: 'channel_not_found' }),
+      );
+
+      const result = await provider.callApi('Test prompt');
+
+      expect(result.error).toBe('Channel C123 not found. Please check the channel ID.');
+    });
+
+    it('maps typed Slack rate-limit errors to the existing provider message', async () => {
+      mockWebClient.chat.postMessage.mockRejectedValue(new WebAPIRateLimitedError(30));
+
+      const result = await provider.callApi('Test prompt');
+
+      expect(result.error).toBe('Slack API rate limit exceeded. Please try again later.');
+    });
+
+    it.each([
+      ['channel_not_found', 'Channel U456 not found. Please check the channel ID.'],
+      ['not_in_channel', 'Bot is not in channel U456. Please invite the bot first.'],
+    ])('uses the requested target for %s post errors', async (error, message) => {
+      const dmProvider = new SlackProvider({ config: { channel: 'U456' } });
+      mockWebClient.chat.postMessage.mockRejectedValue(
+        new WebAPIPlatformError({ ok: false, error }),
+      );
+
+      expect(await dmProvider.callApi('Test prompt')).toEqual({ error: message });
+      expect(mockWebClient.conversations.history).not.toHaveBeenCalled();
+    });
+
+    it('should use custom message formatter if provided', async () => {
+      provider = new SlackProvider({
+        config: {
+          channel: 'C123',
+          formatMessage: (prompt) => `*Bold prompt:* ${prompt}`,
+        },
+      });
+
+      mockWebClient.chat.postMessage.mockResolvedValue({
+        ok: true,
+        ts: '1234567890.123456',
+      } as any);
+
+      mockWebClient.conversations.history.mockResolvedValue({
+        messages: [
+          {
+            type: 'message',
+            ts: '1234567890.123457',
+            text: 'Response',
+            user: 'U123',
+          },
+        ],
+      } as any);
+
+      await provider.callApi('Test prompt');
+
+      expect(mockWebClient.chat.postMessage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          text: '*Bold prompt:* Test prompt',
+        }),
+      );
+    });
+  });
+
+  describe('response strategies', () => {
+    describe.each(['first', 'user', 'timeout'] as const)(
+      '%s polling errors',
+      (responseStrategy) => {
+        it.each([
+          ['channel_not_found', 'Channel D789 not found. Please check the channel ID.'],
+          ['not_in_channel', 'Bot is not in channel D789. Please invite the bot first.'],
+        ])('uses the returned conversation for %s', async (error, message) => {
+          const provider = new SlackProvider({
+            config: { channel: 'U456', responseStrategy, waitForUser: 'U456', timeout: 1000 },
+          });
+          mockWebClient.chat.postMessage.mockResolvedValue({
+            ok: true,
+            channel: 'D789',
+            ts: '1234567890.123456',
+          });
+          mockWebClient.conversations.history.mockRejectedValue(
+            new WebAPIPlatformError({ ok: false, error }),
+          );
+
+          expect(await provider.callApi('Test prompt')).toEqual({ error: message });
+          expect(mockWebClient.conversations.history).toHaveBeenCalledWith(
+            expect.objectContaining({ channel: 'D789' }),
+          );
+        });
+      },
+    );
+
+    it.each(['first', 'user', 'timeout'] as const)(
+      'collects %s responses from the conversation returned for a user target',
+      async (responseStrategy) => {
+        const provider = new SlackProvider({
+          config: {
+            channel: 'U456',
+            responseStrategy,
+            waitForUser: 'U456',
+            timeout: 1000,
+          },
+        });
+        mockWebClient.chat.postMessage.mockResolvedValue({
+          ok: true,
+          channel: 'D789',
+          ts: '1234567890.123456',
+        });
+        mockWebClient.conversations.history.mockImplementation(
+          async ({ channel }: { channel: string }) => {
+            if (channel !== 'D789') {
+              throw new WebAPIPlatformError({ ok: false, error: 'channel_not_found' });
+            }
+            return {
+              messages: [
+                {
+                  type: 'message',
+                  ts: '1234567890.123457',
+                  text: 'Feedback from the direct message',
+                  user: 'U456',
+                },
+              ],
+            };
+          },
+        );
+
+        const resultPromise = provider.callApi('Please provide feedback');
+        await vi.runAllTimersAsync();
+        const result = await resultPromise;
+
+        expect(mockWebClient.chat.postMessage).toHaveBeenCalledWith(
+          expect.objectContaining({ channel: 'U456' }),
+        );
+        expect(result).toMatchObject({
+          output: 'Feedback from the direct message',
+          metadata: { channel: 'D789' },
+        });
+        expect(result.error).toBeUndefined();
+      },
+    );
+
+    it('should wait for specific user when responseStrategy is "user"', async () => {
+      const provider = new SlackProvider({
+        config: {
+          channel: 'C123',
+          responseStrategy: 'user',
+          waitForUser: 'U456',
+        },
+      });
+
+      mockWebClient.chat.postMessage.mockResolvedValue({
+        ok: true,
+        ts: '1234567890.123456',
+      } as any);
+
+      mockWebClient.conversations.history
+        .mockResolvedValueOnce({
+          messages: [
+            {
+              type: 'message',
+              ts: '1234567890.123457',
+              text: 'Wrong user',
+              user: 'U123',
+            },
+          ],
+        } as any)
+        .mockResolvedValueOnce({
+          messages: [
+            {
+              type: 'message',
+              ts: '1234567890.123457',
+              text: 'Wrong user',
+              user: 'U123',
+            },
+            {
+              type: 'message',
+              ts: '1234567890.123458',
+              text: 'Correct user',
+              user: 'U456',
+            },
+          ],
+        } as any);
+
+      const resultPromise = provider.callApi('Test prompt');
+      await vi.runAllTimersAsync();
+      const result = await resultPromise;
+
+      expect(result.output).toBe('Correct user');
+      expect(result.metadata?.waitForUser).toBe('U456');
+    });
+
+    it('should collect all responses until timeout when responseStrategy is "timeout"', async () => {
+      const provider = new SlackProvider({
+        config: {
+          channel: 'C123',
+          responseStrategy: 'timeout',
+          timeout: 3000, // Increase timeout to ensure reliable polling on all platforms
+        },
+      });
+
+      mockWebClient.chat.postMessage.mockResolvedValue({
+        ok: true,
+        ts: '1234567890.123456',
+      } as any);
+
+      let callCount = 0;
+      mockWebClient.conversations.history.mockImplementation(() => {
+        callCount++;
+        if (callCount === 1) {
+          return Promise.resolve({
+            messages: [
+              {
+                type: 'message',
+                ts: '1234567890.123457',
+                text: 'First response',
+                user: 'U123',
+              },
+            ],
+          } as any);
+        } else {
+          return Promise.resolve({
+            messages: [
+              {
+                type: 'message',
+                ts: '1234567890.123457',
+                text: 'First response',
+                user: 'U123',
+              },
+              {
+                type: 'message',
+                ts: '1234567890.123458',
+                text: 'Second response',
+                user: 'U456',
+              },
+            ],
+          } as any);
+        }
+      });
+
+      const resultPromise = provider.callApi('Test prompt');
+      await vi.runAllTimersAsync();
+      const result = await resultPromise;
+
+      expect(result.output).toBe('First response\n\nSecond response');
+    });
+
+    it('should throw error if waitForUser not specified with user strategy', async () => {
+      const provider = new SlackProvider({
+        config: {
+          channel: 'C123',
+          responseStrategy: 'user',
+        },
+      });
+
+      mockWebClient.chat.postMessage.mockResolvedValue({
+        ok: true,
+        ts: '1234567890.123456',
+      } as any);
+
+      const result = await provider.callApi('Test prompt');
+
+      expect(result.error).toBe(
+        'waitForUser must be specified when using "user" response strategy',
+      );
+    });
+  });
+
+  describe('thread support', () => {
+    it('should post in thread if threadTs is provided', async () => {
+      const provider = new SlackProvider({
+        config: {
+          channel: 'C123',
+          threadTs: '1234567890.000001',
+        },
+      });
+
+      mockWebClient.chat.postMessage.mockResolvedValue({
+        ok: true,
+        ts: '1234567890.123456',
+      } as any);
+
+      mockWebClient.conversations.history.mockResolvedValue({
+        messages: [
+          {
+            type: 'message',
+            ts: '1234567890.123457',
+            text: 'Response',
+            user: 'U123',
+          },
+        ],
+      } as any);
+
+      await provider.callApi('Test prompt');
+
+      expect(mockWebClient.chat.postMessage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          thread_ts: '1234567890.000001',
+        }),
+      );
+    });
+
+    it('should include thread timestamp in metadata if includeThread is true', async () => {
+      const provider = new SlackProvider({
+        config: {
+          channel: 'C123',
+          includeThread: true,
+        },
+      });
+
+      mockWebClient.chat.postMessage.mockResolvedValue({
+        ok: true,
+        ts: '1234567890.123456',
+      } as any);
+
+      mockWebClient.conversations.history.mockResolvedValue({
+        messages: [
+          {
+            type: 'message',
+            ts: '1234567890.123457',
+            text: 'Response',
+            user: 'U123',
+          },
+        ],
+      } as any);
+
+      const result = await provider.callApi('Test prompt');
+
+      expect(result.metadata?.threadTs).toBe('1234567890.123456');
+    });
+  });
+
+  describe('metadata', () => {
+    it('should include response time in metadata', async () => {
+      const provider = new SlackProvider({
+        config: {
+          channel: 'C123',
+          timeout: 5000,
+        },
+      });
+
+      mockWebClient.chat.postMessage.mockResolvedValue({
+        ok: true,
+        ts: '1234567890.123456',
+      });
+
+      mockWebClient.conversations.history
+        .mockResolvedValueOnce({
+          ok: true,
+          messages: [],
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          messages: [
+            {
+              type: 'message',
+              text: 'Response',
+              ts: '1234567890.123457',
+              user: 'U123',
+            },
+          ],
+        });
+
+      const resultPromise = provider.callApi('Test prompt');
+      await vi.runAllTimersAsync();
+      const result = await resultPromise;
+
+      expect(result.output).toBe('Response');
+      expect(result.metadata).toBeDefined();
+      expect(result.metadata?.responseTime).toBeDefined();
+      expect(typeof result.metadata?.responseTime).toBe('number');
+      expect(result.metadata?.responseTime).toBeGreaterThan(0);
+      expect(result.metadata?.responseTime).toBeLessThan(5000);
+    });
+  });
+});

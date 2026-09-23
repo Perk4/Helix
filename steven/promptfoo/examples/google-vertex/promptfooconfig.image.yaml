@@ -1,0 +1,31 @@
+# yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
+
+description: Image captioning using Gemini
+
+prompts: |
+  {{imageFile}}
+  Describe what you see.
+
+providers:
+  - id: vertex:gemini-3.6-flash
+    config:
+      region: global
+      generationConfig:
+        maxOutputTokens: 1024
+        thinkingConfig:
+          thinkingLevel: MEDIUM
+
+  - id: vertex:gemini-3.5-flash-lite
+    config:
+      region: global
+      generationConfig:
+        maxOutputTokens: 1024
+        thinkingConfig:
+          thinkingLevel: MINIMAL
+
+tests:
+  - vars:
+      imageFile: file://assets/red-panda.jpg
+    assert:
+      - type: contains
+        value: red panda
