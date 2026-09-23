@@ -1,0 +1,63 @@
+{
+  "schema_version": "helix.data-validation-package/v1",
+  "package_id": "validation.body_weight",
+  "version": "0.1.0",
+  "node_id": "validation.body_weight",
+  "domain": "body_weight",
+  "depends_on": [
+    "parse.body_weights",
+    "study_type.resolve"
+  ],
+  "inputs": [
+    {
+      "artifact_kinds": [
+        "source_dataset"
+      ],
+      "record_schema": "helix://records/body-weight/v1"
+    }
+  ],
+  "agentic_skill": null,
+  "executors": [
+    {
+      "id": "body-weight-summary",
+      "version": "1.0.0"
+    }
+  ],
+  "rules": [
+    {
+      "rule_id": "body-weight-required-grain",
+      "rule_version": "1.0.0",
+      "enforcement_class": "hard_blocker"
+    },
+    {
+      "rule_id": "body-weight-summary-recompute",
+      "rule_version": "1.0.0",
+      "enforcement_class": "hard_blocker"
+    },
+    {
+      "rule_id": "body-weight-cell-provenance",
+      "rule_version": "1.0.0",
+      "enforcement_class": "hard_blocker"
+    }
+  ],
+  "outputs": [
+    {
+      "claim_type": "body_weight.mean",
+      "grain": "study_day_x_sex_x_dose_group"
+    },
+    {
+      "claim_type": "body_weight.standard_deviation",
+      "grain": "study_day_x_sex_x_dose_group"
+    },
+    {
+      "claim_type": "body_weight.percent_change",
+      "grain": "study_day_x_sex_x_dose_group"
+    }
+  ],
+  "tests": {
+    "fixture_paths": [
+      "backend/tests/test_validation.py",
+      "synthetic-e2e/data/study_data/body_weights.csv"
+    ]
+  }
+}
