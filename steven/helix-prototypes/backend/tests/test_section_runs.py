@@ -1,17 +1,20 @@
 import json
 import re
+import sys
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 from sqlalchemy import func, select
 
-from app.agents.codex_section_agent import AgentResult
+from app.agents.codex_section_agent import AgentResult, CodexSectionAgent
 from app.config import Settings
 from app.database import create_database_engine
 from app.main import create_app
 from app.models import AuditEventRow, SectionRunRow
 from app.repository import StudyPackageRepository
+from app.section_runs import SectionRunService
 
 ROOT = Path(__file__).resolve().parents[2]
 STUDY_ID = "STUDY-HLX-028"
@@ -36,6 +39,7 @@ class FakeSectionAgent:
         run_id = re.search(r"run_id (SRUN-[A-Z0-9-]+)", prompt).group(1)
         skill_hash = re.search(r"skill_hash to (sha256:[a-f0-9]{64})", prompt).group(1)
         claim_ids = ["C-NOT-ALLOWED"] if self.mode == "unapproved" else ["C-BW-HIGH"]
+        span_claim_ids = ["C-NOT-ALLOWED"] if self.mode == "nested_unapproved" else claim_ids
         receipt = {
             "runtime": "codex_sdk",
             "thread_id": "thread-test-001",
@@ -61,7 +65,7 @@ class FakeSectionAgent:
                     "kind": "paragraph",
                     "content": "Terminal high-dose body weight was 286.2 g.",
                     "factual_spans": [
-                        {"text": "286.2 g", "claim_ids": claim_ids},
+                        {"text": "286.2 g", "claim_ids": span_claim_ids},
                     ],
                 }
             ],
@@ -126,10 +130,17 @@ def test_section_run_records_candidate_receipt_scaffold_and_exact_replay() -> No
         assert stored["candidate"]["validated_claim_ids"] == ["C-BW-HIGH"]
         assert "286.2 g" in json.dumps(stored["candidate"])
         assert stored["review_scaffold"]["export_eligible"] is False
+        body_weight_section = next(
+            section
+            for section in stored["review_scaffold"]["sections"]
+            if section["section_id"] == "5_2_3_body_weight"
+        )
+        assert body_weight_section["render_state"] == "needs_review"
+        assert body_weight_section["placeholder"] == "[NEEDS REVIEW]"
+        assert body_weight_section["blocker_result_ids"] == [f"PENDING-{receipt['candidate_id']}"]
         assert workspace["release_gate"]["status"] == "blocked"
         assert all(
-            item["candidate"]["status"] == "section_draft_candidate"
-            for item in workspace["section_runs"]
+            item["candidate"]["status"] == "section_draft_candidate" for item in workspace["section_runs"]
         )
 
         conflict = client.post(
@@ -184,6 +195,7 @@ def test_candidate_and_sdk_failures_leave_no_partial_state() -> None:
     for mode, expected_status in [
         ("malformed", 422),
         ("unapproved", 422),
+        ("nested_unapproved", 422),
         ("missing_receipt", 422),
         ("failure", 503),
     ]:
@@ -232,3 +244,84 @@ def test_transaction_failure_rolls_back_candidate_event_and_revision() -> None:
                 == 0
             )
     engine.dispose()
+
+
+def test_eligibility_rejects_a_claim_that_does_not_match_the_package_grain(tmp_path: Path) -> None:
+    agent = FakeSectionAgent()
+    client, engine = build_client(agent)
+    package_definition = json.loads(
+        (ROOT / "skills/helix-evidence-pipeline/packages/sections/5_2_3_body_weight/package.json").read_text()
+    )
+    package_definition["required_claims"][0]["grain"] = "dose_group_x_sex"
+    package_path = tmp_path / "package.json"
+    package_path.write_text(json.dumps(package_definition))
+
+    with client:
+        validate(client)
+        with client.app.state.session_factory() as session:
+            service = SectionRunService(session, agent, ROOT)
+            service.package_path = package_path
+            eligibility = service.eligibility(StudyPackageRepository(session).get(STUDY_ID))
+
+    assert eligibility.eligible is False
+    assert "C-BW-HIGH does not match the Section Package grain" in eligibility.reasons
+    engine.dispose()
+
+
+def test_template_contract_gates_inspect_the_pinned_template(tmp_path: Path) -> None:
+    template = json.loads((ROOT / "backend/app/data/report-template.json").read_text())
+    section = next(item for item in template["sections"] if item["section_id"] == "S5")
+    field = next(item for item in section["fields"] if item["field_id"] == "body-weight")
+    field["expected_grain"] = "dose_group"
+    template_path = tmp_path / "report-template.json"
+    template_path.write_text(json.dumps(template))
+    package_definition = json.loads(
+        (ROOT / "skills/helix-evidence-pipeline/packages/sections/5_2_3_body_weight/package.json").read_text()
+    )
+    service = object.__new__(SectionRunService)
+    service.template_path = template_path
+
+    failures = service._template_contract_gate_failures(package_definition)
+
+    assert failures == ["Template Contract Gate body-weight-table-shape failed"]
+
+
+def test_codex_agent_passes_the_candidate_schema_to_the_sdk() -> None:
+    calls = []
+
+    class FakeThread:
+        id = "thread-schema-001"
+
+        def run(self, prompt, **kwargs):
+            calls.append((prompt, kwargs))
+            return SimpleNamespace(final_response="{}")
+
+    class FakeCodex:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return None
+
+        def thread_start(self, **kwargs):
+            return FakeThread()
+
+    schema = {"type": "object", "additionalProperties": False}
+    module = SimpleNamespace(
+        Codex=FakeCodex,
+        Sandbox=SimpleNamespace(read_only="read-only"),
+    )
+    with patch.dict(sys.modules, {"openai_codex": module}):
+        result = CodexSectionAgent(ROOT).run(
+            envelope_id="ENV-1",
+            prompt="thread={{CODEX_THREAD_ID}}",
+            output_schema=schema,
+        )
+
+    assert result.thread_id == "thread-schema-001"
+    assert calls == [
+        (
+            "thread=thread-schema-001",
+            {"cwd": str(ROOT), "sandbox": "read-only", "output_schema": schema},
+        )
+    ]

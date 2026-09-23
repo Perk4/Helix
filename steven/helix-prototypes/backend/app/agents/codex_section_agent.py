@@ -27,6 +27,7 @@ class CodexSectionAgent:
                 prompt.replace("{{CODEX_THREAD_ID}}", thread.id),
                 cwd=cwd,
                 sandbox=Sandbox.read_only,
+                output_schema=output_schema,
             )
         if result.final_response is None:
             raise RuntimeError(f"Codex thread {thread.id} returned no final response for {envelope_id}")

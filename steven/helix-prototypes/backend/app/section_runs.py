@@ -62,27 +62,34 @@ class SectionRunService:
             / "5_2_3_body_weight"
             / "package.json"
         )
+        self.template_path = repository_root / "backend" / "app" / "data" / "report-template.json"
         self.skill_path = repository_root / ".agents" / "skills" / SKILL_NAME / "SKILL.md"
 
     def eligibility(self, package: StudyEvidencePackage) -> SectionRunEligibility:
         reasons: list[str] = []
+        package_definition = self._load_json(self.package_path)
+        required_claim = next(
+            (
+                item
+                for item in package_definition.get("required_claims", [])
+                if item.get("claim_selector") == CLAIM_ID and item.get("required") is True
+            ),
+            None,
+        )
         claim = next((item for item in package.claims if item.claim_id == CLAIM_ID), None)
         if claim is None or claim.status not in {ClaimStatus.VALIDATED, ClaimStatus.APPROVED}:
             reasons.append("C-BW-HIGH is not a Validated Claim")
+        if claim is not None and required_claim is not None and claim.grain != required_claim.get("grain"):
+            reasons.append("C-BW-HIGH does not match the Section Package grain")
+        if required_claim is None:
+            reasons.append("The Section Package does not require C-BW-HIGH")
         if claim is not None and not any(edge.claim_id == CLAIM_ID for edge in package.provenance_edges):
             reasons.append("C-BW-HIGH has no provenance")
         if not package.manifest or any(not item.locked for item in package.manifest):
             reasons.append("The source manifest is not frozen")
         if not any(event.event == "validation_run" for event in package.events):
             reasons.append("Run hybrid validation first")
-        package_definition = self._load_json(self.package_path)
-        required_gates = {
-            "body-weight-template-fields",
-            "body-weight-table-shape",
-            "body-weight-style-policy",
-        }
-        if set(package_definition.get("template_contract_gate_ids", [])) != required_gates:
-            reasons.append("The body-weight Template Contract Gates are incomplete")
+        reasons.extend(self._template_contract_gate_failures(package_definition))
         if package_definition.get("maturity") != "vertical_slice":
             reasons.append("The Section Package is not the vertical slice")
         if package_definition.get("promotion_allowed") is not False:
@@ -92,6 +99,47 @@ class SectionRunService:
             eligible=not reasons,
             reasons=reasons,
         )
+
+    def _template_contract_gate_failures(self, package_definition: dict[str, object]) -> list[str]:
+        required_gates = {
+            "body-weight-template-fields",
+            "body-weight-table-shape",
+            "body-weight-style-policy",
+        }
+        declared_gates = set(package_definition.get("template_contract_gate_ids", []))
+        failures = []
+        if declared_gates != required_gates:
+            failures.append("The body-weight Template Contract Gates are incomplete")
+
+        template = self._load_json(self.template_path)
+        section = next(
+            (item for item in template.get("sections", []) if item.get("section_id") == "S5"),
+            None,
+        )
+        field = (
+            next(
+                (item for item in section.get("fields", []) if item.get("field_id") == "body-weight"),
+                None,
+            )
+            if section
+            else None
+        )
+        checks = {
+            "body-weight-template-fields": field is not None and field.get("required") is True,
+            "body-weight-table-shape": field is not None
+            and field.get("expected_grain") == "dose_group_x_sex",
+            "body-weight-style-policy": field is not None
+            and bool(section.get("purpose"))
+            and bool(field.get("label"))
+            and bool(field.get("source_expectation"))
+            and bool(field.get("regulatory_reference_ids")),
+        }
+        failures.extend(
+            f"Template Contract Gate {gate_id} failed"
+            for gate_id, passed in checks.items()
+            if gate_id in declared_gates and not passed
+        )
+        return failures
 
     def run(self, study_id: str, command: SectionRunCommand) -> SectionRunReceipt:
         request_hash = canonical_hash(
@@ -238,7 +286,7 @@ class SectionRunService:
                     "field_id": claim.field_id,
                     "value": claim.value,
                     "unit": claim.unit,
-                    "grain": "dose_group_x_sex",
+                    "grain": claim.grain,
                     "hash": canonical_hash(claim_value),
                 }
             ],
@@ -307,6 +355,10 @@ class SectionRunService:
                 raise CandidateValidationError(f"Codex candidate returned an invalid {field}")
         if candidate.validated_claim_ids != [CLAIM_ID]:
             raise CandidateValidationError("Codex candidate cited an unapproved claim")
+        for block in candidate.content_blocks:
+            for span in block.get("factual_spans", []):
+                if set(span.get("claim_ids", [])) != {CLAIM_ID}:
+                    raise CandidateValidationError("Codex candidate factual span cited an unapproved claim")
         receipt = candidate.agent_receipt
         if receipt != {
             "runtime": "codex_sdk",
@@ -329,9 +381,7 @@ class SectionRunService:
     ) -> dict[str, object]:
         completed_runs = self.repository.list_section_runs(package.study.study_id)
         sequence = len(completed_runs) + 2
-        predecessor_id = (
-            completed_runs[-1].review_scaffold.get("revision_id") if completed_runs else None
-        )
+        predecessor_id = completed_runs[-1].review_scaffold.get("revision_id") if completed_runs else None
         sections = []
         for section in package.report_sections:
             if section.section_id == "S5":
@@ -339,11 +389,11 @@ class SectionRunService:
                     {
                         "section_id": SECTION_ID,
                         "heading": section.title,
-                        "render_state": "validated_content",
+                        "render_state": "needs_review",
                         "artifact_ids": [candidate.candidate_id],
                         "validated_claim_ids": [CLAIM_ID],
-                        "blocker_result_ids": [],
-                        "placeholder": None,
+                        "blocker_result_ids": [f"PENDING-{candidate.candidate_id}"],
+                        "placeholder": "[NEEDS REVIEW]",
                     }
                 )
             else:

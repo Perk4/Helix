@@ -16,7 +16,7 @@
   "required_claims": [
     {
       "claim_selector": "C-BW-HIGH",
-      "grain": "dose_group_x_sex",
+      "grain": "dose_group",
       "required": true
     }
   ],
