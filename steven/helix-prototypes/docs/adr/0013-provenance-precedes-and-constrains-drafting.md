@@ -1,0 +1,3 @@
+# Provenance precedes and constrains drafting
+
+Deterministic extraction and validation create source-to-claim provenance before drafting. A Section Agent may reference only Validated Claim identifiers, and a shared deterministic Provenance Compiler subsequently binds every factual statement and table cell in the Section Draft Candidate to those claims and rejects unsupported content; neither the agent nor the compiler may invent evidence or provenance. A provenance failure is non-waivable and must be resolved by removing the content, binding an existing supported claim, or introducing authorized data through a superseding run.

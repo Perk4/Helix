@@ -7,50 +7,61 @@ description: Build or simulate traceable nonclinical study evidence from authori
 
 Keep the workflow anchored to one immutable `StudyEvidencePackage`. Never let a UI view, narrative model, or retrieval result become a second source of truth.
 
+Read [../../docs/architecture/agentic-report-pipeline.md](../../docs/architecture/agentic-report-pipeline.md) before changing the validation-to-drafting workflow. Validate package records against [contracts](contracts/README.md).
+
 ## Start
 
 1. Confirm that every input is authorized for the task.
 2. Freeze an input manifest with artifact IDs, versions, checksums, source authority, and lock state.
 3. Read [references/schema.md](references/schema.md) before creating or changing records.
-4. Read [references/ontology.md](references/ontology.md) before indexing, retrieving, or linking evidence.
+4. Read [references/ontology.md](references/ontology.md) before linking evidence.
 5. Use `scripts/generate-synthetic-bundle.mjs` when real study data is unavailable or inappropriate. Label every generated record `SYNTHETIC / NOT FOR SUBMISSION`.
 
 ## Run the evidence workflow
 
-Process the package through these states in order:
+Process the package through these states and preserve each transition:
 
-1. `authorized_upload`
+1. `run_requested`
 2. `parsed`
 3. `study_resolved`
-4. `extracted`
-5. `validated`
-6. `drafted`
+4. `validated`
+5. `template_contract_passed`
+6. `section_candidate_recorded`
 7. `provenance_compiled`
-8. `gated`
-9. `approved`
-10. `exported`
+8. `template_conformance_passed`
+9. `section_promoted`
+10. `review_scaffold_revised`
+11. `approved`
+12. `exported`
 
 Each state transition appends an event with the actor, timestamp, input IDs, output IDs, rule or tool version, and outcome. Never rewrite an earlier event.
 
-## Retrieval and extraction
+## Extraction and validation
 
-- Retrieve patterns and candidate evidence by `study_type`, `report_section`, `endpoint`, `source_authority`, and `grain`.
-- Use approved prior reports to retrieve structure and phrasing patterns. Do not reuse their study values.
-- Use retrieval to locate evidence. Use deterministic readers to extract values from the selected source records.
+- Resolve `study_type_id` deterministically from pinned protocol fields and a versioned mapping table.
+- Run Data Validation Packages by evidence domain, not by report section.
+- Use deterministic readers and transforms to create normalized records, Validated Claims, and source-to-claim provenance.
 - Reject a candidate when its source version differs from the frozen manifest, its grain cannot satisfy the report field, or its authority is below the field rule.
-- Return a ranked evidence set with rejection reasons. Do not return an unqualified best match.
+- Keep embedding and report-pattern selection outside the active workflow.
 
-## Validation and drafting
+## Section drafting
 
 - Validate schema, keys, controlled terminology, units, grain, source authority, aggregation, cross-domain references, and report reconciliation.
 - Bind every report claim to one or more `ProvenanceEdge` records.
-- Draft narrative only around claims with `pass` validation results.
+- Run Template Contract Gates before starting a Section Agent.
+- Give each Section Agent only its Section Execution Envelope. Do not put the full Run Plan or Study Evidence Package in agent context.
+- Invoke the repo `helix-section-agent` skill explicitly and accept only a schema-valid Section Draft Candidate.
+- Compile provenance for every factual span and table cell, then run study-output evaluation and Template Conformance Gates.
+- Promote a candidate only through deterministic shared code.
 - Render unresolved, conflicting, or missing evidence as `[NEEDS REVIEW]` with a reason code. Do not fill the gap from general model knowledge.
 - Keep scientific interpretation separate. A qualified reviewer owns adversity, biological relevance, and NOAEL decisions.
 
 ## Gates and export
 
-- A section passes only when every required field is either validated or dispositioned for review, and every numeric claim has provenance.
+- Use only `hard_blocker`, `review_required`, and `warning` as rule-enforcement classes.
+- A section promotes only when no hard blocker exists, every review-required result has a current disposition, provenance passes, and template conformance passes.
+- Stop an autonomous drafting cycle after three Candidate Attempts. A human can start a new audited cycle for one section.
+- Maintain an append-only history of Review Scaffold Revisions for the full study.
 - Release stays blocked while any blocking validation result is open, required peer review is incomplete, the QAU statement is absent, the study director has not approved the report, or submission metadata is incomplete.
 - Export requires a separate, explicit user action after release approval. Preparation is not export.
 - Name the result `ready for signature`, `ready for export`, or `exported`. Never label it `FDA approved`.
@@ -58,6 +69,6 @@ Each state transition appends an event with the actor, timestamp, input IDs, out
 
 ## Deliverables
 
-Return the frozen manifest, normalized study records, retrieval index, validation results, report sections, provenance graph, review dispositions, gate decisions, and export manifest. State which parts are synthetic, incomplete, or unverified.
+Return the frozen manifest, Run Plan, normalized study records, validation results, Validated Claims, Section Draft Candidates, provenance graph, Section Drafts, Review Scaffold Revisions, review dispositions, gate decisions, and export manifest. State which parts are synthetic, incomplete, or unverified.
 
 Throughput checkpoint: after generation, run the schema and invariants check before building a UI or drafting report text.

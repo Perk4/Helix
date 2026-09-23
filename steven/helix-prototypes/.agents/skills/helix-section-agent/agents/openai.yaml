@@ -1,0 +1,6 @@
+interface:
+  display_name: "HELIX Section Agent"
+  short_description: "Draft one governed HELIX report section"
+  default_prompt: "Use $helix-section-agent with the supplied Section Execution Envelope."
+policy:
+  allow_implicit_invocation: false
