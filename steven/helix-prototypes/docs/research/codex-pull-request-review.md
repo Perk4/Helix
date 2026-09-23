@@ -7,9 +7,25 @@ GitHub discovers the workflow at repository-root `.github/workflows/codex-review
 ## Configure the secret
 
 A repository administrator must create an Actions secret named `OPENAI_API_KEY`.
-Create the key at [OpenAI API keys](https://platform.openai.com/api-keys), then add it under **Settings**, **Secrets and variables**, **Actions**.
 
-The workflow succeeds without the secret but skips the review and emits a notice. It passes the key only to `openai/codex-action`.
+1. Open the GitHub repository and select **Settings**.
+2. Select **Secrets and variables**, then **Actions**.
+3. On the **Secrets** tab, select **New repository secret**.
+4. Enter `OPENAI_API_KEY` as the name, paste a key from [OpenAI API keys](https://platform.openai.com/api-keys), then select **Add secret**.
+
+The workflow succeeds without the secret but skips the review and emits a notice. It passes the key only to `openai/codex-action`. The action sends the key as `Authorization: Bearer <key>`. An Azure or custom endpoint must accept that header.
+
+## Configure optional provider variables
+
+Standard OpenAI requires neither optional variable. To configure Azure or another Responses API provider:
+
+1. Open the GitHub repository and select **Settings**.
+2. Select **Secrets and variables**, then **Actions**.
+3. On the **Variables** tab, select **New repository variable**.
+4. Enter `OPENAI_RESPONSES_API_ENDPOINT` as the name and the full Responses API URL as the value, then select **Add variable**.
+5. Select **New repository variable** again. Enter `OPENAI_CODEX_MODEL` as the name and the model or deployment name as the value, then select **Add variable**.
+
+Azure requires `OPENAI_RESPONSES_API_ENDPOINT`. Include the `/v1/responses` suffix and any required query parameters. Azure may also require `OPENAI_CODEX_MODEL` with its model or deployment name.
 
 ## Review scope
 

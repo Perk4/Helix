@@ -49,6 +49,8 @@ jobs:
         uses: openai/codex-action@86365089eb2b84e0a8fb0717b304f8bdcb13b20e
         with:
           openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          responses-api-endpoint: ${{ vars.OPENAI_RESPONSES_API_ENDPOINT }}
+          model: ${{ vars.OPENAI_CODEX_MODEL }}
           permission-profile: ":read-only"
           safety-strategy: drop-sudo
           prompt: |
