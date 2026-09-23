@@ -39,7 +39,11 @@ from .schemas import (
     WorkspaceResponse,
     WorkspaceSummary,
 )
-from .section_runs import SectionRunService
+from .section_runs import (
+    SectionRunService,
+    governed_versions_fingerprint,
+    manifest_fingerprint,
+)
 from .validation import (
     FixturePlanner,
     OpenAICompatiblePlanner,
@@ -91,7 +95,7 @@ class StudyService:
                 study_type_id=package.study.study_type_id,
                 title=f"{package.study.duration_days}-day {package.study.route} toxicity study",
                 workflow_state=package.workflow_state,
-                release_status=derive_release_gate(package).status,
+                release_status=self._release_gate(package).status,
                 label=package.label,
             )
             for package in self.repository.list_packages()
@@ -147,7 +151,12 @@ class StudyService:
             study_id=study_id,
             event_type=event.event,
             actor=event.actor,
-            payload={"outcome": event.outcome, **event.details},
+            payload={
+                "outcome": event.outcome,
+                **event.details,
+                "manifest_hash": manifest_fingerprint(updated),
+                "governed_versions_hash": governed_versions_fingerprint(),
+            },
             idempotency_key=f"validation:{run.run_id}",
             occurred_at=now,
         )
@@ -265,8 +274,8 @@ class StudyService:
     def approve(self, study_id: str, command: ApprovalCommand) -> WorkspaceResponse:
         package = self.repository.get(study_id, for_update=True)
         self._ensure_mutable(package)
-        gate = derive_release_gate(package)
-        if gate.blocking_result_ids:
+        gate = self._release_gate(package)
+        if any(result_id.startswith("VR-") for result_id in gate.blocking_result_ids):
             raise WorkflowConflictError("Resolve all blocking validation results before recording approvals")
         if any(
             approval.role == command.role
@@ -338,7 +347,7 @@ class StudyService:
                 artifacts=package.export_artifacts,
                 idempotent_replay=True,
             )
-        gate = derive_release_gate(package)
+        gate = self._release_gate(package)
         if gate.status != GateStatus.READY_FOR_EXPORT:
             raise WorkflowConflictError("The release gate is not ready for export")
         timestamp = self._now()
@@ -413,9 +422,12 @@ class StudyService:
         )
 
     def _workspace(self, package: StudyEvidencePackage) -> WorkspaceResponse:
-        gate = derive_release_gate(package)
+        gate = self._release_gate(package)
         unresolved = set(gate.blocking_result_ids)
-        resolved = len(blocking_failures(package.validation_results)) - len(unresolved)
+        validation_blockers = {
+            result.result_id for result in blocking_failures(package.validation_results)
+        }
+        resolved = len(validation_blockers - unresolved)
         return WorkspaceResponse(
             label=package.label,
             study=package.study,
@@ -474,9 +486,27 @@ class StudyService:
         return OpenAICompatiblePlanner(self.settings)
 
     def _with_derived_gate(self, package: StudyEvidencePackage, timestamp: str) -> StudyEvidencePackage:
-        gate = derive_release_gate(package, timestamp)
+        gate = self._release_gate(package, timestamp)
         other_gates = [item for item in package.gate_decisions if item.gate_type != "release"]
         return package.model_copy(update={"gate_decisions": [*other_gates, gate]})
+
+    def _release_gate(
+        self,
+        package: StudyEvidencePackage,
+        decided_at: str | None = None,
+    ) -> GateDecision:
+        blockers = sorted(
+            {
+                f"PROMOTION-DISABLED-{run.receipt.section_package_id}"
+                for run in self.repository.list_section_runs(package.study.study_id)
+                if run.candidate.status == "section_draft_candidate"
+            }
+        )
+        return derive_release_gate(
+            package,
+            candidate_blocker_ids=blockers,
+            decided_at=decided_at,
+        )
 
     def _apply_claim_correction(
         self,
@@ -603,7 +633,11 @@ class StudyService:
         return datetime.now(UTC).isoformat().replace("+00:00", "Z")
 
 
-def derive_release_gate(package: StudyEvidencePackage, decided_at: str | None = None) -> GateDecision:
+def derive_release_gate(
+    package: StudyEvidencePackage,
+    candidate_blocker_ids: list[str] | None = None,
+    decided_at: str | None = None,
+) -> GateDecision:
     latest_dispositions: dict[str, ReviewDisposition] = {}
     for disposition in package.review_dispositions:
         latest_dispositions[disposition.result_id] = disposition
@@ -613,6 +647,7 @@ def derive_release_gate(package: StudyEvidencePackage, decided_at: str | None = 
         if latest_dispositions.get(result.result_id) is None
         or latest_dispositions[result.result_id].decision not in RESOLVED_DISPOSITIONS
     ]
+    unresolved.extend(candidate_blocker_ids or [])
     approval_roles = {approval.role for approval in package.approvals}
     has_unreviewed_sections = any(
         section.status == SectionStatus.NEEDS_REVIEW for section in package.report_sections

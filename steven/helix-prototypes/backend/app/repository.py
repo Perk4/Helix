@@ -84,6 +84,17 @@ class StudyPackageRepository:
             )
         )
 
+    def latest_event(self, study_id: str, event_type: str) -> AuditEventRow | None:
+        return self.session.scalar(
+            select(AuditEventRow)
+            .where(
+                AuditEventRow.study_id == study_id,
+                AuditEventRow.event_type == event_type,
+            )
+            .order_by(AuditEventRow.occurred_at.desc(), AuditEventRow.id.desc())
+            .limit(1)
+        )
+
     def save_export_file(
         self,
         *,

@@ -14,6 +14,7 @@ from app.database import create_database_engine
 from app.main import create_app
 from app.models import AuditEventRow, SectionRunRow
 from app.repository import StudyPackageRepository
+from app.schemas import SectionRunCommand
 from app.section_runs import SectionRunService
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -41,6 +42,8 @@ class FakeSectionAgent:
         claim_ids = ["C-NOT-ALLOWED"] if self.mode == "unapproved" else ["C-BW-HIGH"]
         span_claim_ids = claim_ids
         content: object = "Terminal high-dose body weight was 286.2 g."
+        if self.mode == "uncovered_content":
+            content = "Terminal high-dose body weight was 286.2 g. Unsupported factual assertion."
         if self.mode == "nested_unapproved":
             content = {
                 "rows": [
@@ -75,9 +78,20 @@ class FakeSectionAgent:
                     "block_id": "BW-P1",
                     "kind": "paragraph",
                     "content": content,
-                    "factual_spans": [
-                        {"text": "286.2 g", "claim_ids": span_claim_ids},
-                    ],
+                    "factual_spans": (
+                        []
+                        if self.mode == "empty_factual_spans"
+                        else [
+                            {
+                                "text": (
+                                    "286.2 g"
+                                    if isinstance(content, dict) or self.mode == "uncovered_content"
+                                    else content
+                                ),
+                                "claim_ids": span_claim_ids,
+                            }
+                        ]
+                    ),
                 }
             ],
             "executor_receipt_ids": (
@@ -157,6 +171,8 @@ def test_section_run_records_candidate_receipt_scaffold_and_exact_replay() -> No
             "PROMOTION-DISABLED-section.5_2_3_body_weight",
         ]
         assert stored["envelope"]["validated_claims"][0]["grain"] == "dose_group"
+        assert stored["envelope"]["pinned_run_id"].startswith("RUN-")
+        assert stored["envelope"]["manifest_hash"].startswith("sha256:")
         assert stored["envelope"]["structured_failures"] == [
             {
                 "result_id": "VR-004",
@@ -222,6 +238,8 @@ def test_candidate_and_sdk_failures_leave_no_partial_state() -> None:
         ("malformed", 422),
         ("unapproved", 422),
         ("nested_unapproved", 422),
+        ("empty_factual_spans", 422),
+        ("uncovered_content", 422),
         ("unapproved_executor_receipt", 422),
         ("missing_executor_receipt", 422),
         ("missing_receipt", 422),
@@ -244,6 +262,24 @@ def test_candidate_and_sdk_failures_leave_no_partial_state() -> None:
                     == 0
                 )
         engine.dispose()
+
+
+def test_idempotency_rechecks_after_the_study_lock() -> None:
+    agent = FakeSectionAgent()
+    client, engine = build_client(agent)
+    with client:
+        validate(client)
+        first = client.post(f"/api/v1/studies/{STUDY_ID}/section-runs", json=COMMAND)
+        assert first.status_code == 201
+        with client.app.state.session_factory() as session:
+            row = session.scalar(select(SectionRunRow))
+            service = SectionRunService(session, agent, ROOT)
+            with patch.object(service.repository, "get_section_run", side_effect=[None, row]):
+                replay = service.run(STUDY_ID, SectionRunCommand.model_validate(COMMAND))
+
+        assert replay.model_dump(mode="json") == first.json()
+        assert agent.calls == 1
+    engine.dispose()
 
 
 def test_transaction_failure_rolls_back_candidate_event_and_revision() -> None:
@@ -271,6 +307,100 @@ def test_transaction_failure_rolls_back_candidate_event_and_revision() -> None:
                 )
                 == 0
             )
+    engine.dispose()
+
+
+def test_pinned_run_rejects_manifest_and_governed_version_drift() -> None:
+    agent = FakeSectionAgent()
+    client, engine = build_client(agent)
+    with client:
+        validate(client)
+        with client.app.state.session_factory() as session:
+            repository = StudyPackageRepository(session)
+            package = repository.get(STUDY_ID)
+            changed_manifest = [*package.manifest]
+            changed_manifest[0] = changed_manifest[0].model_copy(
+                update={"checksum": "sha256:" + "0" * 64}
+            )
+            repository.save(package.model_copy(update={"manifest": changed_manifest}))
+            session.commit()
+
+        manifest_drift = client.post(f"/api/v1/studies/{STUDY_ID}/section-runs", json=COMMAND)
+        assert manifest_drift.status_code == 409
+        assert "manifest fingerprint" in manifest_drift.json()["detail"]
+
+        with client.app.state.session_factory() as session:
+            repository = StudyPackageRepository(session)
+            package = repository.get(STUDY_ID)
+            original_manifest = [*package.manifest]
+            original_manifest[0] = original_manifest[0].model_copy(
+                update={"checksum": "sha256:" + "a" * 64}
+            )
+            repository.save(package.model_copy(update={"manifest": original_manifest}))
+            session.commit()
+        validate(client)
+
+        with patch("app.section_runs.GOVERNED_VERSIONS", {"schema": "2.0.0"}):
+            governed_drift = client.post(
+                f"/api/v1/studies/{STUDY_ID}/section-runs",
+                json={**COMMAND, "idempotency_key": "governed-version-drift"},
+            )
+        assert governed_drift.status_code == 409
+        assert "governed-version fingerprint" in governed_drift.json()["detail"]
+        assert agent.calls == 0
+    engine.dispose()
+
+
+def test_unpromoted_candidate_blocks_release_and_export() -> None:
+    agent = FakeSectionAgent()
+    client, engine = build_client(agent)
+    with client:
+        validation = client.post(
+            f"/api/v1/studies/{STUDY_ID}/validation-runs",
+            json={"planner": "fixture"},
+        )
+        assert validation.status_code == 201
+        assert client.post(f"/api/v1/studies/{STUDY_ID}/section-runs", json=COMMAND).status_code == 201
+        blockers = [
+            result
+            for result in validation.json()["results"]
+            if result["status"] == "fail" and result["severity"] == "blocker"
+        ]
+        for result in blockers:
+            disposition = client.post(
+                f"/api/v1/studies/{STUDY_ID}/validation-results/{result['result_id']}/dispositions",
+                json={
+                    "decision": (
+                        "approved_exception" if result["result_id"] == "VR-006" else "corrected"
+                    ),
+                    "reason": f"Synthetic disposition recorded for {result['rule_id']}.",
+                    "reviewer": "Dr. Ada Path",
+                },
+            )
+            assert disposition.status_code == 200
+
+        for role, reviewer, meaning in [
+            ("pathologist", "Dr. Ada Path", "Scientific review complete"),
+            ("peer_reviewer", "Dr. Priya Peer", "Independent pathology review complete"),
+            ("qau", "Morgan QA", "Quality assurance statement recorded"),
+            ("study_director", "Dr. Sam Director", "Final report approval"),
+        ]:
+            approval = client.post(
+                f"/api/v1/studies/{STUDY_ID}/approvals",
+                json={"role": role, "reviewer": reviewer, "meaning": meaning},
+            )
+            assert approval.status_code == 200
+
+        workspace = client.get(f"/api/v1/studies/{STUDY_ID}/workspace").json()
+        export = client.post(
+            f"/api/v1/studies/{STUDY_ID}/exports",
+            json={"actor": "Dr. Sam Director", "idempotency_key": "blocked-export-001"},
+        )
+        assert workspace["release_gate"]["status"] == "blocked"
+        assert workspace["release_gate"]["blocking_result_ids"] == [
+            "PROMOTION-DISABLED-section.5_2_3_body_weight"
+        ]
+        assert export.status_code == 409
     engine.dispose()
 
 

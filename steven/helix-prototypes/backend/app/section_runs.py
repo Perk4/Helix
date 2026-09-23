@@ -1,5 +1,6 @@
 import hashlib
 import json
+from collections import Counter
 from datetime import UTC, datetime
 from pathlib import Path
 from uuid import uuid4
@@ -23,6 +24,15 @@ SECTION_PACKAGE_ID = "section.5_2_3_body_weight"
 SECTION_ID = "5_2_3_body_weight"
 CLAIM_ID = "C-BW-HIGH"
 SKILL_NAME = "helix-section-agent"
+GOVERNED_VERSIONS = {
+    "schema": "1.0.0",
+    "ontology": "1.0.0",
+    "rule_bundle": "helix-rules-1.0.0",
+    "template": "1.0.0",
+    "section_agent_skill": "0.1.0",
+    "promptfoo_qualification_suite": "helix-section-agent-qualification@0.1.0",
+    "promptfoo_study_output_suite": "helix-section-study-output@0.1.0",
+}
 
 
 class SectionRunConflictError(RuntimeError):
@@ -44,6 +54,14 @@ class UnknownSectionPackageError(ValueError):
 def canonical_hash(value: object) -> str:
     encoded = json.dumps(value, separators=(",", ":"), sort_keys=True).encode()
     return f"sha256:{hashlib.sha256(encoded).hexdigest()}"
+
+
+def manifest_fingerprint(package: StudyEvidencePackage) -> str:
+    return canonical_hash([item.model_dump(mode="json") for item in package.manifest])
+
+
+def governed_versions_fingerprint() -> str:
+    return canonical_hash(GOVERNED_VERSIONS)
 
 
 class SectionRunService:
@@ -91,8 +109,14 @@ class SectionRunService:
             reasons.append("C-BW-HIGH has no provenance")
         if not package.manifest or any(not item.locked for item in package.manifest):
             reasons.append("The source manifest is not frozen")
-        if not any(event.event == "validation_run" for event in package.events):
+        pinned_run = self.repository.latest_event(package.study.study_id, "validation_run")
+        if pinned_run is None:
             reasons.append("Run hybrid validation first")
+        else:
+            if pinned_run.payload.get("manifest_hash") != manifest_fingerprint(package):
+                reasons.append("The Pinned Run manifest fingerprint does not match the current manifest")
+            if pinned_run.payload.get("governed_versions_hash") != governed_versions_fingerprint():
+                reasons.append("The Pinned Run governed-version fingerprint does not match")
         reasons.extend(self._template_contract_gate_failures(package_definition))
         if package_definition.get("maturity") != "vertical_slice":
             reasons.append("The Section Package is not the vertical slice")
@@ -159,23 +183,25 @@ class SectionRunService:
         request_hash = canonical_hash(
             {"study_id": study_id, "section_package_id": command.section_package_id}
         )
-        prior = self.repository.get_section_run(study_id, command.idempotency_key)
-        if prior is not None:
-            if prior.request_hash != request_hash:
-                raise SectionRunConflictError("The idempotency key was already used for another command")
-            if prior.receipt is None:
-                raise SectionRunConflictError("The prior section run did not complete")
-            return SectionRunReceipt.model_validate(prior.receipt)
+        prior_receipt = self._replay(study_id, command.idempotency_key, request_hash)
+        if prior_receipt is not None:
+            return prior_receipt
         if command.section_package_id != SECTION_PACKAGE_ID:
             raise UnknownSectionPackageError(f"Unknown Section Package {command.section_package_id}")
 
         package = self.repository.get(study_id, for_update=True)
+        prior_receipt = self._replay(study_id, command.idempotency_key, request_hash)
+        if prior_receipt is not None:
+            return prior_receipt
         eligibility = self.eligibility(package)
         if not eligibility.eligible:
             raise SectionRunConflictError("; ".join(eligibility.reasons))
+        pinned_run = self.repository.latest_event(study_id, "validation_run")
+        if pinned_run is None:
+            raise SectionRunConflictError("Run hybrid validation first")
 
         run_id = f"SRUN-{uuid4().hex[:12].upper()}"
-        envelope = self._build_envelope(package, run_id)
+        envelope = self._build_envelope(package, run_id, str(pinned_run.payload["run_id"]))
         envelope_hash = canonical_hash(envelope)
         row = self.repository.add_section_run(
             run_id=run_id,
@@ -266,19 +292,39 @@ class SectionRunService:
             self.session.rollback()
             raise
 
-    def _build_envelope(self, package: StudyEvidencePackage, run_id: str) -> dict[str, object]:
+    def _replay(
+        self,
+        study_id: str,
+        idempotency_key: str,
+        request_hash: str,
+    ) -> SectionRunReceipt | None:
+        prior = self.repository.get_section_run(study_id, idempotency_key)
+        if prior is None:
+            return None
+        if prior.request_hash != request_hash:
+            raise SectionRunConflictError("The idempotency key was already used for another command")
+        if prior.receipt is None:
+            raise SectionRunConflictError("The prior section run did not complete")
+        return SectionRunReceipt.model_validate(prior.receipt)
+
+    def _build_envelope(
+        self,
+        package: StudyEvidencePackage,
+        run_id: str,
+        pinned_run_id: str,
+    ) -> dict[str, object]:
         claim = next(item for item in package.claims if item.claim_id == CLAIM_ID)
         package_definition = self._load_json(self.package_path)
-        manifest = [item.model_dump(mode="json") for item in package.manifest]
         claim_value = claim.model_dump(mode="json")
         envelope = {
             "schema_version": "helix.section-execution-envelope/v1",
             "envelope_id": f"ENV-{uuid4().hex[:12].upper()}",
             "run_id": run_id,
+            "pinned_run_id": pinned_run_id,
             "run_plan_hash": canonical_hash(
                 {"study_id": package.study.study_id, "section_package_id": SECTION_PACKAGE_ID}
             ),
-            "manifest_hash": canonical_hash(manifest),
+            "manifest_hash": manifest_fingerprint(package),
             "section_package": {
                 "package_id": SECTION_PACKAGE_ID,
                 "version": package_definition["version"],
@@ -334,15 +380,7 @@ class SectionRunService:
                     ),
                 }
             ],
-            "governed_versions": {
-                "schema": "1.0.0",
-                "ontology": "1.0.0",
-                "rule_bundle": "helix-rules-1.0.0",
-                "template": "1.0.0",
-                "section_agent_skill": "0.1.0",
-                "promptfoo_qualification_suite": "helix-section-agent-qualification@0.1.0",
-                "promptfoo_study_output_suite": "helix-section-study-output@0.1.0",
-            },
+            "governed_versions": GOVERNED_VERSIONS,
         }
         schema = self._load_json(self.contracts / "section-execution-envelope.schema.json")
         errors = list(Draft202012Validator(schema).iter_errors(envelope))
@@ -388,6 +426,18 @@ class SectionRunService:
                 or set(claim_ids) != {CLAIM_ID}
             ):
                 raise CandidateValidationError("Codex candidate content cited an unapproved claim")
+        for block in candidate.content_blocks:
+            content_fragments = self._content_fragments(block)
+            factual_spans = block.get("factual_spans")
+            span_fragments = (
+                [span.get("text") for span in factual_spans if isinstance(span, dict)]
+                if isinstance(factual_spans, list)
+                else []
+            )
+            if Counter(content_fragments) != Counter(span_fragments):
+                raise CandidateValidationError(
+                    "Codex candidate factual spans do not cover the block content"
+                )
         if len(candidate.executor_receipt_ids) != len(executor_receipt_ids) or set(
             candidate.executor_receipt_ids
         ) != set(executor_receipt_ids):
@@ -482,6 +532,24 @@ class SectionRunService:
             f"{thread_receipt_instruction} Envelope: "
             f"{json.dumps(envelope, separators=(',', ':'), sort_keys=True)}"
         )
+
+    @staticmethod
+    def _content_fragments(block: dict[str, object]) -> list[str]:
+        content = block.get("content")
+        if isinstance(content, str):
+            return [content]
+        if not isinstance(content, dict):
+            return []
+        rows = content.get("rows")
+        if not isinstance(rows, list):
+            return []
+        return [
+            str(cell["text"])
+            for row in rows
+            if isinstance(row, dict) and isinstance(row.get("cells"), list)
+            for cell in row["cells"]
+            if isinstance(cell, dict) and "text" in cell
+        ]
 
     @classmethod
     def _nested_claim_id_lists(cls, value: object):
