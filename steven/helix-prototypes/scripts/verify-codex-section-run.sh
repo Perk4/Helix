@@ -33,7 +33,7 @@ trap cleanup EXIT
   HELIX_DATABASE_URL="sqlite+pysqlite:///$tmp/helix.db" \
     HELIX_CODEX_REPOSITORY_ROOT="$root" \
     HELIX_CORS_ORIGINS="[\"http://127.0.0.1:$web_port\"]" \
-    exec uv run uvicorn app.main:app --host 127.0.0.1 --port "$api_port"
+    exec uv run python -m uvicorn app.main:app --host 127.0.0.1 --port "$api_port"
 ) >"$api_log" 2>&1 &
 api_pid=$!
 

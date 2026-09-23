@@ -199,6 +199,9 @@ class SectionRunService:
                 candidate_id=candidate_id,
                 thread_id=result.thread_id,
                 skill_hash=skill_hash,
+                executor_receipt_ids=[
+                    str(receipt["artifact_id"]) for receipt in envelope["executor_receipts"]
+                ],
             )
             now = datetime.now(UTC).isoformat().replace("+00:00", "Z")
             event_id = f"EV-{uuid4().hex[:12].upper()}"
@@ -334,6 +337,7 @@ class SectionRunService:
         candidate_id: str,
         thread_id: str,
         skill_hash: str,
+        executor_receipt_ids: list[str],
     ) -> SectionDraftCandidate:
         try:
             raw = json.loads(response)
@@ -355,10 +359,17 @@ class SectionRunService:
                 raise CandidateValidationError(f"Codex candidate returned an invalid {field}")
         if candidate.validated_claim_ids != [CLAIM_ID]:
             raise CandidateValidationError("Codex candidate cited an unapproved claim")
-        for block in candidate.content_blocks:
-            for span in block.get("factual_spans", []):
-                if set(span.get("claim_ids", [])) != {CLAIM_ID}:
-                    raise CandidateValidationError("Codex candidate factual span cited an unapproved claim")
+        for claim_ids in self._nested_claim_id_lists(candidate.content_blocks):
+            if (
+                not isinstance(claim_ids, list)
+                or len(claim_ids) != 1
+                or set(claim_ids) != {CLAIM_ID}
+            ):
+                raise CandidateValidationError("Codex candidate content cited an unapproved claim")
+        if len(candidate.executor_receipt_ids) != len(executor_receipt_ids) or set(
+            candidate.executor_receipt_ids
+        ) != set(executor_receipt_ids):
+            raise CandidateValidationError("Codex candidate returned invalid executor receipts")
         receipt = candidate.agent_receipt
         if receipt != {
             "runtime": "codex_sdk",
@@ -446,6 +457,17 @@ class SectionRunService:
             f"{thread_receipt_instruction} Envelope: "
             f"{json.dumps(envelope, separators=(',', ':'), sort_keys=True)}"
         )
+
+    @classmethod
+    def _nested_claim_id_lists(cls, value: object):
+        if isinstance(value, dict):
+            for key, nested_value in value.items():
+                if key == "claim_ids":
+                    yield nested_value
+                yield from cls._nested_claim_id_lists(nested_value)
+        elif isinstance(value, list):
+            for item in value:
+                yield from cls._nested_claim_id_lists(item)
 
     @staticmethod
     def _load_json(path: Path) -> dict[str, object]:

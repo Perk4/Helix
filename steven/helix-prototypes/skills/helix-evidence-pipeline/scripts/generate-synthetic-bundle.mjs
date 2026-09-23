@@ -84,7 +84,7 @@ const reportSections = [
 const highDoseTerminal = bodyWeights.filter((record) => record.timepoint === "DAY 28" && animals.find((animal) => animal.animal_id === record.animal_id).group_id === "G4");
 const liverFindings = microscopicFindings.filter((finding) => finding.finding === "Hepatocellular hypertrophy");
 const claims = [
-  { claim_id: "C-BW-HIGH", section_id: "S5", field_id: "terminal-body-weight-high", value: round(highDoseTerminal.reduce((sum, record) => sum + record.value, 0) / highDoseTerminal.length), unit: "g", grain: "dose_group", status: "validated" },
+  { claim_id: "C-BW-HIGH", section_id: "S5", field_id: "terminal-body-weight-high", value: round(highDoseTerminal.reduce((sum, record) => sum + record.value, 0) / highDoseTerminal.length), unit: "g", grain: "dose_group_x_sex", status: "validated" },
   { claim_id: "C-MI-LIVER", section_id: "S7", field_id: "liver-hypertrophy-incidence", value: liverFindings.length, unit: "animals", grain: "dose_group", status: "needs_review" },
   { claim_id: "C-NOAEL", section_id: "S8", field_id: "noael", value: null, unit: "mg/kg/day", grain: "study", status: "needs_review" },
 ];

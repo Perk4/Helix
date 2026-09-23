@@ -39,7 +39,18 @@ class FakeSectionAgent:
         run_id = re.search(r"run_id (SRUN-[A-Z0-9-]+)", prompt).group(1)
         skill_hash = re.search(r"skill_hash to (sha256:[a-f0-9]{64})", prompt).group(1)
         claim_ids = ["C-NOT-ALLOWED"] if self.mode == "unapproved" else ["C-BW-HIGH"]
-        span_claim_ids = ["C-NOT-ALLOWED"] if self.mode == "nested_unapproved" else claim_ids
+        span_claim_ids = claim_ids
+        content: object = "Terminal high-dose body weight was 286.2 g."
+        if self.mode == "nested_unapproved":
+            content = {
+                "rows": [
+                    {
+                        "cells": [
+                            {"text": "286.2 g", "claim_ids": ["C-NOT-ALLOWED"]},
+                        ]
+                    }
+                ]
+            }
         receipt = {
             "runtime": "codex_sdk",
             "thread_id": "thread-test-001",
@@ -63,13 +74,17 @@ class FakeSectionAgent:
                 {
                     "block_id": "BW-P1",
                     "kind": "paragraph",
-                    "content": "Terminal high-dose body weight was 286.2 g.",
+                    "content": content,
                     "factual_spans": [
                         {"text": "286.2 g", "claim_ids": span_claim_ids},
                     ],
                 }
             ],
-            "executor_receipt_ids": ["EXEC-BW-SUMMARY-001"],
+            "executor_receipt_ids": (
+                ["EXEC-NOT-ALLOWED"]
+                if self.mode == "unapproved_executor_receipt"
+                else ([] if self.mode == "missing_executor_receipt" else ["EXEC-BW-SUMMARY-001"])
+            ),
             "agent_receipt": receipt,
         }
         return AgentResult(thread_id="thread-test-001", final_response=json.dumps(candidate))
@@ -196,6 +211,8 @@ def test_candidate_and_sdk_failures_leave_no_partial_state() -> None:
         ("malformed", 422),
         ("unapproved", 422),
         ("nested_unapproved", 422),
+        ("unapproved_executor_receipt", 422),
+        ("missing_executor_receipt", 422),
         ("missing_receipt", 422),
         ("failure", 503),
     ]:
@@ -246,22 +263,26 @@ def test_transaction_failure_rolls_back_candidate_event_and_revision() -> None:
     engine.dispose()
 
 
-def test_eligibility_rejects_a_claim_that_does_not_match_the_package_grain(tmp_path: Path) -> None:
+def test_eligibility_rejects_a_claim_that_does_not_match_the_package_grain() -> None:
     agent = FakeSectionAgent()
     client, engine = build_client(agent)
     package_definition = json.loads(
         (ROOT / "skills/helix-evidence-pipeline/packages/sections/5_2_3_body_weight/package.json").read_text()
     )
-    package_definition["required_claims"][0]["grain"] = "dose_group_x_sex"
-    package_path = tmp_path / "package.json"
-    package_path.write_text(json.dumps(package_definition))
+    assert package_definition["required_claims"][0]["grain"] == "dose_group_x_sex"
 
     with client:
         validate(client)
         with client.app.state.session_factory() as session:
             service = SectionRunService(session, agent, ROOT)
-            service.package_path = package_path
-            eligibility = service.eligibility(StudyPackageRepository(session).get(STUDY_ID))
+            package = StudyPackageRepository(session).get(STUDY_ID)
+            mismatched_claims = [
+                claim.model_copy(update={"grain": "dose_group"})
+                if claim.claim_id == "C-BW-HIGH"
+                else claim
+                for claim in package.claims
+            ]
+            eligibility = service.eligibility(package.model_copy(update={"claims": mismatched_claims}))
 
     assert eligibility.eligible is False
     assert "C-BW-HIGH does not match the Section Package grain" in eligibility.reasons

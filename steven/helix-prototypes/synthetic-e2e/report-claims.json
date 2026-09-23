@@ -64,7 +64,7 @@
       "field_id": "terminal-body-weight-high",
       "value": 286.2,
       "unit": "g",
-      "grain": "dose_group",
+      "grain": "dose_group_x_sex",
       "status": "validated"
     },
     {
