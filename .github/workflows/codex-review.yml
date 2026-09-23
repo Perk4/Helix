@@ -52,7 +52,10 @@ jobs:
           permission-profile: ":read-only"
           safety-strategy: drop-sudo
           prompt: |
-            Review only the changes introduced by this pull request:
+            Review only the changes introduced by this pull request.
+            The current working directory is the repository root.
+            The HELIX project is at steven/helix-prototypes.
+            Run this diff from the repository root:
             git diff ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}
 
             Report only high-confidence correctness, security, data-integrity, or regression findings that require developer action.

@@ -2,6 +2,8 @@
 
 Research checked on 2026-09-23 against OpenAI and GitHub documentation.
 
+GitHub discovers the workflow at repository-root `.github/workflows/codex-review.yml`. The workflow starts at the repository root and reviews the HELIX project under `steven/helix-prototypes`.
+
 ## Configure the secret
 
 A repository administrator must create an Actions secret named `OPENAI_API_KEY`.
