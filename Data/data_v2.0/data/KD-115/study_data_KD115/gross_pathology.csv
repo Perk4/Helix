@@ -1,0 +1,53 @@
+study_id,animal_id,group_number,group_name,sex,dose_mgkg_day,tissue,observation,is_collected_for_histo,comment,necropsy_date
+TOX-2025-0421-P,M101,1,Vehicle Control,M,0,All tissues,No remarkable gross findings,False,,2025-04-14
+TOX-2025-0421-P,M102,1,Vehicle Control,M,0,All tissues,No remarkable gross findings,False,,2025-04-14
+TOX-2025-0421-P,M103,1,Vehicle Control,M,0,All tissues,No remarkable gross findings,False,,2025-04-14
+TOX-2025-0421-P,M104,1,Vehicle Control,M,0,All tissues,No remarkable gross findings,False,,2025-04-14
+TOX-2025-0421-P,M105,1,Vehicle Control,M,0,All tissues,No remarkable gross findings,False,,2025-04-14
+TOX-2025-0421-P,F101,1,Vehicle Control,F,0,All tissues,No remarkable gross findings,False,,2025-04-14
+TOX-2025-0421-P,F102,1,Vehicle Control,F,0,All tissues,No remarkable gross findings,False,,2025-04-14
+TOX-2025-0421-P,F103,1,Vehicle Control,F,0,All tissues,No remarkable gross findings,False,,2025-04-14
+TOX-2025-0421-P,F104,1,Vehicle Control,F,0,All tissues,No remarkable gross findings,False,,2025-04-14
+TOX-2025-0421-P,F105,1,Vehicle Control,F,0,All tissues,No remarkable gross findings,False,,2025-04-14
+TOX-2025-0421-P,M201,2,Low Dose,M,5,All tissues,No remarkable gross findings,False,,2025-04-14
+TOX-2025-0421-P,M202,2,Low Dose,M,5,All tissues,No remarkable gross findings,False,,2025-04-14
+TOX-2025-0421-P,M203,2,Low Dose,M,5,All tissues,No remarkable gross findings,False,,2025-04-14
+TOX-2025-0421-P,M204,2,Low Dose,M,5,All tissues,No remarkable gross findings,False,,2025-04-14
+TOX-2025-0421-P,M205,2,Low Dose,M,5,All tissues,No remarkable gross findings,False,,2025-04-14
+TOX-2025-0421-P,F201,2,Low Dose,F,5,All tissues,No remarkable gross findings,False,,2025-04-14
+TOX-2025-0421-P,F202,2,Low Dose,F,5,All tissues,No remarkable gross findings,False,,2025-04-14
+TOX-2025-0421-P,F203,2,Low Dose,F,5,All tissues,No remarkable gross findings,False,,2025-04-14
+TOX-2025-0421-P,F204,2,Low Dose,F,5,All tissues,No remarkable gross findings,False,,2025-04-14
+TOX-2025-0421-P,F205,2,Low Dose,F,5,All tissues,No remarkable gross findings,False,,2025-04-14
+TOX-2025-0421-P,M301,3,Mid Dose,M,25,Kidney,Slight pale coloration,True,Bilateral,2025-04-14
+TOX-2025-0421-P,M301,3,Mid Dose,M,25,All other tissues,No remarkable gross findings,False,,2025-04-14
+TOX-2025-0421-P,M302,3,Mid Dose,M,25,Kidney,Slight pale coloration,True,Bilateral,2025-04-14
+TOX-2025-0421-P,M302,3,Mid Dose,M,25,All other tissues,No remarkable gross findings,False,,2025-04-14
+TOX-2025-0421-P,M303,3,Mid Dose,M,25,Kidney,Slight pale coloration,True,Bilateral,2025-04-14
+TOX-2025-0421-P,M303,3,Mid Dose,M,25,All other tissues,No remarkable gross findings,False,,2025-04-14
+TOX-2025-0421-P,M304,3,Mid Dose,M,25,All tissues,No remarkable gross findings,False,,2025-04-14
+TOX-2025-0421-P,M305,3,Mid Dose,M,25,All tissues,No remarkable gross findings,False,,2025-04-14
+TOX-2025-0421-P,F301,3,Mid Dose,F,25,Kidney,Slight pale coloration,True,Bilateral,2025-04-14
+TOX-2025-0421-P,F301,3,Mid Dose,F,25,All other tissues,No remarkable gross findings,False,,2025-04-14
+TOX-2025-0421-P,F302,3,Mid Dose,F,25,Kidney,Slight pale coloration,True,Bilateral,2025-04-14
+TOX-2025-0421-P,F302,3,Mid Dose,F,25,All other tissues,No remarkable gross findings,False,,2025-04-14
+TOX-2025-0421-P,F303,3,Mid Dose,F,25,All tissues,No remarkable gross findings,False,,2025-04-14
+TOX-2025-0421-P,F304,3,Mid Dose,F,25,All tissues,No remarkable gross findings,False,,2025-04-14
+TOX-2025-0421-P,F305,3,Mid Dose,F,25,All tissues,No remarkable gross findings,False,,2025-04-14
+TOX-2025-0421-P,M401,4,High Dose,M,100,Kidney,"Pale coloration, enlargement, and irregular surface",True,Bilateral; more pronounced,2025-04-14
+TOX-2025-0421-P,M402,4,High Dose,M,100,Kidney,"Pale coloration, enlargement, and irregular surface",True,Bilateral; more pronounced,2025-04-14
+TOX-2025-0421-P,M403,4,High Dose,M,100,Kidney,Pale coloration and slight enlargement,True,Bilateral,2025-04-14
+TOX-2025-0421-P,M403,4,High Dose,M,100,Thymus,Small,True,,2025-04-14
+TOX-2025-0421-P,M404,4,High Dose,M,100,Kidney,Pale coloration and slight enlargement,True,Bilateral,2025-04-14
+TOX-2025-0421-P,M404,4,High Dose,M,100,Thymus,Small,True,,2025-04-14
+TOX-2025-0421-P,M405,4,High Dose,M,100,Kidney,Pale coloration and slight enlargement,True,Bilateral,2025-04-14
+TOX-2025-0421-P,M405,4,High Dose,M,100,Thymus,Small,True,,2025-04-14
+TOX-2025-0421-P,F401,4,High Dose,F,100,Kidney,"Pale coloration, enlargement, and irregular surface",True,Bilateral; more pronounced,2025-04-14
+TOX-2025-0421-P,F402,4,High Dose,F,100,Kidney,Pale coloration and slight enlargement,True,Bilateral,2025-04-14
+TOX-2025-0421-P,F402,4,High Dose,F,100,Thymus,Small,True,,2025-04-14
+TOX-2025-0421-P,F403,4,High Dose,F,100,Kidney,Pale coloration and slight enlargement,True,Bilateral,2025-04-14
+TOX-2025-0421-P,F403,4,High Dose,F,100,Thymus,Small,True,,2025-04-14
+TOX-2025-0421-P,F404,4,High Dose,F,100,Kidney,Pale coloration and slight enlargement,True,Bilateral,2025-04-14
+TOX-2025-0421-P,F404,4,High Dose,F,100,Thymus,Small,True,,2025-04-14
+TOX-2025-0421-P,F405,4,High Dose,F,100,Kidney,Pale coloration and slight enlargement,True,Bilateral,2025-04-14
+TOX-2025-0421-P,F405,4,High Dose,F,100,Thymus,Small,True,,2025-04-14

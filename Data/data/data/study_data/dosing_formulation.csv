@@ -1,0 +1,13 @@
+﻿study_id,study_day,sample_date,group_number,group_name,dose_mgkg_day,intended_conc_mgml,measured_conc_mgml,pct_of_nominal,acceptance_criterion_pct,pass_fail,analyst_comment
+TOX-2025-0118-P,1,2025-02-03,1,Vehicle Control,0,0.0,0.0,N/A,10,PASS (ND),Below detection limit; no test article detected
+TOX-2025-0118-P,1,2025-02-03,2,Low Dose,25,2.5,2.48,99.2,10,PASS,
+TOX-2025-0118-P,1,2025-02-03,3,Mid Dose,100,10.0,9.87,98.7,10,PASS,
+TOX-2025-0118-P,1,2025-02-03,4,High Dose,400,40.0,39.64,99.1,10,PASS,
+TOX-2025-0118-P,14,2025-02-17,1,Vehicle Control,0,0.0,0.0,N/A,10,PASS (ND),Below detection limit; no test article detected
+TOX-2025-0118-P,14,2025-02-17,2,Low Dose,25,2.5,2.41,96.4,10,PASS,
+TOX-2025-0118-P,14,2025-02-17,3,Mid Dose,100,10.0,9.73,97.3,10,PASS,
+TOX-2025-0118-P,14,2025-02-17,4,High Dose,400,40.0,38.92,97.3,10,PASS,
+TOX-2025-0118-P,28,2025-03-03,1,Vehicle Control,0,0.0,0.0,N/A,10,PASS (ND),Below detection limit; no test article detected
+TOX-2025-0118-P,28,2025-03-03,2,Low Dose,25,2.5,2.46,98.4,10,PASS,
+TOX-2025-0118-P,28,2025-03-03,3,Mid Dose,100,10.0,9.91,99.1,10,PASS,
+TOX-2025-0118-P,28,2025-03-03,4,High Dose,400,40.0,39.47,98.7,10,PASS,
