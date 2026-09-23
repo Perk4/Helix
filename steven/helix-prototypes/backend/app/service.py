@@ -39,6 +39,7 @@ from .schemas import (
     WorkspaceResponse,
     WorkspaceSummary,
 )
+from .section_runs import SectionRunService
 from .validation import (
     FixturePlanner,
     OpenAICompatiblePlanner,
@@ -68,10 +69,16 @@ class InvalidCommandError(ValueError):
 
 
 class StudyService:
-    def __init__(self, session: Session, settings: Settings):
+    def __init__(
+        self,
+        session: Session,
+        settings: Settings,
+        section_runs: SectionRunService,
+    ):
         self.session = session
         self.settings = settings
         self.repository = StudyPackageRepository(session)
+        self.section_runs = section_runs
 
     def workspace(self, study_id: str) -> WorkspaceResponse:
         package = self.repository.get(study_id)
@@ -448,6 +455,8 @@ class StudyService:
                     ),
                 ),
             ],
+            section_run_eligibility=[self.section_runs.eligibility(package)],
+            section_runs=self.repository.list_section_runs(package.study.study_id),
         )
 
     @staticmethod

@@ -96,6 +96,12 @@ cd frontend && npx playwright install chromium && cd ..
 ./scripts/verify-live.sh
 ```
 
+Run the frontend-triggered section draft through the real Python Codex SDK. This check uses the configured Codex login and saves its receipt and screenshot under `evidence/`.
+
+```bash
+HELIX_CODEX_LIVE=1 ./scripts/verify-codex-section-run.sh
+```
+
 Run the complete release and artifact-download flow against a temporary PostgreSQL 16 cluster.
 
 ```bash

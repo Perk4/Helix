@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     llm_base_url: str = "https://api.openai.com/v1"
     llm_api_key: str | None = None
     llm_model: str = "gpt-5-mini"
+    codex_repository_root: Path = Path(__file__).resolve().parents[2]
 
 
 @lru_cache

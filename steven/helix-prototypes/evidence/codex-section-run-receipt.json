@@ -1,0 +1,15 @@
+{
+  "run_id": "SRUN-A704134102D7",
+  "section_id": "5_2_3_body_weight",
+  "section_package_id": "section.5_2_3_body_weight",
+  "status": "candidate_recorded",
+  "candidate_id": "SDC-AA295C926509",
+  "candidate_hash": "sha256:ca04982e5487982b3280514f28dcb8638a159a4c2fb2eb37a18a466c322bf15e",
+  "envelope_hash": "sha256:fd01482767826bf8aabf1e36a3b729420e5018464ce296d41d56440f46df0a19",
+  "agent_runtime": "codex_sdk",
+  "codex_thread_id": "01a0cf78-8b89-71a1-bcf8-fddd52ad330e",
+  "skill_name": "helix-section-agent",
+  "skill_hash": "sha256:40f2a2076c14ec4efce86c6d3d3c2627c52a043866cc9abebef49f18086369f4",
+  "review_scaffold_revision": 2,
+  "idempotent_replay": false
+}

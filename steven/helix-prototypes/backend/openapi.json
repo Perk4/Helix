@@ -903,6 +903,227 @@
         "title": "ReviewDisposition",
         "type": "object"
       },
+      "SectionDraftCandidate": {
+        "additionalProperties": false,
+        "properties": {
+          "agent_receipt": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Agent Receipt",
+            "type": "object"
+          },
+          "attempt": {
+            "maximum": 3.0,
+            "minimum": 1.0,
+            "title": "Attempt",
+            "type": "integer"
+          },
+          "candidate_id": {
+            "pattern": "^SDC-[A-Z0-9-]+$",
+            "title": "Candidate Id",
+            "type": "string"
+          },
+          "content_blocks": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "minItems": 1,
+            "title": "Content Blocks",
+            "type": "array"
+          },
+          "drafting_cycle_id": {
+            "title": "Drafting Cycle Id",
+            "type": "string"
+          },
+          "executor_receipt_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Executor Receipt Ids",
+            "type": "array"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": "helix.section-draft-candidate/v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "section_id": {
+            "title": "Section Id",
+            "type": "string"
+          },
+          "section_package_id": {
+            "title": "Section Package Id",
+            "type": "string"
+          },
+          "section_package_version": {
+            "title": "Section Package Version",
+            "type": "string"
+          },
+          "status": {
+            "const": "section_draft_candidate",
+            "title": "Status",
+            "type": "string"
+          },
+          "validated_claim_ids": {
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Validated Claim Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "schema_version",
+          "status",
+          "candidate_id",
+          "run_id",
+          "section_id",
+          "section_package_id",
+          "section_package_version",
+          "drafting_cycle_id",
+          "attempt",
+          "validated_claim_ids",
+          "content_blocks",
+          "executor_receipt_ids",
+          "agent_receipt"
+        ],
+        "title": "SectionDraftCandidate",
+        "type": "object"
+      },
+      "SectionRunCommand": {
+        "additionalProperties": false,
+        "properties": {
+          "idempotency_key": {
+            "maxLength": 160,
+            "minLength": 8,
+            "title": "Idempotency Key",
+            "type": "string"
+          },
+          "section_package_id": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Section Package Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "section_package_id",
+          "idempotency_key"
+        ],
+        "title": "SectionRunCommand",
+        "type": "object"
+      },
+      "SectionRunEligibility": {
+        "additionalProperties": false,
+        "properties": {
+          "eligible": {
+            "title": "Eligible",
+            "type": "boolean"
+          },
+          "reasons": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Reasons",
+            "type": "array"
+          },
+          "section_package_id": {
+            "title": "Section Package Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "section_package_id",
+          "eligible",
+          "reasons"
+        ],
+        "title": "SectionRunEligibility",
+        "type": "object"
+      },
+      "SectionRunReceipt": {
+        "additionalProperties": false,
+        "properties": {
+          "agent_runtime": {
+            "const": "codex_sdk",
+            "title": "Agent Runtime",
+            "type": "string"
+          },
+          "candidate_hash": {
+            "title": "Candidate Hash",
+            "type": "string"
+          },
+          "candidate_id": {
+            "title": "Candidate Id",
+            "type": "string"
+          },
+          "codex_thread_id": {
+            "title": "Codex Thread Id",
+            "type": "string"
+          },
+          "envelope_hash": {
+            "title": "Envelope Hash",
+            "type": "string"
+          },
+          "idempotent_replay": {
+            "default": false,
+            "title": "Idempotent Replay",
+            "type": "boolean"
+          },
+          "review_scaffold_revision": {
+            "title": "Review Scaffold Revision",
+            "type": "integer"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "section_id": {
+            "title": "Section Id",
+            "type": "string"
+          },
+          "section_package_id": {
+            "title": "Section Package Id",
+            "type": "string"
+          },
+          "skill_hash": {
+            "title": "Skill Hash",
+            "type": "string"
+          },
+          "skill_name": {
+            "const": "helix-section-agent",
+            "title": "Skill Name",
+            "type": "string"
+          },
+          "status": {
+            "const": "candidate_recorded",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "section_id",
+          "section_package_id",
+          "status",
+          "candidate_id",
+          "candidate_hash",
+          "envelope_hash",
+          "agent_runtime",
+          "codex_thread_id",
+          "skill_name",
+          "skill_hash",
+          "review_scaffold_revision"
+        ],
+        "title": "SectionRunReceipt",
+        "type": "object"
+      },
       "SectionStatus": {
         "enum": [
           "validated",
@@ -1062,6 +1283,35 @@
           "checks"
         ],
         "title": "Stage",
+        "type": "object"
+      },
+      "StoredSectionRun": {
+        "additionalProperties": false,
+        "properties": {
+          "candidate": {
+            "$ref": "#/components/schemas/SectionDraftCandidate"
+          },
+          "envelope": {
+            "additionalProperties": true,
+            "title": "Envelope",
+            "type": "object"
+          },
+          "receipt": {
+            "$ref": "#/components/schemas/SectionRunReceipt"
+          },
+          "review_scaffold": {
+            "additionalProperties": true,
+            "title": "Review Scaffold",
+            "type": "object"
+          }
+        },
+        "required": [
+          "receipt",
+          "candidate",
+          "envelope",
+          "review_scaffold"
+        ],
+        "title": "StoredSectionRun",
         "type": "object"
       },
       "Study": {
@@ -1468,6 +1718,20 @@
           "report": {
             "$ref": "#/components/schemas/ReportAssembly"
           },
+          "section_run_eligibility": {
+            "items": {
+              "$ref": "#/components/schemas/SectionRunEligibility"
+            },
+            "title": "Section Run Eligibility",
+            "type": "array"
+          },
+          "section_runs": {
+            "items": {
+              "$ref": "#/components/schemas/StoredSectionRun"
+            },
+            "title": "Section Runs",
+            "type": "array"
+          },
           "stages": {
             "items": {
               "$ref": "#/components/schemas/Stage"
@@ -1508,7 +1772,9 @@
           "export_artifacts",
           "report",
           "events",
-          "planner_capabilities"
+          "planner_capabilities",
+          "section_run_eligibility",
+          "section_runs"
         ],
         "title": "WorkspaceResponse",
         "type": "object"
@@ -1782,6 +2048,58 @@
         "summary": "Download Artifact",
         "tags": [
           "export"
+        ]
+      }
+    },
+    "/api/v1/studies/{study_id}/section-runs": {
+      "post": {
+        "operationId": "run_section_api_v1_studies__study_id__section_runs_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "study_id",
+            "required": true,
+            "schema": {
+              "title": "Study Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SectionRunCommand"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SectionRunReceipt"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Run Section",
+        "tags": [
+          "section-runs"
         ]
       }
     },

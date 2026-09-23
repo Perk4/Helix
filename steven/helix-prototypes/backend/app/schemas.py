@@ -417,6 +417,56 @@ class StudyListItem(StrictModel):
     label: str
 
 
+class SectionRunCommand(StrictModel):
+    section_package_id: str = Field(min_length=1, max_length=120)
+    idempotency_key: str = Field(min_length=8, max_length=160)
+
+
+class SectionRunEligibility(StrictModel):
+    section_package_id: str
+    eligible: bool
+    reasons: list[str]
+
+
+class SectionDraftCandidate(StrictModel):
+    schema_version: Literal["helix.section-draft-candidate/v1"]
+    status: Literal["section_draft_candidate"]
+    candidate_id: Annotated[str, Field(pattern=r"^SDC-[A-Z0-9-]+$")]
+    run_id: str
+    section_id: str
+    section_package_id: str
+    section_package_version: str
+    drafting_cycle_id: str
+    attempt: int = Field(ge=1, le=3)
+    validated_claim_ids: list[str] = Field(min_length=1)
+    content_blocks: list[dict[str, object]] = Field(min_length=1)
+    executor_receipt_ids: list[str]
+    agent_receipt: dict[str, str]
+
+
+class SectionRunReceipt(StrictModel):
+    run_id: str
+    section_id: str
+    section_package_id: str
+    status: Literal["candidate_recorded"]
+    candidate_id: str
+    candidate_hash: str
+    envelope_hash: str
+    agent_runtime: Literal["codex_sdk"]
+    codex_thread_id: str
+    skill_name: Literal["helix-section-agent"]
+    skill_hash: str
+    review_scaffold_revision: int
+    idempotent_replay: bool = False
+
+
+class StoredSectionRun(StrictModel):
+    receipt: SectionRunReceipt
+    candidate: SectionDraftCandidate
+    envelope: dict[str, object]
+    review_scaffold: dict[str, object]
+
+
 class WorkspaceResponse(StrictModel):
     label: str
     study: Study
@@ -433,6 +483,8 @@ class WorkspaceResponse(StrictModel):
     report: ReportAssembly
     events: list[WorkflowEvent]
     planner_capabilities: list[PlannerCapability]
+    section_run_eligibility: list[SectionRunEligibility]
+    section_runs: list[StoredSectionRun]
 
 
 class ExportReceipt(StrictModel):

@@ -7,17 +7,21 @@ import type { PlannerMode, Workspace } from "@/lib/types";
 type Props = {
   workspace: Workspace;
   planner: PlannerMode;
-  busy: boolean;
+  validationBusy: boolean;
+  sectionRunBusy: boolean;
   onPlannerChange: (planner: PlannerMode) => void;
   onValidate: () => void;
+  onDraftBodyWeight: () => void;
 };
 
 export function StudyJourney({
   workspace,
   planner,
-  busy,
+  validationBusy,
+  sectionRunBusy,
   onPlannerChange,
   onValidate,
+  onDraftBodyWeight,
 }: Props) {
   const defaultStage = useMemo(
     () =>
@@ -37,6 +41,10 @@ export function StudyJourney({
     workspace.stages.find((candidate) => candidate.stage_id === selectedStageId) ?? defaultStage;
   const fixture = workspace.planner_capabilities.find((item) => item.mode === "fixture");
   const llm = workspace.planner_capabilities.find((item) => item.mode === "openai_compatible");
+  const bodyWeightEligibility = workspace.section_run_eligibility.find(
+    (item) => item.section_package_id === "section.5_2_3_body_weight",
+  );
+  const bodyWeightRun = workspace.section_runs.at(-1);
 
   if (!stage) {
     return null;
@@ -190,11 +198,37 @@ export function StudyJourney({
             className="button primary wide"
             type="button"
             onClick={onValidate}
-            disabled={busy}
+            disabled={validationBusy || sectionRunBusy}
             data-testid="run-validation"
           >
-            {busy ? "Running checks…" : "Run hybrid validation"}
+            {validationBusy ? "Running checks…" : "Run hybrid validation"}
           </button>
+          <button
+            className="button secondary wide"
+            type="button"
+            onClick={onDraftBodyWeight}
+            disabled={!bodyWeightEligibility?.eligible || validationBusy || sectionRunBusy}
+            data-testid="draft-body-weight"
+          >
+            {sectionRunBusy ? "Drafting with Codex…" : "Draft body-weight component"}
+          </button>
+          {!bodyWeightEligibility?.eligible && (
+            <p className="fine-print" data-testid="section-run-ineligible">
+              {bodyWeightEligibility?.reasons.join(" ")}
+            </p>
+          )}
+          {bodyWeightRun && (
+            <div className="section-run-receipt" data-testid="section-run-receipt">
+              <strong>Codex SDK receipt</strong>
+              <span>{bodyWeightRun.receipt.candidate_id}</span>
+              <code>{bodyWeightRun.receipt.candidate_hash}</code>
+              <span>{bodyWeightRun.receipt.skill_name}</span>
+              <code>{bodyWeightRun.receipt.skill_hash}</code>
+              <span>Thread {bodyWeightRun.receipt.codex_thread_id}</span>
+              <code>Envelope {bodyWeightRun.receipt.envelope_hash}</code>
+              <span>Review Scaffold Revision {bodyWeightRun.receipt.review_scaffold_revision}</span>
+            </div>
+          )}
           <p className="fine-print">
             The planner can only select registered tools. Python calculates every result and gate state.
           </p>
