@@ -79,8 +79,12 @@ class SectionRunService:
         claim = next((item for item in package.claims if item.claim_id == CLAIM_ID), None)
         if claim is None or claim.status not in {ClaimStatus.VALIDATED, ClaimStatus.APPROVED}:
             reasons.append("C-BW-HIGH is not a Validated Claim")
-        if claim is not None and required_claim is not None and claim.grain != required_claim.get("grain"):
-            reasons.append("C-BW-HIGH does not match the Section Package grain")
+        if (
+            claim is not None
+            and required_claim is not None
+            and claim.grain != required_claim.get("input_grain")
+        ):
+            reasons.append("C-BW-HIGH does not match the Section Package input grain")
         if required_claim is None:
             reasons.append("The Section Package does not require C-BW-HIGH")
         if claim is not None and not any(edge.claim_id == CLAIM_ID for edge in package.provenance_edges):
@@ -124,10 +128,20 @@ class SectionRunService:
             if section
             else None
         )
+        required_claim = next(
+            (
+                item
+                for item in package_definition.get("required_claims", [])
+                if item.get("claim_selector") == CLAIM_ID and item.get("required") is True
+            ),
+            None,
+        )
         checks = {
             "body-weight-template-fields": field is not None and field.get("required") is True,
             "body-weight-table-shape": field is not None
-            and field.get("expected_grain") == "dose_group_x_sex",
+            and required_claim is not None
+            and field.get("expected_grain") == "dose_group_x_sex"
+            and required_claim.get("output_grain") == field.get("expected_grain"),
             "body-weight-style-policy": field is not None
             and bool(section.get("purpose"))
             and bool(field.get("label"))
@@ -299,7 +313,15 @@ class SectionRunService:
                 "group": "high-dose",
                 "timepoint": "terminal",
             },
-            "structured_failures": [],
+            "structured_failures": [
+                {
+                    "result_id": result.result_id,
+                    "code": result.rule_id,
+                    "message": result.message,
+                }
+                for result in package.validation_results
+                if result.result_id == "VR-004" and result.status == "fail"
+            ],
             "executor_receipts": [
                 {
                     "artifact_id": "EXEC-BW-SUMMARY-001",
@@ -403,7 +425,10 @@ class SectionRunService:
                         "render_state": "needs_review",
                         "artifact_ids": [candidate.candidate_id],
                         "validated_claim_ids": [CLAIM_ID],
-                        "blocker_result_ids": [f"PENDING-{candidate.candidate_id}"],
+                        "blocker_result_ids": [
+                            "VR-004",
+                            f"PROMOTION-DISABLED-{SECTION_PACKAGE_ID}",
+                        ],
                         "placeholder": "[NEEDS REVIEW]",
                     }
                 )

@@ -152,7 +152,18 @@ def test_section_run_records_candidate_receipt_scaffold_and_exact_replay() -> No
         )
         assert body_weight_section["render_state"] == "needs_review"
         assert body_weight_section["placeholder"] == "[NEEDS REVIEW]"
-        assert body_weight_section["blocker_result_ids"] == [f"PENDING-{receipt['candidate_id']}"]
+        assert body_weight_section["blocker_result_ids"] == [
+            "VR-004",
+            "PROMOTION-DISABLED-section.5_2_3_body_weight",
+        ]
+        assert stored["envelope"]["validated_claims"][0]["grain"] == "dose_group"
+        assert stored["envelope"]["structured_failures"] == [
+            {
+                "result_id": "VR-004",
+                "code": "grain-sex-stratified",
+                "message": "The draft groups n=10. The report field requires dose group by sex with n=5.",
+            }
+        ]
         assert workspace["release_gate"]["status"] == "blocked"
         assert all(
             item["candidate"]["status"] == "section_draft_candidate" for item in workspace["section_runs"]
@@ -263,29 +274,33 @@ def test_transaction_failure_rolls_back_candidate_event_and_revision() -> None:
     engine.dispose()
 
 
-def test_eligibility_rejects_a_claim_that_does_not_match_the_package_grain() -> None:
+def test_eligibility_distinguishes_input_claim_grain_from_required_output_grain() -> None:
     agent = FakeSectionAgent()
     client, engine = build_client(agent)
     package_definition = json.loads(
         (ROOT / "skills/helix-evidence-pipeline/packages/sections/5_2_3_body_weight/package.json").read_text()
     )
-    assert package_definition["required_claims"][0]["grain"] == "dose_group_x_sex"
+    required_claim = package_definition["required_claims"][0]
+    assert required_claim["input_grain"] == "dose_group"
+    assert required_claim["output_grain"] == "dose_group_x_sex"
 
     with client:
         validate(client)
         with client.app.state.session_factory() as session:
             service = SectionRunService(session, agent, ROOT)
             package = StudyPackageRepository(session).get(STUDY_ID)
+            claim = next(item for item in package.claims if item.claim_id == "C-BW-HIGH")
+            assert claim.grain == "dose_group"
+            assert service.eligibility(package).eligible is True
+
             mismatched_claims = [
-                claim.model_copy(update={"grain": "dose_group"})
-                if claim.claim_id == "C-BW-HIGH"
-                else claim
-                for claim in package.claims
+                item.model_copy(update={"grain": "study"}) if item.claim_id == "C-BW-HIGH" else item
+                for item in package.claims
             ]
             eligibility = service.eligibility(package.model_copy(update={"claims": mismatched_claims}))
 
     assert eligibility.eligible is False
-    assert "C-BW-HIGH does not match the Section Package grain" in eligibility.reasons
+    assert "C-BW-HIGH does not match the Section Package input grain" in eligibility.reasons
     engine.dispose()
 
 
@@ -301,6 +316,14 @@ def test_template_contract_gates_inspect_the_pinned_template(tmp_path: Path) -> 
     )
     service = object.__new__(SectionRunService)
     service.template_path = template_path
+
+    failures = service._template_contract_gate_failures(package_definition)
+
+    assert failures == ["Template Contract Gate body-weight-table-shape failed"]
+
+    field["expected_grain"] = "dose_group_x_sex"
+    template_path.write_text(json.dumps(template))
+    package_definition["required_claims"][0]["output_grain"] = "dose_group"
 
     failures = service._template_contract_gate_failures(package_definition)
 
