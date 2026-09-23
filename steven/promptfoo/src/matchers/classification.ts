@@ -1,0 +1,66 @@
+import { callGradingProvider, getAndCheckProvider } from './providers';
+import { graderFail } from './shared';
+
+import type { ApiClassificationProvider, GradingConfig, GradingResult } from '../types/index';
+
+/**
+ *
+ * @param expected Expected classification. If undefined, matches any classification.
+ * @param output Text to classify.
+ * @param threshold Value between 0 and 1. If the expected classification is undefined, the threshold is the minimum score for any classification. If the expected classification is defined, the threshold is the minimum score for that classification.
+ * @param grading
+ * @returns Pass if the output matches the classification with a score greater than or equal to the threshold.
+ */
+export async function matchesClassification(
+  expected: string | undefined,
+  output: string,
+  threshold: number,
+  grading?: GradingConfig,
+): Promise<Omit<GradingResult, 'assertion'>> {
+  const finalProvider = (await getAndCheckProvider(
+    'classification',
+    grading?.provider,
+    null,
+    'classification check',
+  )) as ApiClassificationProvider;
+
+  const resp = await callGradingProvider(finalProvider, 'classification', () =>
+    finalProvider.callClassificationApi(output),
+  );
+
+  if (!resp.classification) {
+    return graderFail(resp.error || 'Unknown error fetching classification');
+  }
+  const scores = Object.values(resp.classification);
+  if (scores.length === 0) {
+    // No scores means there is no verdict, even when a specific label was requested.
+    return graderFail('No classification scores returned');
+  }
+
+  let score: number;
+  if (expected === undefined) {
+    score = Math.max(...scores);
+  } else {
+    score = resp.classification[expected] || 0;
+  }
+
+  if (score >= threshold - Number.EPSILON) {
+    const reason =
+      expected === undefined
+        ? `Maximum classification score ${score.toFixed(2)} >= ${threshold}`
+        : `Classification ${expected} has score ${score.toFixed(2)} >= ${threshold}`;
+    return {
+      pass: true,
+      score,
+      reason,
+    };
+  }
+  return {
+    pass: false,
+    score,
+    reason:
+      expected === undefined
+        ? `Maximum classification score ${score.toFixed(2)} < ${threshold}`
+        : `Classification ${expected} has score ${score.toFixed(2)} < ${threshold}`,
+  };
+}
