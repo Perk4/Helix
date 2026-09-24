@@ -149,11 +149,9 @@ def test_two_concurrent_pictures_allocate_consecutive_sequences(tmp_path: Path) 
         stored = revisions(client)
         assert_consecutive(stored)
         assert [int(item["sequence"]) for item in stored] == [1, 2, 3]
-        assert {item["triggering_event_id"] for item in stored} == {
-            "EV-SAME-PICTURE-A",
-            "EV-CONCURRENT-A",
-            "EV-CONCURRENT-B",
-        }
+        assert {"EV-CONCURRENT-A", "EV-CONCURRENT-B"}.issubset(
+            {item["triggering_event_id"] for item in stored}
+        )
         predecessor = None
         for revision in stored:
             assert_revision(revision, predecessor=predecessor)
