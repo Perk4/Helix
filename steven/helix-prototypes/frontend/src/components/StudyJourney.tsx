@@ -235,6 +235,69 @@ export function StudyJourney({
         </aside>
       </div>
 
+      {workspace.pinned_run && (
+        <article className="panel run-plan-card" data-testid="run-plan">
+          <div className="panel-heading">
+            <div>
+              <p className="eyebrow">Pinned governance identity</p>
+              <h3>{workspace.pinned_run.run_id}</h3>
+            </div>
+            <span className={`owner-chip ${workspace.pinned_run.status === "planned" ? "agent" : "human"}`}>
+              {workspace.pinned_run.status.replaceAll("_", " ")}
+            </span>
+          </div>
+          <div className="run-plan-fingerprints">
+            <div>
+              <span>Manifest</span>
+              <code>{workspace.pinned_run.manifest_hash}</code>
+            </div>
+            <div>
+              <span>Run Plan</span>
+              <code>{workspace.pinned_run.run_plan.fingerprint}</code>
+            </div>
+            <div>
+              <span>Study type</span>
+              <code>
+                {workspace.pinned_run.study_type_resolution.study_type_id ?? "[NEEDS REVIEW]"}
+              </code>
+            </div>
+          </div>
+          <details>
+            <summary>
+              Complete Run Plan · {workspace.pinned_run.run_plan.nodes.length} nodes · {workspace.pinned_run.governed_inputs.length} governed inputs
+            </summary>
+            <div className="run-plan-grid">
+              <div>
+                <strong>Execution graph</strong>
+                {workspace.pinned_run.run_plan.nodes.map((node) => (
+                  <div className="run-plan-row" key={node.node_id}>
+                    <span className={`status-dot-label ${node.status}`}><span />{node.status}</span>
+                    <div>
+                      <strong>{node.node_id}</strong>
+                      <small>{node.node_type} · depends on {node.depends_on.join(", ") || "nothing"}</small>
+                    </div>
+                    <code>{node.input_fingerprint}</code>
+                  </div>
+                ))}
+              </div>
+              <div>
+                <strong>Governed inputs</strong>
+                {workspace.pinned_run.governed_inputs.map((input) => (
+                  <div className="run-plan-row" key={`${input.kind}-${input.artifact_id}`}>
+                    <span className="count-chip">{input.kind}</span>
+                    <div>
+                      <strong>{input.artifact_id}</strong>
+                      <small>{input.version} · {input.path}</small>
+                    </div>
+                    <code>{input.content_hash}</code>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </details>
+        </article>
+      )}
+
       <div className="journey-lower-grid">
         <article className="panel source-map-card">
           <div className="panel-heading">

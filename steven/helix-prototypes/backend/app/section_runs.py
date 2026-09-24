@@ -12,6 +12,7 @@ from .agents.codex_section_agent import SectionAgent
 from .repository import StudyPackageRepository
 from .schemas import (
     ClaimStatus,
+    PinnedRun,
     SectionDraftCandidate,
     SectionRunCommand,
     SectionRunEligibility,
@@ -109,14 +110,22 @@ class SectionRunService:
             reasons.append("C-BW-HIGH has no provenance")
         if not package.manifest or any(not item.locked for item in package.manifest):
             reasons.append("The source manifest is not frozen")
-        pinned_run = self.repository.latest_event(package.study.study_id, "validation_run")
+        pinned_run = package.pinned_run
         if pinned_run is None:
-            reasons.append("Run hybrid validation first")
+            reasons.append("Freeze the authorized manifest first")
         else:
-            if pinned_run.payload.get("manifest_hash") != manifest_fingerprint(package):
+            if pinned_run.manifest_hash != manifest_fingerprint(package):
                 reasons.append("The Pinned Run manifest fingerprint does not match the current manifest")
-            if pinned_run.payload.get("governed_versions_hash") != governed_versions_fingerprint():
-                reasons.append("The Pinned Run governed-version fingerprint does not match")
+            if pinned_run.status != "planned":
+                reasons.append("The Pinned Run requires study-type review")
+            if any(
+                not (self.repository_root / item.path).is_file()
+                or self._file_hash(self.repository_root / item.path) != item.content_hash
+                for item in pinned_run.governed_inputs
+            ):
+                reasons.append("The Pinned Run governed-input fingerprint does not match")
+        if self.repository.latest_event(package.study.study_id, "validation_run") is None:
+            reasons.append("Run hybrid validation first")
         reasons.extend(self._template_contract_gate_failures(package_definition))
         if package_definition.get("maturity") != "vertical_slice":
             reasons.append("The Section Package is not the vertical slice")
@@ -196,12 +205,12 @@ class SectionRunService:
         eligibility = self.eligibility(package)
         if not eligibility.eligible:
             raise SectionRunConflictError("; ".join(eligibility.reasons))
-        pinned_run = self.repository.latest_event(study_id, "validation_run")
+        pinned_run = package.pinned_run
         if pinned_run is None:
-            raise SectionRunConflictError("Run hybrid validation first")
+            raise SectionRunConflictError("Freeze the authorized manifest first")
 
         run_id = f"SRUN-{uuid4().hex[:12].upper()}"
-        envelope = self._build_envelope(package, run_id, str(pinned_run.payload["run_id"]))
+        envelope = self._build_envelope(package, run_id, pinned_run)
         envelope_hash = canonical_hash(envelope)
         row = self.repository.add_section_run(
             run_id=run_id,
@@ -311,7 +320,7 @@ class SectionRunService:
         self,
         package: StudyEvidencePackage,
         run_id: str,
-        pinned_run_id: str,
+        pinned_run: PinnedRun,
     ) -> dict[str, object]:
         claim = next(item for item in package.claims if item.claim_id == CLAIM_ID)
         package_definition = self._load_json(self.package_path)
@@ -320,10 +329,8 @@ class SectionRunService:
             "schema_version": "helix.section-execution-envelope/v1",
             "envelope_id": f"ENV-{uuid4().hex[:12].upper()}",
             "run_id": run_id,
-            "pinned_run_id": pinned_run_id,
-            "run_plan_hash": canonical_hash(
-                {"study_id": package.study.study_id, "section_package_id": SECTION_PACKAGE_ID}
-            ),
+            "pinned_run_id": pinned_run.run_id,
+            "run_plan_hash": pinned_run.run_plan.fingerprint,
             "manifest_hash": manifest_fingerprint(package),
             "section_package": {
                 "package_id": SECTION_PACKAGE_ID,
@@ -380,7 +387,7 @@ class SectionRunService:
                     ),
                 }
             ],
-            "governed_versions": GOVERNED_VERSIONS,
+            "governed_versions": pinned_run.run_plan.governed_versions,
         }
         schema = self._load_json(self.contracts / "section-execution-envelope.schema.json")
         errors = list(Draft202012Validator(schema).iter_errors(envelope))
@@ -420,11 +427,7 @@ class SectionRunService:
         if candidate.validated_claim_ids != [CLAIM_ID]:
             raise CandidateValidationError("Codex candidate cited an unapproved claim")
         for claim_ids in self._nested_claim_id_lists(candidate.content_blocks):
-            if (
-                not isinstance(claim_ids, list)
-                or len(claim_ids) != 1
-                or set(claim_ids) != {CLAIM_ID}
-            ):
+            if not isinstance(claim_ids, list) or len(claim_ids) != 1 or set(claim_ids) != {CLAIM_ID}:
                 raise CandidateValidationError("Codex candidate content cited an unapproved claim")
         for block in candidate.content_blocks:
             content_fragments = self._content_fragments(block)
@@ -435,9 +438,7 @@ class SectionRunService:
                 else []
             )
             if Counter(content_fragments) != Counter(span_fragments):
-                raise CandidateValidationError(
-                    "Codex candidate factual spans do not cover the block content"
-                )
+                raise CandidateValidationError("Codex candidate factual spans do not cover the block content")
         if len(candidate.executor_receipt_ids) != len(executor_receipt_ids) or set(
             candidate.executor_receipt_ids
         ) != set(executor_receipt_ids):

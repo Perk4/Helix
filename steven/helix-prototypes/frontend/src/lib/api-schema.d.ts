@@ -89,6 +89,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/studies/{study_id}/pinned-runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Freeze Run */
+        post: operations["freeze_run_api_v1_studies__study_id__pinned_runs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/studies/{study_id}/section-runs": {
         parameters: {
             query?: never;
@@ -327,6 +344,13 @@ export interface components {
             /** Study Id */
             study_id: string;
         };
+        /** FreezeRunCommand */
+        FreezeRunCommand: {
+            /** Actor */
+            actor: string;
+            /** Idempotency Key */
+            idempotency_key: string;
+        };
         /** GateDecision */
         GateDecision: {
             /** Blocking Result Ids */
@@ -347,6 +371,19 @@ export interface components {
          * @enum {string}
          */
         GateStatus: "blocked" | "ready_for_review" | "ready_for_signature" | "ready_for_export" | "exported";
+        /** GovernedArtifact */
+        GovernedArtifact: {
+            /** Artifact Id */
+            artifact_id: string;
+            /** Content Hash */
+            content_hash: string;
+            /** Kind */
+            kind: string;
+            /** Path */
+            path: string;
+            /** Version */
+            version: string;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -371,6 +408,29 @@ export interface components {
             /** Version */
             version: string;
         };
+        /** PinnedRun */
+        PinnedRun: {
+            /** Created At */
+            created_at: string;
+            /** Event History */
+            event_history: components["schemas"]["WorkflowEvent"][];
+            /** Governed Inputs */
+            governed_inputs: components["schemas"]["GovernedArtifact"][];
+            /** Manifest Hash */
+            manifest_hash: string;
+            receipt: components["schemas"]["RunReceipt"];
+            /** Run Id */
+            run_id: string;
+            run_plan: components["schemas"]["RunPlan"];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "planned" | "needs_review";
+            /** Study Id */
+            study_id: string;
+            study_type_resolution: components["schemas"]["StudyTypeResolution"];
+        };
         /** PlannerCapability */
         PlannerCapability: {
             /** Available */
@@ -386,6 +446,15 @@ export interface components {
          * @enum {string}
          */
         PlannerMode: "fixture" | "openai_compatible";
+        /** PlanningEvidence */
+        PlanningEvidence: {
+            /** Code */
+            code: string;
+            /** Message */
+            message: string;
+            /** Subject */
+            subject: string;
+        };
         /** RegulatoryReference */
         RegulatoryReference: {
             /**
@@ -489,6 +558,72 @@ export interface components {
             reviewer: string | null;
             /** Timestamp */
             timestamp: string | null;
+        };
+        /** RunPlan */
+        RunPlan: {
+            /** Created At */
+            created_at: string;
+            /** Fingerprint */
+            fingerprint: string;
+            /** Governed Versions */
+            governed_versions: {
+                [key: string]: string;
+            };
+            /** Manifest Hash */
+            manifest_hash: string;
+            /** Nodes */
+            nodes: components["schemas"]["RunPlanNode"][];
+            /** Run Id */
+            run_id: string;
+            /** Run Plan Id */
+            run_plan_id: string;
+            /**
+             * Schema Version
+             * @constant
+             */
+            schema_version: "helix.run-plan/v1";
+            /** Version */
+            version: number;
+        };
+        /** RunPlanNode */
+        RunPlanNode: {
+            /** Depends On */
+            depends_on: string[];
+            /** Evidence */
+            evidence: components["schemas"]["PlanningEvidence"][];
+            /** Input Fingerprint */
+            input_fingerprint: string;
+            /** Node Id */
+            node_id: string;
+            /**
+             * Node Type
+             * @enum {string}
+             */
+            node_type: "parse" | "study_type_resolution" | "data_validation" | "template_contract" | "section_agent" | "provenance" | "study_output_evaluation" | "template_conformance" | "section_promotion" | "review_scaffold";
+            /** Package Id */
+            package_id?: string | null;
+            /** Package Version */
+            package_version?: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "blocked";
+        };
+        /** RunReceipt */
+        RunReceipt: {
+            /** Event Id */
+            event_id: string;
+            /** Governed Inputs Fingerprint */
+            governed_inputs_fingerprint: string;
+            /** Manifest Hash */
+            manifest_hash: string;
+            /** Receipt Id */
+            receipt_id: string;
+            /** Run Id */
+            run_id: string;
+            /** Run Plan Fingerprint */
+            run_plan_fingerprint: string;
         };
         /** SectionDraftCandidate */
         SectionDraftCandidate: {
@@ -687,6 +822,26 @@ export interface components {
             /** Workflow State */
             workflow_state: string;
         };
+        /** StudyTypeResolution */
+        StudyTypeResolution: {
+            /** Evidence */
+            evidence: components["schemas"]["PlanningEvidence"][];
+            /** Mapping Hash */
+            mapping_hash: string;
+            /** Mapping Version */
+            mapping_version: string;
+            /** Protocol Fields */
+            protocol_fields: {
+                [key: string]: string | number;
+            };
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "resolved" | "needs_review";
+            /** Study Type Id */
+            study_type_id: string | null;
+        };
         /** ValidationError */
         ValidationError: {
             /** Context */
@@ -794,6 +949,7 @@ export interface components {
             label: string;
             /** Manifest */
             manifest: components["schemas"]["ManifestEntry"][];
+            pinned_run: components["schemas"]["PinnedRun"] | null;
             /** Planner Capabilities */
             planner_capabilities: components["schemas"]["PlannerCapability"][];
             release_gate: components["schemas"]["GateDecision"];
@@ -975,6 +1131,41 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    freeze_run_api_v1_studies__study_id__pinned_runs_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FreezeRunCommand"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PinnedRun"];
+                };
             };
             /** @description Validation Error */
             422: {
