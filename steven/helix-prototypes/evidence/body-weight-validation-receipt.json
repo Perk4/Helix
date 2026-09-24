@@ -1,14 +1,14 @@
 {
   "receipt": {
-    "receipt_id": "RCP-DVP-80663CFD1E88483D",
-    "run_id": "RUN-327F15A44A253EBF",
+    "receipt_id": "RCP-DVP-60A01EF09BE9A658",
+    "run_id": "RUN-D92A2540BD0EFA8E",
     "package_id": "validation.body_weight",
     "package_version": "0.1.0",
     "package_hash": "sha256:2bea2e2f5a12b35979b65c61f833b074e8aff5fa560da9317b4221836e7918e4",
     "node_id": "validation.body_weight",
     "executor_id": "body-weight-summary",
     "executor_version": "1.0.0",
-    "executor_hash": "sha256:3eaeeea6616fed1cf977ee3bc18c3f9fcd9a8a46978667eb49e6319d0e343135",
+    "executor_hash": "sha256:092bce89402052debf2388a46ad84da362641e120cc3044932f64e6eefc0e61f",
     "rule_bundle_id": "validation.body_weight",
     "rule_ids": [
       "body-weight-required-grain",
@@ -19,7 +19,7 @@
     "source_hash": "sha256:synthetic-a-bw-LOCK-2026-09-18",
     "governed_versions": {
       "validation.body_weight": "0.1.0@sha256:2bea2e2f5a12b35979b65c61f833b074e8aff5fa560da9317b4221836e7918e4",
-      "body-weight-summary": "1.0.0@sha256:3eaeeea6616fed1cf977ee3bc18c3f9fcd9a8a46978667eb49e6319d0e343135",
+      "body-weight-summary": "1.0.0@sha256:092bce89402052debf2388a46ad84da362641e120cc3044932f64e6eefc0e61f",
       "helix-ontology": "1.0.0@sha256:a7c4f6b7417e83d0121330b4034550b5c608732bbe7efcd0b2bcdc30e204e92f",
       "helix-schema": "1.0.0@sha256:6409f1a6b68883471822fb2db7621827b4c3ab2376ac8de4a3f7cbaad5bee1cc",
       "helix-rules": "1.0.0@sha256:8636fd03f73959ab47567b6e33ae62fe4e374d9cc73b0a16a3af55a1d7f82f89",
@@ -39,7 +39,7 @@
       "repeat-dose-report-template": "1.0.0@sha256:a974e16a758d549fc27993f28aec13df0c3b2be4e09417aefcd59795b652d3ce",
       "codex-section-runtime": "0.1.0@sha256:1c1beb5813d3dc0c7506c28d02716b2b522f0cbcfc0aca6148ec84af4653926c"
     },
-    "input_fingerprint": "sha256:acea6aa7e6d584d9e34363aaaf944306da47425332c83556956cb71034cb585c",
+    "input_fingerprint": "sha256:dd1852477371059f51b85dde7fd516ebbbc4aabcc4a9d24f6796864ad15ca192",
     "claim_ids": [
       "C-BW-MEAN-D1-G1-F",
       "C-BW-SD-D1-G1-F",
@@ -168,7 +168,7 @@
       "VR-BW-RECOMPUTE",
       "VR-BW-PROVENANCE"
     ],
-    "event_id": "EV-DVP-057132976292",
+    "event_id": "EV-DVP-D8FEF2AC0953",
     "status": "passed",
     "idempotent_replay": true
   },
@@ -10338,26 +10338,26 @@
       "section_package_id": "section.5_2_3_body_weight",
       "title": "5.2.3 Body Weight",
       "claim_id": "C-BW-HIGH",
-      "executor_receipt_id": "RCP-DVP-80663CFD1E88483D"
+      "executor_receipt_id": "RCP-DVP-60A01EF09BE9A658"
     },
     {
       "section_id": "S8",
       "section_package_id": "section.5_3_discussion",
       "title": "Discussion and conclusion",
       "claim_id": "C-BW-HIGH",
-      "executor_receipt_id": "RCP-DVP-80663CFD1E88483D"
+      "executor_receipt_id": "RCP-DVP-60A01EF09BE9A658"
     }
   ],
   "event": {
-    "event_id": "EV-DVP-057132976292",
+    "event_id": "EV-DVP-D8FEF2AC0953",
     "event": "data_validation_completed",
     "actor": "HELIX validation service",
-    "timestamp": "2026-09-24T05:20:04.212819Z",
+    "timestamp": "2026-09-24T05:42:41.627832Z",
     "outcome": "passed",
     "details": {
-      "run_id": "RUN-327F15A44A253EBF",
+      "run_id": "RUN-D92A2540BD0EFA8E",
       "package_id": "validation.body_weight",
-      "receipt_id": "RCP-DVP-80663CFD1E88483D",
+      "receipt_id": "RCP-DVP-60A01EF09BE9A658",
       "executor_id": "body-weight-summary",
       "source_artifact_id": "A-BW"
     }
