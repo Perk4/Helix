@@ -9,11 +9,14 @@ from sqlalchemy.orm import Session
 
 from .agents.codex_section_agent import CodexSectionAgent, SectionAgent
 from .config import Settings, get_settings
+from .data_validation import DataValidationConflictError, UnknownValidationPackageError
 from .database import create_database_engine, create_schema, create_session_factory
 from .repository import StudyNotFoundError
 from .run_plans import PinnedRunService, RunConflictError, RunPlanRejectedError
 from .schemas import (
     ApprovalCommand,
+    DataValidationCommand,
+    DataValidationExecution,
     DispositionCommand,
     EvidenceChain,
     ExportCommand,
@@ -104,11 +107,6 @@ def create_app(
 
     SectionRunServiceDependency = Annotated[SectionRunService, Depends(section_run_service)]
 
-    def pinned_run_service(session: SessionDependency) -> PinnedRunService:
-        return PinnedRunService(session, active_settings.codex_repository_root)
-
-    PinnedRunServiceDependency = Annotated[PinnedRunService, Depends(pinned_run_service)]
-
     @app.get("/health", tags=["system"])
     def health(session: SessionDependency) -> dict[str, str]:
         session.execute(text("SELECT 1"))
@@ -135,9 +133,22 @@ def create_app(
     def freeze_run(
         study_id: str,
         command: FreezeRunCommand,
-        run_service: PinnedRunServiceDependency,
+        study_service: ServiceDependency,
     ) -> PinnedRun:
-        return _call(lambda: run_service.freeze(study_id, command))
+        return _call(lambda: study_service.freeze_run(study_id, command))
+
+    @app.post(
+        "/api/v1/studies/{study_id}/data-validation-packages",
+        response_model=DataValidationExecution,
+        status_code=status.HTTP_201_CREATED,
+        tags=["data-validation"],
+    )
+    def run_data_validation(
+        study_id: str,
+        command: DataValidationCommand,
+        study_service: ServiceDependency,
+    ) -> DataValidationExecution:
+        return _call(lambda: study_service.run_data_validation(study_id, command))
 
     @app.post(
         "/api/v1/studies/{study_id}/validation-runs",
@@ -239,9 +250,14 @@ def _call[ResponseT](operation: Callable[[], ResponseT]) -> ResponseT:
         return operation()
     except StudyNotFoundError as error:
         raise HTTPException(status_code=404, detail=f"Unknown study {error.args[0]}") from error
-    except (InvalidCommandError, UnknownSectionPackageError) as error:
+    except (InvalidCommandError, UnknownSectionPackageError, UnknownValidationPackageError) as error:
         raise HTTPException(status_code=404, detail=str(error)) from error
-    except (WorkflowConflictError, SectionRunConflictError, RunConflictError) as error:
+    except (
+        WorkflowConflictError,
+        SectionRunConflictError,
+        RunConflictError,
+        DataValidationConflictError,
+    ) as error:
         raise HTTPException(status_code=409, detail=str(error)) from error
     except RunPlanRejectedError as error:
         raise HTTPException(

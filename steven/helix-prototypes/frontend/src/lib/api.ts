@@ -1,5 +1,6 @@
 import type {
   ApprovalRole,
+  DataValidationExecution,
   EvidenceChainData,
   ExportReceipt,
   PlannerMode,
@@ -37,6 +38,19 @@ export async function runValidation(
     body: JSON.stringify({ planner }),
   });
   assertValidationRun(value);
+  return value;
+}
+
+export async function runDataValidation(studyId: string): Promise<DataValidationExecution> {
+  const value = await request(`/studies/${encodeURIComponent(studyId)}/data-validation-packages`, {
+    method: "POST",
+    body: JSON.stringify({
+      actor: "HELIX workbench",
+      package_id: "validation.body_weight",
+      idempotency_key: `workbench-${studyId}-validation.body_weight-v1`,
+    }),
+  });
+  assertDataValidationExecution(value);
   return value;
 }
 
@@ -162,6 +176,21 @@ function assertValidationRun(value: unknown): asserts value is ValidationRun {
     !Array.isArray(value.results)
   ) {
     throw new Error("The validation response does not match the generated API contract.");
+  }
+}
+
+function assertDataValidationExecution(value: unknown): asserts value is DataValidationExecution {
+  if (
+    !isObject(value) ||
+    !isObject(value.receipt) ||
+    typeof value.receipt.receipt_id !== "string" ||
+    value.receipt.package_id !== "validation.body_weight" ||
+    value.receipt.executor_id !== "body-weight-summary" ||
+    !Array.isArray(value.claims) ||
+    !Array.isArray(value.results) ||
+    !Array.isArray(value.section_references)
+  ) {
+    throw new Error("The data-validation response does not match the generated API contract.");
   }
 }
 

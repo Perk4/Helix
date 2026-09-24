@@ -51,7 +51,7 @@ class DeclaredGovernedIdentity:
 
 
 IMPLEMENTATION_PATHS = {
-    ("executor", "body-weight-summary", "1.0.0"): "backend/app/validation.py",
+    ("executor", "body-weight-summary", "1.0.0"): "backend/app/body_weight.py",
     ("skill", "helix-section-agent", "0.1.0"): ".agents/skills/helix-section-agent/SKILL.md",
     (
         "suite",

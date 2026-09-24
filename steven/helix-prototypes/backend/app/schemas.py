@@ -116,6 +116,16 @@ class Claim(StrictModel):
     unit: str
     grain: str
     status: ClaimStatus
+    claim_type: str | None = None
+    grain_key: dict[str, str] = Field(default_factory=dict)
+    source_hashes: list[str] = Field(default_factory=list)
+    transform_id: str | None = None
+    transform_version: str | None = None
+    rule_versions: dict[str, str] = Field(default_factory=dict)
+    package_id: str | None = None
+    package_version: str | None = None
+    executor_id: str | None = None
+    executor_version: str | None = None
 
 
 class ProvenanceEdge(StrictModel):
@@ -125,6 +135,8 @@ class ProvenanceEdge(StrictModel):
     transform_id: str
     source_pointer: str
     authority_tier: int = Field(ge=1, le=6)
+    source_hash: str | None = None
+    transform_version: str | None = None
 
 
 class ValidationStatus(StrEnum):
@@ -150,6 +162,10 @@ class ValidationResult(StrictModel):
     rule_version: str
     kind: ValidationKind = ValidationKind.DETERMINISTIC
     tool_name: str | None = None
+    enforcement_class: Literal["hard_blocker", "review_required", "warning"] | None = None
+    waivable: bool | None = None
+    package_id: str | None = None
+    executor_id: str | None = None
 
 
 class DispositionDecision(StrEnum):
@@ -176,6 +192,7 @@ class ReviewDisposition(StrictModel):
     reason: str | None
     reviewer: str | None
     timestamp: str | None
+    artifact_id: str | None = None
 
 
 class ApprovalRole(StrEnum):
@@ -257,11 +274,72 @@ class StudyEvidencePackage(StrictModel):
     retrieval_index: list[RetrievalIndexEntry]
     events: list[WorkflowEvent]
     pinned_run: "PinnedRun | None" = None
+    data_validation_executions: list["DataValidationExecution"] = Field(default_factory=list)
 
 
 class PlannerMode(StrEnum):
     FIXTURE = "fixture"
     OPENAI_COMPATIBLE = "openai_compatible"
+
+
+class DataValidationCommand(StrictModel):
+    actor: str = Field(min_length=2, max_length=120)
+    idempotency_key: str = Field(min_length=8, max_length=160)
+    package_id: str = Field(default="validation.body_weight", min_length=1, max_length=120)
+
+
+class DataValidationRuleResult(StrictModel):
+    result_id: ValidationResultId
+    rule_id: str
+    rule_version: str
+    enforcement_class: Literal["hard_blocker", "review_required", "warning"]
+    status: ValidationStatus
+    scope_id: str
+    evidence_ids: list[str]
+    message: str
+    waivable: bool
+    package_id: str
+    executor_id: str
+
+
+class SectionClaimReference(StrictModel):
+    section_id: str
+    section_package_id: str
+    title: str
+    claim_id: ClaimId
+    executor_receipt_id: str
+
+
+class DataValidationReceipt(StrictModel):
+    receipt_id: str
+    run_id: str
+    package_id: str
+    package_version: str
+    package_hash: Annotated[str, Field(pattern=r"^sha256:[a-f0-9]{64}$")]
+    node_id: str
+    executor_id: str
+    executor_version: str
+    executor_hash: Annotated[str, Field(pattern=r"^sha256:[a-f0-9]{64}$")]
+    rule_bundle_id: str
+    rule_ids: list[str]
+    source_artifact_id: str
+    source_hash: str
+    governed_versions: dict[str, str]
+    input_fingerprint: Annotated[str, Field(pattern=r"^sha256:[a-f0-9]{64}$")]
+    claim_ids: list[str]
+    result_ids: list[str]
+    event_id: str
+    status: Literal["passed", "blocked"]
+    idempotent_replay: bool = False
+
+
+class DataValidationExecution(StrictModel):
+    receipt: DataValidationReceipt
+    claims: list[Claim]
+    results: list[DataValidationRuleResult]
+    provenance_edges: list[ProvenanceEdge]
+    section_references: list[SectionClaimReference]
+    event: WorkflowEvent
 
 
 class ValidationRequest(StrictModel):
@@ -377,6 +455,10 @@ class EvidenceChain(StrictModel):
     exact_match: bool | None
     validations: list[ValidationResult]
     report_text: str
+    source_hashes: list[str] = Field(default_factory=list)
+    transform_version: str | None = None
+    rule_versions: dict[str, str] = Field(default_factory=dict)
+    lineage: list[ProvenanceEdge] = Field(default_factory=list)
 
 
 class Stage(StrictModel):
@@ -569,6 +651,7 @@ class WorkspaceResponse(StrictModel):
     events: list[WorkflowEvent]
     planner_capabilities: list[PlannerCapability]
     pinned_run: PinnedRun | None
+    data_validation_executions: list[DataValidationExecution]
     section_run_eligibility: list[SectionRunEligibility]
     section_runs: list[StoredSectionRun]
 
@@ -579,3 +662,7 @@ class ExportReceipt(StrictModel):
     exported_at: str
     artifacts: list[ExportArtifact]
     idempotent_replay: bool
+
+
+StudyEvidencePackage.model_rebuild()
+WorkspaceResponse.model_rebuild()

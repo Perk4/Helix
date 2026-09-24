@@ -2,9 +2,9 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-DB="$(mktemp -t helix-e2e).db"
-API_LOG="$(mktemp -t helix-api).log"
-WEB_LOG="$(mktemp -t helix-web).log"
+DB="$(mktemp -t helix-e2e.XXXXXX).db"
+API_LOG="$(mktemp -t helix-api.XXXXXX).log"
+WEB_LOG="$(mktemp -t helix-web.XXXXXX).log"
 API_PID=""
 WEB_PID=""
 

@@ -6,13 +6,14 @@ from sqlalchemy.orm import Session
 
 from .models import (
     AuditEventRow,
+    DataValidationRunRow,
     ExportFileRow,
     PinnedRunRow,
     SectionRunRow,
     StudyPackageRow,
     ValidationRunRow,
 )
-from .schemas import StoredSectionRun, StudyEvidencePackage, ValidationRun
+from .schemas import DataValidationExecution, StoredSectionRun, StudyEvidencePackage, ValidationRun
 
 
 class StudyNotFoundError(LookupError):
@@ -228,3 +229,65 @@ class StudyPackageRepository:
             )
             for row in rows
         ]
+
+    def get_data_validation_run(self, study_id: str, idempotency_key: str) -> DataValidationRunRow | None:
+        return self.session.scalar(
+            select(DataValidationRunRow).where(
+                DataValidationRunRow.study_id == study_id,
+                DataValidationRunRow.idempotency_key == idempotency_key,
+            )
+        )
+
+    def get_data_validation_for_run(
+        self,
+        study_id: str,
+        run_id: str,
+        package_id: str,
+    ) -> DataValidationRunRow | None:
+        return self.session.scalar(
+            select(DataValidationRunRow)
+            .where(
+                DataValidationRunRow.study_id == study_id,
+                DataValidationRunRow.run_id == run_id,
+                DataValidationRunRow.package_id == package_id,
+            )
+            .order_by(DataValidationRunRow.id)
+            .limit(1)
+        )
+
+    def add_data_validation_run(
+        self,
+        *,
+        study_id: str,
+        run_id: str,
+        package_id: str,
+        idempotency_key: str,
+        execution: DataValidationExecution,
+    ) -> DataValidationRunRow:
+        row = DataValidationRunRow(
+            study_id=study_id,
+            run_id=run_id,
+            package_id=package_id,
+            idempotency_key=idempotency_key,
+            execution=execution.model_dump(mode="json"),
+        )
+        self.session.add(row)
+        self.session.flush()
+        return row
+
+    def add_data_validation_alias(
+        self,
+        existing: DataValidationRunRow,
+        *,
+        idempotency_key: str,
+    ) -> DataValidationRunRow:
+        prior = self.get_data_validation_run(existing.study_id, idempotency_key)
+        if prior is not None:
+            return prior
+        return self.add_data_validation_run(
+            study_id=existing.study_id,
+            run_id=existing.run_id,
+            package_id=existing.package_id,
+            idempotency_key=idempotency_key,
+            execution=DataValidationExecution.model_validate(existing.execution),
+        )

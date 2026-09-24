@@ -8,6 +8,7 @@ import {
   getWorkspace,
   recordApproval,
   recordDisposition,
+  runDataValidation,
   runSectionAgent,
   runValidation,
 } from "@/lib/api";
@@ -60,6 +61,23 @@ export function HelixWorkbench({ studyId }: Props) {
       await refresh();
       setNotice(
         `${run.results.length} checks completed with ${run.planner_label}. LLM used: ${run.llm_used ? "yes" : "no"}.`,
+      );
+    } catch (cause) {
+      setError(messageFrom(cause));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function executeBodyWeight() {
+    setBusy("data-validation");
+    setNotice(null);
+    setError(null);
+    try {
+      const execution = await runDataValidation(studyId);
+      await refresh();
+      setNotice(
+        `${execution.receipt.package_id} ${execution.receipt.status} with ${execution.claims.length} persisted claims.`,
       );
     } catch (cause) {
       setError(messageFrom(cause));
@@ -234,9 +252,11 @@ export function HelixWorkbench({ studyId }: Props) {
             workspace={workspace}
             planner={planner}
             validationBusy={busy === "validation"}
+            dataValidationBusy={busy === "data-validation"}
             sectionRunBusy={busy === "section-run"}
             onPlannerChange={setPlanner}
             onValidate={() => void validate()}
+            onExecuteBodyWeight={() => void executeBodyWeight()}
             onDraftBodyWeight={() => void draftBodyWeight()}
           />
         )}
