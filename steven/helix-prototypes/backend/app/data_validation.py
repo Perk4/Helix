@@ -1,5 +1,8 @@
+import json
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Literal
 
 from sqlalchemy.orm import Session
 
@@ -10,7 +13,6 @@ from .body_weight import (
     OUTPUT_GRAIN,
     PACKAGE_ID,
     PACKAGE_VERSION,
-    RULES,
     SOURCE_ARTIFACT_ID,
     TERMINAL_CLAIM_ID,
     BodyWeightComputation,
@@ -42,6 +44,159 @@ from .schemas import (
 
 PACKAGE_RELATIVE = Path("skills/helix-evidence-pipeline/packages/data-validation/body-weight/package.json")
 EXECUTOR_RELATIVE = Path("backend/app/body_weight.py")
+_RESULT_IDS = {
+    "body-weight-required-grain": "VR-BW-GRAIN",
+    "body-weight-summary-recompute": "VR-BW-RECOMPUTE",
+    "body-weight-cell-provenance": "VR-BW-PROVENANCE",
+}
+
+
+@dataclass(frozen=True)
+class GateRule:
+    rule_id: str
+    rule_version: str
+    enforcement_class: Literal["hard_blocker", "review_required", "warning"]
+
+
+def load_gate_rules(package_json: Path) -> list[GateRule]:
+    payload = json.loads(package_json.read_text())
+    rules = payload["rules"]
+    if not isinstance(rules, list):
+        raise ValueError("package.json rules must be a list")
+    loaded: list[GateRule] = []
+    for item in rules:
+        if not isinstance(item, dict):
+            raise ValueError("package.json rule must be an object")
+        enforcement = item["enforcement_class"]
+        if enforcement not in {"hard_blocker", "review_required", "warning"}:
+            raise ValueError(f"invalid enforcement_class {enforcement}")
+        loaded.append(
+            GateRule(
+                rule_id=str(item["rule_id"]),
+                rule_version=str(item["rule_version"]),
+                enforcement_class=enforcement,
+            )
+        )
+    return loaded
+
+
+def _result_id(rule_id: str) -> str:
+    return _RESULT_IDS.get(rule_id, f"VR-{rule_id.upper()}")
+
+
+def _gate_result(
+    rule: GateRule,
+    *,
+    passed: bool,
+    evidence_ids: list[str],
+    message: str,
+    scope_id: str,
+    enforcement_class: Literal["hard_blocker", "review_required", "warning"] | None = None,
+) -> DataValidationRuleResult:
+    return DataValidationRuleResult(
+        result_id=_result_id(rule.rule_id),
+        rule_id=rule.rule_id,
+        rule_version=rule.rule_version,
+        enforcement_class=enforcement_class or rule.enforcement_class,
+        status=ValidationStatus.PASS if passed else ValidationStatus.FAIL,
+        scope_id=scope_id,
+        evidence_ids=evidence_ids,
+        message=message,
+        waivable=False,
+        package_id=PACKAGE_ID,
+        executor_id=EXECUTOR_ID,
+    )
+
+
+def _evaluate_grain(
+    rule: GateRule,
+    computation: BodyWeightComputation,
+    _fixture: dict[str, object],
+) -> DataValidationRuleResult:
+    grain_ids = [issue.record_id for issue in computation.grain_issues]
+    passed = not computation.grain_issues
+    return _gate_result(
+        rule,
+        passed=passed,
+        evidence_ids=grain_ids or [OUTPUT_GRAIN],
+        message=(
+            "Every body-weight record has grain and projects to study_day × sex × dose_group."
+            if passed
+            else (
+                f"{len(computation.grain_issues)} body-weight records are missing grain "
+                "or a provenance edge required to project study_day × sex × dose_group."
+            )
+        ),
+        scope_id=PACKAGE_ID,
+    )
+
+
+def _evaluate_recompute(
+    rule: GateRule,
+    computation: BodyWeightComputation,
+    fixture: dict[str, object],
+) -> DataValidationRuleResult:
+    matched, recompute_evidence = recompute_matches_fixture(computation, fixture)
+    return _gate_result(
+        rule,
+        passed=matched,
+        evidence_ids=recompute_evidence or [TERMINAL_CLAIM_ID, str(FIXTURE_PATH)],
+        message=(
+            "Recomputed body-weight summaries match the frozen fixture."
+            if matched
+            else "Recomputed body-weight summaries do not match the frozen fixture."
+        ),
+        scope_id=TERMINAL_CLAIM_ID,
+    )
+
+
+def _evaluate_provenance(
+    rule: GateRule,
+    computation: BodyWeightComputation,
+    _fixture: dict[str, object],
+) -> DataValidationRuleResult:
+    provenance_evidence = provenance_failures(computation)
+    passed = not provenance_evidence
+    return _gate_result(
+        rule,
+        passed=passed,
+        evidence_ids=provenance_evidence or [edge.edge_id for edge in computation.provenance_edges[:12]],
+        message=(
+            "Every numeric body-weight claim has complete hashes, transforms, and edges."
+            if passed
+            else "A body-weight claim is missing a provenance edge, source hash, or transform."
+        ),
+        scope_id=PACKAGE_ID,
+    )
+
+
+def _unknown_gate(rule: GateRule) -> DataValidationRuleResult:
+    return _gate_result(
+        rule,
+        passed=False,
+        evidence_ids=[rule.rule_id],
+        message=f"No evaluator is registered for rule {rule.rule_id}.",
+        scope_id=PACKAGE_ID,
+        enforcement_class="hard_blocker",
+    )
+
+
+_EVALUATORS = {
+    "body-weight-required-grain": _evaluate_grain,
+    "body-weight-summary-recompute": _evaluate_recompute,
+    "body-weight-cell-provenance": _evaluate_provenance,
+}
+
+
+def _evaluate_gate(
+    rule: GateRule,
+    computation: BodyWeightComputation,
+    fixture: dict[str, object],
+) -> DataValidationRuleResult:
+    evaluator = _EVALUATORS.get(rule.rule_id)
+    if evaluator is None:
+        return _unknown_gate(rule)
+    return evaluator(rule, computation, fixture)
 
 
 class DataValidationConflictError(RuntimeError):
@@ -136,9 +291,11 @@ class DataValidationService:
         pinned: PinnedRun,
         command: DataValidationCommand,
     ) -> DataValidationExecution:
-        computation = compute_body_weight_summary(package)
+        rules = load_gate_rules(self.repository_root / PACKAGE_RELATIVE)
+        rule_versions = {rule.rule_id: rule.rule_version for rule in rules}
+        computation = compute_body_weight_summary(package, rule_versions=rule_versions)
         fixture = load_frozen_fixture(self.repository_root)
-        results = self._rule_results(computation, fixture)
+        results = self._rule_results(computation, fixture, rules)
         blocked = any(
             result.status == ValidationStatus.FAIL and result.enforcement_class == "hard_blocker"
             for result in results
@@ -168,7 +325,7 @@ class DataValidationService:
             executor_version=EXECUTOR_VERSION,
             executor_hash=file_hash(self.repository_root / EXECUTOR_RELATIVE),
             rule_bundle_id=PACKAGE_ID,
-            rule_ids=[rule_id for rule_id, _, _ in RULES],
+            rule_ids=[rule.rule_id for rule in rules],
             source_artifact_id=SOURCE_ARTIFACT_ID,
             source_hash=self._source_hash(package),
             governed_versions=pinned.run_plan.governed_versions,
@@ -217,67 +374,9 @@ class DataValidationService:
         self,
         computation: BodyWeightComputation,
         fixture: dict[str, object],
+        rules: list[GateRule],
     ) -> list[DataValidationRuleResult]:
-        matched, recompute_evidence = recompute_matches_fixture(computation, fixture)
-        provenance_evidence = provenance_failures(computation)
-        grain_ids = [issue.record_id for issue in computation.grain_issues]
-        checks = [
-            (
-                "VR-BW-GRAIN",
-                "body-weight-required-grain",
-                "1.0.0",
-                not computation.grain_issues,
-                grain_ids or [OUTPUT_GRAIN],
-                (
-                    "Every body-weight record has grain and projects to study_day × sex × dose_group."
-                    if not computation.grain_issues
-                    else (
-                        f"{len(computation.grain_issues)} body-weight records are missing grain "
-                        "or a provenance edge required to project study_day × sex × dose_group."
-                    )
-                ),
-            ),
-            (
-                "VR-BW-RECOMPUTE",
-                "body-weight-summary-recompute",
-                "1.0.0",
-                matched,
-                recompute_evidence or [TERMINAL_CLAIM_ID, str(FIXTURE_PATH)],
-                (
-                    "Recomputed body-weight summaries match the frozen fixture."
-                    if matched
-                    else "Recomputed body-weight summaries do not match the frozen fixture."
-                ),
-            ),
-            (
-                "VR-BW-PROVENANCE",
-                "body-weight-cell-provenance",
-                "1.0.0",
-                not provenance_evidence,
-                provenance_evidence or [edge.edge_id for edge in computation.provenance_edges[:12]],
-                (
-                    "Every numeric body-weight claim has complete hashes, transforms, and edges."
-                    if not provenance_evidence
-                    else "A body-weight claim is missing a provenance edge, source hash, or transform."
-                ),
-            ),
-        ]
-        return [
-            DataValidationRuleResult(
-                result_id=result_id,
-                rule_id=rule_id,
-                rule_version=rule_version,
-                enforcement_class="hard_blocker",
-                status=ValidationStatus.PASS if passed else ValidationStatus.FAIL,
-                scope_id=PACKAGE_ID if rule_id != "body-weight-summary-recompute" else TERMINAL_CLAIM_ID,
-                evidence_ids=evidence_ids,
-                message=message,
-                waivable=False,
-                package_id=PACKAGE_ID,
-                executor_id=EXECUTOR_ID,
-            )
-            for result_id, rule_id, rule_version, passed, evidence_ids, message in checks
-        ]
+        return [_evaluate_gate(rule, computation, fixture) for rule in rules]
 
     def _persist_execution(
         self,

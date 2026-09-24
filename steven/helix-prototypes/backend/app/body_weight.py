@@ -31,11 +31,6 @@ CLAIM_TYPES = (
     "body_weight.standard_deviation",
     "body_weight.percent_change",
 )
-RULES = (
-    ("body-weight-required-grain", "1.0.0", "hard_blocker"),
-    ("body-weight-summary-recompute", "1.0.0", "hard_blocker"),
-    ("body-weight-cell-provenance", "1.0.0", "hard_blocker"),
-)
 SECTION_CONSUMERS = (
     ("S5", "section.5_2_3_body_weight", "5.2.3 Body Weight"),
     ("S8", "section.5_3_discussion", "Discussion and conclusion"),
@@ -126,7 +121,10 @@ class BodyWeightComputation:
     aggregate_issues: list[str] = field(default_factory=list)
 
 
-def compute_body_weight_summary(package: StudyEvidencePackage) -> BodyWeightComputation:
+def compute_body_weight_summary(
+    package: StudyEvidencePackage,
+    rule_versions: dict[str, str] | None = None,
+) -> BodyWeightComputation:
     animals = {animal.animal_id: animal for animal in package.records.animals}
     grain_issues: list[GrainIssue] = []
     pointer_issues: list[GrainIssue] = []
@@ -169,7 +167,7 @@ def compute_body_weight_summary(package: StudyEvidencePackage) -> BodyWeightComp
     claims: list[Claim] = []
     edges: list[ProvenanceEdge] = []
     aggregate_issues: list[str] = []
-    rule_versions = {rule_id: version for rule_id, version, _ in RULES}
+    versions = dict(rule_versions or {})
     for key in sorted(grouped, key=lambda item: (item.study_day, item.sex, item.dose_group)):
         records = grouped[key]
         mean = _mean(records)
@@ -195,7 +193,7 @@ def compute_body_weight_summary(package: StudyEvidencePackage) -> BodyWeightComp
             "body_weight.percent_change": percent_change,
         }
         for claim_type, value in values.items():
-            claim, claim_edges = _cell_claim(key, claim_type, value, records, rule_versions)
+            claim, claim_edges = _cell_claim(key, claim_type, value, records, versions)
             claims.append(claim)
             edges.extend(claim_edges)
 
@@ -206,7 +204,7 @@ def compute_body_weight_summary(package: StudyEvidencePackage) -> BodyWeightComp
         for record in records
     ]
     if terminal_records and not aggregate_issues:
-        claim, claim_edges = _terminal_claim(terminal_records, rule_versions)
+        claim, claim_edges = _terminal_claim(terminal_records, versions)
         claims.append(claim)
         edges.extend(claim_edges)
 
