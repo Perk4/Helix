@@ -22,6 +22,8 @@
   "approvals": [],
   "events": [],
   "review_scaffold_revisions": [],
+  "export_artifacts": [],
+  "workflow_state": "gated",
   "section_runs": [],
   "section_drafts": [],
   "candidate_evaluations": [],

@@ -2152,6 +2152,13 @@
             "title": "Events",
             "type": "array"
           },
+          "export_artifacts": {
+            "items": {
+              "$ref": "#/components/schemas/ExportArtifact"
+            },
+            "title": "Export Artifacts",
+            "type": "array"
+          },
           "frozen_inputs": {
             "$ref": "#/components/schemas/FrozenRunInputs"
           },
@@ -2217,6 +2224,10 @@
             },
             "title": "Validation Results",
             "type": "array"
+          },
+          "workflow_state": {
+            "title": "Workflow State",
+            "type": "string"
           }
         },
         "required": [
@@ -2233,6 +2244,8 @@
           "approvals",
           "events",
           "review_scaffold_revisions",
+          "export_artifacts",
+          "workflow_state",
           "section_runs",
           "section_drafts",
           "candidate_evaluations",

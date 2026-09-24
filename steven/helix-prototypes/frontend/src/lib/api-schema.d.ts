@@ -1018,6 +1018,8 @@ export interface components {
             drafting_cycles: components["schemas"]["DraftingCycle"][];
             /** Events */
             events: components["schemas"]["WorkflowEvent"][];
+            /** Export Artifacts */
+            export_artifacts: components["schemas"]["ExportArtifact"][];
             frozen_inputs: components["schemas"]["FrozenRunInputs"];
             /** Gate Decisions */
             gate_decisions: components["schemas"]["GateDecision"][];
@@ -1043,6 +1045,8 @@ export interface components {
             snapshot_hash: string;
             /** Validation Results */
             validation_results: components["schemas"]["ValidationResult"][];
+            /** Workflow State */
+            workflow_state: string;
         };
         /** PromotionCommand */
         PromotionCommand: {

@@ -60,7 +60,7 @@ from .section_runs import (
     governed_versions_fingerprint,
     manifest_fingerprint,
 )
-from .superseding_runs import with_fresh_authority
+from .superseding_runs import assert_bound_pinned_run, with_fresh_authority
 from .template_contracts import BODY_WEIGHT_PACKAGE_ID
 from .validation import (
     FixturePlanner,
@@ -123,7 +123,7 @@ class StudyService:
         ]
 
     def freeze_run(self, study_id: str, command: FreezeRunCommand) -> PinnedRun:
-        pinned_run = self.pinned_runs.freeze(study_id, command)
+        pinned_run = self.pinned_runs.freeze(study_id, command, commit=False)
         execution = None
         if pinned_run.status == "planned":
             execution = self.data_validation.execute(
@@ -133,8 +133,10 @@ class StudyService:
                     package_id="validation.body_weight",
                     idempotency_key=f"dvp-{pinned_run.run_id}-validation.body_weight",
                 ),
+                commit=False,
             )
         package = self.repository.get(study_id, for_update=True)
+        assert_bound_pinned_run(package, pinned_run)
         if package.superseding_run_receipt is not None:
             event_id = (
                 pinned_run.event_history[0].event_id
@@ -142,9 +144,11 @@ class StudyService:
                 else f"EV-{uuid4().hex[:12].upper()}"
             )
             package = self.section_runs.persist_contract_revision(package, event_id=event_id)
+            assert_bound_pinned_run(package, pinned_run)
             gate = self._release_gate(package)
             package = with_fresh_authority(
                 package,
+                pinned_run=pinned_run,
                 validation_receipt_ids=[execution.receipt.receipt_id] if execution is not None else [],
                 gate_ids=[gate.gate_id],
                 scaffold_revision=(
@@ -154,20 +158,25 @@ class StudyService:
                 ),
             )
             self.repository.save(package)
-            self.session.commit()
+            assert_bound_pinned_run(package, pinned_run)
+        self.session.commit()
         return pinned_run
 
     def run_data_validation(self, study_id: str, command: DataValidationCommand) -> DataValidationExecution:
         return self.data_validation.execute(study_id, command)
 
     def run_validation(self, study_id: str, request: ValidationRequest) -> ValidationRun:
-        pinned_run = self.pinned_runs.freeze(
-            study_id,
-            FreezeRunCommand(
-                actor="HELIX validation service",
-                idempotency_key=f"validation-freeze-{study_id}",
-            ),
-        )
+        package = self.repository.get(study_id)
+        if package.pinned_run is None:
+            pinned_run = self.pinned_runs.freeze(
+                study_id,
+                FreezeRunCommand(
+                    actor="HELIX validation service",
+                    idempotency_key=f"validation-freeze-{study_id}",
+                ),
+            )
+        else:
+            pinned_run = package.pinned_run
         if pinned_run.status != "planned":
             raise WorkflowConflictError("The Pinned Run requires study-type review")
         execution = self.data_validation.execute(

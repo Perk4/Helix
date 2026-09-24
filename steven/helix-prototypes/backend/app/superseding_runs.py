@@ -7,6 +7,7 @@ from .schemas import (
     CandidateEvaluation,
     CarriedForwardArtifact,
     DraftingCycle,
+    ExportArtifact,
     FrozenRunInputs,
     ManifestEntry,
     ParseReuse,
@@ -147,6 +148,8 @@ def snapshot_predecessor(
         "approvals": [item.model_dump(mode="json") for item in package.approvals],
         "events": [item.model_dump(mode="json") for item in package.events],
         "review_scaffold_revisions": list(package.review_scaffold_revisions),
+        "export_artifacts": [item.model_dump(mode="json") for item in package.export_artifacts],
+        "workflow_state": package.workflow_state,
         "section_runs": [item.model_dump(mode="json") for item in section_runs],
         "section_drafts": [item.model_dump(mode="json") for item in section_drafts],
         "candidate_evaluations": [item.model_dump(mode="json") for item in candidate_evaluations],
@@ -266,21 +269,40 @@ def apply_supersession(
             "gate_decisions": [],
             "events": [],
             "review_scaffold_revisions": [],
+            # Fresh validations: leftover seed VR-* FAIL rows would still block
+            # derive_release_gate after dispositions are wiped. Remint empty here;
+            # freeze_run records a new DVP receipt, and POST /validation-runs can
+            # remint hybrid results against the successor without the burned
+            # validation-freeze-{study_id} key.
+            "validation_results": [],
+            # Export is out of slice 9 AC, but carrying EXPORTED artifacts / workflow
+            # would show GATE EXPORTED on the new run_id and block amendment.
+            # Clear successor export state. Predecessor bytes stay in the snapshot.
+            "export_artifacts": pending_export_artifacts(package.export_artifacts),
+            "workflow_state": (
+                "gated" if package.workflow_state == "exported" else package.workflow_state
+            ),
         }
     )
+
+
+def pending_export_artifacts(artifacts: list[ExportArtifact]) -> list[ExportArtifact]:
+    return [item.model_copy(update={"status": "pending", "checksum": None}) for item in artifacts]
 
 
 def with_fresh_authority(
     package: StudyEvidencePackage,
     *,
+    pinned_run: PinnedRun,
     validation_receipt_ids: list[str],
     gate_ids: list[str],
     scaffold_revision: int,
 ) -> StudyEvidencePackage:
+    assert_bound_pinned_run(package, pinned_run)
     receipt = package.superseding_run_receipt
     if receipt is None:
         return package
-    return package.model_copy(
+    updated = package.model_copy(
         update={
             "approvals": [],
             "superseding_run_receipt": receipt.model_copy(
@@ -292,6 +314,13 @@ def with_fresh_authority(
             ),
         }
     )
+    assert_bound_pinned_run(updated, pinned_run)
+    return updated
+
+
+def assert_bound_pinned_run(package: StudyEvidencePackage, pinned_run: PinnedRun) -> None:
+    if package.pinned_run is None or package.pinned_run.run_id != pinned_run.run_id:
+        raise RuntimeError("Post-freeze authority must bind to the frozen Pinned Run")
 
 
 def _source_checksum(manifest: list[ManifestEntry]) -> str:

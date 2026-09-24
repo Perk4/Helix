@@ -7,8 +7,10 @@ from pathlib import Path
 
 from jsonschema import Draft202012Validator, FormatChecker
 from jsonschema.exceptions import SchemaError
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from .models import PinnedRunRow
 from .repository import StudyPackageRepository
 from .schemas import (
     FreezeRunCommand,
@@ -87,7 +89,7 @@ class PinnedRunService:
             self.repository_root / "backend" / "app" / "data" / "study-type-mapping.json"
         )
 
-    def freeze(self, study_id: str, command: FreezeRunCommand) -> PinnedRun:
+    def freeze(self, study_id: str, command: FreezeRunCommand, *, commit: bool = True) -> PinnedRun:
         package_snapshot = self.repository.get(study_id)
         request_hash = canonical_hash(
             {
@@ -98,16 +100,12 @@ class PinnedRunService:
         )
         prior = self.repository.get_pinned_run(study_id, command.idempotency_key)
         if prior is not None:
-            if prior.request_hash != request_hash:
-                raise RunConflictError("The idempotency key was already used for another command")
-            return self._stored_run(self.repository.get(study_id))
+            return self._replay_indexed_run(study_id, prior, request_hash)
 
         package = self.repository.get(study_id, for_update=True)
         prior = self.repository.get_pinned_run(study_id, command.idempotency_key)
         if prior is not None:
-            if prior.request_hash != request_hash:
-                raise RunConflictError("The idempotency key was already used for another command")
-            return self._stored_run(package)
+            return self._replay_indexed_run(study_id, prior, request_hash)
 
         manifest_hash = canonical_hash([item.model_dump(mode="json") for item in package.manifest])
         manifest_evidence = self._validate_manifest(package)
@@ -146,14 +144,14 @@ class PinnedRunService:
         superseded = list(package.superseded_pinned_runs)
         if current is not None:
             if current.run_id == run_id:
-                self.repository.add_pinned_run(
+                return self._index_pinned_run(
                     run_id=run_id,
                     study_id=study_id,
-                    idempotency_key=command.idempotency_key,
+                    command=command,
                     request_hash=request_hash,
+                    pinned=current,
+                    commit=commit,
                 )
-                self.session.commit()
-                return current
             if command.supersession is None:
                 raise RunConflictError("The study already has a different immutable Pinned Run")
             if command.supersession.predecessor_run_id != current.run_id:
@@ -246,22 +244,34 @@ class PinnedRunService:
                     "frozen_inputs": current_inputs,
                 }
             )
-        self.repository.save(stored)
-        self.repository.add_pinned_run(
-            run_id=run_id,
-            study_id=study_id,
-            idempotency_key=command.idempotency_key,
-            request_hash=request_hash,
-        )
-        self.repository.append_event(
-            study_id=study_id,
-            event_type="run_requested",
-            actor=command.actor,
-            payload={"outcome": event["outcome"], **event["details"]},
-            idempotency_key=f"run-freeze:{command.idempotency_key}",
-            occurred_at=datetime.fromisoformat(created_at.replace("Z", "+00:00")),
-        )
-        self.session.commit()
+        try:
+            self.repository.save(stored)
+            self.repository.add_pinned_run(
+                run_id=run_id,
+                study_id=study_id,
+                idempotency_key=command.idempotency_key,
+                request_hash=request_hash,
+            )
+            self.repository.append_event(
+                study_id=study_id,
+                event_type="run_requested",
+                actor=command.actor,
+                payload={"outcome": event["outcome"], **event["details"]},
+                idempotency_key=f"run-freeze:{command.idempotency_key}",
+                occurred_at=datetime.fromisoformat(created_at.replace("Z", "+00:00")),
+            )
+        except IntegrityError as error:
+            if not _is_pinned_run_key_conflict(error):
+                raise
+            self.session.rollback()
+            prior = self.repository.get_pinned_run(study_id, command.idempotency_key)
+            if prior is None:
+                raise RunConflictError(
+                    "The idempotency key was already used for another command"
+                ) from error
+            return self._replay_indexed_run(study_id, prior, request_hash)
+        if commit:
+            self.session.commit()
         return pinned
 
     def latest(self, study_id: str) -> PinnedRun | None:
@@ -269,6 +279,42 @@ class PinnedRunService:
         if package.pinned_run is None:
             return None
         return package.pinned_run
+
+    def _index_pinned_run(
+        self,
+        *,
+        run_id: str,
+        study_id: str,
+        command: FreezeRunCommand,
+        request_hash: str,
+        pinned: PinnedRun,
+        commit: bool,
+    ) -> PinnedRun:
+        try:
+            self.repository.add_pinned_run(
+                run_id=run_id,
+                study_id=study_id,
+                idempotency_key=command.idempotency_key,
+                request_hash=request_hash,
+            )
+        except IntegrityError as error:
+            if not _is_pinned_run_key_conflict(error):
+                raise
+            self.session.rollback()
+            prior = self.repository.get_pinned_run(study_id, command.idempotency_key)
+            if prior is None:
+                raise RunConflictError(
+                    "The idempotency key was already used for another command"
+                ) from error
+            return self._replay_indexed_run(study_id, prior, request_hash)
+        if commit:
+            self.session.commit()
+        return pinned
+
+    def _replay_indexed_run(self, study_id: str, prior: PinnedRunRow, request_hash: str) -> PinnedRun:
+        if prior.request_hash != request_hash:
+            raise RunConflictError("The idempotency key was already used for another command")
+        return self._stored_run(self.repository.get(study_id))
 
     @staticmethod
     def _stored_run(package: StudyEvidencePackage) -> PinnedRun:
@@ -883,3 +929,11 @@ class PinnedRunService:
     @staticmethod
     def _load_json(path: Path) -> dict[str, object]:
         return json.loads(path.read_text())
+
+
+def _is_pinned_run_key_conflict(error: IntegrityError) -> bool:
+    orig = getattr(error, "orig", None)
+    message = f"{orig} {error}".lower()
+    return "uq_pinned_run_key" in message or (
+        "unique constraint failed" in message and "pinned_runs" in message
+    )

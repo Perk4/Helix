@@ -948,6 +948,8 @@ class PredecessorSnapshot(StrictModel):
     approvals: list[Approval]
     events: list[WorkflowEvent]
     review_scaffold_revisions: list[dict[str, object]]
+    export_artifacts: list[ExportArtifact]
+    workflow_state: str
     section_runs: list[StoredSectionRun]
     section_drafts: list["SectionDraft"]
     candidate_evaluations: list[CandidateEvaluation]

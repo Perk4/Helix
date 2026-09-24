@@ -6,6 +6,8 @@ Base: `68134f412b522317eec18968a036d723c91f38cd`.
 
 Organizing structure: append-only `PredecessorSnapshot` plus complete per-node fingerprints. `plan_supersession` compares parse, validation, and section fingerprints. A correction mints a new `PinnedRun`. It does not mutate the predecessor. Parsing reuses only identical content hashes. A section artifact carries forward only on an identical complete Dependency Fingerprint with recorded lineage. The successor issues fresh DVP receipts, gates, Review Scaffold Revisions, and empty approval state.
 
+P1 follow-up: successor clone remints empty `validation_results` and pending export artifacts; freeze is a single-commit path with `uq_pinned_run_key` IntegrityError replay; `POST /validation-runs` uses the current pinned run instead of the burned study-level freeze key.
+
 ## make test
 
 ```text
@@ -16,15 +18,18 @@ Outcome: green.
 
 - synthetic bundle verified
 - ruff clean
-- pytest 129 passed
+- pytest 132 passed
 - frontend typecheck and production build
 - a correction freeze mints a new run with `predecessor_run_id` and `supersession_reason`
-- the predecessor pinned run, claims, validations, events, section runs, drafts, and frozen inputs remain byte-for-byte in `predecessor_snapshots`
+- the predecessor pinned run, claims, validations, events, export artifacts, workflow state, section runs, drafts, and frozen inputs remain byte-for-byte in `predecessor_snapshots`
 - parse fingerprints match only for identical records and source checksum
 - discussion-only template change reuses parse and carries the body-weight candidate with predecessor lineage
 - a changed source checksum reruns parse, validation, body-weight, and discussion; carried_forward is empty
 - a governed validation-package version change reuses parse and reruns validation plus both sections
 - the successor records fresh DVP receipt ids, a new scaffold revision, and empty approvals while a matching artifact is carried
+- leftover seed VR-004/005/006 FAIL rows do not block the successor gate after dispositions are wiped; source correction remints hybrid validation via `POST /validation-runs`
+- freeze replays `uq_pinned_run_key` IntegrityError on file SQLite QueuePool and concurrent supersession binds one `run_id`
+- supersession after export clears successor export artifacts and workflow_state; predecessor export files stay
 - lineage, superseding-run, and predecessor-snapshot schemas reject unknown fields and incomplete hashes; Pydantic dual-rejects the same fixtures
 
 ## verify-superseding-runs.sh
@@ -35,9 +40,9 @@ Outcome: green.
 
 Outcome: green. Wrote `evidence/superseding-run-receipt.json`.
 
-- Predecessor run: `RUN-E4C6ACB2808AF418`
-- Discussion-only successor: `RUN-21B8E883F29C7AF5`
-- Source-change successor: `RUN-26C2098FF989497C`
+- Predecessor run: `RUN-0AB6B4E8A1E3AE1E`
+- Discussion-only successor: `RUN-E4708EBC0BE611C8`
+- Source-change successor: `RUN-296FC108D983ED68`
 - Parse reused on discussion-only mutation: `true`
 - Carried artifact ids include the predecessor candidate and injected Section Draft
 - Carried lineage names the predecessor run

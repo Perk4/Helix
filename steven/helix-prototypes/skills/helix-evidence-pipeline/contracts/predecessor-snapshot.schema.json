@@ -18,6 +18,8 @@
     "approvals",
     "events",
     "review_scaffold_revisions",
+    "export_artifacts",
+    "workflow_state",
     "section_runs",
     "section_drafts",
     "candidate_evaluations",
@@ -103,6 +105,13 @@
     },
     "review_scaffold_revisions": {
       "type": "array"
+    },
+    "export_artifacts": {
+      "type": "array"
+    },
+    "workflow_state": {
+      "type": "string",
+      "minLength": 1
     },
     "section_runs": {
       "type": "array"
