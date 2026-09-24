@@ -106,13 +106,15 @@ class StudyService:
         ]
 
     def run_validation(self, study_id: str, request: ValidationRequest) -> ValidationRun:
-        self.pinned_runs.freeze(
+        pinned_run = self.pinned_runs.freeze(
             study_id,
             FreezeRunCommand(
                 actor="HELIX validation service",
                 idempotency_key=f"validation-freeze-{study_id}",
             ),
         )
+        if pinned_run.status != "planned":
+            raise WorkflowConflictError("The Pinned Run requires study-type review")
         package = self.repository.get(study_id, for_update=True)
         self._ensure_mutable(package)
         planner = self._planner(request.planner)
@@ -166,7 +168,7 @@ class StudyService:
                 "outcome": event.outcome,
                 **event.details,
                 "manifest_hash": manifest_fingerprint(updated),
-                "governed_versions_hash": governed_versions_fingerprint(),
+                "governed_versions_hash": governed_versions_fingerprint(pinned_run),
             },
             idempotency_key=f"validation:{run.run_id}",
             occurred_at=now,

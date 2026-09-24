@@ -25,15 +25,6 @@ SECTION_PACKAGE_ID = "section.5_2_3_body_weight"
 SECTION_ID = "5_2_3_body_weight"
 CLAIM_ID = "C-BW-HIGH"
 SKILL_NAME = "helix-section-agent"
-GOVERNED_VERSIONS = {
-    "schema": "1.0.0",
-    "ontology": "1.0.0",
-    "rule_bundle": "helix-rules-1.0.0",
-    "template": "1.0.0",
-    "section_agent_skill": "0.1.0",
-    "promptfoo_qualification_suite": "helix-section-agent-qualification@0.1.0",
-    "promptfoo_study_output_suite": "helix-section-study-output@0.1.0",
-}
 
 
 class SectionRunConflictError(RuntimeError):
@@ -61,8 +52,8 @@ def manifest_fingerprint(package: StudyEvidencePackage) -> str:
     return canonical_hash([item.model_dump(mode="json") for item in package.manifest])
 
 
-def governed_versions_fingerprint() -> str:
-    return canonical_hash(GOVERNED_VERSIONS)
+def governed_versions_fingerprint(pinned_run: PinnedRun) -> str:
+    return canonical_hash(pinned_run.run_plan.governed_versions)
 
 
 class SectionRunService:
@@ -118,6 +109,16 @@ class SectionRunService:
                 reasons.append("The Pinned Run manifest fingerprint does not match the current manifest")
             if pinned_run.status != "planned":
                 reasons.append("The Pinned Run requires study-type review")
+            resolution = pinned_run.study_type_resolution
+            if resolution.status == "resolved" and resolution.study_type_id not in package_definition.get(
+                "study_type_ids", []
+            ):
+                reasons.append("The Section Package does not apply to the resolved study type")
+            if not any(
+                node.node_id == SECTION_PACKAGE_ID and node.package_id == SECTION_PACKAGE_ID
+                for node in pinned_run.run_plan.nodes
+            ):
+                reasons.append("The Section Package is not part of the Pinned Run")
             if any(
                 not (self.repository_root / item.path).is_file()
                 or self._file_hash(self.repository_root / item.path) != item.content_hash
