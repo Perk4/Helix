@@ -1,6 +1,6 @@
 # UI lanes: file ownership, ports, and databases
 
-**Status:** in force from UI step 0 (the visual parity kit) until lanes A to D merge.
+**Status:** in force from UI step 0 (the visual parity kit) until lanes A to D merge. Written against base `feat/steven-workspace` @ `e56bf7fd`, which includes the ADO sync: Alembic migrations, `intake_jobs.py`, and the intake-job routes.
 **Scope:** `steven/helix-prototypes` on the fork `Perk4/Helix`. PRs target `feat/steven-workspace`. Issues live on `Steven-Espaillat/Helix`.
 **Why:** four lanes build the v1 stage-gated workspace in parallel. Each path below has **one** owner, so lanes do not collide on rebase.
 
@@ -64,7 +64,7 @@ Backend (`backend/`) and repo:
 
 | Path | What |
 |---|---|
-| `app/models.py`, `migrations/**`, and `alembic.ini` (arriving with the ADO sync) | Database schema. **Any new table or column means escalating.** See section 5.3. |
+| `backend/migrations/**`, `backend/alembic.ini`, `app/models.py` | Database schema and Alembic history (landed with the ADO sync in base `e56bf7fd`). **Any new table, column, or revision means escalating.** See section 5.3. |
 | `app/schemas.py` | `WorkspaceResponse` and every existing model. New lane-only request and response models go in lane modules (section 3.2). |
 | `app/main.py` | App factory and route registration. Section 7 proposes routers; until they exist, route edits escalate. |
 | `app/database.py`, `app/config.py`, `app/repository.py`, `app/seed.py`, `app/journey.py`, `app/run_events.py` | Cross-cutting persistence, config, and the #25 journey projection and event store. |
@@ -86,7 +86,7 @@ Paths marked *(new)* do not exist yet. The owning lane creates them at exactly t
 | Gate 1 (#20) | `src/components/upload/UploadGate.tsx`, `PinnedRunDetail.tsx` *(new)*. `src/lib/api/intake.ts` *(new)*: `freezePinnedRun`. `src/styles/views/upload.css`, already seeded from the reference. `tests/upload-gate.spec.ts` *(new)*. |
 | Upload and run controls (#26) | `src/components/upload/IntakeUploadForm.tsx`, `IntakeJobProgress.tsx`, `StudyPicker.tsx` *(new)*. Intake-job wrappers (`POST /studies/jobs` and job polling) and pause/resume wrappers go in `src/lib/api/intake.ts` and `src/lib/api/runControls.ts` *(new)*. `tests/intake-upload.spec.ts` *(new)*. |
 | Study selection | Lane A **uses** the step-0 seam. It calls `useStudySelection().selectStudy(id)` after an intake job completes, or from `StudyPicker`. It does not edit `StudyContext.tsx`. If the seam is not enough (for example, a server-side list of recent studies), escalate. |
-| Backend | `app/intake.py`, `app/intake_jobs.py` (arriving with the ADO sync), `tests/test_intake.py`, `tests/test_intake_jobs.py`. Proposed *(new)*, see section 7: `app/manifest_authorization.py` (the audited human freeze of an uploaded file list, and the `_validate_manifest` rules); `app/run_controls.py` (pause/resume commands that append `run_paused`/`run_resumed` through the shared event store API); `app/routers/intake.py`; `tests/test_manifest_authorization.py`; `tests/test_run_controls.py`. Function-level: `service.freeze_run`, and `run_plans.PinnedRunService._validate_manifest` until it is extracted. |
+| Backend | `app/intake.py`, `app/intake_jobs.py` (the upload job runner and its stage progress, used by #26), `tests/test_intake.py`, `tests/test_intake_jobs.py`. The intake-job routes that are in `main.py` today stay SHARED until the `routers/intake.py` extraction in section 7. Until then, a change to them means escalating. Proposed *(new)*, see section 7: `app/manifest_authorization.py` (the audited human freeze of an uploaded file list, and the `_validate_manifest` rules); `app/run_controls.py` (pause/resume commands that append `run_paused`/`run_resumed` through the shared event store API); `app/routers/intake.py`; `tests/test_manifest_authorization.py`; `tests/test_run_controls.py`. Function-level: `service.freeze_run`, and `run_plans.PinnedRunService._validate_manifest` until it is extracted. |
 | Parity | `tests/parity/screens/lane-a.ts` |
 
 **Lane B: #21**
