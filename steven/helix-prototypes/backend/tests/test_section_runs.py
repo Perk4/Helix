@@ -17,7 +17,7 @@ from app.main import create_app
 from app.models import AuditEventRow, SectionRunRow
 from app.repository import StudyPackageRepository
 from app.schemas import SectionRunCommand
-from app.section_runs import SectionRunService
+from app.section_runs import SectionRunService, canonical_hash
 from app.skill_integrity import SECTION_AGENT_ROOT, skill_integrity
 from app.template_contracts import evaluate_template_contract
 
@@ -286,6 +286,35 @@ def test_section_run_records_candidate_receipt_scaffold_and_exact_replay() -> No
         assert "records" not in stored["envelope"]
         assert stored["envelope"]["pinned_run_id"].startswith("RUN-")
         assert stored["envelope"]["manifest_hash"].startswith("sha256:")
+
+        # Style exemplars travel inside the envelope so they are hashed with it.
+        # They come from another study, so their values must never reach a
+        # draft: the corpus carries 291.5 g against this study's 286.2 g claim.
+        exemplars = stored["envelope"]["reference_drafts"]
+        assert exemplars, "the drafter needs an example of an approved section"
+        for exemplar in exemplars:
+            assert exemplar["report_id"] != stored["envelope"]["study_context"]["study_id"]
+            assert exemplar["hash"].startswith("sha256:")
+        assert stored["envelope"]["validated_claims"][0]["claim_id"] == "C-BW-HIGH"
+        exemplar_text = json.dumps(exemplars)
+        assert "291.5" in exemplar_text, "corpus changed; the contamination guard below is now vacuous"
+        assert "291.5" not in json.dumps(stored["candidate"])
+
+
+        # The agent renders values the executor computed. A receipt carrying only
+        # a hash leaves it nothing to render, so it has to derive them itself.
+        receipt = stored["envelope"]["executor_receipts"][0]
+        assert receipt["artifact_id"] == "EXEC-BW-SUMMARY-001"
+        assert receipt["facts"]["unit"] == "g"
+        assert receipt["facts"]["male_means"]["G1"]
+        assert receipt["facts"]["female_means"]["G1"]
+        # No layer runs a statistical test, so nothing may name one.
+        assert "statistical_test" not in receipt["facts"]
+        assert receipt["provenance"]
+        assert all(entry["source_record_ids"] for entry in receipt["provenance"])
+        assert receipt["hash"] == canonical_hash(
+            {"facts": receipt["facts"], "provenance": receipt["provenance"]}
+        )
         assert stored["envelope"]["structured_failures"] == [
             {
                 "result_id": "VR-004",

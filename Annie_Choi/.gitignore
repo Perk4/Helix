@@ -1,0 +1,11 @@
+# Belt-and-suspenders (repo root already ignores these). Never leak keys/artifacts.
+.env
+.env.*
+!.env.example
+.venv/
+__pycache__/
+*.pyc
+.next/
+out/
+node_modules/
+*.zip

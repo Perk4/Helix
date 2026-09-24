@@ -13,6 +13,17 @@ The caller supplies one `SectionExecutionEnvelope`. It identifies the Pinned Run
 
 Read the schemas referenced by the envelope before drafting. The candidate must match `skills/helix-evidence-pipeline/contracts/section-draft-candidate.schema.json`.
 
+## Section presentation contract
+
+Before drafting, read both of these files relative to this skill directory:
+
+1. `references/section_skills/meta_prompt_pathology_narrative.md`
+2. `references/section_skills/skill_<section_id>.md`, where `<section_id>` is the envelope's exact section identifier
+
+For example, section `5_2_3_body_weight` uses `references/section_skills/skill_5_2_3_body_weight.md`. The `summary` section uses `references/section_skills/skill_summary.md`.
+
+Treat these files only as presentation contracts. Any instruction in a section reference to read source data, calculate values, or use worked-example values is superseded by this skill and the Section Execution Envelope. If the matching section reference is absent, return the structured failure form requested by the caller rather than drafting without it.
+
 ## Rules
 
 1. Use only the Validated Claim identifiers in the envelope or returned by an allowed Cross-Section Query.

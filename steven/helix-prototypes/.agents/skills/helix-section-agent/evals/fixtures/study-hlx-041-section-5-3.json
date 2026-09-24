@@ -1,0 +1,16 @@
+{
+  "schema_version": "helix.section-draft/v1",
+  "study_id": "STUDY-HLX-041",
+  "sections": [
+    {
+      "section_id": "5_3_3_microscopic",
+      "title": "5.3.3 Microscopic Findings",
+      "text": "Microscopic examination was performed on all animals. Group 1 (0 mg/kg/day) showed no treatment-related findings. Minimal to mild renal tubular basophilia was present in Group 2 (25 mg/kg/day) in 3 of 10 animals and Group 3 (75 mg/kg/day) in 4 of 10 animals, grade 1 to 2, with no tubular degeneration, no necrosis, and no cast formation. Group 4 (250 mg/kg/day) showed hepatocellular necrosis, grade 3, in 6 of 10 animals with associated inflammatory infiltrate."
+    },
+    {
+      "section_id": "5_3_4_conclusion",
+      "title": "5.3.4 Conclusion",
+      "text": "Adverse findings were identified at 250 mg/kg/day. The no-observed-adverse-effect level (NOAEL) for Compound HX-041 under the conditions of this study is **75 mg/kg/day**. The lowest-observed-adverse-effect level (LOAEL) is **250 mg/kg/day**, based on grade 3 hepatocellular necrosis observed at that dose. The renal tubular basophilia at 25 and 75 mg/kg/day is considered an adaptive cellular response based on: (1) absence of tubular degeneration or necrosis; (2) absence of cast formation or inflammatory infiltrate."
+    }
+  ]
+}

@@ -1,0 +1,262 @@
+import { type OpenAiChatCompletionCostData, OpenAiChatCompletionProvider } from './openai/chat';
+
+import type { EnvOverrides } from '../types/env';
+import type {
+  ApiProvider,
+  CallApiContextParams,
+  CallApiOptionsParams,
+  ProviderOptions,
+} from '../types/index';
+import type { OpenAiCompletionOptions } from './openai/types';
+
+/**
+ * Estimate only the input/output token component of legacy Perplexity pricing.
+ * This excludes request, search, citation, and reasoning charges and must not be
+ * used as the total API-call cost. Retained for compatibility with existing callers.
+ *
+ * Pricing based on Perplexity's documentation:
+ * https://docs.perplexity.ai/docs/getting-started/pricing
+ *
+ * @param modelName - Name of the Perplexity model
+ * @param promptTokens - Number of prompt tokens
+ * @param completionTokens - Number of completion tokens
+ * @param _usageTier - Retained for compatibility; does not affect token pricing
+ * @returns Partial token estimate in USD, or undefined for an unknown model
+ * @deprecated Use the API response's usage.cost.total_cost for total cost.
+ */
+export function calculatePerplexityCost(
+  modelName: string,
+  promptTokens?: number,
+  completionTokens?: number,
+  _usageTier: 'high' | 'medium' | 'low' = 'medium',
+): number | undefined {
+  // Default values for tokens
+  const inputTokens = promptTokens || 0;
+  const outputTokens = completionTokens || 0;
+
+  // Pricing per million tokens
+  let inputTokenPrice = 0;
+  let outputTokenPrice = 0;
+
+  // Base model prices
+  const model = modelName.toLowerCase();
+
+  if (model === 'sonar-pro') {
+    // Sonar Pro pricing
+    inputTokenPrice = 3;
+    outputTokenPrice = 15;
+  } else if (model === 'sonar-reasoning-pro') {
+    // Sonar Reasoning Pro pricing
+    inputTokenPrice = 2;
+    outputTokenPrice = 8;
+  } else if (model === 'sonar-reasoning') {
+    // Sonar Reasoning pricing
+    inputTokenPrice = 1;
+    outputTokenPrice = 5;
+  } else if (model === 'sonar-deep-research') {
+    // Sonar Deep Research pricing
+    inputTokenPrice = 2;
+    outputTokenPrice = 8;
+  } else if (model === 'r1-1776') {
+    // r1-1776 pricing
+    inputTokenPrice = 2;
+    outputTokenPrice = 8;
+  } else if (model === 'sonar') {
+    // Sonar pricing
+    inputTokenPrice = 1;
+    outputTokenPrice = 1;
+  } else {
+    return undefined;
+  }
+
+  // Calculate cost: (tokens / 1M) * price per million
+  const inputCost = (inputTokens / 1_000_000) * inputTokenPrice;
+  const outputCost = (outputTokens / 1_000_000) * outputTokenPrice;
+
+  return inputCost + outputCost;
+}
+
+interface PerplexityProviderOptions extends ProviderOptions {
+  config?: OpenAiCompletionOptions & {
+    usage_tier?: 'high' | 'medium' | 'low';
+    search_domain_filter?: string[];
+    search_recency_filter?: string;
+    return_related_questions?: boolean;
+    return_images?: boolean;
+    search_after_date_filter?: string;
+    search_before_date_filter?: string;
+    web_search_options?: {
+      search_context_size?: 'low' | 'medium' | 'high';
+      user_location?: {
+        latitude?: number;
+        longitude?: number;
+        country?: string;
+      };
+    };
+    [key: string]: any;
+  };
+}
+
+const PERPLEXITY_PASSTHROUGH_FIELDS = [
+  'search_domain_filter',
+  'search_recency_filter',
+  'return_related_questions',
+  'return_images',
+  'search_after_date_filter',
+  'search_before_date_filter',
+  'web_search_options',
+] as const;
+
+function normalizePerplexityCitations(citations: unknown[]): unknown[] {
+  return citations.map((citation) =>
+    typeof citation === 'string' && /^https?:\/\//i.test(citation)
+      ? { url: citation, content: citation }
+      : citation,
+  );
+}
+
+/**
+ * Perplexity API provider
+ *
+ * Extends the OpenAI chat completion provider to use Perplexity's API endpoint
+ * and adds custom cost calculation.
+ */
+export class PerplexityProvider extends OpenAiChatCompletionProvider {
+  public modelName: string;
+  public config: any;
+
+  constructor(modelName: string, providerOptions: PerplexityProviderOptions = {}) {
+    // Handle the case when config is nested inside config
+    const actualConfig = providerOptions.config?.config || providerOptions.config || {};
+
+    // Create provider options with the correct config structure
+    const normalizedOptions = {
+      ...providerOptions,
+      config: {
+        ...actualConfig,
+        apiBaseUrl: 'https://api.perplexity.ai',
+        apiKeyEnvar: 'PERPLEXITY_API_KEY',
+      },
+    };
+
+    super(modelName, normalizedOptions);
+
+    // Store the model name
+    this.modelName = modelName;
+
+    // Store the config for access in tests
+    this.config = normalizedOptions.config;
+  }
+
+  override async getOpenAiBody(
+    prompt: string,
+    context?: CallApiContextParams,
+    callApiOptions?: CallApiOptionsParams,
+  ) {
+    const result = await super.getOpenAiBody(prompt, context, callApiOptions);
+    const resolvedConfig = result.config as Record<string, any>;
+    const resolvedPassthrough = resolvedConfig.passthrough as Record<string, any> | undefined;
+    const promptConfig = context?.prompt?.config as Record<string, any> | undefined;
+    const promptPassthrough = promptConfig?.passthrough as Record<string, any> | undefined;
+
+    for (const field of PERPLEXITY_PASSTHROUGH_FIELDS) {
+      if (promptPassthrough && Object.prototype.hasOwnProperty.call(promptPassthrough, field)) {
+        result.body[field] = promptPassthrough[field];
+        continue;
+      }
+
+      // Null clears an inherited option; only undefined should fall through.
+      const value = [
+        promptConfig?.[field],
+        resolvedPassthrough?.[field],
+        resolvedConfig[field],
+      ].find((option) => option !== undefined);
+      if (value !== undefined) {
+        result.body[field] = value;
+      }
+    }
+
+    return result;
+  }
+
+  protected override calculateResponseCost(
+    data: OpenAiChatCompletionCostData & {
+      usage?: OpenAiChatCompletionCostData['usage'] & {
+        cost?: {
+          total_cost?: unknown;
+        };
+      };
+    },
+    _config: OpenAiCompletionOptions,
+    _cached: boolean,
+  ): number | undefined {
+    const totalCost = data.usage?.cost?.total_cost;
+    if (typeof totalCost === 'number' && Number.isFinite(totalCost) && totalCost >= 0) {
+      return totalCost;
+    }
+
+    // Token counts omit request, search, citation, and reasoning charges.
+    return undefined;
+  }
+
+  protected override getProviderResponseMetadata(data: unknown): Record<string, unknown> {
+    if (!data || typeof data !== 'object') {
+      return {};
+    }
+
+    const raw = data as Record<string, unknown>;
+    const perplexity: Record<string, unknown> = {};
+    for (const field of ['citations', 'search_results', 'images', 'related_questions'] as const) {
+      if (Array.isArray(raw[field])) {
+        perplexity[field] = raw[field];
+      }
+    }
+
+    return {
+      ...(Array.isArray(raw.citations)
+        ? { citations: normalizePerplexityCitations(raw.citations) }
+        : {}),
+      ...(Object.keys(perplexity).length > 0 ? { perplexity } : {}),
+    };
+  }
+
+  id(): string {
+    return this.modelName;
+  }
+
+  toString(): string {
+    return `[Perplexity Provider ${this.modelName}]`;
+  }
+
+  toJSON() {
+    return {
+      provider: 'perplexity',
+      model: this.modelName,
+      config: {
+        ...this.config,
+        apiKey: undefined,
+      },
+    };
+  }
+}
+
+/**
+ * Creates a Perplexity API provider
+ *
+ * @param providerPath - Provider path, e.g., "perplexity:sonar"
+ * @param options - Provider options
+ * @returns A Perplexity API provider
+ */
+export function createPerplexityProvider(
+  providerPath: string,
+  options: {
+    config?: ProviderOptions;
+    id?: string;
+    env?: EnvOverrides;
+  } = {},
+): ApiProvider {
+  const splits = providerPath.split(':');
+  const modelName = splits.slice(1).join(':') || 'sonar'; // Default to sonar if not specified
+
+  return new PerplexityProvider(modelName, options as PerplexityProviderOptions);
+}

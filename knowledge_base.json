@@ -1,0 +1,577 @@
+{
+  "TOX": {
+    "TOX-2024-0412": {
+      "report_id": "TOX-2024-0412",
+      "report_title": "A 28-Day Repeat-Dose Oral Gavage Toxicity Study with Compound XR-247 in Sprague-Dawley Rats",
+      "sections": {
+        "1": {
+          "section_number": "1",
+          "section_title": "Objective",
+          "parent_sections": {},
+          "content": "The objectives of this study were to: (1) evaluate the potential toxicity of Compound XR-247 following repeated oral gavage administration to Sprague-Dawley rats for 28 consecutive days; (2) characterise the nature, severity, and dose-response relationship of any treatment-related effects; (3) identify target organs of toxicity; and (4) establish a no-observed-adverse-effect level (NOAEL) to support further development. The study was conducted in compliance with Good Laboratory Practice (GLP) regulations.\n\nCompound XR-247 is a small-molecule candidate under development for treatment of chronic inflammatory disease. Based on pharmacological activity in prior in vitro screens, the liver was identified as a potential target organ. The doses selected for this study (10, 50, and 200 mg/kg/day) were based on the maximum tolerated dose established in a 7-day range-finding study.\n\n---"
+        },
+        "2": {
+          "section_number": "2",
+          "section_title": "Experimental Design",
+          "parent_sections": {},
+          "content": "| Parameter | Detail |\n|---|---|\n| Species | Sprague-Dawley rat (Crl:CD(SD)) |\n| Source | Charles River Laboratories |\n| Age at study start | 7 to 8 weeks |\n| Route of administration | Oral gavage |\n| Dosing frequency | Once daily, 7 days per week |\n| Study duration | 28 days |\n| Vehicle | 0.5% methylcellulose in purified water |\n| Dose volume | 10 mL/kg body weight |\n\n**Animal Allocation:**\n\n| Group | Dose (mg/kg/day) | Males | Females | Total |\n|---|---|---|---|---|\n| 1 — Vehicle Control | 0 | 5 | 5 | 10 |\n| 2 — Low Dose | 10 | 5 | 5 | 10 |\n| 3 — Mid Dose | 50 | 5 | 5 | 10 |\n| 4 — High Dose | 200 | 5 | 5 | 10 |\n| **Total** | | **20** | **20** | **40** |\n\nAnimals were housed 2 per cage under standard conditions (22 ± 2°C, 12-hour light/dark cycle) with free access to certified rodent diet and water. Animals were assigned to groups by stratified randomisation based on body weight on Day 1.\n\n---"
+        },
+        "3": {
+          "section_number": "3",
+          "section_title": "Materials and Methods",
+          "parent_sections": {},
+          "content": ""
+        },
+        "3.1": {
+          "section_number": "3.1",
+          "section_title": "Test Article",
+          "parent_sections": {
+            "3": "Materials and Methods"
+          },
+          "content": "Compound XR-247 was supplied by the Sponsor Analytical Chemistry Group. The batch used (XR247-2023-B01) had a purity of 98.7% (HPLC). The test article was stored at controlled room temperature, protected from light."
+        },
+        "3.2": {
+          "section_number": "3.2",
+          "section_title": "Vehicle",
+          "parent_sections": {
+            "3": "Materials and Methods"
+          },
+          "content": "Vehicle was 0.5% methylcellulose (w/v) in purified water. Dosing formulations were prepared as a suspension weekly and stored refrigerated (2 to 8°C)."
+        },
+        "3.3": {
+          "section_number": "3.3",
+          "section_title": "Test System",
+          "parent_sections": {
+            "3": "Materials and Methods"
+          },
+          "content": "Naive, virus antibody-free Sprague-Dawley rats (Crl:CD(SD)) were obtained from Charles River Laboratories. Animals arrived at 7 weeks of age and were acclimated for a minimum of 5 days prior to Day 1. Animals were assigned to groups by stratified randomisation based on Day 1 body weight."
+        },
+        "3.4": {
+          "section_number": "3.4",
+          "section_title": "Dose Formulation Verification",
+          "parent_sections": {
+            "3": "Materials and Methods"
+          },
+          "content": "Dosing formulation samples were collected for concentration verification on Day 1 and during Week 4. Samples were analysed by HPLC. Acceptance criteria: measured concentration within ±10% of nominal."
+        },
+        "3.5": {
+          "section_number": "3.5",
+          "section_title": "Terminal Procedures",
+          "parent_sections": {
+            "3": "Materials and Methods"
+          },
+          "content": "All surviving animals were euthanised on Day 29 by carbon dioxide inhalation followed by exsanguination. A complete macroscopic examination was performed on all animals. Terminal body weights were recorded immediately prior to euthanasia. The following organs were weighed: liver, kidneys (paired), heart, brain, spleen, and thymus."
+        },
+        "3.6": {
+          "section_number": "3.6",
+          "section_title": "Histology and Histopathology",
+          "parent_sections": {
+            "3": "Materials and Methods"
+          },
+          "content": "Tissues from all animals in Groups 1 and 4 and target tissues (liver, kidney) from Groups 2 and 3 were fixed in 10% neutral buffered formalin, processed, and embedded in paraffin. Sections were cut at 4 to 6 μm and stained with haematoxylin and eosin (H&E). Microscopic findings were graded on a scale of 1 (Minimal) to 5 (Severe). A pathology peer review was conducted by an independent board-certified veterinary pathologist."
+        },
+        "3.7": {
+          "section_number": "3.7",
+          "section_title": "Statistical Analysis",
+          "parent_sections": {
+            "3": "Materials and Methods"
+          },
+          "content": "Continuous variables (body weights, organ weights) were analysed by one-way ANOVA with Dunnett's post-hoc test. Where Bartlett's test indicated heterogeneity of variance (p < 0.05), the Kruskal-Wallis test with Dunn's post-hoc was applied. Incidence data were compared by Fisher's exact test. Statistical significance was set at p < 0.05.\n\n---"
+        },
+        "4": {
+          "section_number": "4",
+          "section_title": "Deviations",
+          "parent_sections": {},
+          "content": "No protocol deviations were noted during the conduct of this study.\n\n---"
+        },
+        "5": {
+          "section_number": "5",
+          "section_title": "Results",
+          "parent_sections": {},
+          "content": ""
+        },
+        "5.1": {
+          "section_number": "5.1",
+          "section_title": "Test Article Formulation and Analyses Verification",
+          "parent_sections": {
+            "5": "Results"
+          },
+          "content": "Dosing formulation samples were collected and analysed on Day 1 and during Week 4. All measured concentrations were within ±10% of the nominal target concentration. No test article was detected in vehicle control formulations. All dosing formulations met the predefined acceptance criteria."
+        },
+        "5.2": {
+          "section_number": "5.2",
+          "section_title": "In-Life Observations and Measurements",
+          "parent_sections": {
+            "5": "Results"
+          },
+          "content": ""
+        },
+        "5.2.1": {
+          "section_number": "5.2.1",
+          "section_title": "Mortality",
+          "parent_sections": {
+            "5": "Results",
+            "5.2": "In-Life Observations and Measurements"
+          },
+          "content": "No unscheduled deaths or moribund euthanasias occurred during the study. All 40 animals (20 males, 20 females) survived to scheduled necropsy on Day 29."
+        },
+        "5.2.2": {
+          "section_number": "5.2.2",
+          "section_title": "Clinical Observations",
+          "parent_sections": {
+            "5": "Results",
+            "5.2": "In-Life Observations and Measurements"
+          },
+          "content": "Cage-side observations were recorded twice daily throughout the study. Detailed clinical examinations were performed weekly.\n\n**Group 1 (0 mg/kg/day — Vehicle Control):** No treatment-related clinical signs were observed in any male or female animal during the study.\n\n**Group 2 (10 mg/kg/day — Low Dose):** No treatment-related clinical signs were observed. All animals appeared healthy throughout the dosing period.\n\n**Group 3 (50 mg/kg/day — Mid Dose):** Soft stool was observed in 3 of 10 animals (M301, M303, and M305) during Days 8 to 14. The finding was transient and resolved without intervention by Day 15. No other clinical signs were noted.\n\n**Group 4 (200 mg/kg/day — High Dose):** Multiple clinical signs consistent with systemic toxicity were observed throughout the study. Reduced activity was observed in 6 of 10 animals (M401, M402, M403, M404, F401, F402) from Day 1 through Day 28. Hunched posture was recorded in 4 of 10 animals (M401, M402, M403, F401) from Day 1 through Day 21. Soft stool was observed in 7 of 10 animals from Day 1 through Day 28. Partially closed eyes were noted in 3 animals (M401, M402, F401) from Days 1 to 14. All clinical signs persisted for the duration of dosing and are considered treatment-related."
+        },
+        "5.2.3": {
+          "section_number": "5.2.3",
+          "section_title": "Body Weight",
+          "parent_sections": {
+            "5": "Results",
+            "5.2": "In-Life Observations and Measurements"
+          },
+          "content": "Body weights were recorded on Day 1 (pre-dose) and weekly thereafter through Day 28.\n\n**Male Mean Body Weights (g):**\n\n| Group | Day 1 | Day 7 | Day 14 | Day 21 | Day 28 |\n|---|---|---|---|---|---|\n| G1 — Control (0 mg/kg) | 231.4 | 261.3 | 288.6 | 312.4 | 338.7 |\n| G2 — Low (10 mg/kg) | 229.8 | 260.1 | 287.4 | 310.8 | 336.2 |\n| G3 — Mid (50 mg/kg) | 232.1 | 256.4 | 281.2 | 299.7 | 318.4 |\n| G4 — High (200 mg/kg) | 230.5 | 247.6 | 264.8 | 278.3 | 291.5 |\n\n**Female Mean Body Weights (g):**\n\n| Group | Day 1 | Day 7 | Day 14 | Day 21 | Day 28 |\n|---|---|---|---|---|---|\n| G1 — Control (0 mg/kg) | 183.2 | 203.8 | 219.4 | 232.7 | 244.8 |\n| G2 — Low (10 mg/kg) | 184.6 | 204.2 | 220.1 | 233.5 | 245.6 |\n| G3 — Mid (50 mg/kg) | 182.9 | 201.6 | 215.8 | 226.4 | 235.9 |\n| G4 — High (200 mg/kg) | 184.1 | 196.2 | 207.3 | 214.8 | 220.6 |\n\nBody weight gain in Group 4 males was reduced by 13.9% relative to controls by Day 28 (291.5 g vs. 338.7 g). Group 4 females showed a similar reduction of 9.9% (220.6 g vs. 244.8 g). Group 3 showed mild reductions of 6.0% (males) and 3.6% (females) relative to controls at Day 28. Groups 1 and 2 showed comparable body weight trajectories throughout the study."
+        },
+        "5.3": {
+          "section_number": "5.3",
+          "section_title": "Anatomic Pathology",
+          "parent_sections": {
+            "5": "Results"
+          },
+          "content": ""
+        },
+        "5.3.1": {
+          "section_number": "5.3.1",
+          "section_title": "Organ Weights",
+          "parent_sections": {
+            "5": "Results",
+            "5.3": "Anatomic Pathology"
+          },
+          "content": "Terminal organ weights were recorded at scheduled necropsy on Day 29.\n\n**Male Absolute Organ Weights (g) — Group Means:**\n\n| Organ | G1 Control | G2 Low | G3 Mid | G4 High |\n|---|---|---|---|---|\n| Liver | 11.48 | 11.47 | 12.82 | 15.33 |\n| Kidneys (paired) | 2.18 | 2.18 | 2.31 | 2.64 |\n| Heart | 1.12 | 1.12 | 1.13 | 1.17 |\n| Brain | 1.89 | 1.89 | 1.87 | 1.86 |\n| Spleen | 0.74 | 0.74 | 0.77 | 0.81 |\n| Thymus | 0.38 | 0.38 | 0.34 | 0.28 |\n\n**Female Absolute Organ Weights (g) — Group Means:**\n\n| Organ | G1 Control | G2 Low | G3 Mid | G4 High |\n|---|---|---|---|---|\n| Liver | 8.65 | 8.73 | 9.66 | 11.79 |\n| Kidneys (paired) | 1.53 | 1.54 | 1.64 | 1.87 |\n| Heart | 0.87 | 0.87 | 0.87 | 0.90 |\n| Brain | 1.86 | 1.86 | 1.84 | 1.83 |\n| Spleen | 0.61 | 0.62 | 0.63 | 0.67 |\n| Thymus | 0.42 | 0.41 | 0.37 | 0.30 |\n\nLiver weights were statistically increased in Group 3 (12.82 g males, 9.66 g females) and Group 4 (15.33 g males, 11.79 g females) relative to controls. The increase in Group 4 males represents a 33.5% elevation over the control mean (p < 0.01, Dunnett's test). Kidney weights were increased in Group 4 (males: 2.64 g vs. 2.18 g control; females: 1.87 g vs. 1.53 g control). Thymus weights were reduced in Group 4 (males: 0.28 g; females: 0.30 g), consistent with stress or lymphoid depletion. All other organ weights were comparable across groups."
+        },
+        "5.3.2": {
+          "section_number": "5.3.2",
+          "section_title": "Macroscopic Observations",
+          "parent_sections": {
+            "5": "Results",
+            "5.3": "Anatomic Pathology"
+          },
+          "content": "A complete macroscopic examination was performed on all animals at scheduled necropsy on Day 29.\n\n**Groups 1 and 2 (0 and 10 mg/kg/day):** No treatment-related macroscopic findings were observed in any tissue in male or female animals.\n\n**Group 3 (50 mg/kg/day):** No macroscopic findings were noted in the liver or any other tissue. Microscopic hepatocellular hypertrophy at this dose was not associated with a macroscopic correlate.\n\n**Group 4 (200 mg/kg/day):** The liver appeared enlarged and pale tan in all 5 males and all 5 females. In 2 of 5 males (M401, M402), dark surface foci were additionally noted on the liver, consistent with focal necrosis observed microscopically. No macroscopic findings were noted in the kidney, thymus, or any other tissue."
+        },
+        "5.3.3": {
+          "section_number": "5.3.3",
+          "section_title": "Microscopic Findings",
+          "parent_sections": {
+            "5": "Results",
+            "5.3": "Anatomic Pathology"
+          },
+          "content": "Microscopic examination was performed on tissues from all animals in Groups 1 and 4 and target tissues (liver, kidney) from Groups 2 and 3.\n\n**Liver:**\n\nGroups 1 and 2: No treatment-related microscopic findings. Hepatic parenchyma appeared within normal limits in all animals examined.\n\nGroup 3: Minimal hepatocellular hypertrophy (Grade 1) was observed in 3 of 5 males (M301, M302, M304) and 2 of 5 females (F301, F303). The finding consisted of enlarged hepatocytes with abundant pale cytoplasm, predominantly in the centrilobular region. This change is consistent with hepatic enzyme induction and is considered adaptive rather than adverse at this dose.\n\nGroup 4: Moderate hepatocellular hypertrophy (Grade 2 to 3) was present in all 5 males and all 5 females. Additionally, mild centrilobular necrosis (Grade 1 to 2) was observed in 2 of 5 males (M401, M402) and 1 of 5 females (F401). Necrosis was characterised by hepatocyte loss and karyolysis in the centrilobular zone. These findings are considered adverse and directly attributable to compound administration.\n\n**Kidneys:**\n\nGroups 1 and 2: No treatment-related findings.\n\nGroup 3: No treatment-related renal findings.\n\nGroup 4: Minimal renal tubular basophilia (Grade 1) was observed in 3 of 5 males (M401, M402, M404) and 2 of 5 females (F402, F403). The finding consisted of basophilic tubular epithelial cells in the cortex, consistent with tubular regeneration following mild nephrotoxic injury.\n\n**Thymus:**\n\nNo treatment-related thymic findings were observed in Groups 1, 2, or 3. Thymic lymphoid depletion (Grade 1) was observed in 2 of 5 Group 4 males (M401, M402), consistent with stress-related involution secondary to body weight loss and systemic toxicity.\n\n**Other Organs (Heart, Brain, Spleen, Adrenal Glands, Gonads, Lungs, Bone Marrow):**\n\nNo treatment-related microscopic findings were identified in the heart, brain, spleen, adrenal glands, gonads, lungs, or bone marrow in any dose group."
+        },
+        "5.3.4": {
+          "section_number": "5.3.4",
+          "section_title": "Conclusion",
+          "parent_sections": {
+            "5": "Results",
+            "5.3": "Anatomic Pathology"
+          },
+          "content": "The no-observed-adverse-effect level (NOAEL) for Compound XR-247 under the conditions of this study is **10 mg/kg/day**, based on the absence of adverse findings at the low dose level. The lowest-observed-adverse-effect level (LOAEL) is **200 mg/kg/day**, based on adverse hepatic findings (hepatocellular hypertrophy Grade 2–3 and centrilobular necrosis), renal tubular basophilia, body weight reduction, and clinical signs of systemic toxicity.\n\n---"
+        },
+        "6": {
+          "section_number": "6",
+          "section_title": "Abbreviations",
+          "parent_sections": {},
+          "content": "| Abbreviation | Definition |\n|---|---|\n| ANOVA | analysis of variance |\n| GLP | Good Laboratory Practice |\n| H&E | haematoxylin and eosin |\n| LOAEL | lowest-observed-adverse-effect level |\n| NOAEL | no-observed-adverse-effect level |\n| QAU | Quality Assurance Unit |\n\n---"
+        },
+        "7": {
+          "section_number": "7",
+          "section_title": "Quality Assurance Statement",
+          "parent_sections": {},
+          "content": "This study was conducted in compliance with GLP regulations (21 CFR Part 58). Periodic inspections were conducted by the Quality Assurance Unit.\n\n| Phase Inspected | Audit Date | Reporting Date |\n|---|---|---|\n| In-life phase | 22 February 2024 | 01 March 2024 |\n| Pathology review | 08 March 2024 | 12 March 2024 |"
+        }
+      }
+    },
+    "TOX-2023-0856": {
+      "report_id": "TOX-2023-0856",
+      "report_title": "A 13-Week Repeat-Dose Oral Gavage Toxicity Study with Compound LF-892 in Sprague-Dawley Rats with a 4-Week Recovery Period",
+      "sections": {
+        "1": {
+          "section_number": "1",
+          "section_title": "Objective",
+          "parent_sections": {},
+          "content": "The objectives of this study were to: (1) evaluate the potential subchronic toxicity of Compound LF-892 following repeated oral gavage administration to Sprague-Dawley rats for 13 consecutive weeks; (2) characterise the nature, severity, dose-response relationship, and reversibility of any treatment-related effects; (3) identify target organs of toxicity; and (4) establish a no-observed-adverse-effect level (NOAEL) to support regulatory submission. The study was conducted in compliance with Good Laboratory Practice (GLP) regulations.\n\nCompound LF-892 is a small-molecule candidate under development for treatment of pulmonary inflammatory disease. Based on the pharmacological mechanism of action (inhibition of alveolar macrophage activation) and repeat-dose range-finding data, the lung was identified as the primary target organ. A 4-week recovery cohort was included to assess the reversibility of any identified findings.\n\n---"
+        },
+        "2": {
+          "section_number": "2",
+          "section_title": "Experimental Design",
+          "parent_sections": {},
+          "content": "| Parameter | Detail |\n|---|---|\n| Species | Sprague-Dawley rat (Crl:CD(SD)) |\n| Source | Charles River Laboratories |\n| Age at study start | 7 to 8 weeks |\n| Route of administration | Oral gavage |\n| Dosing frequency | Once daily, 7 days per week |\n| Study duration | 13 weeks (91 days) |\n| Recovery period | 4 weeks (28 days); Groups 1 and 4 only |\n| Vehicle | 0.5% methylcellulose in purified water |\n| Dose volume | 10 mL/kg body weight |\n\n**Animal Allocation:**\n\n| Group | Dose (mg/kg/day) | Males (Main) | Females (Main) | Males (Recovery) | Females (Recovery) | Total |\n|---|---|---|---|---|---|---|\n| 1 — Vehicle Control | 0 | 10 | 10 | 5 | 5 | 30 |\n| 2 — Low Dose | 10 | 10 | 10 | — | — | 20 |\n| 3 — Mid Dose | 50 | 10 | 10 | — | — | 20 |\n| 4 — High Dose | 150 | 10 | 10 | 5 | 5 | 30 |\n| **Total** | | **40** | **40** | **10** | **10** | **100** |\n\nAnimals were housed 2 per cage under standard conditions (22 ± 2°C, 12-hour light/dark cycle) with free access to certified rodent diet and water. Animals were assigned to groups by stratified randomisation based on body weight on Day 1.\n\n---"
+        },
+        "3": {
+          "section_number": "3",
+          "section_title": "Materials and Methods",
+          "parent_sections": {},
+          "content": ""
+        },
+        "3.1": {
+          "section_number": "3.1",
+          "section_title": "Test Article",
+          "parent_sections": {
+            "3": "Materials and Methods"
+          },
+          "content": "Compound LF-892 was supplied by the Sponsor Analytical Chemistry Group. The batch used (LF892-2022-C03) had a purity of 99.1% (HPLC). The test article was stored at controlled room temperature, protected from light."
+        },
+        "3.2": {
+          "section_number": "3.2",
+          "section_title": "Vehicle",
+          "parent_sections": {
+            "3": "Materials and Methods"
+          },
+          "content": "Vehicle was 0.5% methylcellulose (w/v) in purified water. Dosing formulations were prepared as a suspension weekly and stored refrigerated (2 to 8°C)."
+        },
+        "3.3": {
+          "section_number": "3.3",
+          "section_title": "Test System",
+          "parent_sections": {
+            "3": "Materials and Methods"
+          },
+          "content": "Naive, virus antibody-free Sprague-Dawley rats (Crl:CD(SD)) were obtained from Charles River Laboratories. Animals arrived at 7 weeks of age and were acclimated for a minimum of 5 days prior to Day 1. Animals were assigned to groups by stratified randomisation based on Day 1 body weight."
+        },
+        "3.4": {
+          "section_number": "3.4",
+          "section_title": "Dose Formulation Verification",
+          "parent_sections": {
+            "3": "Materials and Methods"
+          },
+          "content": "Dosing formulation samples were collected for concentration verification on Day 1 and during Week 13. Samples were analysed by HPLC. Acceptance criteria: measured concentration within ±10% of nominal."
+        },
+        "3.5": {
+          "section_number": "3.5",
+          "section_title": "Terminal Procedures",
+          "parent_sections": {
+            "3": "Materials and Methods"
+          },
+          "content": "Main group animals were euthanised at Day 92 (Week 13 + 1 day). Recovery group animals were euthanised at Day 120 (4 weeks post-treatment). All animals were euthanised by carbon dioxide inhalation followed by exsanguination. A complete macroscopic post-mortem examination was performed on all animals. The following organs were weighed: liver, lungs, kidneys (paired), heart, brain, spleen, and thymus."
+        },
+        "3.6": {
+          "section_number": "3.6",
+          "section_title": "Histology and Histopathology",
+          "parent_sections": {
+            "3": "Materials and Methods"
+          },
+          "content": "Tissues from all animals in Groups 1 and 4 (and their respective recovery groups) and target tissues (lungs, liver) from Groups 2 and 3 were fixed in 10% neutral buffered formalin, processed, and embedded in paraffin. Sections were cut at 4 to 6 μm and stained with haematoxylin and eosin (H&E). Microscopic findings were graded on a scale of 1 (Minimal) to 5 (Severe). A pathology peer review was conducted by an independent board-certified veterinary pathologist."
+        },
+        "3.7": {
+          "section_number": "3.7",
+          "section_title": "Statistical Analysis",
+          "parent_sections": {
+            "3": "Materials and Methods"
+          },
+          "content": "Continuous variables (body weights, organ weights) were analysed by one-way ANOVA with Dunnett's post-hoc test. Where Bartlett's test indicated heterogeneity of variance (p < 0.05), the Kruskal-Wallis test with Dunn's post-hoc was applied. Incidence data were compared by Fisher's exact test. Statistical significance was set at p < 0.05.\n\n---"
+        },
+        "4": {
+          "section_number": "4",
+          "section_title": "Deviations",
+          "parent_sections": {},
+          "content": "One unscheduled death occurred during the study. Group 1 male M101 was found moribund on Day 35 and was euthanised by carbon dioxide inhalation. Gross pathology revealed oesophageal perforation consistent with inadvertent gavage error. This death was classified as accidental and non-treatment-related. The event was documented as a protocol deviation; no impact on study integrity was identified.\n\n---"
+        },
+        "5": {
+          "section_number": "5",
+          "section_title": "Results",
+          "parent_sections": {},
+          "content": ""
+        },
+        "5.1": {
+          "section_number": "5.1",
+          "section_title": "Test Article Formulation and Analyses Verification",
+          "parent_sections": {
+            "5": "Results"
+          },
+          "content": "Dosing formulation samples were collected and analysed on Day 1 and during Week 13. All measured concentrations were within ±10% of the nominal target concentration. No test article was detected in vehicle control formulations. All dosing formulations met the predefined acceptance criteria."
+        },
+        "5.2": {
+          "section_number": "5.2",
+          "section_title": "In-Life Observations and Measurements",
+          "parent_sections": {
+            "5": "Results"
+          },
+          "content": ""
+        },
+        "5.2.1": {
+          "section_number": "5.2.1",
+          "section_title": "Mortality",
+          "parent_sections": {
+            "5": "Results",
+            "5.2": "In-Life Observations and Measurements"
+          },
+          "content": "One unscheduled death occurred during the study period. Group 1 male M101 was found moribund on Day 35 and was euthanised. Gross post-mortem examination revealed oesophageal perforation, consistent with an inadvertent gavage error. This death was considered accidental and non-treatment-related. All remaining 99 animals (39 males, 40 females, and 20 recovery animals across Groups 1 and 4) survived to scheduled necropsy. No treatment-related deaths occurred during the 13-week treatment period or the 4-week recovery period."
+        },
+        "5.2.2": {
+          "section_number": "5.2.2",
+          "section_title": "Clinical Observations",
+          "parent_sections": {
+            "5": "Results",
+            "5.2": "In-Life Observations and Measurements"
+          },
+          "content": "Cage-side observations were recorded twice daily throughout the study. Detailed clinical examinations were performed weekly.\n\n**Group 1 (0 mg/kg/day — Vehicle Control):** No treatment-related clinical signs were observed. The death of M101 on Day 35 was associated with clinical signs of respiratory distress immediately prior to moribund sacrifice, consistent with gavage error.\n\n**Group 2 (10 mg/kg/day — Low Dose):** No treatment-related clinical signs were observed. All animals appeared healthy throughout the dosing period.\n\n**Group 3 (50 mg/kg/day — Mid Dose):** Occasional soft stool was noted in 4 of 20 animals (M303, M305, F301, F308) during Days 1 to 14. The finding was transient and resolved without intervention. No other clinical signs were noted.\n\n**Group 4 (150 mg/kg/day — High Dose):** Multiple clinical signs consistent with pulmonary and systemic toxicity were observed from Week 2 onwards. Reduced activity was observed in 12 of 20 main group animals from Days 8 to 91. Piloerection was noted in 9 of 20 animals from Days 8 to 63. Laboured breathing was observed in 6 of 20 animals (M401, M402, M404, F401, F403, F405) from Days 15 to 91. Reduced food consumption was recorded in most Group 4 animals throughout the dosing period. All clinical signs were considered treatment-related and resolved during the recovery period. By Week 4 of recovery, no residual clinical signs were observed in any Group 4 recovery animal."
+        },
+        "5.2.3": {
+          "section_number": "5.2.3",
+          "section_title": "Body Weight",
+          "parent_sections": {
+            "5": "Results",
+            "5.2": "In-Life Observations and Measurements"
+          },
+          "content": "Body weights were recorded on Day 1 (pre-dose) and weekly thereafter through Day 91 for main groups, and through Day 120 for recovery groups.\n\n**Male Mean Body Weights (g) — Selected Timepoints:**\n\n| Group | Day 1 | Week 4 (Day 28) | Week 8 (Day 56) | Week 13 (Day 91) | Recovery Week 4 (Day 120) |\n|---|---|---|---|---|---|\n| G1 — Control (0 mg/kg) | 232 | 341 | 399 | 427 | 431 |\n| G2 — Low (10 mg/kg) | 230 | 339 | 397 | 425 | — |\n| G3 — Mid (50 mg/kg) | 231 | 328 | 376 | 396 | — |\n| G4 — High (150 mg/kg) | 229 | 308 | 346 | 363 | 408 |\n\n**Female Mean Body Weights (g) — Selected Timepoints:**\n\n| Group | Day 1 | Week 4 (Day 28) | Week 8 (Day 56) | Week 13 (Day 91) | Recovery Week 4 (Day 120) |\n|---|---|---|---|---|---|\n| G1 — Control (0 mg/kg) | 184 | 244 | 267 | 276 | 279 |\n| G2 — Low (10 mg/kg) | 183 | 243 | 266 | 275 | — |\n| G3 — Mid (50 mg/kg) | 184 | 237 | 256 | 263 | — |\n| G4 — High (150 mg/kg) | 183 | 228 | 243 | 249 | 268 |\n\nBody weight gain in Group 4 males was reduced by 15.0% relative to controls at Week 13 (363 g vs. 427 g; p < 0.01). Group 4 females showed a similar reduction of 9.8% (249 g vs. 276 g; p < 0.01). Group 3 males and females showed mild reductions of 7.3% and 4.7%, respectively. Group 2 was comparable to controls throughout the study. During the 4-week recovery period, Group 4 males recovered to 408 g (94.7% of control) and Group 4 females to 268 g (96.1% of control), indicating substantial but not complete recovery of body weight gain."
+        },
+        "5.3": {
+          "section_number": "5.3",
+          "section_title": "Anatomic Pathology",
+          "parent_sections": {
+            "5": "Results"
+          },
+          "content": ""
+        },
+        "5.3.1": {
+          "section_number": "5.3.1",
+          "section_title": "Organ Weights",
+          "parent_sections": {
+            "5": "Results",
+            "5.3": "Anatomic Pathology"
+          },
+          "content": "Terminal organ weights were recorded at scheduled necropsy. Recovery group organ weights are reported separately.\n\n**Male Absolute Organ Weights (g) — Main Group Means:**\n\n| Organ | G1 Control | G2 Low | G3 Mid | G4 High |\n|---|---|---|---|---|\n| Liver | 12.10 | 12.22 | 13.09 | 14.83 |\n| Lungs | 1.85 | 1.88 | 1.96 | 2.31 |\n| Kidneys (paired) | 2.24 | 2.25 | 2.28 | 2.31 |\n| Heart | 1.18 | 1.18 | 1.19 | 1.21 |\n| Brain | 1.91 | 1.91 | 1.90 | 1.89 |\n| Spleen | 0.78 | 0.78 | 0.80 | 0.83 |\n| Thymus | 0.40 | 0.40 | 0.37 | 0.26 |\n\n**Female Absolute Organ Weights (g) — Main Group Means:**\n\n| Organ | G1 Control | G2 Low | G3 Mid | G4 High |\n|---|---|---|---|---|\n| Liver | 9.10 | 9.18 | 9.84 | 11.21 |\n| Lungs | 1.46 | 1.47 | 1.55 | 1.87 |\n| Kidneys (paired) | 1.56 | 1.57 | 1.59 | 1.62 |\n| Heart | 0.89 | 0.89 | 0.90 | 0.92 |\n| Brain | 1.87 | 1.87 | 1.86 | 1.85 |\n| Spleen | 0.64 | 0.64 | 0.66 | 0.69 |\n| Thymus | 0.43 | 0.42 | 0.40 | 0.27 |\n\n**Recovery Group Mean Organ Weights (g) — Day 120:**\n\n| Organ | G1R Control | G4R High (post-recovery) |\n|---|---|---|\n| Liver (males) | 12.08 | 12.31 |\n| Lungs (males) | 1.86 | 2.04 |\n| Thymus (males) | 0.39 | 0.36 |\n| Liver (females) | 9.12 | 9.19 |\n| Lungs (females) | 1.47 | 1.61 |\n| Thymus (females) | 0.44 | 0.41 |\n\nLung weights were statistically increased in Group 3 (males: +6.0%; females: +6.2%) and Group 4 (males: +24.9%, p < 0.01; females: +28.1%, p < 0.01) relative to controls. Liver weights were increased in Group 4 (males: +22.6%, p < 0.01; females: +23.2%, p < 0.01). Thymus weights were reduced in Group 4 (males: −35.0%; females: −37.2%), consistent with lymphoid depletion. At recovery, lung weights in Group 4 males partially normalised (2.04 g vs. 1.86 g control; +9.7% residual), while liver and thymus weights fully normalised. Kidney weights were unaffected across all groups and timepoints."
+        },
+        "5.3.2": {
+          "section_number": "5.3.2",
+          "section_title": "Macroscopic Observations",
+          "parent_sections": {
+            "5": "Results",
+            "5.3": "Anatomic Pathology"
+          },
+          "content": "A complete macroscopic examination was performed on all animals at scheduled necropsy and recovery necropsy.\n\n**Groups 1 and 2 (0 and 10 mg/kg/day):** No treatment-related macroscopic findings were observed in any tissue. The oesophageal perforation in M101 was confirmed at gross necropsy as the cause of death.\n\n**Group 3 (50 mg/kg/day):** No macroscopic findings attributable to treatment were identified in the lungs or any other tissue. The microscopic lung changes at this dose level were not associated with a macroscopic correlate.\n\n**Group 4 (150 mg/kg/day):** The lungs appeared dark red and exhibited multifocal areas of consolidation in 8 of 10 males and 7 of 10 females. Lung lobes were firm on palpation in the most severely affected animals (M401, M402, F401, F403). The thymus appeared small in 6 of 10 animals. No macroscopic liver findings were noted despite the presence of microscopic hepatocellular vacuolisation. No macroscopic findings were noted in the kidneys, heart, brain, spleen, or gonads in any group.\n\n**Recovery (Groups 1R and 4R):** No macroscopic findings were observed in Group 1R animals. Residual mild lung consolidation was noted in 2 of 5 Group 4R males (M401R, M403R) and 1 of 5 Group 4R females (F401R), indicating partial macroscopic reversibility. All other tissues were unremarkable in recovery animals."
+        },
+        "5.3.3": {
+          "section_number": "5.3.3",
+          "section_title": "Microscopic Findings",
+          "parent_sections": {
+            "5": "Results",
+            "5.3": "Anatomic Pathology"
+          },
+          "content": "Microscopic examination was performed on tissues from all animals in Groups 1 and 4 and their respective recovery groups, and on target tissues (lungs, liver) from Groups 2 and 3.\n\n**Lungs:**\n\nGroups 1 and 2: Group 1 animals showed no treatment-related pulmonary findings. In Group 2, minimal intra-alveolar macrophage accumulation (Grade 1) was observed in 2 of 10 males (M201, M207). The finding was characterised by scattered clusters of foamy macrophages within alveolar spaces without accompanying inflammation. This finding was considered incidental in nature based on low incidence and absence of associated inflammatory changes, and was not classified as adverse.\n\nGroup 3: Intra-alveolar macrophage accumulation (Grade 1) was present in all 10 males and 6 of 10 females. Macrophages were foamy in appearance and distributed in a multifocal pattern. The higher incidence compared to Group 2 indicates a treatment-related effect at this dose; the finding is considered adverse based on its occurrence in all Group 3 males.\n\nGroup 4: Moderate to marked intra-alveolar macrophage accumulation (Grade 2 to 3) was present in all 10 males and all 10 females. Additionally, pulmonary inflammation characterised by neutrophilic and lymphocytic infiltration (Grade 2) was observed in 7 of 10 males and 6 of 10 females. Perivascular lymphoid infiltration (Grade 1) was noted in 5 of 10 animals. All pulmonary findings are considered adverse and directly attributable to compound administration.\n\nGroup 4R (Recovery): Residual Grade 1 intra-alveolar macrophage accumulation was present in 3 of 5 Group 4R males and 2 of 5 Group 4R females, indicating partial reversibility. Pulmonary inflammation and perivascular infiltration were absent in all recovery animals, indicating complete reversibility of inflammatory components.\n\n**Liver:**\n\nGroups 1 and 2: No treatment-related hepatic findings.\n\nGroup 3: Minimal hepatocellular vacuolisation (Grade 1) was observed in 3 of 10 males (M302, M305, M309). The finding consisted of small clear vacuoles within hepatocytes in the centrilobular region, consistent with glycogen or lipid accumulation. This finding was considered treatment-related but non-adverse at this dose based on minimal severity and restricted distribution.\n\nGroup 4: Mild hepatocellular vacuolisation (Grade 1 to 2) was present in all 10 males and 7 of 10 females. Distribution was centrilobular with diffuse involvement in the more severely affected animals. The finding is considered adverse in the context of the overall toxicological profile at 150 mg/kg/day.\n\nGroup 4R (Recovery): No residual hepatic vacuolisation was observed in any Group 4R recovery animal, indicating complete reversibility of this finding.\n\n**Thymus:**\n\nGroups 1 and 2: No treatment-related thymic findings.\n\nGroup 3: No treatment-related thymic findings.\n\nGroup 4: Thymic lymphoid depletion (Grade 1 to 2) was observed in 7 of 10 males and 6 of 10 females, characterised by decreased lymphocyte density in the cortex. This finding is consistent with stress-related involution secondary to body weight reduction and systemic toxicity.\n\nGroup 4R (Recovery): Residual mild thymic lymphoid depletion (Grade 1) was present in 1 of 5 Group 4R males. All other recovery animals showed complete thymic recovery.\n\n**Other Organs (Kidneys, Heart, Brain, Spleen, Adrenal Glands, Gonads, Bone Marrow):**\n\nNo treatment-related microscopic findings were identified in the kidneys, heart, brain, spleen, adrenal glands, gonads, or bone marrow in any dose group or in recovery animals."
+        },
+        "5.3.4": {
+          "section_number": "5.3.4",
+          "section_title": "Conclusion",
+          "parent_sections": {
+            "5": "Results",
+            "5.3": "Anatomic Pathology"
+          },
+          "content": "The no-observed-adverse-effect level (NOAEL) for Compound LF-892 under the conditions of this study is **10 mg/kg/day**, based on the absence of adverse findings at the low dose level (the minimal intra-alveolar macrophage accumulation observed in 2 of 10 Group 2 males was considered incidental and non-adverse). The lowest-observed-adverse-effect level (LOAEL) is **50 mg/kg/day**, based on treatment-related intra-alveolar macrophage accumulation in all Group 3 males and the majority of Group 3 females.\n\nThe primary target organ of toxicity is the **lung**. The liver and thymus are secondary targets at 150 mg/kg/day. Lung macrophage accumulation was partially reversible following a 4-week recovery period; the inflammatory component was fully reversible. Hepatocellular vacuolisation and thymic lymphoid depletion were fully reversible during the recovery period.\n\n---"
+        },
+        "6": {
+          "section_number": "6",
+          "section_title": "Abbreviations",
+          "parent_sections": {},
+          "content": "| Abbreviation | Definition |\n|---|---|\n| ANOVA | analysis of variance |\n| GLP | Good Laboratory Practice |\n| H&E | haematoxylin and eosin |\n| LOAEL | lowest-observed-adverse-effect level |\n| NOAEL | no-observed-adverse-effect level |\n| QAU | Quality Assurance Unit |\n\n---"
+        },
+        "7": {
+          "section_number": "7",
+          "section_title": "Quality Assurance Statement",
+          "parent_sections": {},
+          "content": "This study was conducted in compliance with GLP regulations (21 CFR Part 58). Periodic inspections were conducted by the Quality Assurance Unit.\n\n| Phase Inspected | Audit Date | Reporting Date |\n|---|---|---|\n| In-life phase (Weeks 1–7) | 18 March 2023 | 25 March 2023 |\n| In-life phase (Weeks 8–13) | 14 May 2023 | 21 May 2023 |\n| Recovery phase | 10 July 2023 | 17 July 2023 |\n| Pathology review | 31 August 2023 | 07 September 2023 |"
+        }
+      }
+    },
+    "TOX-2024-0931": {
+      "report_id": "TOX-2024-0931",
+      "report_title": "A 28-Day Repeat-Dose Oral Gavage Toxicity Study with Compound BM-341 in Sprague-Dawley Rats",
+      "sections": {
+        "1": {
+          "section_number": "1",
+          "section_title": "Objective",
+          "parent_sections": {},
+          "content": "The objectives of this study were to: (1) evaluate the potential toxicity of Compound BM-341 following repeated oral gavage administration to Sprague-Dawley rats for 28 consecutive days; (2) characterise the nature, severity, and dose-response relationship of any treatment-related effects; (3) identify any target organs of toxicity; and (4) establish a no-observed-adverse-effect level (NOAEL) to support further development. The study was conducted in compliance with Good Laboratory Practice (GLP) regulations.\n\nCompound BM-341 is a novel small-molecule inhibitor of a renal proximal tubular transporter under development for the treatment of metabolic syndrome. Based on the mechanism of action and the renal tubular target, the kidney was designated as the organ of primary interest. Bone marrow was identified as a secondary organ of interest based on in vitro haematopoietic assay data. The doses of 15, 75, and 300 mg/kg/day were selected based on the no-effect level and supratherapeutic multiples established in a 7-day dose range-finding study, in which no adverse findings were observed up to 300 mg/kg/day.\n\n---"
+        },
+        "2": {
+          "section_number": "2",
+          "section_title": "Experimental Design",
+          "parent_sections": {},
+          "content": "| Parameter | Detail |\n|---|---|\n| Species | Sprague-Dawley rat (Crl:CD(SD)) |\n| Source | Charles River Laboratories |\n| Age at study start | 7 to 8 weeks |\n| Route of administration | Oral gavage |\n| Dosing frequency | Once daily, 7 days per week |\n| Study duration | 28 days |\n| Vehicle | Sterile saline (0.9% NaCl) |\n| Dose volume | 10 mL/kg body weight |\n\n**Animal Allocation:**\n\n| Group | Dose (mg/kg/day) | Males | Females | Total |\n|---|---|---|---|---|\n| 1 — Vehicle Control | 0 | 5 | 5 | 10 |\n| 2 — Low Dose | 15 | 5 | 5 | 10 |\n| 3 — Mid Dose | 75 | 5 | 5 | 10 |\n| 4 — High Dose | 300 | 5 | 5 | 10 |\n| **Total** | | **20** | **20** | **40** |\n\nAnimals were housed 2 per cage under standard conditions (22 ± 2°C, 12-hour light/dark cycle) with free access to certified rodent diet and water. Animals were assigned to groups by stratified randomisation based on body weight on Day 1.\n\n---"
+        },
+        "3": {
+          "section_number": "3",
+          "section_title": "Materials and Methods",
+          "parent_sections": {},
+          "content": ""
+        },
+        "3.1": {
+          "section_number": "3.1",
+          "section_title": "Test Article",
+          "parent_sections": {
+            "3": "Materials and Methods"
+          },
+          "content": "Compound BM-341 was supplied by the Sponsor Analytical Chemistry Group. The batch used (BM341-2024-D02) had a purity of 98.3% (HPLC). The test article was stored refrigerated (2 to 8°C), protected from light."
+        },
+        "3.2": {
+          "section_number": "3.2",
+          "section_title": "Vehicle",
+          "parent_sections": {
+            "3": "Materials and Methods"
+          },
+          "content": "Vehicle was sterile saline (0.9% NaCl, w/v). Dosing formulations were prepared as solutions and stored refrigerated (2 to 8°C)."
+        },
+        "3.3": {
+          "section_number": "3.3",
+          "section_title": "Test System",
+          "parent_sections": {
+            "3": "Materials and Methods"
+          },
+          "content": "Naive, virus antibody-free Sprague-Dawley rats (Crl:CD(SD)) were obtained from Charles River Laboratories. Animals arrived at 7 weeks of age and were acclimated for a minimum of 5 days prior to Day 1. Animals were assigned to groups by stratified randomisation based on Day 1 body weight."
+        },
+        "3.4": {
+          "section_number": "3.4",
+          "section_title": "Dose Formulation Verification",
+          "parent_sections": {
+            "3": "Materials and Methods"
+          },
+          "content": "Dosing formulation samples were collected for concentration verification on Days 1 and 28. Samples were analysed by HPLC. Acceptance criteria: measured concentration within ±10% of nominal."
+        },
+        "3.5": {
+          "section_number": "3.5",
+          "section_title": "Terminal Procedures",
+          "parent_sections": {
+            "3": "Materials and Methods"
+          },
+          "content": "All surviving animals were euthanised on Day 29 by carbon dioxide inhalation followed by exsanguination. A complete macroscopic examination was performed on all animals. Terminal body weights were recorded immediately prior to euthanasia. The following organs were weighed: liver, kidneys (paired), heart, brain, spleen, and thymus."
+        },
+        "3.6": {
+          "section_number": "3.6",
+          "section_title": "Histology and Histopathology",
+          "parent_sections": {
+            "3": "Materials and Methods"
+          },
+          "content": "Tissues from all animals in Groups 1 and 4 were fixed in 10% neutral buffered formalin, processed, and embedded in paraffin. Target tissues (kidneys and bone marrow) from Groups 2 and 3 were similarly processed. Sections were cut at 4 to 6 μm and stained with haematoxylin and eosin (H&E). Microscopic findings were graded on a scale of 1 (Minimal) to 5 (Severe). A pathology peer review was conducted by an independent board-certified veterinary pathologist."
+        },
+        "3.7": {
+          "section_number": "3.7",
+          "section_title": "Statistical Analysis",
+          "parent_sections": {
+            "3": "Materials and Methods"
+          },
+          "content": "Continuous variables (body weights, organ weights) were analysed by one-way ANOVA with Dunnett's post-hoc test. Where Bartlett's test indicated heterogeneity of variance (p < 0.05), the Kruskal-Wallis test with Dunn's post-hoc was applied. Incidence data were compared by Fisher's exact test. Statistical significance was set at p < 0.05.\n\n---"
+        },
+        "4": {
+          "section_number": "4",
+          "section_title": "Deviations",
+          "parent_sections": {},
+          "content": "No protocol deviations were noted during the conduct of this study.\n\n---"
+        },
+        "5": {
+          "section_number": "5",
+          "section_title": "Results",
+          "parent_sections": {},
+          "content": ""
+        },
+        "5.1": {
+          "section_number": "5.1",
+          "section_title": "Test Article Formulation and Analyses Verification",
+          "parent_sections": {
+            "5": "Results"
+          },
+          "content": "Dosing formulation samples were collected and analysed on Days 1 and 28. All measured concentrations were within ±10% of the nominal target concentration. No test article was detected in vehicle control formulations. All dosing formulations met the predefined acceptance criteria."
+        },
+        "5.2": {
+          "section_number": "5.2",
+          "section_title": "In-Life Observations and Measurements",
+          "parent_sections": {
+            "5": "Results"
+          },
+          "content": ""
+        },
+        "5.2.1": {
+          "section_number": "5.2.1",
+          "section_title": "Mortality",
+          "parent_sections": {
+            "5": "Results",
+            "5.2": "In-Life Observations and Measurements"
+          },
+          "content": "No unscheduled deaths or moribund euthanasias occurred during the study. All 40 animals (20 males, 20 females) survived to scheduled necropsy on Day 29."
+        },
+        "5.2.2": {
+          "section_number": "5.2.2",
+          "section_title": "Clinical Observations",
+          "parent_sections": {
+            "5": "Results",
+            "5.2": "In-Life Observations and Measurements"
+          },
+          "content": "Cage-side observations were recorded twice daily throughout the study. Detailed clinical examinations were performed weekly.\n\n**Group 1 (0 mg/kg/day — Vehicle Control):** No treatment-related clinical signs were observed in any male or female animal during the study.\n\n**Group 2 (15 mg/kg/day — Low Dose):** No treatment-related clinical signs were observed. All animals appeared healthy and clinically normal throughout the dosing period.\n\n**Group 3 (75 mg/kg/day — Mid Dose):** No treatment-related clinical signs were observed. All animals appeared healthy and clinically normal throughout the dosing period.\n\n**Group 4 (300 mg/kg/day — High Dose):** No treatment-related clinical signs were observed at any cage-side or detailed clinical examination timepoint. All Group 4 animals appeared healthy and clinically normal throughout the 28-day dosing period."
+        },
+        "5.2.3": {
+          "section_number": "5.2.3",
+          "section_title": "Body Weight",
+          "parent_sections": {
+            "5": "Results",
+            "5.2": "In-Life Observations and Measurements"
+          },
+          "content": "Body weights were recorded on Day 1 (pre-dose) and weekly thereafter through Day 28.\n\n**Male Mean Body Weights (g):**\n\n| Group | Day 1 | Day 7 | Day 14 | Day 21 | Day 28 |\n|---|---|---|---|---|---|\n| G1 — Control (0 mg/kg) | 231 | 261 | 289 | 314 | 337 |\n| G2 — Low (15 mg/kg) | 230 | 260 | 288 | 313 | 336 |\n| G3 — Mid (75 mg/kg) | 232 | 262 | 290 | 315 | 338 |\n| G4 — High (300 mg/kg) | 231 | 261 | 289 | 314 | 337 |\n\n**Female Mean Body Weights (g):**\n\n| Group | Day 1 | Day 7 | Day 14 | Day 21 | Day 28 |\n|---|---|---|---|---|---|\n| G1 — Control (0 mg/kg) | 184 | 204 | 220 | 233 | 244 |\n| G2 — Low (15 mg/kg) | 183 | 203 | 219 | 232 | 243 |\n| G3 — Mid (75 mg/kg) | 185 | 205 | 221 | 234 | 245 |\n| G4 — High (300 mg/kg) | 184 | 204 | 220 | 233 | 244 |\n\nBody weight gain was comparable across all dose groups throughout the 28-day dosing period. No statistically significant or biologically meaningful differences in body weight were observed in any treatment group relative to controls at any timepoint. The body weight data indicate no treatment-related effect on body weight at any dose level tested."
+        },
+        "5.3": {
+          "section_number": "5.3",
+          "section_title": "Anatomic Pathology",
+          "parent_sections": {
+            "5": "Results"
+          },
+          "content": ""
+        },
+        "5.3.1": {
+          "section_number": "5.3.1",
+          "section_title": "Organ Weights",
+          "parent_sections": {
+            "5": "Results",
+            "5.3": "Anatomic Pathology"
+          },
+          "content": "Terminal organ weights were recorded at scheduled necropsy on Day 29.\n\n**Male Absolute Organ Weights (g) — Group Means:**\n\n| Organ | G1 Control | G2 Low | G3 Mid | G4 High |\n|---|---|---|---|---|\n| Liver | 11.31 | 11.38 | 11.44 | 11.62 |\n| Kidneys (paired) | 2.20 | 2.21 | 2.27 | 2.33 |\n| Heart | 1.09 | 1.09 | 1.10 | 1.10 |\n| Brain | 1.89 | 1.89 | 1.88 | 1.88 |\n| Spleen | 0.73 | 0.73 | 0.74 | 0.74 |\n| Thymus | 0.40 | 0.40 | 0.40 | 0.39 |\n\n**Female Absolute Organ Weights (g) — Group Means:**\n\n| Organ | G1 Control | G2 Low | G3 Mid | G4 High |\n|---|---|---|---|---|\n| Liver | 8.62 | 8.65 | 8.68 | 8.74 |\n| Kidneys (paired) | 1.54 | 1.54 | 1.57 | 1.62 |\n| Heart | 0.87 | 0.87 | 0.87 | 0.88 |\n| Brain | 1.86 | 1.86 | 1.85 | 1.85 |\n| Spleen | 0.62 | 0.62 | 0.62 | 0.63 |\n| Thymus | 0.41 | 0.41 | 0.41 | 0.40 |\n\nKidney weights showed a slight increase in Group 4 males (2.33 g vs. 2.20 g control; +5.8%) and females (1.62 g vs. 1.54 g control; +5.2%). These differences did not reach statistical significance (p > 0.05, Dunnett's test) and were not associated with adverse macroscopic or clinical correlates. All other organ weights were comparable across all dose groups for both sexes."
+        },
+        "5.3.2": {
+          "section_number": "5.3.2",
+          "section_title": "Macroscopic Observations",
+          "parent_sections": {
+            "5": "Results",
+            "5.3": "Anatomic Pathology"
+          },
+          "content": "A complete macroscopic examination was performed on all animals at scheduled necropsy on Day 29.\n\n**Groups 1, 2, 3, and 4 (0, 15, 75, and 300 mg/kg/day):** No treatment-related macroscopic findings were observed in any tissue, including the kidneys, liver, spleen, thymus, adrenal glands, lungs, heart, brain, or gonads, in any male or female animal at any dose level. All tissues examined appeared grossly normal. The minimal increase in kidney weight observed in Group 4 animals was not associated with any macroscopic correlate."
+        },
+        "5.3.3": {
+          "section_number": "5.3.3",
+          "section_title": "Microscopic Findings",
+          "parent_sections": {
+            "5": "Results",
+            "5.3": "Anatomic Pathology"
+          },
+          "content": "Microscopic examination was performed on all tissues from Group 1 and Group 4 animals, and on target tissues (kidneys and bone marrow) from Groups 2 and 3.\n\n**Kidneys:**\n\nGroup 1: No treatment-related microscopic findings. Renal parenchyma was within normal limits in all animals examined.\n\nGroup 2 (15 mg/kg/day): No treatment-related renal microscopic findings. All kidney sections appeared within normal limits.\n\nGroup 3 (75 mg/kg/day): Minimal renal tubular basophilia (Grade 1) was observed in 3 of 5 males (M301, M303, M304). The finding was characterised by increased cytoplasmic basophilia of proximal tubular epithelial cells in the cortex, consistent with increased ribosomal content and protein synthetic activity associated with enzyme induction. No tubular degeneration, necrosis, cast formation, or inflammatory infiltrate was observed. This change is considered an adaptive cellular response to the pharmacological activity of BM-341 at the proximal tubular transporter, and is not considered adverse.\n\nGroup 4 (300 mg/kg/day): Minimal to mild renal tubular basophilia (Grade 1 to 2) was observed in all 5 males and all 5 females. The morphological characteristics were consistent with those described in Group 3, with slightly greater severity in Group 4. No tubular degeneration, necrosis, tubular dilation, cast formation, or interstitial inflammation was observed in any Group 4 animal. The very slight kidney weight increase in Group 4 is considered attributable to this adaptive cellular response. In the absence of evidence of tubular injury, impaired renal function, or any other adverse correlate, renal tubular basophilia at 300 mg/kg/day is considered an adaptive, non-adverse finding.\n\n**Bone Marrow:**\n\nGroups 1, 2, and 3: No treatment-related bone marrow findings in any animal.\n\nGroup 4 (300 mg/kg/day): Minimal focal erythroid hyperplasia (Grade 1) was observed in 3 of 5 males and 2 of 5 females. The finding was characterised by a mild local increase in erythroid precursor cells within the femoral marrow space. Overall marrow cellularity was maintained. The finding is considered a compensatory haematopoietic response and, in the absence of anaemia, haemolysis, haematological abnormalities, or reduction in overall marrow cellularity, is classified as an adaptive, non-adverse response.\n\n**Liver:**\n\nNo treatment-related microscopic findings were identified in the liver in any dose group. Hepatic parenchyma appeared within normal limits in all Group 1 and Group 4 animals examined.\n\n**Other Organs (Heart, Brain, Spleen, Thymus, Adrenal Glands, Gonads, Lungs):**\n\nNo treatment-related microscopic findings were identified in the heart, brain, spleen, thymus, adrenal glands, gonads, or lungs in any dose group."
+        },
+        "5.3.4": {
+          "section_number": "5.3.4",
+          "section_title": "Conclusion",
+          "parent_sections": {
+            "5": "Results",
+            "5.3": "Anatomic Pathology"
+          },
+          "content": "No adverse treatment-related findings were identified at any dose level tested in this study. The no-observed-adverse-effect level (NOAEL) for Compound BM-341 under the conditions of this study is **300 mg/kg/day**, the highest dose tested. No lowest-observed-adverse-effect level (LOAEL) was established.\n\nThe minimal to mild renal tubular basophilia observed at 75 and 300 mg/kg/day is considered an adaptive cellular response to the pharmacological activity of BM-341 at the proximal tubular transporter target. This finding is not considered adverse based on: (1) absence of tubular degeneration or necrosis; (2) absence of cast formation or inflammatory infiltrate; (3) no adverse macroscopic renal correlate; (4) no statistically significant organ weight change; and (5) consistency with a well-characterised adaptive response to transporter inhibition in this species.\n\nThe minimal focal erythroid hyperplasia observed in the bone marrow of Group 4 animals is considered a compensatory haematopoietic response and is not adverse in the context of maintained overall marrow cellularity and the absence of haematological abnormalities.\n\n---"
+        },
+        "6": {
+          "section_number": "6",
+          "section_title": "Abbreviations",
+          "parent_sections": {},
+          "content": "| Abbreviation | Definition |\n|---|---|\n| ANOVA | analysis of variance |\n| GLP | Good Laboratory Practice |\n| H&E | haematoxylin and eosin |\n| LOAEL | lowest-observed-adverse-effect level |\n| NOAEL | no-observed-adverse-effect level |\n| QAU | Quality Assurance Unit |\n\n---"
+        },
+        "7": {
+          "section_number": "7",
+          "section_title": "Quality Assurance Statement",
+          "parent_sections": {},
+          "content": "This study was conducted in compliance with GLP regulations (21 CFR Part 58). Periodic inspections were conducted by the Quality Assurance Unit.\n\n| Phase Inspected | Audit Date | Reporting Date |\n|---|---|---|\n| In-life phase | 06 September 2024 | 13 September 2024 |\n| Pathology review | 24 September 2024 | 01 October 2024 |"
+        }
+      }
+    }
+  }
+}

@@ -120,6 +120,7 @@ make generate
 
 - [`docs/architecture/helix-prototype.md`](docs/architecture/helix-prototype.md) explains the aggregate, API, validation boundary, and alternatives.
 - [`docs/architecture/agentic-report-pipeline.md`](docs/architecture/agentic-report-pipeline.md) defines the governed validation-to-drafting process and gate order.
+- [`docs/specifications/agentic-report-pipeline.md`](docs/specifications/agentic-report-pipeline.md) defines the buildable commands, state transitions, failures, acceptance criteria, and source traceability for that process.
 - [`docs/implementation/first-vertical-slice.md`](docs/implementation/first-vertical-slice.md) defines the frontend-triggered Codex SDK proof.
 - [`docs/research/fda-nonclinical-reporting.md`](docs/research/fda-nonclinical-reporting.md) maps 21 CFR Part 58, OECD TG 407, FDA study-data guidance, the Data Standards Catalog, and ICH M4S to product controls.
 - [`backend/app/data/report-template.json`](backend/app/data/report-template.json) is the structured 28-day report template.

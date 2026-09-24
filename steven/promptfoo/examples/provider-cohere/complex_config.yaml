@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
+prompts:
+  - file://prompt.yaml
+
+providers:
+  - cohere:command-a-03-2025
+
+defaultTest:
+  options:
+    provider:
+      embedding: cohere:embedding:embed-english-v3.0
+
+tests:
+  - vars:
+      question: What year was he born?
+  - vars:
+      question: What did he like eating for breakfast?

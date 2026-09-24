@@ -1,0 +1,645 @@
+{
+  "schema_version": "helix.section-execution-envelope/v1",
+  "envelope_id": "ENV-BW-002",
+  "run_id": "RUN-SYNTHETIC-001",
+  "pinned_run_id": "RUN-SYNTHETIC-001",
+  "run_plan_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+  "manifest_hash": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+  "section_package": {
+    "package_id": "section.5_2_3_body_weight",
+    "version": "0.1.0",
+    "path": "skills/helix-evidence-pipeline/packages/sections/5_2_3_body_weight/package.json",
+    "hash": "sha256:3333333333333333333333333333333333333333333333333333333333333333"
+  },
+  "direct_dependencies": [
+    {
+      "artifact_id": "validation.body_weight",
+      "hash": "sha256:4444444444444444444444444444444444444444444444444444444444444444"
+    }
+  ],
+  "validated_claims": [
+    {
+      "claim_id": "C-CO-TREMOR",
+      "field_id": "clinical-observation-incidence",
+      "value": 0,
+      "unit": "count",
+      "grain": "dose_group_x_sex",
+      "hash": "sha256:6666666666666666666666666666666666666666666666666666666666666666"
+    }
+  ],
+  "study_context": {
+    "study_id": "STUDY-HLX-028",
+    "study_type_id": "REPEAT_DOSE_28D_RODENT",
+    "group": "high-dose",
+    "timepoint": "terminal"
+  },
+  "structured_failures": [
+    {
+      "result_id": "VR-011",
+      "code": "missing-required-claim",
+      "message": "The required claim C-BW-HIGH is not present in this envelope. No terminal body-weight value is available."
+    }
+  ],
+  "executor_receipts": [
+    {
+      "artifact_id": "EXEC-BW-SUMMARY-001",
+      "hash": "sha256:7685e5e4e80f76280e8e1a8a5cc3ec37244a57e83bc43beb4945d3be0c3d7b0f",
+      "facts": {
+        "recording_days": [
+          1,
+          7,
+          14,
+          21,
+          28
+        ],
+        "duration_days": 28,
+        "unit": "g",
+        "groups": [
+          {
+            "group_id": "G1",
+            "label": "Control",
+            "dose": 0.0,
+            "dose_unit": "mg/kg/day"
+          },
+          {
+            "group_id": "G2",
+            "label": "Low",
+            "dose": 10.0,
+            "dose_unit": "mg/kg/day"
+          },
+          {
+            "group_id": "G3",
+            "label": "Mid",
+            "dose": 30.0,
+            "dose_unit": "mg/kg/day"
+          },
+          {
+            "group_id": "G4",
+            "label": "High",
+            "dose": 100.0,
+            "dose_unit": "mg/kg/day"
+          }
+        ],
+        "male_means": {
+          "G1": {
+            "1": 296.5,
+            "7": 302.1,
+            "14": 310.0,
+            "21": 317.2,
+            "28": 324.8
+          },
+          "G2": {
+            "1": 295.3,
+            "7": 300.8,
+            "14": 307.4,
+            "21": 315.0,
+            "28": 321.4
+          },
+          "G3": {
+            "1": 295.4,
+            "7": 300.9,
+            "14": 306.6,
+            "21": 312.9,
+            "28": 319.1
+          },
+          "G4": {
+            "1": 298.1,
+            "7": 301.0,
+            "14": 305.0,
+            "21": 307.4,
+            "28": 310.7
+          }
+        },
+        "female_means": {
+          "G1": {
+            "1": 247.0,
+            "7": 252.4,
+            "14": 258.2,
+            "21": 265.1,
+            "28": 271.0
+          },
+          "G2": {
+            "1": 252.1,
+            "7": 256.9,
+            "14": 263.2,
+            "21": 268.8,
+            "28": 274.8
+          },
+          "G3": {
+            "1": 248.4,
+            "7": 252.8,
+            "14": 258.3,
+            "21": 263.3,
+            "28": 268.1
+          },
+          "G4": {
+            "1": 250.7,
+            "7": 253.5,
+            "14": 255.9,
+            "21": 259.3,
+            "28": 261.8
+          }
+        }
+      },
+      "provenance": [
+        {
+          "section_id": "5_2_3_body_weight",
+          "claim": "Male G1 Day 1 mean 296.5 g (n=5)",
+          "source_record_ids": [
+            "BW-HXL-M101-1",
+            "BW-HXL-M102-1",
+            "BW-HXL-M103-1",
+            "BW-HXL-M104-1",
+            "BW-HXL-M105-1"
+          ],
+          "agg": "mean"
+        },
+        {
+          "section_id": "5_2_3_body_weight",
+          "claim": "Male G1 Day 7 mean 302.1 g (n=5)",
+          "source_record_ids": [
+            "BW-HXL-M101-7",
+            "BW-HXL-M102-7",
+            "BW-HXL-M103-7",
+            "BW-HXL-M104-7",
+            "BW-HXL-M105-7"
+          ],
+          "agg": "mean"
+        },
+        {
+          "section_id": "5_2_3_body_weight",
+          "claim": "Male G1 Day 14 mean 310.0 g (n=5)",
+          "source_record_ids": [
+            "BW-HXL-M101-14",
+            "BW-HXL-M102-14",
+            "BW-HXL-M103-14",
+            "BW-HXL-M104-14",
+            "BW-HXL-M105-14"
+          ],
+          "agg": "mean"
+        },
+        {
+          "section_id": "5_2_3_body_weight",
+          "claim": "Male G1 Day 21 mean 317.2 g (n=5)",
+          "source_record_ids": [
+            "BW-HXL-M101-21",
+            "BW-HXL-M102-21",
+            "BW-HXL-M103-21",
+            "BW-HXL-M104-21",
+            "BW-HXL-M105-21"
+          ],
+          "agg": "mean"
+        },
+        {
+          "section_id": "5_2_3_body_weight",
+          "claim": "Male G1 Day 28 mean 324.8 g (n=5)",
+          "source_record_ids": [
+            "BW-HXL-M101-28",
+            "BW-HXL-M102-28",
+            "BW-HXL-M103-28",
+            "BW-HXL-M104-28",
+            "BW-HXL-M105-28"
+          ],
+          "agg": "mean"
+        },
+        {
+          "section_id": "5_2_3_body_weight",
+          "claim": "Male G2 Day 1 mean 295.3 g (n=5)",
+          "source_record_ids": [
+            "BW-HXL-M201-1",
+            "BW-HXL-M202-1",
+            "BW-HXL-M203-1",
+            "BW-HXL-M204-1",
+            "BW-HXL-M205-1"
+          ],
+          "agg": "mean"
+        },
+        {
+          "section_id": "5_2_3_body_weight",
+          "claim": "Male G2 Day 7 mean 300.8 g (n=5)",
+          "source_record_ids": [
+            "BW-HXL-M201-7",
+            "BW-HXL-M202-7",
+            "BW-HXL-M203-7",
+            "BW-HXL-M204-7",
+            "BW-HXL-M205-7"
+          ],
+          "agg": "mean"
+        },
+        {
+          "section_id": "5_2_3_body_weight",
+          "claim": "Male G2 Day 14 mean 307.4 g (n=5)",
+          "source_record_ids": [
+            "BW-HXL-M201-14",
+            "BW-HXL-M202-14",
+            "BW-HXL-M203-14",
+            "BW-HXL-M204-14",
+            "BW-HXL-M205-14"
+          ],
+          "agg": "mean"
+        },
+        {
+          "section_id": "5_2_3_body_weight",
+          "claim": "Male G2 Day 21 mean 315.0 g (n=5)",
+          "source_record_ids": [
+            "BW-HXL-M201-21",
+            "BW-HXL-M202-21",
+            "BW-HXL-M203-21",
+            "BW-HXL-M204-21",
+            "BW-HXL-M205-21"
+          ],
+          "agg": "mean"
+        },
+        {
+          "section_id": "5_2_3_body_weight",
+          "claim": "Male G2 Day 28 mean 321.4 g (n=5)",
+          "source_record_ids": [
+            "BW-HXL-M201-28",
+            "BW-HXL-M202-28",
+            "BW-HXL-M203-28",
+            "BW-HXL-M204-28",
+            "BW-HXL-M205-28"
+          ],
+          "agg": "mean"
+        },
+        {
+          "section_id": "5_2_3_body_weight",
+          "claim": "Male G3 Day 1 mean 295.4 g (n=5)",
+          "source_record_ids": [
+            "BW-HXL-M301-1",
+            "BW-HXL-M302-1",
+            "BW-HXL-M303-1",
+            "BW-HXL-M304-1",
+            "BW-HXL-M305-1"
+          ],
+          "agg": "mean"
+        },
+        {
+          "section_id": "5_2_3_body_weight",
+          "claim": "Male G3 Day 7 mean 300.9 g (n=5)",
+          "source_record_ids": [
+            "BW-HXL-M301-7",
+            "BW-HXL-M302-7",
+            "BW-HXL-M303-7",
+            "BW-HXL-M304-7",
+            "BW-HXL-M305-7"
+          ],
+          "agg": "mean"
+        },
+        {
+          "section_id": "5_2_3_body_weight",
+          "claim": "Male G3 Day 14 mean 306.6 g (n=5)",
+          "source_record_ids": [
+            "BW-HXL-M301-14",
+            "BW-HXL-M302-14",
+            "BW-HXL-M303-14",
+            "BW-HXL-M304-14",
+            "BW-HXL-M305-14"
+          ],
+          "agg": "mean"
+        },
+        {
+          "section_id": "5_2_3_body_weight",
+          "claim": "Male G3 Day 21 mean 312.9 g (n=5)",
+          "source_record_ids": [
+            "BW-HXL-M301-21",
+            "BW-HXL-M302-21",
+            "BW-HXL-M303-21",
+            "BW-HXL-M304-21",
+            "BW-HXL-M305-21"
+          ],
+          "agg": "mean"
+        },
+        {
+          "section_id": "5_2_3_body_weight",
+          "claim": "Male G3 Day 28 mean 319.1 g (n=5)",
+          "source_record_ids": [
+            "BW-HXL-M301-28",
+            "BW-HXL-M302-28",
+            "BW-HXL-M303-28",
+            "BW-HXL-M304-28",
+            "BW-HXL-M305-28"
+          ],
+          "agg": "mean"
+        },
+        {
+          "section_id": "5_2_3_body_weight",
+          "claim": "Male G4 Day 1 mean 298.1 g (n=5)",
+          "source_record_ids": [
+            "BW-HXL-M401-1",
+            "BW-HXL-M402-1",
+            "BW-HXL-M403-1",
+            "BW-HXL-M404-1",
+            "BW-HXL-M405-1"
+          ],
+          "agg": "mean"
+        },
+        {
+          "section_id": "5_2_3_body_weight",
+          "claim": "Male G4 Day 7 mean 301.0 g (n=5)",
+          "source_record_ids": [
+            "BW-HXL-M401-7",
+            "BW-HXL-M402-7",
+            "BW-HXL-M403-7",
+            "BW-HXL-M404-7",
+            "BW-HXL-M405-7"
+          ],
+          "agg": "mean"
+        },
+        {
+          "section_id": "5_2_3_body_weight",
+          "claim": "Male G4 Day 14 mean 305.0 g (n=5)",
+          "source_record_ids": [
+            "BW-HXL-M401-14",
+            "BW-HXL-M402-14",
+            "BW-HXL-M403-14",
+            "BW-HXL-M404-14",
+            "BW-HXL-M405-14"
+          ],
+          "agg": "mean"
+        },
+        {
+          "section_id": "5_2_3_body_weight",
+          "claim": "Male G4 Day 21 mean 307.4 g (n=5)",
+          "source_record_ids": [
+            "BW-HXL-M401-21",
+            "BW-HXL-M402-21",
+            "BW-HXL-M403-21",
+            "BW-HXL-M404-21",
+            "BW-HXL-M405-21"
+          ],
+          "agg": "mean"
+        },
+        {
+          "section_id": "5_2_3_body_weight",
+          "claim": "Male G4 Day 28 mean 310.7 g (n=5)",
+          "source_record_ids": [
+            "BW-HXL-M401-28",
+            "BW-HXL-M402-28",
+            "BW-HXL-M403-28",
+            "BW-HXL-M404-28",
+            "BW-HXL-M405-28"
+          ],
+          "agg": "mean"
+        },
+        {
+          "section_id": "5_2_3_body_weight",
+          "claim": "Female G1 Day 1 mean 247.0 g (n=5)",
+          "source_record_ids": [
+            "BW-HXL-F101-1",
+            "BW-HXL-F102-1",
+            "BW-HXL-F103-1",
+            "BW-HXL-F104-1",
+            "BW-HXL-F105-1"
+          ],
+          "agg": "mean"
+        },
+        {
+          "section_id": "5_2_3_body_weight",
+          "claim": "Female G1 Day 7 mean 252.4 g (n=5)",
+          "source_record_ids": [
+            "BW-HXL-F101-7",
+            "BW-HXL-F102-7",
+            "BW-HXL-F103-7",
+            "BW-HXL-F104-7",
+            "BW-HXL-F105-7"
+          ],
+          "agg": "mean"
+        },
+        {
+          "section_id": "5_2_3_body_weight",
+          "claim": "Female G1 Day 14 mean 258.2 g (n=5)",
+          "source_record_ids": [
+            "BW-HXL-F101-14",
+            "BW-HXL-F102-14",
+            "BW-HXL-F103-14",
+            "BW-HXL-F104-14",
+            "BW-HXL-F105-14"
+          ],
+          "agg": "mean"
+        },
+        {
+          "section_id": "5_2_3_body_weight",
+          "claim": "Female G1 Day 21 mean 265.1 g (n=5)",
+          "source_record_ids": [
+            "BW-HXL-F101-21",
+            "BW-HXL-F102-21",
+            "BW-HXL-F103-21",
+            "BW-HXL-F104-21",
+            "BW-HXL-F105-21"
+          ],
+          "agg": "mean"
+        },
+        {
+          "section_id": "5_2_3_body_weight",
+          "claim": "Female G1 Day 28 mean 271.0 g (n=5)",
+          "source_record_ids": [
+            "BW-HXL-F101-28",
+            "BW-HXL-F102-28",
+            "BW-HXL-F103-28",
+            "BW-HXL-F104-28",
+            "BW-HXL-F105-28"
+          ],
+          "agg": "mean"
+        },
+        {
+          "section_id": "5_2_3_body_weight",
+          "claim": "Female G2 Day 1 mean 252.1 g (n=5)",
+          "source_record_ids": [
+            "BW-HXL-F201-1",
+            "BW-HXL-F202-1",
+            "BW-HXL-F203-1",
+            "BW-HXL-F204-1",
+            "BW-HXL-F205-1"
+          ],
+          "agg": "mean"
+        },
+        {
+          "section_id": "5_2_3_body_weight",
+          "claim": "Female G2 Day 7 mean 256.9 g (n=5)",
+          "source_record_ids": [
+            "BW-HXL-F201-7",
+            "BW-HXL-F202-7",
+            "BW-HXL-F203-7",
+            "BW-HXL-F204-7",
+            "BW-HXL-F205-7"
+          ],
+          "agg": "mean"
+        },
+        {
+          "section_id": "5_2_3_body_weight",
+          "claim": "Female G2 Day 14 mean 263.2 g (n=5)",
+          "source_record_ids": [
+            "BW-HXL-F201-14",
+            "BW-HXL-F202-14",
+            "BW-HXL-F203-14",
+            "BW-HXL-F204-14",
+            "BW-HXL-F205-14"
+          ],
+          "agg": "mean"
+        },
+        {
+          "section_id": "5_2_3_body_weight",
+          "claim": "Female G2 Day 21 mean 268.8 g (n=5)",
+          "source_record_ids": [
+            "BW-HXL-F201-21",
+            "BW-HXL-F202-21",
+            "BW-HXL-F203-21",
+            "BW-HXL-F204-21",
+            "BW-HXL-F205-21"
+          ],
+          "agg": "mean"
+        },
+        {
+          "section_id": "5_2_3_body_weight",
+          "claim": "Female G2 Day 28 mean 274.8 g (n=5)",
+          "source_record_ids": [
+            "BW-HXL-F201-28",
+            "BW-HXL-F202-28",
+            "BW-HXL-F203-28",
+            "BW-HXL-F204-28",
+            "BW-HXL-F205-28"
+          ],
+          "agg": "mean"
+        },
+        {
+          "section_id": "5_2_3_body_weight",
+          "claim": "Female G3 Day 1 mean 248.4 g (n=5)",
+          "source_record_ids": [
+            "BW-HXL-F301-1",
+            "BW-HXL-F302-1",
+            "BW-HXL-F303-1",
+            "BW-HXL-F304-1",
+            "BW-HXL-F305-1"
+          ],
+          "agg": "mean"
+        },
+        {
+          "section_id": "5_2_3_body_weight",
+          "claim": "Female G3 Day 7 mean 252.8 g (n=5)",
+          "source_record_ids": [
+            "BW-HXL-F301-7",
+            "BW-HXL-F302-7",
+            "BW-HXL-F303-7",
+            "BW-HXL-F304-7",
+            "BW-HXL-F305-7"
+          ],
+          "agg": "mean"
+        },
+        {
+          "section_id": "5_2_3_body_weight",
+          "claim": "Female G3 Day 14 mean 258.3 g (n=5)",
+          "source_record_ids": [
+            "BW-HXL-F301-14",
+            "BW-HXL-F302-14",
+            "BW-HXL-F303-14",
+            "BW-HXL-F304-14",
+            "BW-HXL-F305-14"
+          ],
+          "agg": "mean"
+        },
+        {
+          "section_id": "5_2_3_body_weight",
+          "claim": "Female G3 Day 21 mean 263.3 g (n=5)",
+          "source_record_ids": [
+            "BW-HXL-F301-21",
+            "BW-HXL-F302-21",
+            "BW-HXL-F303-21",
+            "BW-HXL-F304-21",
+            "BW-HXL-F305-21"
+          ],
+          "agg": "mean"
+        },
+        {
+          "section_id": "5_2_3_body_weight",
+          "claim": "Female G3 Day 28 mean 268.1 g (n=5)",
+          "source_record_ids": [
+            "BW-HXL-F301-28",
+            "BW-HXL-F302-28",
+            "BW-HXL-F303-28",
+            "BW-HXL-F304-28",
+            "BW-HXL-F305-28"
+          ],
+          "agg": "mean"
+        },
+        {
+          "section_id": "5_2_3_body_weight",
+          "claim": "Female G4 Day 1 mean 250.7 g (n=5)",
+          "source_record_ids": [
+            "BW-HXL-F401-1",
+            "BW-HXL-F402-1",
+            "BW-HXL-F403-1",
+            "BW-HXL-F404-1",
+            "BW-HXL-F405-1"
+          ],
+          "agg": "mean"
+        },
+        {
+          "section_id": "5_2_3_body_weight",
+          "claim": "Female G4 Day 7 mean 253.5 g (n=5)",
+          "source_record_ids": [
+            "BW-HXL-F401-7",
+            "BW-HXL-F402-7",
+            "BW-HXL-F403-7",
+            "BW-HXL-F404-7",
+            "BW-HXL-F405-7"
+          ],
+          "agg": "mean"
+        },
+        {
+          "section_id": "5_2_3_body_weight",
+          "claim": "Female G4 Day 14 mean 255.9 g (n=5)",
+          "source_record_ids": [
+            "BW-HXL-F401-14",
+            "BW-HXL-F402-14",
+            "BW-HXL-F403-14",
+            "BW-HXL-F404-14",
+            "BW-HXL-F405-14"
+          ],
+          "agg": "mean"
+        },
+        {
+          "section_id": "5_2_3_body_weight",
+          "claim": "Female G4 Day 21 mean 259.3 g (n=5)",
+          "source_record_ids": [
+            "BW-HXL-F401-21",
+            "BW-HXL-F402-21",
+            "BW-HXL-F403-21",
+            "BW-HXL-F404-21",
+            "BW-HXL-F405-21"
+          ],
+          "agg": "mean"
+        },
+        {
+          "section_id": "5_2_3_body_weight",
+          "claim": "Female G4 Day 28 mean 261.8 g (n=5)",
+          "source_record_ids": [
+            "BW-HXL-F401-28",
+            "BW-HXL-F402-28",
+            "BW-HXL-F403-28",
+            "BW-HXL-F404-28",
+            "BW-HXL-F405-28"
+          ],
+          "agg": "mean"
+        }
+      ]
+    }
+  ],
+  "reference_drafts": [
+    {
+      "report_id": "TOX-2024-0412",
+      "section_title": "Body Weight",
+      "hash": "sha256:556f3ecf65a8e406dd1a7603a4c119bb922c52e52c8a4681747b3e460e8b65ab",
+      "content": "Body weights were recorded on Day 1 (pre-dose) and weekly thereafter through Day 28.\n\n**Male Mean Body Weights (g):**\n\n| Group | Day 1 | Day 7 | Day 14 | Day 21 | Day 28 |\n|---|---|---|---|---|---|\n| G1 \u2014 Control (0 mg/kg) | 231.4 | 261.3 | 288.6 | 312.4 | 338.7 |\n| G2 \u2014 Low (10 mg/kg) | 229.8 | 260.1 | 287.4 | 310.8 | 336.2 |\n| G3 \u2014 Mid (50 mg/kg) | 232.1 | 256.4 | 281.2 | 299.7 | 318.4 |\n| G4 \u2014 High (200 mg/kg) | 230.5 | 247.6 | 264.8 | 278.3 | 291.5 |\n\n**Female Mean Body Weights (g):**\n\n| Group | Day 1 | Day 7 | Day 14 | Day 21 | Day 28 |\n|---|---|---|---|---|---|\n| G1 \u2014 Control (0 mg/kg) | 183.2 | 203.8 | 219.4 | 232.7 | 244.8 |\n| G2 \u2014 Low (10 mg/kg) | 184.6 | 204.2 | 220.1 | 233.5 | 245.6 |\n| G3 \u2014 Mid (50 mg/kg) | 182.9 | 201.6 | 215.8 | 226.4 | 235.9 |\n| G4 \u2014 High (200 mg/kg) | 184.1 | 196.2 | 207.3 | 214.8 | 220.6 |\n\nBody weight gain in Group 4 males was reduced by 13.9% relative to controls by Day 28 (291.5 g vs. 338.7 g). Group 4 females showed a similar reduction of 9.9% (220.6 g vs. 244.8 g). Group 3 showed mild reductions of 6.0% (males) and 3.6% (females) relative to controls at Day 28. Groups 1 and 2 showed comparable body weight trajectories throughout the study."
+    }
+  ],
+  "governed_versions": {
+    "schema": "1.0.0",
+    "ontology": "1.0.0",
+    "rule_bundle": "helix-rules-1.0.0",
+    "template": "1.0.0",
+    "section_agent_skill": "0.1.0",
+    "promptfoo_qualification_suite": "helix-section-agent-qualification@0.1.0",
+    "promptfoo_study_output_suite": "helix-section-study-output@0.1.0"
+  }
+}
