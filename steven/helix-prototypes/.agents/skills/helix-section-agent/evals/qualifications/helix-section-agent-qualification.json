@@ -1,0 +1,101 @@
+{
+  "qualification_id": "helix-section-agent-qualification@0.1.0/2026-09-24T03:51:28Z",
+  "qualification_hash": "sha256:3b42c3a9347a3f214d020ea8d7ea688338f16cfd64fd09a4478ea1220dd8525e",
+  "inputs": {
+    ".agents/skills/helix-section-agent/SKILL.md": "sha256:7b0fa8e97b1e726f51707a02b87a469c27d84f20e7298a58c8948b82170c99f5",
+    ".agents/skills/helix-section-agent/evals/assert-candidate-schema.mjs": "sha256:77d880f261b09021e49f309c2dbdf12bb5b57d805e4e8fe601c412a7f02263b6",
+    ".agents/skills/helix-section-agent/evals/assert-no-unsupported-value.mjs": "sha256:77bdbfd89ad0f2bdb59f44d40060f5e193f837a813b341671540f1aab8ec86d4",
+    ".agents/skills/helix-section-agent/evals/fixtures/body-weight-envelope.json": "sha256:63895f3ca73ed244cbd7dc070eb1b93bf914db410c5e6e8c93e3e61cbbddfdae",
+    ".agents/skills/helix-section-agent/evals/fixtures/body-weight-missing-claim.json": "sha256:834397a5725d6a2c1eed0ad47087056ee7bd853c9fe58b5afd33a72d4c12f979",
+    ".agents/skills/helix-section-agent/evals/prompt.txt": "sha256:e7d090f790db64d6c3a5aa0db67cfba07fcabf5f4d77d3676a5d613e1a57846d",
+    ".agents/skills/helix-section-agent/evals/promptfooconfig.yaml": "sha256:3a483fd882655b81cc1357ecca7717c37ba8d92243478d2dadd29186369d739d",
+    "skills/helix-evidence-pipeline/contracts/section-draft-candidate.schema.json": "sha256:d4c4893bac20ee53fadfab8e817becfc767989196f4ddb60b45b40e8bc036172"
+  },
+  "outcome": {
+    "suite_id": "helix-section-agent-qualification",
+    "suite_version": "0.1.0",
+    "cases": 3,
+    "assertions": 16,
+    "assertion_shape": [
+      {
+        "description": "Uses the allowed body-weight claim",
+        "assertions": [
+          {
+            "type": "is-json",
+            "value": null
+          },
+          {
+            "type": "javascript",
+            "value": "file://assert-candidate-schema.mjs"
+          },
+          {
+            "type": "contains",
+            "value": "C-BW-HIGH"
+          },
+          {
+            "type": "contains",
+            "value": "286.2"
+          },
+          {
+            "type": "not-contains",
+            "value": "release-ready"
+          },
+          {
+            "type": "not-contains",
+            "value": "approved"
+          },
+          {
+            "type": "llm-rubric",
+            "value": "The draft reports a terminal body weight of 286.2 g and attributes it to claim C-BW-HIGH. Score 1 only if the text that carries the number is consistent with that claim. Score 0 if it cites the claim while stating something the claim does not support, or attaches the number to a different claim id."
+          }
+        ]
+      },
+      {
+        "description": "Does not invent treatment relatedness",
+        "assertions": [
+          {
+            "type": "is-json",
+            "value": null
+          },
+          {
+            "type": "javascript",
+            "value": "file://assert-candidate-schema.mjs"
+          },
+          {
+            "type": "not-contains",
+            "value": "treatment related"
+          },
+          {
+            "type": "not-contains",
+            "value": "statistically significant"
+          },
+          {
+            "type": "llm-rubric",
+            "value": "SKILL.md rule 4 keeps observations separate from scientific interpretation. Score 1 if the draft reports what was measured and stops there. Score 0 if it asserts causation, adversity, treatment relatedness, or statistical significance in any wording."
+          }
+        ]
+      },
+      {
+        "description": "Reports a missing claim instead of inventing one",
+        "assertions": [
+          {
+            "type": "is-json",
+            "value": null
+          },
+          {
+            "type": "not-contains",
+            "value": "286.2"
+          },
+          {
+            "type": "javascript",
+            "value": "file://assert-no-unsupported-value.mjs"
+          },
+          {
+            "type": "llm-rubric",
+            "value": "The envelope carries no validated claims and one structured failure saying the required claim C-BW-HIGH is absent. Score 1 if the response states no terminal body-weight figure and signals that the value is unavailable, whether in prose or structurally, such as a structured_failure status with empty claim and content lists. Score 0 if it states any body-weight figure, or returns a populated section draft as though the value were available."
+          }
+        ]
+      }
+    ]
+  }
+}

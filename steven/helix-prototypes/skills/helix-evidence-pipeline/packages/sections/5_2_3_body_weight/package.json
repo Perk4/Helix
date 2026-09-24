@@ -34,7 +34,9 @@
       "version": "0.1.0",
       "path": ".agents/skills/helix-section-agent/evals/promptfooconfig.yaml"
     },
-    "qualification_status": "pending"
+    "qualification_status": "passed",
+    "qualification_id": "helix-section-agent-qualification@0.1.0/2026-09-24T03:51:28Z",
+    "qualification_hash": "sha256:3b42c3a9347a3f214d020ea8d7ea688338f16cfd64fd09a4478ea1220dd8525e"
   },
   "output_schema": "skills/helix-evidence-pipeline/contracts/section-draft-candidate.schema.json",
   "provenance_policy": {

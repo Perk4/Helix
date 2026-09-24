@@ -39,16 +39,21 @@ const walk = (dir) =>
     return statSync(path).isDirectory() ? walk(path) : [path];
   });
 
-// Everything the judged prompt is built from. The suite pulls prompt.txt, the
-// skill, and the fixtures in by `file://`, so any of them can change behaviour
-// while promptfooconfig.yaml stays byte-identical. A config-only digest would
-// certify a skill that no longer behaves the way it was qualified.
-const inputPaths = [
-  skillPath,
-  resolve(evalsDir, "promptfooconfig.yaml"),
-  resolve(evalsDir, "prompt.txt"),
-  ...walk(resolve(evalsDir, "fixtures")),
-].sort();
+// Everything that decides the outcome. The config pulls the skill, the prompt,
+// the fixtures, the candidate contract, and the assertion scripts in by
+// `file://`, so any of them can change behaviour while promptfooconfig.yaml
+// stays byte-identical. A config-only digest would certify a skill that no
+// longer behaves the way it was qualified.
+//
+// Derived from the config's own references rather than a hand-kept list, so a
+// reference added later is covered without anyone remembering to add it here.
+const configPath = resolve(evalsDir, "promptfooconfig.yaml");
+const configSource = readFileSync(configPath, "utf8");
+const referenced = [...configSource.matchAll(/file:\/\/(\S+)/g)]
+  .map(([, reference]) => resolve(evalsDir, reference))
+  .flatMap((path) => (statSync(path).isDirectory() ? walk(path) : [path]));
+
+const inputPaths = [...new Set([skillPath, configPath, ...referenced, ...walk(resolve(evalsDir, "fixtures"))])].sort();
 
 const inputs = Object.fromEntries(
   inputPaths.map((path) => [relative(root, path).split("\\").join("/"), fileHash(path)]),

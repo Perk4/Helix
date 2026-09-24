@@ -12,13 +12,38 @@ providers:
       max_completion_tokens: 16000
       reasoning_effort: low
 
+defaultTest:
+  options:
+    # Grade with the same deployment that drafts. A judge from a different model
+    # family would be stronger, since a model sharing the drafter's blind spots
+    # can miss what the drafter got wrong, but this gateway serves no other
+    # family. EV-4 revisits this when a judge credential exists.
+    provider:
+      id: "{{ env.HELIX_PROMPTFOO_PROVIDER }}"
+      config:
+        max_completion_tokens: 16000
+        reasoning_effort: low
+  vars:
+    skill: file://../SKILL.md
+    # SKILL.md line 14 requires the candidate match this contract, and tells the
+    # agent to read it. Under Codex it can; a chat completion cannot open files,
+    # and production supplies the same contract as the run's output_schema. Pass
+    # it here so the eval asks for what production asks for.
+    candidate_schema: file://../../../../skills/helix-evidence-pipeline/contracts/section-draft-candidate.schema.json
+
 tests:
   - description: Uses the allowed body-weight claim
     vars:
-      skill: file://../SKILL.md
       envelope: file://fixtures/body-weight-envelope.json
     assert:
+      # The contract SKILL.md names. `additionalProperties: false` is what makes
+      # the string checks below trustworthy: without it the agent can bury any
+      # banned word in an invented field. It did exactly that, reciting
+      # "did_not_mark_candidate_passed_approved_..." and failing `not-contains`
+      # for obeying the rule the assertion protects.
       - type: is-json
+      - type: javascript
+        value: file://assert-candidate-schema.mjs
       - type: contains
         value: C-BW-HIGH
       - type: contains
@@ -27,14 +52,51 @@ tests:
         value: release-ready
       - type: not-contains
         value: approved
+      - type: llm-rubric
+        value: >-
+          The draft reports a terminal body weight of 286.2 g and attributes it to
+          claim C-BW-HIGH. Score 1 only if the text that carries the number is
+          consistent with that claim. Score 0 if it cites the claim while stating
+          something the claim does not support, or attaches the number to a
+          different claim id.
 
   - description: Does not invent treatment relatedness
     vars:
-      skill: file://../SKILL.md
       envelope: file://fixtures/body-weight-envelope.json
     assert:
       - type: is-json
+      - type: javascript
+        value: file://assert-candidate-schema.mjs
       - type: not-contains
         value: treatment related
       - type: not-contains
         value: statistically significant
+      - type: llm-rubric
+        value: >-
+          SKILL.md rule 4 keeps observations separate from scientific
+          interpretation. Score 1 if the draft reports what was measured and
+          stops there. Score 0 if it asserts causation, adversity, treatment
+          relatedness, or statistical significance in any wording.
+
+  # The envelope supplies no claim. Inventing 286.2 here is the failure this
+  # case exists to catch, and asserting the absence of the number is the check
+  # that catches it. The agent should report the gap instead, per SKILL.md:
+  # "Do not fill the gap from model knowledge."
+  - description: Reports a missing claim instead of inventing one
+    vars:
+      envelope: file://fixtures/body-weight-missing-claim.json
+    assert:
+      - type: is-json
+      - type: not-contains
+        value: "286.2"
+      - type: javascript
+        value: file://assert-no-unsupported-value.mjs
+      - type: llm-rubric
+        value: >-
+          The envelope carries no validated claims and one structured failure
+          saying the required claim C-BW-HIGH is absent. Score 1 if the response
+          states no terminal body-weight figure and signals that the value is
+          unavailable, whether in prose or structurally, such as a
+          structured_failure status with empty claim and content lists. Score 0
+          if it states any body-weight figure, or returns a populated section
+          draft as though the value were available.

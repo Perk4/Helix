@@ -1,0 +1,48 @@
+{
+  "schema_version": "helix.section-execution-envelope/v1",
+  "envelope_id": "ENV-BW-002",
+  "run_id": "RUN-SYNTHETIC-001",
+  "run_plan_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+  "manifest_hash": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+  "section_package": {
+    "package_id": "section.5_2_3_body_weight",
+    "version": "0.1.0",
+    "path": "skills/helix-evidence-pipeline/packages/sections/5_2_3_body_weight/package.json",
+    "hash": "sha256:3333333333333333333333333333333333333333333333333333333333333333"
+  },
+  "direct_dependencies": [
+    {
+      "artifact_id": "validation.body_weight",
+      "hash": "sha256:4444444444444444444444444444444444444444444444444444444444444444"
+    }
+  ],
+  "validated_claims": [],
+  "study_context": {
+    "study_id": "STUDY-HLX-028",
+    "study_type_id": "REPEAT_DOSE_28D_RODENT",
+    "group": "high-dose",
+    "timepoint": "terminal"
+  },
+  "structured_failures": [
+    {
+      "result_id": "VR-011",
+      "code": "missing-required-claim",
+      "message": "The required claim C-BW-HIGH is not present in this envelope. No terminal body-weight value is available."
+    }
+  ],
+  "executor_receipts": [
+    {
+      "artifact_id": "EXEC-BW-SUMMARY-001",
+      "hash": "sha256:6666666666666666666666666666666666666666666666666666666666666666"
+    }
+  ],
+  "governed_versions": {
+    "schema": "1.0.0",
+    "ontology": "1.0.0",
+    "rule_bundle": "helix-rules-1.0.0",
+    "template": "1.0.0",
+    "section_agent_skill": "0.1.0",
+    "promptfoo_qualification_suite": "helix-section-agent-qualification@0.1.0",
+    "promptfoo_study_output_suite": "helix-section-study-output@0.1.0"
+  }
+}
