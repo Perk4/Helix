@@ -1,5 +1,7 @@
 Use $helix-section-agent.
 
+{{skill}}
+
 Draft one Section Draft Candidate from this Section Execution Envelope:
 
 {{envelope}}

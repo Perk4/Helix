@@ -4,11 +4,12 @@ prompts:
   - file://prompt.txt
 
 providers:
-  - ${HELIX_PROMPTFOO_PROVIDER}
+  - "{{ env.HELIX_PROMPTFOO_PROVIDER }}"
 
 tests:
   - description: Uses the allowed body-weight claim
     vars:
+      skill: file://../SKILL.md
       envelope: file://fixtures/body-weight-envelope.json
     assert:
       - type: is-json
@@ -23,6 +24,7 @@ tests:
 
   - description: Does not invent treatment relatedness
     vars:
+      skill: file://../SKILL.md
       envelope: file://fixtures/body-weight-envelope.json
     assert:
       - type: is-json
