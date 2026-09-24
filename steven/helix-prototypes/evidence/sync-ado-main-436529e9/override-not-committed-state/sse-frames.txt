@@ -1,0 +1,617 @@
+# GET http://127.0.0.1:8010/api/v1/studies/STUDY-HLX-028/pinned-runs/RUN-EB6114A58B3200C1/events
+# opened 2026-09-24T22:32:16.463Z
+# HTTP 200 text/event-stream; charset=utf-8
+[2026-09-24T22:32:16.493Z]
+id: RUN-EB6114A58B3200C1.E000001
+event: action_started
+data: {"action_id": "manifest:A-PROTOCOL", "action_label": "Authorized protocol-v3.pdf", "event_id": "RUN-EB6114A58B3200C1.E000001", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:15.612838Z", "run_id": "RUN-EB6114A58B3200C1", "sequence": 1, "stage_id": "upload", "study_id": "STUDY-HLX-028", "type": "action_started"}
+
+[2026-09-24T22:32:16.493Z]
+id: RUN-EB6114A58B3200C1.E000002
+event: action_finished
+data: {"action_id": "manifest:A-PROTOCOL", "action_label": "Authorized protocol-v3.pdf", "event_id": "RUN-EB6114A58B3200C1.E000002", "flag": null, "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:15.613816Z", "outcome": "passed", "run_id": "RUN-EB6114A58B3200C1", "sequence": 2, "stage_id": "upload", "study_id": "STUDY-HLX-028", "type": "action_finished"}
+
+[2026-09-24T22:32:16.493Z]
+id: RUN-EB6114A58B3200C1.E000003
+event: action_started
+data: {"action_id": "manifest:A-TEMPLATE", "action_label": "Authorized repeat-dose-template-v5.docx", "event_id": "RUN-EB6114A58B3200C1.E000003", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:15.614202Z", "run_id": "RUN-EB6114A58B3200C1", "sequence": 3, "stage_id": "upload", "study_id": "STUDY-HLX-028", "type": "action_started"}
+
+[2026-09-24T22:32:16.493Z]
+id: RUN-EB6114A58B3200C1.E000004
+event: action_finished
+data: {"action_id": "manifest:A-TEMPLATE", "action_label": "Authorized repeat-dose-template-v5.docx", "event_id": "RUN-EB6114A58B3200C1.E000004", "flag": null, "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:15.614536Z", "outcome": "passed", "run_id": "RUN-EB6114A58B3200C1", "sequence": 4, "stage_id": "upload", "study_id": "STUDY-HLX-028", "type": "action_finished"}
+
+[2026-09-24T22:32:16.493Z]
+id: RUN-EB6114A58B3200C1.E000005
+event: action_started
+data: {"action_id": "manifest:A-DM", "action_label": "Authorized dm.csv", "event_id": "RUN-EB6114A58B3200C1.E000005", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:15.614855Z", "run_id": "RUN-EB6114A58B3200C1", "sequence": 5, "stage_id": "upload", "study_id": "STUDY-HLX-028", "type": "action_started"}
+
+[2026-09-24T22:32:16.493Z]
+id: RUN-EB6114A58B3200C1.E000006
+event: action_finished
+data: {"action_id": "manifest:A-DM", "action_label": "Authorized dm.csv", "event_id": "RUN-EB6114A58B3200C1.E000006", "flag": null, "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:15.615145Z", "outcome": "passed", "run_id": "RUN-EB6114A58B3200C1", "sequence": 6, "stage_id": "upload", "study_id": "STUDY-HLX-028", "type": "action_finished"}
+
+[2026-09-24T22:32:16.493Z]
+id: RUN-EB6114A58B3200C1.E000007
+event: action_started
+data: {"action_id": "manifest:A-BW", "action_label": "Authorized body-weights.csv", "event_id": "RUN-EB6114A58B3200C1.E000007", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:15.615543Z", "run_id": "RUN-EB6114A58B3200C1", "sequence": 7, "stage_id": "upload", "study_id": "STUDY-HLX-028", "type": "action_started"}
+
+[2026-09-24T22:32:16.493Z]
+id: RUN-EB6114A58B3200C1.E000008
+event: action_finished
+data: {"action_id": "manifest:A-BW", "action_label": "Authorized body-weights.csv", "event_id": "RUN-EB6114A58B3200C1.E000008", "flag": null, "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:15.615817Z", "outcome": "passed", "run_id": "RUN-EB6114A58B3200C1", "sequence": 8, "stage_id": "upload", "study_id": "STUDY-HLX-028", "type": "action_finished"}
+
+[2026-09-24T22:32:16.493Z]
+id: RUN-EB6114A58B3200C1.E000009
+event: action_started
+data: {"action_id": "manifest:A-CL", "action_label": "Authorized clinical-observations.csv", "event_id": "RUN-EB6114A58B3200C1.E000009", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:15.616198Z", "run_id": "RUN-EB6114A58B3200C1", "sequence": 9, "stage_id": "upload", "study_id": "STUDY-HLX-028", "type": "action_started"}
+
+[2026-09-24T22:32:16.494Z]
+id: RUN-EB6114A58B3200C1.E000010
+event: action_finished
+data: {"action_id": "manifest:A-CL", "action_label": "Authorized clinical-observations.csv", "event_id": "RUN-EB6114A58B3200C1.E000010", "flag": null, "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:15.616560Z", "outcome": "passed", "run_id": "RUN-EB6114A58B3200C1", "sequence": 10, "stage_id": "upload", "study_id": "STUDY-HLX-028", "type": "action_finished"}
+
+[2026-09-24T22:32:16.494Z]
+id: RUN-EB6114A58B3200C1.E000011
+event: action_started
+data: {"action_id": "manifest:A-OM", "action_label": "Authorized organ-weights.xlsx", "event_id": "RUN-EB6114A58B3200C1.E000011", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:15.616884Z", "run_id": "RUN-EB6114A58B3200C1", "sequence": 11, "stage_id": "upload", "study_id": "STUDY-HLX-028", "type": "action_started"}
+
+[2026-09-24T22:32:16.494Z]
+id: RUN-EB6114A58B3200C1.E000012
+event: action_finished
+data: {"action_id": "manifest:A-OM", "action_label": "Authorized organ-weights.xlsx", "event_id": "RUN-EB6114A58B3200C1.E000012", "flag": null, "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:15.617235Z", "outcome": "passed", "run_id": "RUN-EB6114A58B3200C1", "sequence": 12, "stage_id": "upload", "study_id": "STUDY-HLX-028", "type": "action_finished"}
+
+[2026-09-24T22:32:16.494Z]
+id: RUN-EB6114A58B3200C1.E000013
+event: action_started
+data: {"action_id": "manifest:A-MI", "action_label": "Authorized histopathology.csv", "event_id": "RUN-EB6114A58B3200C1.E000013", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:15.617506Z", "run_id": "RUN-EB6114A58B3200C1", "sequence": 13, "stage_id": "upload", "study_id": "STUDY-HLX-028", "type": "action_started"}
+
+[2026-09-24T22:32:16.494Z]
+id: RUN-EB6114A58B3200C1.E000014
+event: action_finished
+data: {"action_id": "manifest:A-MI", "action_label": "Authorized histopathology.csv", "event_id": "RUN-EB6114A58B3200C1.E000014", "flag": null, "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:15.617766Z", "outcome": "passed", "run_id": "RUN-EB6114A58B3200C1", "sequence": 14, "stage_id": "upload", "study_id": "STUDY-HLX-028", "type": "action_finished"}
+
+[2026-09-24T22:32:16.494Z]
+id: RUN-EB6114A58B3200C1.E000015
+event: action_started
+data: {"action_id": "manifest:A-PC", "action_label": "Authorized formulation-results.pdf", "event_id": "RUN-EB6114A58B3200C1.E000015", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:15.618015Z", "run_id": "RUN-EB6114A58B3200C1", "sequence": 15, "stage_id": "upload", "study_id": "STUDY-HLX-028", "type": "action_started"}
+
+[2026-09-24T22:32:16.494Z]
+id: RUN-EB6114A58B3200C1.E000016
+event: action_finished
+data: {"action_id": "manifest:A-PC", "action_label": "Authorized formulation-results.pdf", "event_id": "RUN-EB6114A58B3200C1.E000016", "flag": null, "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:15.618261Z", "outcome": "passed", "run_id": "RUN-EB6114A58B3200C1", "sequence": 16, "stage_id": "upload", "study_id": "STUDY-HLX-028", "type": "action_finished"}
+
+[2026-09-24T22:32:16.494Z]
+id: RUN-EB6114A58B3200C1.E000017
+event: action_started
+data: {"action_id": "manifest:A-STATS", "action_label": "Authorized analysis-output.pdf", "event_id": "RUN-EB6114A58B3200C1.E000017", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:15.618665Z", "run_id": "RUN-EB6114A58B3200C1", "sequence": 17, "stage_id": "upload", "study_id": "STUDY-HLX-028", "type": "action_started"}
+
+[2026-09-24T22:32:16.494Z]
+id: RUN-EB6114A58B3200C1.E000018
+event: action_finished
+data: {"action_id": "manifest:A-STATS", "action_label": "Authorized analysis-output.pdf", "event_id": "RUN-EB6114A58B3200C1.E000018", "flag": null, "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:15.618933Z", "outcome": "passed", "run_id": "RUN-EB6114A58B3200C1", "sequence": 18, "stage_id": "upload", "study_id": "STUDY-HLX-028", "type": "action_finished"}
+
+[2026-09-24T22:32:16.494Z]
+id: RUN-EB6114A58B3200C1.E000019
+event: action_started
+data: {"action_id": "manifest:A-PATTERN", "action_label": "Authorized approved-study-pattern.pdf", "event_id": "RUN-EB6114A58B3200C1.E000019", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:15.619195Z", "run_id": "RUN-EB6114A58B3200C1", "sequence": 19, "stage_id": "upload", "study_id": "STUDY-HLX-028", "type": "action_started"}
+
+[2026-09-24T22:32:16.494Z]
+id: RUN-EB6114A58B3200C1.E000020
+event: action_finished
+data: {"action_id": "manifest:A-PATTERN", "action_label": "Authorized approved-study-pattern.pdf", "event_id": "RUN-EB6114A58B3200C1.E000020", "flag": null, "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:15.619460Z", "outcome": "passed", "run_id": "RUN-EB6114A58B3200C1", "sequence": 20, "stage_id": "upload", "study_id": "STUDY-HLX-028", "type": "action_finished"}
+
+[2026-09-24T22:32:16.494Z]
+id: RUN-EB6114A58B3200C1.E000021
+event: action_started
+data: {"action_id": "manifest:freeze", "action_label": "Freeze manifest and start the Pinned Run", "event_id": "RUN-EB6114A58B3200C1.E000021", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:15.619709Z", "run_id": "RUN-EB6114A58B3200C1", "sequence": 21, "stage_id": "upload", "study_id": "STUDY-HLX-028", "type": "action_started"}
+
+[2026-09-24T22:32:16.494Z]
+id: RUN-EB6114A58B3200C1.E000022
+event: action_finished
+data: {"action_id": "manifest:freeze", "action_label": "Freeze manifest and start the Pinned Run", "event_id": "RUN-EB6114A58B3200C1.E000022", "flag": null, "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:15.619950Z", "outcome": "passed", "run_id": "RUN-EB6114A58B3200C1", "sequence": 22, "stage_id": "upload", "study_id": "STUDY-HLX-028", "type": "action_finished"}
+
+[2026-09-24T22:32:16.494Z]
+id: RUN-EB6114A58B3200C1.E000023
+event: stage_finished
+data: {"event_id": "RUN-EB6114A58B3200C1.E000023", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:15.620185Z", "run_id": "RUN-EB6114A58B3200C1", "sequence": 23, "stage_id": "upload", "study_id": "STUDY-HLX-028", "type": "stage_finished"}
+
+[2026-09-24T22:32:16.494Z]
+id: RUN-EB6114A58B3200C1.E000024
+event: stage_started
+data: {"event_id": "RUN-EB6114A58B3200C1.E000024", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:15.620583Z", "run_id": "RUN-EB6114A58B3200C1", "sequence": 24, "stage_id": "parse", "study_id": "STUDY-HLX-028", "type": "stage_started"}
+
+[2026-09-24T22:32:16.494Z]
+id: RUN-EB6114A58B3200C1.E000025
+event: action_started
+data: {"action_id": "node:parse.body_weights", "action_label": "Parsed parse.body_weights", "event_id": "RUN-EB6114A58B3200C1.E000025", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:15.620911Z", "run_id": "RUN-EB6114A58B3200C1", "sequence": 25, "stage_id": "parse", "study_id": "STUDY-HLX-028", "type": "action_started"}
+
+[2026-09-24T22:32:16.494Z]
+id: RUN-EB6114A58B3200C1.E000026
+event: action_finished
+data: {"action_id": "node:parse.body_weights", "action_label": "Parsed parse.body_weights", "event_id": "RUN-EB6114A58B3200C1.E000026", "flag": null, "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:15.621171Z", "outcome": "passed", "run_id": "RUN-EB6114A58B3200C1", "sequence": 26, "stage_id": "parse", "study_id": "STUDY-HLX-028", "type": "action_finished"}
+
+[2026-09-24T22:32:16.494Z]
+id: RUN-EB6114A58B3200C1.E000027
+event: action_started
+data: {"action_id": "parse:records", "action_label": "Normalized 1,662 source records", "event_id": "RUN-EB6114A58B3200C1.E000027", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:15.621432Z", "run_id": "RUN-EB6114A58B3200C1", "sequence": 27, "stage_id": "parse", "study_id": "STUDY-HLX-028", "type": "action_started"}
+
+[2026-09-24T22:32:16.494Z]
+id: RUN-EB6114A58B3200C1.E000028
+event: action_finished
+data: {"action_id": "parse:records", "action_label": "Normalized 1,662 source records", "event_id": "RUN-EB6114A58B3200C1.E000028", "flag": null, "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:15.621672Z", "outcome": "passed", "run_id": "RUN-EB6114A58B3200C1", "sequence": 28, "stage_id": "parse", "study_id": "STUDY-HLX-028", "type": "action_finished"}
+
+[2026-09-24T22:32:16.494Z]
+id: RUN-EB6114A58B3200C1.E000029
+event: stage_finished
+data: {"event_id": "RUN-EB6114A58B3200C1.E000029", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:15.621900Z", "run_id": "RUN-EB6114A58B3200C1", "sequence": 29, "stage_id": "parse", "study_id": "STUDY-HLX-028", "type": "stage_finished"}
+
+[2026-09-24T22:32:16.494Z]
+id: RUN-EB6114A58B3200C1.E000030
+event: stage_started
+data: {"event_id": "RUN-EB6114A58B3200C1.E000030", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:15.622189Z", "run_id": "RUN-EB6114A58B3200C1", "sequence": 30, "stage_id": "resolve", "study_id": "STUDY-HLX-028", "type": "stage_started"}
+
+[2026-09-24T22:32:16.494Z]
+id: RUN-EB6114A58B3200C1.E000031
+event: action_started
+data: {"action_id": "resolve:study-type", "action_label": "Resolved REPEAT_DOSE_28D_RODENT", "event_id": "RUN-EB6114A58B3200C1.E000031", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:15.622468Z", "run_id": "RUN-EB6114A58B3200C1", "sequence": 31, "stage_id": "resolve", "study_id": "STUDY-HLX-028", "type": "action_started"}
+
+[2026-09-24T22:32:16.494Z]
+id: RUN-EB6114A58B3200C1.E000032
+event: action_finished
+data: {"action_id": "resolve:study-type", "action_label": "Resolved REPEAT_DOSE_28D_RODENT", "event_id": "RUN-EB6114A58B3200C1.E000032", "flag": null, "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:15.622721Z", "outcome": "passed", "run_id": "RUN-EB6114A58B3200C1", "sequence": 32, "stage_id": "resolve", "study_id": "STUDY-HLX-028", "type": "action_finished"}
+
+[2026-09-24T22:32:16.494Z]
+id: RUN-EB6114A58B3200C1.E000033
+event: stage_finished
+data: {"event_id": "RUN-EB6114A58B3200C1.E000033", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:15.622962Z", "run_id": "RUN-EB6114A58B3200C1", "sequence": 33, "stage_id": "resolve", "study_id": "STUDY-HLX-028", "type": "stage_finished"}
+
+[2026-09-24T22:32:16.494Z]
+id: RUN-EB6114A58B3200C1.E000034
+event: stage_started
+data: {"event_id": "RUN-EB6114A58B3200C1.E000034", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:15.623235Z", "run_id": "RUN-EB6114A58B3200C1", "sequence": 34, "stage_id": "extract", "study_id": "STUDY-HLX-028", "type": "stage_started"}
+
+[2026-09-24T22:32:16.494Z]
+id: RUN-EB6114A58B3200C1.E000035
+event: action_started
+data: {"action_id": "dvp:validation.body_weight", "action_label": "Executed validation.body_weight (121 claims)", "event_id": "RUN-EB6114A58B3200C1.E000035", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:15.745596Z", "run_id": "RUN-EB6114A58B3200C1", "sequence": 35, "stage_id": "extract", "study_id": "STUDY-HLX-028", "type": "action_started"}
+
+[2026-09-24T22:32:16.494Z]
+id: RUN-EB6114A58B3200C1.E000036
+event: action_finished
+data: {"action_id": "dvp:validation.body_weight", "action_label": "Executed validation.body_weight (121 claims)", "event_id": "RUN-EB6114A58B3200C1.E000036", "flag": null, "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:15.745997Z", "outcome": "passed", "run_id": "RUN-EB6114A58B3200C1", "sequence": 36, "stage_id": "extract", "study_id": "STUDY-HLX-028", "type": "action_finished"}
+
+[2026-09-24T22:32:16.494Z]
+id: RUN-EB6114A58B3200C1.E000037
+event: stage_finished
+data: {"event_id": "RUN-EB6114A58B3200C1.E000037", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:15.746279Z", "run_id": "RUN-EB6114A58B3200C1", "sequence": 37, "stage_id": "extract", "study_id": "STUDY-HLX-028", "type": "stage_finished"}
+
+[2026-09-24T22:32:16.494Z]
+id: RUN-EB6114A58B3200C1.E000038
+event: stage_started
+data: {"event_id": "RUN-EB6114A58B3200C1.E000038", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:15.746577Z", "run_id": "RUN-EB6114A58B3200C1", "sequence": 38, "stage_id": "validate", "study_id": "STUDY-HLX-028", "type": "stage_started"}
+
+[2026-09-24T22:32:16.495Z]
+id: RUN-EB6114A58B3200C1.E000039
+event: action_started
+data: {"action_id": "result:VR-DET-001", "action_label": "synthetic-label \u00b7 PKG-HLX-028", "event_id": "RUN-EB6114A58B3200C1.E000039", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:16.032765Z", "run_id": "RUN-EB6114A58B3200C1", "sequence": 39, "stage_id": "validate", "study_id": "STUDY-HLX-028", "type": "action_started"}
+
+[2026-09-24T22:32:16.495Z]
+id: RUN-EB6114A58B3200C1.E000040
+event: action_finished
+data: {"action_id": "result:VR-DET-001", "action_label": "synthetic-label \u00b7 PKG-HLX-028", "event_id": "RUN-EB6114A58B3200C1.E000040", "flag": null, "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:16.033196Z", "outcome": "passed", "run_id": "RUN-EB6114A58B3200C1", "sequence": 40, "stage_id": "validate", "study_id": "STUDY-HLX-028", "type": "action_finished"}
+
+[2026-09-24T22:32:16.495Z]
+id: RUN-EB6114A58B3200C1.E000041
+event: action_started
+data: {"action_id": "result:VR-DET-002", "action_label": "manifest-locked \u00b7 PKG-HLX-028", "event_id": "RUN-EB6114A58B3200C1.E000041", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:16.033492Z", "run_id": "RUN-EB6114A58B3200C1", "sequence": 41, "stage_id": "validate", "study_id": "STUDY-HLX-028", "type": "action_started"}
+
+[2026-09-24T22:32:16.495Z]
+id: RUN-EB6114A58B3200C1.E000042
+event: action_finished
+data: {"action_id": "result:VR-DET-002", "action_label": "manifest-locked \u00b7 PKG-HLX-028", "event_id": "RUN-EB6114A58B3200C1.E000042", "flag": null, "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:16.033817Z", "outcome": "passed", "run_id": "RUN-EB6114A58B3200C1", "sequence": 42, "stage_id": "validate", "study_id": "STUDY-HLX-028", "type": "action_finished"}
+
+[2026-09-24T22:32:16.495Z]
+id: RUN-EB6114A58B3200C1.E000043
+event: action_started
+data: {"action_id": "result:VR-DET-003", "action_label": "bw-key-unique \u00b7 BW", "event_id": "RUN-EB6114A58B3200C1.E000043", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:16.034087Z", "run_id": "RUN-EB6114A58B3200C1", "sequence": 43, "stage_id": "validate", "study_id": "STUDY-HLX-028", "type": "action_started"}
+
+[2026-09-24T22:32:16.495Z]
+id: RUN-EB6114A58B3200C1.E000044
+event: action_finished
+data: {"action_id": "result:VR-DET-003", "action_label": "bw-key-unique \u00b7 BW", "event_id": "RUN-EB6114A58B3200C1.E000044", "flag": null, "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:16.034348Z", "outcome": "passed", "run_id": "RUN-EB6114A58B3200C1", "sequence": 44, "stage_id": "validate", "study_id": "STUDY-HLX-028", "type": "action_finished"}
+
+[2026-09-24T22:32:16.495Z]
+id: RUN-EB6114A58B3200C1.E000045
+event: action_started
+data: {"action_id": "result:VR-DET-004", "action_label": "claim-value-reconciliation \u00b7 C-BW-HIGH", "event_id": "RUN-EB6114A58B3200C1.E000045", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:16.034595Z", "run_id": "RUN-EB6114A58B3200C1", "sequence": 45, "stage_id": "validate", "study_id": "STUDY-HLX-028", "type": "action_started"}
+
+[2026-09-24T22:32:16.495Z]
+id: RUN-EB6114A58B3200C1.E000046
+event: action_finished
+data: {"action_id": "result:VR-DET-004", "action_label": "claim-value-reconciliation \u00b7 C-BW-HIGH", "event_id": "RUN-EB6114A58B3200C1.E000046", "flag": null, "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:16.034870Z", "outcome": "passed", "run_id": "RUN-EB6114A58B3200C1", "sequence": 46, "stage_id": "validate", "study_id": "STUDY-HLX-028", "type": "action_finished"}
+
+[2026-09-24T22:32:16.495Z]
+id: RUN-EB6114A58B3200C1.E000047
+event: action_started
+data: {"action_id": "result:VR-DET-005", "action_label": "numeric-claim-provenance \u00b7 PKG-HLX-028", "event_id": "RUN-EB6114A58B3200C1.E000047", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:16.035133Z", "run_id": "RUN-EB6114A58B3200C1", "sequence": 47, "stage_id": "validate", "study_id": "STUDY-HLX-028", "type": "action_started"}
+
+[2026-09-24T22:32:16.495Z]
+id: RUN-EB6114A58B3200C1.E000048
+event: action_finished
+data: {"action_id": "result:VR-DET-005", "action_label": "numeric-claim-provenance \u00b7 PKG-HLX-028", "event_id": "RUN-EB6114A58B3200C1.E000048", "flag": null, "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:16.035378Z", "outcome": "passed", "run_id": "RUN-EB6114A58B3200C1", "sequence": 48, "stage_id": "validate", "study_id": "STUDY-HLX-028", "type": "action_finished"}
+
+[2026-09-24T22:32:16.495Z]
+id: RUN-EB6114A58B3200C1.E000049
+event: action_started
+data: {"action_id": "result:VR-004", "action_label": "grain-sex-stratified \u00b7 S5", "event_id": "RUN-EB6114A58B3200C1.E000049", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:16.035632Z", "run_id": "RUN-EB6114A58B3200C1", "sequence": 49, "stage_id": "validate", "study_id": "STUDY-HLX-028", "type": "action_started"}
+
+[2026-09-24T22:32:16.495Z]
+id: RUN-EB6114A58B3200C1.E000050
+event: action_finished
+data: {"action_id": "result:VR-004", "action_label": "grain-sex-stratified \u00b7 S5", "event_id": "RUN-EB6114A58B3200C1.E000050", "flag": "blocker", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:16.035923Z", "outcome": "blocker", "run_id": "RUN-EB6114A58B3200C1", "sequence": 50, "stage_id": "validate", "study_id": "STUDY-HLX-028", "type": "action_finished"}
+
+[2026-09-24T22:32:16.495Z]
+id: RUN-EB6114A58B3200C1.E000051
+event: action_started
+data: {"action_id": "result:VR-005", "action_label": "mi-severity-reconcile \u00b7 C-MI-LIVER", "event_id": "RUN-EB6114A58B3200C1.E000051", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:16.036168Z", "run_id": "RUN-EB6114A58B3200C1", "sequence": 51, "stage_id": "validate", "study_id": "STUDY-HLX-028", "type": "action_started"}
+
+[2026-09-24T22:32:16.495Z]
+id: RUN-EB6114A58B3200C1.E000052
+event: action_finished
+data: {"action_id": "result:VR-005", "action_label": "mi-severity-reconcile \u00b7 C-MI-LIVER", "event_id": "RUN-EB6114A58B3200C1.E000052", "flag": "blocker", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:16.036430Z", "outcome": "blocker", "run_id": "RUN-EB6114A58B3200C1", "sequence": 52, "stage_id": "validate", "study_id": "STUDY-HLX-028", "type": "action_finished"}
+
+[2026-09-24T22:32:16.495Z]
+id: RUN-EB6114A58B3200C1.E000053
+event: action_started
+data: {"action_id": "result:VR-006", "action_label": "noael-human-judgment \u00b7 C-NOAEL", "event_id": "RUN-EB6114A58B3200C1.E000053", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:16.036676Z", "run_id": "RUN-EB6114A58B3200C1", "sequence": 53, "stage_id": "validate", "study_id": "STUDY-HLX-028", "type": "action_started"}
+
+[2026-09-24T22:32:16.495Z]
+id: RUN-EB6114A58B3200C1.E000054
+event: action_finished
+data: {"action_id": "result:VR-006", "action_label": "noael-human-judgment \u00b7 C-NOAEL", "event_id": "RUN-EB6114A58B3200C1.E000054", "flag": "blocker", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:16.036937Z", "outcome": "blocker", "run_id": "RUN-EB6114A58B3200C1", "sequence": 54, "stage_id": "validate", "study_id": "STUDY-HLX-028", "type": "action_finished"}
+
+[2026-09-24T22:32:16.495Z]
+id: RUN-EB6114A58B3200C1.E000055
+event: action_started
+data: {"action_id": "result:VR-DET-009", "action_label": "regulatory-template-coverage \u00b7 TPL-28D-RAT-FDA-OECD-V1", "event_id": "RUN-EB6114A58B3200C1.E000055", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:16.037169Z", "run_id": "RUN-EB6114A58B3200C1", "sequence": 55, "stage_id": "validate", "study_id": "STUDY-HLX-028", "type": "action_started"}
+
+[2026-09-24T22:32:16.495Z]
+id: RUN-EB6114A58B3200C1.E000056
+event: action_finished
+data: {"action_id": "result:VR-DET-009", "action_label": "regulatory-template-coverage \u00b7 TPL-28D-RAT-FDA-OECD-V1", "event_id": "RUN-EB6114A58B3200C1.E000056", "flag": null, "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:16.037409Z", "outcome": "passed", "run_id": "RUN-EB6114A58B3200C1", "sequence": 56, "stage_id": "validate", "study_id": "STUDY-HLX-028", "type": "action_finished"}
+
+[2026-09-24T22:32:16.495Z]
+id: RUN-EB6114A58B3200C1.E000057
+event: action_started
+data: {"action_id": "result:VR-DET-010", "action_label": "submission-support-artifacts \u00b7 PKG-HLX-028", "event_id": "RUN-EB6114A58B3200C1.E000057", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:16.037643Z", "run_id": "RUN-EB6114A58B3200C1", "sequence": 57, "stage_id": "validate", "study_id": "STUDY-HLX-028", "type": "action_started"}
+
+[2026-09-24T22:32:16.495Z]
+id: RUN-EB6114A58B3200C1.E000058
+event: action_finished
+data: {"action_id": "result:VR-DET-010", "action_label": "submission-support-artifacts \u00b7 PKG-HLX-028", "event_id": "RUN-EB6114A58B3200C1.E000058", "flag": null, "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:16.037903Z", "outcome": "passed", "run_id": "RUN-EB6114A58B3200C1", "sequence": 58, "stage_id": "validate", "study_id": "STUDY-HLX-028", "type": "action_finished"}
+
+[2026-09-24T22:32:16.495Z]
+id: RUN-EB6114A58B3200C1.E000059
+event: action_started
+data: {"action_id": "result:VR-AGENT-001", "action_label": "agent-grounded-numeric-claim \u00b7 C-BW-HIGH", "event_id": "RUN-EB6114A58B3200C1.E000059", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:16.038177Z", "run_id": "RUN-EB6114A58B3200C1", "sequence": 59, "stage_id": "validate", "study_id": "STUDY-HLX-028", "type": "action_started"}
+
+[2026-09-24T22:32:16.495Z]
+id: RUN-EB6114A58B3200C1.E000060
+event: action_finished
+data: {"action_id": "result:VR-AGENT-001", "action_label": "agent-grounded-numeric-claim \u00b7 C-BW-HIGH", "event_id": "RUN-EB6114A58B3200C1.E000060", "flag": null, "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:16.038499Z", "outcome": "passed", "run_id": "RUN-EB6114A58B3200C1", "sequence": 60, "stage_id": "validate", "study_id": "STUDY-HLX-028", "type": "action_finished"}
+
+[2026-09-24T22:32:16.495Z]
+id: RUN-EB6114A58B3200C1.E000061
+event: action_started
+data: {"action_id": "result:VR-AGENT-002", "action_label": "agent-source-severity-match \u00b7 C-MI-LIVER", "event_id": "RUN-EB6114A58B3200C1.E000061", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:16.038794Z", "run_id": "RUN-EB6114A58B3200C1", "sequence": 61, "stage_id": "validate", "study_id": "STUDY-HLX-028", "type": "action_started"}
+
+[2026-09-24T22:32:16.496Z]
+id: RUN-EB6114A58B3200C1.E000062
+event: action_finished
+data: {"action_id": "result:VR-AGENT-002", "action_label": "agent-source-severity-match \u00b7 C-MI-LIVER", "event_id": "RUN-EB6114A58B3200C1.E000062", "flag": "warning", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:16.039065Z", "outcome": "warning", "run_id": "RUN-EB6114A58B3200C1", "sequence": 62, "stage_id": "validate", "study_id": "STUDY-HLX-028", "type": "action_finished"}
+
+[2026-09-24T22:32:16.496Z]
+id: RUN-EB6114A58B3200C1.E000063
+event: action_started
+data: {"action_id": "result:VR-AGENT-003", "action_label": "agent-human-judgment-guard \u00b7 C-NOAEL", "event_id": "RUN-EB6114A58B3200C1.E000063", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:16.039318Z", "run_id": "RUN-EB6114A58B3200C1", "sequence": 63, "stage_id": "validate", "study_id": "STUDY-HLX-028", "type": "action_started"}
+
+[2026-09-24T22:32:16.496Z]
+id: RUN-EB6114A58B3200C1.E000064
+event: action_finished
+data: {"action_id": "result:VR-AGENT-003", "action_label": "agent-human-judgment-guard \u00b7 C-NOAEL", "event_id": "RUN-EB6114A58B3200C1.E000064", "flag": null, "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:16.039558Z", "outcome": "passed", "run_id": "RUN-EB6114A58B3200C1", "sequence": 64, "stage_id": "validate", "study_id": "STUDY-HLX-028", "type": "action_finished"}
+
+[2026-09-24T22:32:16.496Z]
+id: RUN-EB6114A58B3200C1.E000065
+event: stage_finished
+data: {"event_id": "RUN-EB6114A58B3200C1.E000065", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:16.039803Z", "run_id": "RUN-EB6114A58B3200C1", "sequence": 65, "stage_id": "validate", "study_id": "STUDY-HLX-028", "type": "stage_finished"}
+
+[2026-09-24T22:32:16.496Z]
+id: RUN-EB6114A58B3200C1.E000066
+event: stage_started
+data: {"event_id": "RUN-EB6114A58B3200C1.E000066", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:16.040105Z", "run_id": "RUN-EB6114A58B3200C1", "sequence": 66, "stage_id": "draft", "study_id": "STUDY-HLX-028", "type": "stage_started"}
+
+[2026-09-24T22:32:16.496Z]
+id: RUN-EB6114A58B3200C1.E000067
+event: action_started
+data: {"action_id": "section:S1", "action_label": "Assembled Study identity and compliance", "event_id": "RUN-EB6114A58B3200C1.E000067", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:16.040377Z", "run_id": "RUN-EB6114A58B3200C1", "sequence": 67, "stage_id": "draft", "study_id": "STUDY-HLX-028", "type": "action_started"}
+
+[2026-09-24T22:32:16.496Z]
+id: RUN-EB6114A58B3200C1.E000068
+event: action_finished
+data: {"action_id": "section:S1", "action_label": "Assembled Study identity and compliance", "event_id": "RUN-EB6114A58B3200C1.E000068", "flag": null, "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:16.040621Z", "outcome": "passed", "run_id": "RUN-EB6114A58B3200C1", "sequence": 68, "stage_id": "draft", "study_id": "STUDY-HLX-028", "type": "action_finished"}
+
+[2026-09-24T22:32:16.496Z]
+id: RUN-EB6114A58B3200C1.E000069
+event: action_started
+data: {"action_id": "section:S2", "action_label": "Assembled Objectives", "event_id": "RUN-EB6114A58B3200C1.E000069", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:16.040897Z", "run_id": "RUN-EB6114A58B3200C1", "sequence": 69, "stage_id": "draft", "study_id": "STUDY-HLX-028", "type": "action_started"}
+
+[2026-09-24T22:32:16.496Z]
+id: RUN-EB6114A58B3200C1.E000070
+event: action_finished
+data: {"action_id": "section:S2", "action_label": "Assembled Objectives", "event_id": "RUN-EB6114A58B3200C1.E000070", "flag": null, "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:16.041157Z", "outcome": "passed", "run_id": "RUN-EB6114A58B3200C1", "sequence": 70, "stage_id": "draft", "study_id": "STUDY-HLX-028", "type": "action_finished"}
+
+[2026-09-24T22:32:16.496Z]
+id: RUN-EB6114A58B3200C1.E000071
+event: action_started
+data: {"action_id": "section:S3", "action_label": "Assembled Materials and methods", "event_id": "RUN-EB6114A58B3200C1.E000071", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:16.041403Z", "run_id": "RUN-EB6114A58B3200C1", "sequence": 71, "stage_id": "draft", "study_id": "STUDY-HLX-028", "type": "action_started"}
+
+[2026-09-24T22:32:16.496Z]
+id: RUN-EB6114A58B3200C1.E000072
+event: action_finished
+data: {"action_id": "section:S3", "action_label": "Assembled Materials and methods", "event_id": "RUN-EB6114A58B3200C1.E000072", "flag": null, "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:16.041664Z", "outcome": "passed", "run_id": "RUN-EB6114A58B3200C1", "sequence": 72, "stage_id": "draft", "study_id": "STUDY-HLX-028", "type": "action_finished"}
+
+[2026-09-24T22:32:16.497Z]
+id: RUN-EB6114A58B3200C1.E000073
+event: action_started
+data: {"action_id": "section:S4", "action_label": "Assembled Dose formulation", "event_id": "RUN-EB6114A58B3200C1.E000073", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:16.041910Z", "run_id": "RUN-EB6114A58B3200C1", "sequence": 73, "stage_id": "draft", "study_id": "STUDY-HLX-028", "type": "action_started"}
+
+[2026-09-24T22:32:16.497Z]
+id: RUN-EB6114A58B3200C1.E000074
+event: action_finished
+data: {"action_id": "section:S4", "action_label": "Assembled Dose formulation", "event_id": "RUN-EB6114A58B3200C1.E000074", "flag": null, "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:16.042277Z", "outcome": "passed", "run_id": "RUN-EB6114A58B3200C1", "sequence": 74, "stage_id": "draft", "study_id": "STUDY-HLX-028", "type": "action_finished"}
+
+[2026-09-24T22:32:16.497Z]
+id: RUN-EB6114A58B3200C1.E000075
+event: action_started
+data: {"action_id": "section:S5", "action_label": "Assembled In-life observations", "event_id": "RUN-EB6114A58B3200C1.E000075", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:16.042624Z", "run_id": "RUN-EB6114A58B3200C1", "sequence": 75, "stage_id": "draft", "study_id": "STUDY-HLX-028", "type": "action_started"}
+
+[2026-09-24T22:32:16.497Z]
+id: RUN-EB6114A58B3200C1.E000076
+event: action_finished
+data: {"action_id": "section:S5", "action_label": "Assembled In-life observations", "event_id": "RUN-EB6114A58B3200C1.E000076", "flag": null, "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:16.042987Z", "outcome": "passed", "run_id": "RUN-EB6114A58B3200C1", "sequence": 76, "stage_id": "draft", "study_id": "STUDY-HLX-028", "type": "action_finished"}
+
+[2026-09-24T22:32:16.497Z]
+id: RUN-EB6114A58B3200C1.E000077
+event: action_started
+data: {"action_id": "section:S6", "action_label": "Assembled Clinical pathology", "event_id": "RUN-EB6114A58B3200C1.E000077", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:16.043335Z", "run_id": "RUN-EB6114A58B3200C1", "sequence": 77, "stage_id": "draft", "study_id": "STUDY-HLX-028", "type": "action_started"}
+
+[2026-09-24T22:32:16.497Z]
+id: RUN-EB6114A58B3200C1.E000078
+event: action_finished
+data: {"action_id": "section:S6", "action_label": "Assembled Clinical pathology", "event_id": "RUN-EB6114A58B3200C1.E000078", "flag": "warning", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:16.043630Z", "outcome": "warning", "run_id": "RUN-EB6114A58B3200C1", "sequence": 78, "stage_id": "draft", "study_id": "STUDY-HLX-028", "type": "action_finished"}
+
+[2026-09-24T22:32:16.497Z]
+id: RUN-EB6114A58B3200C1.E000079
+event: action_started
+data: {"action_id": "section:S7", "action_label": "Assembled Anatomic pathology", "event_id": "RUN-EB6114A58B3200C1.E000079", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:16.043884Z", "run_id": "RUN-EB6114A58B3200C1", "sequence": 79, "stage_id": "draft", "study_id": "STUDY-HLX-028", "type": "action_started"}
+
+[2026-09-24T22:32:16.497Z]
+id: RUN-EB6114A58B3200C1.E000080
+event: action_finished
+data: {"action_id": "section:S7", "action_label": "Assembled Anatomic pathology", "event_id": "RUN-EB6114A58B3200C1.E000080", "flag": "warning", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:16.044123Z", "outcome": "warning", "run_id": "RUN-EB6114A58B3200C1", "sequence": 80, "stage_id": "draft", "study_id": "STUDY-HLX-028", "type": "action_finished"}
+
+[2026-09-24T22:32:16.497Z]
+id: RUN-EB6114A58B3200C1.E000081
+event: action_started
+data: {"action_id": "section:S8", "action_label": "Assembled Discussion and conclusion", "event_id": "RUN-EB6114A58B3200C1.E000081", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:16.044365Z", "run_id": "RUN-EB6114A58B3200C1", "sequence": 81, "stage_id": "draft", "study_id": "STUDY-HLX-028", "type": "action_started"}
+
+[2026-09-24T22:32:16.497Z]
+id: RUN-EB6114A58B3200C1.E000082
+event: action_finished
+data: {"action_id": "section:S8", "action_label": "Assembled Discussion and conclusion", "event_id": "RUN-EB6114A58B3200C1.E000082", "flag": "warning", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:16.044618Z", "outcome": "warning", "run_id": "RUN-EB6114A58B3200C1", "sequence": 82, "stage_id": "draft", "study_id": "STUDY-HLX-028", "type": "action_finished"}
+
+[2026-09-24T22:32:16.497Z]
+id: RUN-EB6114A58B3200C1.E000083
+event: stage_finished
+data: {"event_id": "RUN-EB6114A58B3200C1.E000083", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:16.044852Z", "run_id": "RUN-EB6114A58B3200C1", "sequence": 83, "stage_id": "draft", "study_id": "STUDY-HLX-028", "type": "stage_finished"}
+
+[2026-09-24T22:32:16.497Z]
+id: RUN-EB6114A58B3200C1.E000084
+event: stage_started
+data: {"event_id": "RUN-EB6114A58B3200C1.E000084", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:16.045154Z", "run_id": "RUN-EB6114A58B3200C1", "sequence": 84, "stage_id": "provenance", "study_id": "STUDY-HLX-028", "type": "stage_started"}
+
+[2026-09-24T22:32:16.498Z]
+id: RUN-EB6114A58B3200C1.E000085
+event: action_started
+data: {"action_id": "provenance:edges", "action_label": "Compiled 614 provenance edges", "event_id": "RUN-EB6114A58B3200C1.E000085", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:16.045420Z", "run_id": "RUN-EB6114A58B3200C1", "sequence": 85, "stage_id": "provenance", "study_id": "STUDY-HLX-028", "type": "action_started"}
+
+[2026-09-24T22:32:16.498Z]
+id: RUN-EB6114A58B3200C1.E000086
+event: action_finished
+data: {"action_id": "provenance:edges", "action_label": "Compiled 614 provenance edges", "event_id": "RUN-EB6114A58B3200C1.E000086", "flag": null, "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:16.045656Z", "outcome": "passed", "run_id": "RUN-EB6114A58B3200C1", "sequence": 86, "stage_id": "provenance", "study_id": "STUDY-HLX-028", "type": "action_finished"}
+
+[2026-09-24T22:32:16.498Z]
+id: RUN-EB6114A58B3200C1.E000087
+event: stage_finished
+data: {"event_id": "RUN-EB6114A58B3200C1.E000087", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:16.045886Z", "run_id": "RUN-EB6114A58B3200C1", "sequence": 87, "stage_id": "provenance", "study_id": "STUDY-HLX-028", "type": "stage_finished"}
+
+[2026-09-24T22:32:16.499Z]
+id: RUN-EB6114A58B3200C1.E000088
+event: gate_reached
+data: {"event_id": "RUN-EB6114A58B3200C1.E000088", "gate_number": 2, "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:16.046174Z", "run_id": "RUN-EB6114A58B3200C1", "sequence": 88, "stage_id": "traceability", "study_id": "STUDY-HLX-028", "type": "gate_reached"}
+
+[2026-09-24T22:32:16.499Z]
+id: RUN-EB6114A58B3200C1.E000089
+event: action_started
+data: {"action_id": "disposition:VR-004", "action_label": "Blocker VR-004 awaits disposition", "event_id": "RUN-EB6114A58B3200C1.E000089", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:16.046430Z", "run_id": "RUN-EB6114A58B3200C1", "sequence": 89, "stage_id": "traceability", "study_id": "STUDY-HLX-028", "type": "action_started"}
+
+[2026-09-24T22:32:16.499Z]
+id: RUN-EB6114A58B3200C1.E000090
+event: action_finished
+data: {"action_id": "disposition:VR-004", "action_label": "Blocker VR-004 awaits disposition", "event_id": "RUN-EB6114A58B3200C1.E000090", "flag": "blocker", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:16.046667Z", "outcome": "blocker", "run_id": "RUN-EB6114A58B3200C1", "sequence": 90, "stage_id": "traceability", "study_id": "STUDY-HLX-028", "type": "action_finished"}
+
+[2026-09-24T22:32:16.499Z]
+id: RUN-EB6114A58B3200C1.E000091
+event: action_started
+data: {"action_id": "disposition:VR-005", "action_label": "Blocker VR-005 awaits disposition", "event_id": "RUN-EB6114A58B3200C1.E000091", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:16.046902Z", "run_id": "RUN-EB6114A58B3200C1", "sequence": 91, "stage_id": "traceability", "study_id": "STUDY-HLX-028", "type": "action_started"}
+
+[2026-09-24T22:32:16.499Z]
+id: RUN-EB6114A58B3200C1.E000092
+event: action_finished
+data: {"action_id": "disposition:VR-005", "action_label": "Blocker VR-005 awaits disposition", "event_id": "RUN-EB6114A58B3200C1.E000092", "flag": "blocker", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:16.047142Z", "outcome": "blocker", "run_id": "RUN-EB6114A58B3200C1", "sequence": 92, "stage_id": "traceability", "study_id": "STUDY-HLX-028", "type": "action_finished"}
+
+[2026-09-24T22:32:16.499Z]
+id: RUN-EB6114A58B3200C1.E000093
+event: action_started
+data: {"action_id": "disposition:VR-006", "action_label": "Blocker VR-006 awaits disposition", "event_id": "RUN-EB6114A58B3200C1.E000093", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:16.047405Z", "run_id": "RUN-EB6114A58B3200C1", "sequence": 93, "stage_id": "traceability", "study_id": "STUDY-HLX-028", "type": "action_started"}
+
+[2026-09-24T22:32:16.499Z]
+id: RUN-EB6114A58B3200C1.E000094
+event: action_finished
+data: {"action_id": "disposition:VR-006", "action_label": "Blocker VR-006 awaits disposition", "event_id": "RUN-EB6114A58B3200C1.E000094", "flag": "blocker", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:16.047653Z", "outcome": "blocker", "run_id": "RUN-EB6114A58B3200C1", "sequence": 94, "stage_id": "traceability", "study_id": "STUDY-HLX-028", "type": "action_finished"}
+
+[2026-09-24T22:32:17.506Z]
+: keep-alive
+
+[2026-09-24T22:32:18.509Z]
+id: RUN-EB6114A58B3200C1.E000095
+event: action_finished
+data: {"action_id": "disposition:VR-004", "action_label": "Blocker VR-004 dispositioned as corrected", "event_id": "RUN-EB6114A58B3200C1.E000095", "flag": null, "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:18.028279Z", "outcome": "dispositioned", "run_id": "RUN-EB6114A58B3200C1", "sequence": 95, "stage_id": "traceability", "study_id": "STUDY-HLX-028", "type": "action_finished"}
+
+[2026-09-24T22:32:18.509Z]
+: keep-alive
+
+[2026-09-24T22:32:19.527Z]
+id: RUN-EB6114A58B3200C1.E000096
+event: action_finished
+data: {"action_id": "section:S7", "action_label": "Assembled Anatomic pathology", "event_id": "RUN-EB6114A58B3200C1.E000096", "flag": null, "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:18.920993Z", "outcome": "passed", "run_id": "RUN-EB6114A58B3200C1", "sequence": 96, "stage_id": "draft", "study_id": "STUDY-HLX-028", "type": "action_finished"}
+
+[2026-09-24T22:32:19.527Z]
+id: RUN-EB6114A58B3200C1.E000097
+event: action_finished
+data: {"action_id": "disposition:VR-005", "action_label": "Blocker VR-005 dispositioned as corrected", "event_id": "RUN-EB6114A58B3200C1.E000097", "flag": null, "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:18.921533Z", "outcome": "dispositioned", "run_id": "RUN-EB6114A58B3200C1", "sequence": 97, "stage_id": "traceability", "study_id": "STUDY-HLX-028", "type": "action_finished"}
+
+[2026-09-24T22:32:19.527Z]
+: keep-alive
+
+[2026-09-24T22:32:20.539Z]
+id: RUN-EB6114A58B3200C1.E000098
+event: action_finished
+data: {"action_id": "section:S8", "action_label": "Assembled Discussion and conclusion", "event_id": "RUN-EB6114A58B3200C1.E000098", "flag": null, "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:19.880199Z", "outcome": "passed", "run_id": "RUN-EB6114A58B3200C1", "sequence": 98, "stage_id": "draft", "study_id": "STUDY-HLX-028", "type": "action_finished"}
+
+[2026-09-24T22:32:20.539Z]
+id: RUN-EB6114A58B3200C1.E000099
+event: action_finished
+data: {"action_id": "disposition:VR-006", "action_label": "Blocker VR-006 dispositioned as approved_exception", "event_id": "RUN-EB6114A58B3200C1.E000099", "flag": null, "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:19.880687Z", "outcome": "dispositioned", "run_id": "RUN-EB6114A58B3200C1", "sequence": 99, "stage_id": "traceability", "study_id": "STUDY-HLX-028", "type": "action_finished"}
+
+[2026-09-24T22:32:20.539Z]
+id: RUN-EB6114A58B3200C1.E000100
+event: stage_finished
+data: {"event_id": "RUN-EB6114A58B3200C1.E000100", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:19.881064Z", "run_id": "RUN-EB6114A58B3200C1", "sequence": 100, "stage_id": "traceability", "study_id": "STUDY-HLX-028", "type": "stage_finished"}
+
+[2026-09-24T22:32:20.539Z]
+id: RUN-EB6114A58B3200C1.E000101
+event: gate_reached
+data: {"event_id": "RUN-EB6114A58B3200C1.E000101", "gate_number": 3, "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:19.881445Z", "run_id": "RUN-EB6114A58B3200C1", "sequence": 101, "stage_id": "review-export", "study_id": "STUDY-HLX-028", "type": "gate_reached"}
+
+[2026-09-24T22:32:20.540Z]
+id: RUN-EB6114A58B3200C1.E000102
+event: action_started
+data: {"action_id": "approval:pathologist", "action_label": "Pathologist approval", "event_id": "RUN-EB6114A58B3200C1.E000102", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:20.492846Z", "run_id": "RUN-EB6114A58B3200C1", "sequence": 102, "stage_id": "review-export", "study_id": "STUDY-HLX-028", "type": "action_started"}
+
+[2026-09-24T22:32:20.540Z]
+id: RUN-EB6114A58B3200C1.E000103
+event: action_finished
+data: {"action_id": "approval:pathologist", "action_label": "Pathologist approval", "event_id": "RUN-EB6114A58B3200C1.E000103", "flag": null, "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:20.493425Z", "outcome": "passed", "run_id": "RUN-EB6114A58B3200C1", "sequence": 103, "stage_id": "review-export", "study_id": "STUDY-HLX-028", "type": "action_finished"}
+
+[2026-09-24T22:32:20.540Z]
+: keep-alive
+
+[2026-09-24T22:32:21.545Z]
+id: RUN-EB6114A58B3200C1.E000104
+event: action_started
+data: {"action_id": "approval:peer_reviewer", "action_label": "Peer Reviewer approval", "event_id": "RUN-EB6114A58B3200C1.E000104", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:21.392324Z", "run_id": "RUN-EB6114A58B3200C1", "sequence": 104, "stage_id": "review-export", "study_id": "STUDY-HLX-028", "type": "action_started"}
+
+[2026-09-24T22:32:21.545Z]
+id: RUN-EB6114A58B3200C1.E000105
+event: action_finished
+data: {"action_id": "approval:peer_reviewer", "action_label": "Peer Reviewer approval", "event_id": "RUN-EB6114A58B3200C1.E000105", "flag": null, "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:21.392765Z", "outcome": "passed", "run_id": "RUN-EB6114A58B3200C1", "sequence": 105, "stage_id": "review-export", "study_id": "STUDY-HLX-028", "type": "action_finished"}
+
+[2026-09-24T22:32:21.545Z]
+: keep-alive
+
+[2026-09-24T22:32:22.550Z]
+id: RUN-EB6114A58B3200C1.E000106
+event: action_started
+data: {"action_id": "approval:qau", "action_label": "Qau approval", "event_id": "RUN-EB6114A58B3200C1.E000106", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:22.275194Z", "run_id": "RUN-EB6114A58B3200C1", "sequence": 106, "stage_id": "review-export", "study_id": "STUDY-HLX-028", "type": "action_started"}
+
+[2026-09-24T22:32:22.551Z]
+id: RUN-EB6114A58B3200C1.E000107
+event: action_finished
+data: {"action_id": "approval:qau", "action_label": "Qau approval", "event_id": "RUN-EB6114A58B3200C1.E000107", "flag": null, "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:22.275780Z", "outcome": "passed", "run_id": "RUN-EB6114A58B3200C1", "sequence": 107, "stage_id": "review-export", "study_id": "STUDY-HLX-028", "type": "action_finished"}
+
+[2026-09-24T22:32:22.551Z]
+: keep-alive
+
+[2026-09-24T22:32:23.558Z]
+id: RUN-EB6114A58B3200C1.E000108
+event: action_finished
+data: {"action_id": "section:S6", "action_label": "Assembled Clinical pathology", "event_id": "RUN-EB6114A58B3200C1.E000108", "flag": null, "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:23.140206Z", "outcome": "passed", "run_id": "RUN-EB6114A58B3200C1", "sequence": 108, "stage_id": "draft", "study_id": "STUDY-HLX-028", "type": "action_finished"}
+
+[2026-09-24T22:32:23.558Z]
+id: RUN-EB6114A58B3200C1.E000109
+event: action_started
+data: {"action_id": "approval:study_director", "action_label": "Study Director approval", "event_id": "RUN-EB6114A58B3200C1.E000109", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:23.140738Z", "run_id": "RUN-EB6114A58B3200C1", "sequence": 109, "stage_id": "review-export", "study_id": "STUDY-HLX-028", "type": "action_started"}
+
+[2026-09-24T22:32:23.558Z]
+id: RUN-EB6114A58B3200C1.E000110
+event: action_finished
+data: {"action_id": "approval:study_director", "action_label": "Study Director approval", "event_id": "RUN-EB6114A58B3200C1.E000110", "flag": null, "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:23.141122Z", "outcome": "passed", "run_id": "RUN-EB6114A58B3200C1", "sequence": 110, "stage_id": "review-export", "study_id": "STUDY-HLX-028", "type": "action_finished"}
+
+[2026-09-24T22:32:23.559Z]
+: keep-alive
+
+[2026-09-24T22:32:24.564Z]
+id: RUN-EB6114A58B3200C1.E000111
+event: action_started
+data: {"action_id": "final-study-approval", "action_label": "Final Study Approval", "event_id": "RUN-EB6114A58B3200C1.E000111", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:24.232708Z", "run_id": "RUN-EB6114A58B3200C1", "sequence": 111, "stage_id": "review-export", "study_id": "STUDY-HLX-028", "type": "action_started"}
+
+[2026-09-24T22:32:24.564Z]
+id: RUN-EB6114A58B3200C1.E000112
+event: action_finished
+data: {"action_id": "final-study-approval", "action_label": "Final Study Approval", "event_id": "RUN-EB6114A58B3200C1.E000112", "flag": null, "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:24.233211Z", "outcome": "passed", "run_id": "RUN-EB6114A58B3200C1", "sequence": 112, "stage_id": "review-export", "study_id": "STUDY-HLX-028", "type": "action_finished"}
+
+[2026-09-24T22:32:24.564Z]
+: keep-alive
+
+[2026-09-24T22:32:25.571Z]
+id: RUN-EB6114A58B3200C1.E000113
+event: action_started
+data: {"action_id": "export", "action_label": "Explicit export", "event_id": "RUN-EB6114A58B3200C1.E000113", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:25.251222Z", "run_id": "RUN-EB6114A58B3200C1", "sequence": 113, "stage_id": "review-export", "study_id": "STUDY-HLX-028", "type": "action_started"}
+
+[2026-09-24T22:32:25.572Z]
+id: RUN-EB6114A58B3200C1.E000114
+event: action_finished
+data: {"action_id": "export", "action_label": "Explicit export", "event_id": "RUN-EB6114A58B3200C1.E000114", "flag": null, "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:25.251713Z", "outcome": "passed", "run_id": "RUN-EB6114A58B3200C1", "sequence": 114, "stage_id": "review-export", "study_id": "STUDY-HLX-028", "type": "action_finished"}
+
+[2026-09-24T22:32:25.572Z]
+id: RUN-EB6114A58B3200C1.E000115
+event: stage_finished
+data: {"event_id": "RUN-EB6114A58B3200C1.E000115", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:25.252054Z", "run_id": "RUN-EB6114A58B3200C1", "sequence": 115, "stage_id": "review-export", "study_id": "STUDY-HLX-028", "type": "stage_finished"}
+
+[2026-09-24T22:32:25.572Z]
+id: RUN-EB6114A58B3200C1.E000116
+event: export_finished
+data: {"artifact_count": 2, "event_id": "RUN-EB6114A58B3200C1.E000116", "label": "SYNTHETIC / NOT FOR SUBMISSION", "occurred_at": "2026-09-24T22:32:25.252530Z", "run_id": "RUN-EB6114A58B3200C1", "sequence": 116, "stage_id": "review-export", "study_id": "STUDY-HLX-028", "type": "export_finished"}
+
+[2026-09-24T22:32:25.572Z]
+: keep-alive
+
+[2026-09-24T22:32:26.581Z]
+: keep-alive
+
+[2026-09-24T22:32:27.588Z]
+: keep-alive
+
+# closed: AbortError

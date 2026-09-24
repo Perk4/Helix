@@ -1,0 +1,17 @@
+{
+  "steps": [
+    "PASS 01-upload-frozen-manifest",
+    "STOP 02-parse-resolve-validate"
+  ],
+  "stop": {
+    "step": "02-parse-resolve-validate",
+    "error": "Error: expect(locator).toContainText(expected) failed |  | Locator: getByRole('status') | Expected substring: \"13 checks completed\" | Received string:    \"The HELIX API returned an unexpected error.Close\" | Timeout: 10000ms",
+    "ui_notice": [
+      "The HELIX API returned an unexpected error.\nClose"
+    ]
+  },
+  "completed": false,
+  "browser_errors": [
+    "Failed to load resource: the server responded with a status of 422 (Unprocessable Entity)"
+  ]
+}

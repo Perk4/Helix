@@ -1,0 +1,104 @@
+### 1. base f5776828 backend on an empty pg DB (postgresql+psycopg://helix@127.0.0.1:55441/helix_pre): tables created by create_all; writes via its API
+#    (temporary qualification override in the base worktree so the Pinned Run and run events can be created; reverted right after)
+POST validation-runs (freezes run, emits run events) -> 201
+POST data-validation-packages -> 201
+POST disposition VR-004 -> 200
+POST disposition VR-006 -> 200
+POST /studies (sync upload STUDY-YZ389-PRE) -> 201
+journey.run: RUN-EB6114A58B3200C1 latest_event_id RUN-EB6114A58B3200C1.E000097 | workflow gated
+base override reverted: 0 changed files
+
+### 2. BEFORE (base schema, created without Alembic)
+audit_events             13
+candidate_evaluations    0
+cross_section_queries    0
+data_validation_runs     2
+drafting_cycles          0
+export_files             0
+pinned_runs              1
+promotion_decisions      0
+run_events               97
+run_journey_states       1
+section_drafts           0
+section_runs             0
+study_packages           2
+validation_runs          1
+alembic_version: ERROR:  relation "alembic_version" does not existLINE 1: select version_num from alembic_version                                ^
+
+### 3. start the #19 backend (tip + env.py fix, no override) against the same DB
+{"status":"ok","storage":"postgresql"}
+studies: ['STUDY-HLX-028', 'STUDY-YZ389-PRE']
+journey.run: RUN-EB6114A58B3200C1 latest_event_id RUN-EB6114A58B3200C1.E000097 | workflow gated | approvals [] | dispositions 5
+SSE replay frames: 97
+POST disposition VR-005 (new write after upgrade) -> 200
+POST /studies/jobs -> 202
+t=+   10.0ms status=queued    stage=received stages_done=['received']
+t=+   18.9ms status=running   stage=parsed stages_done=['parsed', 'expanded', 'received', 'classified']
+t=+   26.3ms status=succeeded stage=persisted stages_done=['parsed', 'expanded', 'received', 'persisted', 'classified']
+--- #19 backend log:
+INFO:     Started server process [38074]
+INFO:     Waiting for application startup.
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+INFO  [alembic.runtime.migration] Running stamp_revision  -> bf13e5f55c15
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade bf13e5f55c15 -> ea600664952b, intake jobs
+INFO  [alembic.runtime.migration] Running upgrade ea600664952b -> b53f9ec18cf2, bind intake idempotency to request
+INFO  [alembic.runtime.migration] Running upgrade b53f9ec18cf2 -> 9edd082c07ae, run events and run journey states (Steven-Espaillat/Helix#25)
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8010 (Press CTRL+C to quit)
+INFO:     127.0.0.1:65322 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65323 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65324 - "GET /api/v1/studies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65325 - "GET /api/v1/studies/STUDY-HLX-028/workspace HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65326 - "GET /api/v1/studies/STUDY-HLX-028/workspace HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65328 - "GET /api/v1/studies/STUDY-HLX-028/pinned-runs/RUN-EB6114A58B3200C1/events HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65333 - "POST /api/v1/studies/STUDY-HLX-028/validation-results/VR-005/dispositions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65336 - "POST /api/v1/studies/jobs HTTP/1.1" 202 Accepted
+INFO:     127.0.0.1:65337 - "GET /api/v1/studies/jobs/IJ-3EB27CE55731 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65338 - "GET /api/v1/studies/jobs/IJ-3EB27CE55731 HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [38074]
+
+### 4. AFTER
+alembic_version          1
+audit_events             14
+candidate_evaluations    0
+cross_section_queries    0
+data_validation_runs     2
+drafting_cycles          0
+export_files             0
+intake_jobs              1
+pinned_runs              1
+promotion_decisions      0
+run_events               101
+run_journey_states       1
+section_drafts           0
+section_runs             0
+study_packages           3
+validation_runs          1
+alembic_version: 9edd082c07ae
+
+### diff BEFORE -> AFTER
+1c1,2
+< audit_events             13
+---
+> alembic_version          1
+> audit_events             14
+6a8
+> intake_jobs              1
+9c11
+< run_events               97
+---
+> run_events               101
+13c15
+< study_packages           2
+---
+> study_packages           3
+15c17
+< alembic_version: ERROR:  relation "alembic_version" does not existLINE 1: select version_num from alembic_version                                ^
+---
+> alembic_version: 9edd082c07ae

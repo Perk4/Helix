@@ -1,12 +1,21 @@
+from pathlib import Path
 from sqlite3 import Connection as SQLiteConnection
 
-from sqlalchemy import Engine, create_engine, event
+from sqlalchemy import Engine, create_engine, event, inspect
 from sqlalchemy.engine import Connection
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from .config import Settings
 from .models import Base
+
+BASELINE_REVISION = "bf13e5f55c15"
+# Tables a migration after the baseline creates. They are not part of the baseline stamp.
+INTAKE_JOB_TABLES = frozenset({"intake_jobs"})
+# Created by feat/steven-workspace's former `create_all` path (#25) and now by revision
+# 9edd082c07ae. An unversioned database from that branch may already carry them.
+RUN_EVENT_TABLES = frozenset({"run_events", "run_journey_states"})
+BASELINE_TABLES = frozenset(Base.metadata.tables) - INTAKE_JOB_TABLES - RUN_EVENT_TABLES
 
 
 def create_database_engine(settings: Settings) -> Engine:
@@ -28,7 +37,80 @@ def create_session_factory(engine: Engine) -> sessionmaker[Session]:
 
 
 def create_schema(engine: Engine) -> None:
-    Base.metadata.create_all(engine)
+    """Bring the database to the current schema.
+
+    `Base.metadata.create_all` only creates tables that are missing; it never
+    alters one that already exists. So a column added to a model after a
+    database was created simply never appears, the service starts cleanly, and
+    the failure surfaces later as `UndefinedColumn` on a query. That happened
+    when `section_runs` gained `drafting_cycle_id`.
+
+    Migrations are therefore authoritative on a real database. `create_all` is
+    kept only for SQLite, where every test builds a throwaway database from
+    scratch and stamping a migration chain would cost time for no safety.
+    """
+    if engine.dialect.name == "sqlite":
+        Base.metadata.create_all(engine)
+        return
+    upgrade_to_head(engine)
+
+
+def upgrade_to_head(engine: Engine) -> None:
+    """Run Alembic against an existing engine, inside its connection.
+
+    Sharing the connection matters: `HELIX_DATABASE_URL` may carry a
+    `search_path`, and `alembic_version` has to land in the same schema as the
+    tables it tracks rather than in `public`.
+    """
+    from alembic import command
+    from alembic.config import Config
+
+    config = Config(str(Path(__file__).resolve().parents[1] / "alembic.ini"))
+    config.set_main_option("script_location",
+                           str(Path(__file__).resolve().parents[1] / "migrations"))
+    with engine.begin() as connection:
+        config.attributes["connection"] = connection
+        _adopt_unversioned_baseline(connection, config, command)
+        command.upgrade(config, "head")
+
+
+def _adopt_unversioned_baseline(connection: Connection, config: object,
+                                  command: object) -> None:
+    """Stamp a schema created by the former ``create_all`` startup path.
+
+    Adoption is deliberately conservative. A partially-created or drifted
+    schema must stop with an actionable error rather than being stamped as a
+    baseline it does not match.
+    """
+    schema = inspect(connection)
+    existing = set(schema.get_table_names())
+    if "alembic_version" in existing or not (existing & BASELINE_TABLES):
+        return
+
+    missing_tables = BASELINE_TABLES - existing
+    unexpected_migrated_tables = (existing - BASELINE_TABLES) & INTAKE_JOB_TABLES
+    mismatched_columns: list[str] = []
+    # Run-event tables from the old create_all path are adopted too, but only if their
+    # columns match; revision 9edd082c07ae then skips creating them.
+    for table_name in (BASELINE_TABLES | RUN_EVENT_TABLES) & existing:
+        expected = set(Base.metadata.tables[table_name].columns.keys())
+        actual = {column["name"] for column in schema.get_columns(table_name)}
+        if expected != actual:
+            mismatched_columns.append(table_name)
+
+    if missing_tables or unexpected_migrated_tables or mismatched_columns:
+        details = []
+        if missing_tables:
+            details.append(f"missing tables: {', '.join(sorted(missing_tables))}")
+        if unexpected_migrated_tables:
+            details.append("post-baseline tables already exist: intake_jobs")
+        if mismatched_columns:
+            details.append(f"column mismatch: {', '.join(sorted(mismatched_columns))}")
+        raise RuntimeError(
+            "Unversioned HELIX schema does not match the Alembic baseline; "
+            "refusing to stamp it (" + "; ".join(details) + ").")
+
+    command.stamp(config, BASELINE_REVISION)
 
 
 def _serialize_sqlite_writers(engine: Engine) -> None:

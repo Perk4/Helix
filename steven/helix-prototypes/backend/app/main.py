@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 from typing import Annotated
 
 from fastapi import (
+    BackgroundTasks,
     Depends,
     FastAPI,
     File,
@@ -32,6 +33,7 @@ from .config import Settings, get_settings
 from .data_validation import DataValidationConflictError, UnknownValidationPackageError
 from .database import create_database_engine, create_schema, create_session_factory
 from .intake import IntakeRejected, build_package
+from .intake_jobs import IntakeJobConflictError, IntakeJobService, as_record
 from .repository import StudyNotFoundError, StudyPackageRepository
 from .run_events import EventCursorExpiredError, InvalidEventCursorError, RunEventStore, parse_cursor
 from .run_plans import PinnedRunService, RunConflictError, RunPlanRejectedError
@@ -228,6 +230,61 @@ def create_app(
             "receipt": report.as_record(),
             "next": "no claims were stored; run validation to compute them",
         }
+
+    @app.post(
+        "/api/v1/studies/jobs",
+        status_code=status.HTTP_202_ACCEPTED,
+        tags=["studies"],
+    )
+    async def submit_study_upload(
+        background: BackgroundTasks,
+        files: list[UploadFile] = File(...),
+        study_id: str = Form(..., min_length=7, max_length=64),
+        route: str = Form(..., min_length=2, max_length=80),
+        protocol_version: str = Form(..., min_length=1, max_length=40),
+        authorized_by: str = Form(..., min_length=2, max_length=120),
+        idempotency_key: str = Form(..., min_length=8, max_length=160),
+        study_type_id: str = Form("REPEAT_DOSE_28D_RODENT", max_length=80),
+        study_start: str = Form("", max_length=32),
+    ) -> dict:
+        """Accept an upload and process it in the background.
+
+        The synchronous `POST /api/v1/studies` is unchanged and remains the
+        simpler choice for a small study. This exists because a 150-animal
+        study takes long enough that a caller needs to see what is happening.
+
+        Returns 202 with a job id. Poll `GET /api/v1/studies/jobs/{job_id}`.
+        """
+        if not STUDY_ID_PATTERN.match(study_id):
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"study_id {study_id!r} must match ^STUDY-[A-Z0-9-]+$")
+
+        uploads = [(item.filename or "unnamed", await item.read()) for item in files]
+        facts = {"route": route, "protocol_version": protocol_version,
+                 "authorized_by": authorized_by, "study_type_id": study_type_id,
+                 "study_start": study_start}
+
+        service = IntakeJobService(session_factory)
+        try:
+            job = service.submit(study_id=study_id, idempotency_key=idempotency_key,
+                                 uploads=uploads, facts=facts)
+        except IntakeJobConflictError as exc:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT,
+                                detail=str(exc)) from None
+
+        if job.status == "queued":
+            background.add_task(service.run, job.job_id, uploads, facts)
+        return as_record(job)
+
+    @app.get("/api/v1/studies/jobs/{job_id}", tags=["studies"])
+    def get_study_upload_job(job_id: str) -> dict:
+        """Stage-by-stage progress and timings for an upload job."""
+        job = IntakeJobService(session_factory).get(job_id)
+        if job is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                                detail=f"no upload job {job_id}")
+        return as_record(job)
 
     @app.get("/api/v1/studies", response_model=list[StudyListItem], tags=["studies"])
     def list_studies(study_service: ServiceDependency) -> list[StudyListItem]:

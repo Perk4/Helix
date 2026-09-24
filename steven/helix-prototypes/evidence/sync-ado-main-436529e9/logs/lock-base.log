@@ -1,0 +1,155 @@
+INFO:     Started server process [38568]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8010 (Press CTRL+C to quit)
+INFO:     127.0.0.1:65504 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65507 - "GET /api/v1/studies/STUDY-HLX-028/workspace HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65508 - "GET /api/v1/studies/STUDY-HLX-028/pinned-runs/RUN-EB6114A58B3200C1/events HTTP/1.1" 200 OK
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/Users/perk/src/Helix-base-f577/steven/helix-prototypes/backend/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1969, in _exec_single_context
+    self.dialect.do_execute(
+  File "/Users/perk/src/Helix-base-f577/steven/helix-prototypes/backend/.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+sqlite3.OperationalError: database is locked
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/perk/src/Helix-base-f577/steven/helix-prototypes/backend/.venv/lib/python3.12/site-packages/uvicorn/protocols/http/httptools_impl.py", line 422, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/perk/src/Helix-base-f577/steven/helix-prototypes/backend/.venv/lib/python3.12/site-packages/uvicorn/middleware/proxy_headers.py", line 63, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/perk/src/Helix-base-f577/steven/helix-prototypes/backend/.venv/lib/python3.12/site-packages/fastapi/applications.py", line 1163, in __call__
+    await super().__call__(scope, receive, send)
+  File "/Users/perk/src/Helix-base-f577/steven/helix-prototypes/backend/.venv/lib/python3.12/site-packages/starlette/applications.py", line 96, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/perk/src/Helix-base-f577/steven/helix-prototypes/backend/.venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/Users/perk/src/Helix-base-f577/steven/helix-prototypes/backend/.venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/Users/perk/src/Helix-base-f577/steven/helix-prototypes/backend/.venv/lib/python3.12/site-packages/starlette/middleware/cors.py", line 88, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/perk/src/Helix-base-f577/steven/helix-prototypes/backend/.venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/perk/src/Helix-base-f577/steven/helix-prototypes/backend/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/perk/src/Helix-base-f577/steven/helix-prototypes/backend/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/perk/src/Helix-base-f577/steven/helix-prototypes/backend/.venv/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/perk/src/Helix-base-f577/steven/helix-prototypes/backend/.venv/lib/python3.12/site-packages/starlette/routing.py", line 670, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/perk/src/Helix-base-f577/steven/helix-prototypes/backend/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 2734, in app
+    await route.handle(scope, receive, send)
+  File "/Users/perk/src/Helix-base-f577/steven/helix-prototypes/backend/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 1281, in handle
+    await super().handle(scope, receive, send)
+  File "/Users/perk/src/Helix-base-f577/steven/helix-prototypes/backend/.venv/lib/python3.12/site-packages/starlette/routing.py", line 280, in handle
+    await self.app(scope, receive, send)
+  File "/Users/perk/src/Helix-base-f577/steven/helix-prototypes/backend/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 158, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/Users/perk/src/Helix-base-f577/steven/helix-prototypes/backend/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/perk/src/Helix-base-f577/steven/helix-prototypes/backend/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/perk/src/Helix-base-f577/steven/helix-prototypes/backend/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 145, in app
+    await response(scope, receive, send)
+  File "/Users/perk/src/Helix-base-f577/steven/helix-prototypes/backend/.venv/lib/python3.12/site-packages/starlette/responses.py", line 273, in __call__
+    async with create_collapsing_task_group() as task_group:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/perk/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/contextlib.py", line 217, in __aexit__
+    await anext(self.gen)
+  File "/Users/perk/src/Helix-base-f577/steven/helix-prototypes/backend/.venv/lib/python3.12/site-packages/starlette/_utils.py", line 93, in create_collapsing_task_group
+    raise exc from exc.__cause__ or context
+  File "/Users/perk/src/Helix-base-f577/steven/helix-prototypes/backend/.venv/lib/python3.12/site-packages/anyio/_core/_tasks.py", line 327, in _run_coro
+    retval = await self._coro
+             ^^^^^^^^^^^^^^^^
+  File "/Users/perk/src/Helix-base-f577/steven/helix-prototypes/backend/.venv/lib/python3.12/site-packages/starlette/responses.py", line 276, in wrap
+    await func()
+  File "/Users/perk/src/Helix-base-f577/steven/helix-prototypes/backend/.venv/lib/python3.12/site-packages/starlette/responses.py", line 250, in stream_response
+    async for chunk in self.body_iterator:
+  File "/Users/perk/src/Helix-base-f577/steven/helix-prototypes/backend/.venv/lib/python3.12/site-packages/starlette/concurrency.py", line 57, in iterate_in_threadpool
+    yield await anyio.to_thread.run_sync(_next, as_iterator)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/perk/src/Helix-base-f577/steven/helix-prototypes/backend/.venv/lib/python3.12/site-packages/anyio/to_thread.py", line 65, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/perk/src/Helix-base-f577/steven/helix-prototypes/backend/.venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 2706, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "/Users/perk/src/Helix-base-f577/steven/helix-prototypes/backend/.venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1100, in run
+    result = context.run(func, *args)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/perk/src/Helix-base-f577/steven/helix-prototypes/backend/.venv/lib/python3.12/site-packages/starlette/concurrency.py", line 46, in _next
+    return next(iterator)
+           ^^^^^^^^^^^^^^
+  File "/Users/perk/src/Helix-base-f577/steven/helix-prototypes/backend/app/main.py", line 328, in frames
+    fresh = store.replay(run_id, cursor_id)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/perk/src/Helix-base-f577/steven/helix-prototypes/backend/app/run_events.py", line 277, in replay
+    state = self.state(run_id)
+            ^^^^^^^^^^^^^^^^^^
+  File "/Users/perk/src/Helix-base-f577/steven/helix-prototypes/backend/app/run_events.py", line 63, in state
+    return self.session.get(RunJourneyStateRow, run_id)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/perk/src/Helix-base-f577/steven/helix-prototypes/backend/.venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 3702, in get
+    return self._get_impl(
+           ^^^^^^^^^^^^^^^
+  File "/Users/perk/src/Helix-base-f577/steven/helix-prototypes/backend/.venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 3881, in _get_impl
+    return db_load_fn(
+           ^^^^^^^^^^^
+  File "/Users/perk/src/Helix-base-f577/steven/helix-prototypes/backend/.venv/lib/python3.12/site-packages/sqlalchemy/orm/loading.py", line 695, in load_on_pk_identity
+    session.execute(
+  File "/Users/perk/src/Helix-base-f577/steven/helix-prototypes/backend/.venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2373, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/perk/src/Helix-base-f577/steven/helix-prototypes/backend/.venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2261, in _execute_internal
+    conn = self._connection_for_bind(bind)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/perk/src/Helix-base-f577/steven/helix-prototypes/backend/.venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2113, in _connection_for_bind
+    return trans._connection_for_bind(engine, execution_options)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 2, in _connection_for_bind
+  File "/Users/perk/src/Helix-base-f577/steven/helix-prototypes/backend/.venv/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py", line 137, in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/perk/src/Helix-base-f577/steven/helix-prototypes/backend/.venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 1244, in _connection_for_bind
+    transaction = conn.begin()
+                  ^^^^^^^^^^^^
+  File "/Users/perk/src/Helix-base-f577/steven/helix-prototypes/backend/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 857, in begin
+    self._transaction = RootTransaction(self)
+                        ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/perk/src/Helix-base-f577/steven/helix-prototypes/backend/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 2694, in __init__
+    self._connection_begin_impl()
+  File "/Users/perk/src/Helix-base-f577/steven/helix-prototypes/backend/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 2712, in _connection_begin_impl
+    self.connection._begin_impl(self)
+  File "/Users/perk/src/Helix-base-f577/steven/helix-prototypes/backend/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1101, in _begin_impl
+    self.dispatch.begin(self)
+  File "/Users/perk/src/Helix-base-f577/steven/helix-prototypes/backend/.venv/lib/python3.12/site-packages/sqlalchemy/event/attr.py", line 516, in __call__
+    fn(*args, **kw)
+  File "/Users/perk/src/Helix-base-f577/steven/helix-prototypes/backend/app/database.py", line 41, in _begin
+    connection.exec_driver_sql("BEGIN IMMEDIATE")
+  File "/Users/perk/src/Helix-base-f577/steven/helix-prototypes/backend/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1781, in exec_driver_sql
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/perk/src/Helix-base-f577/steven/helix-prototypes/backend/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1848, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/perk/src/Helix-base-f577/steven/helix-prototypes/backend/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1988, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/Users/perk/src/Helix-base-f577/steven/helix-prototypes/backend/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 2365, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/Users/perk/src/Helix-base-f577/steven/helix-prototypes/backend/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1969, in _exec_single_context
+    self.dialect.do_execute(
+  File "/Users/perk/src/Helix-base-f577/steven/helix-prototypes/backend/.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) database is locked
+[SQL: BEGIN IMMEDIATE]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+INFO:     127.0.0.1:65511 - "POST /api/v1/studies/STUDY-HLX-028/validation-results/VR-005/dispositions HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [38568]

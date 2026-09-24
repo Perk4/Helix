@@ -1,0 +1,32 @@
+=== branch (#19), uploaded STUDY-YZ389-LIVE via job, no override ===
+validation-runs fixture:
+{"detail":[{"code":"manifest_unauthorized","subject":"A-ANIMAL-ROSTER","message":"Manifest entry is not authorized"},{"code":"manifest_unauthorized","subject":"A-BODY-WEIGHTS","message":"Manifest entry is not authorized"},{"code":"manifest_unauthorized","subject":"A-CLINICAL-OBSERVATIONS","message":"Manifest entry is not authorized"},{"code":"manifest_unauthorized","subject":"A-DOSING-FORMULATION","message":"Manifest entry is not authorized"},{"code":"manifest_unauthorized","subject":"A-GROSS-PATHOLOGY","message":"Manifest entry is not authorized"},{"code":"manifest_unauthorized","subject":"A-HISTOPATHOLOGY","message":"Manifest entry is not authorized"},{"code":"manifest_unauthorized","subje
+HTTP 422
+validation-runs openai_compatible:
+{"detail":[{"code":"manifest_unauthorized","subject":"A-ANIMAL-ROSTER","message":"Manifest entry is not authorized"},{"code":"manifest_unauthorized","subject":"A-BODY-WEIGHTS","message":"Manifest entry is not authorized"},{"code":"manifest_unauthorized","subject":"A-CLINICAL-OBSERVATIONS","message":"Manifest entry is not authorized"},{"code":"manifest_unauthorized","subject":"A-DOSING-FORMULATION"
+HTTP 422
+pinned-runs freeze:
+{"detail":[{"code":"manifest_unauthorized","subject":"A-ANIMAL-ROSTER","message":"Manifest entry is not authorized"},{"code":"manifest_unauthorized","subject":"A-BODY-WEIGHTS","message":"Manifest entry is not authorized"},{"code":"manifest_unauthorized","subject":"A-CLINICAL-OBSERVATIONS","message":"Manifest entry is not authorized"},{"code":"manifest_unauthorized","subject":"A-DOSING-FORMULATION","message":"Manifest entry is not authorized"},{"code":"manifest_unauthorized","subject":"A-GROSS-PATHOLOGY","message":"Manifest entry is not authorized"},{"code":"manifest_unauthorized","subject":"A-HISTOPATHOLOGY","message":"Manifest entry is not authorized"},{"code":"manifest_unauthorized","subje
+HTTP 422
+=== ADO main 436529e9, sync upload STUDY-YZ389-ADO, no override ===
+POST /studies (sync upload) -> HTTP 201
+validation-runs fixture:
+{"detail":[{"code":"manifest_unauthorized","subject":"A-ANIMAL-ROSTER","message":"Manifest entry is not authorized"},{"code":"manifest_unauthorized","subject":"A-BODY-WEIGHTS","message":"Manifest entry is not authorized"},{"code":"manifest_unauthorized","subject":"A-CLINICAL-OBSERVATIONS","message":"Manifest entry is not authorized"},{"code":"manifest_unauthorized","subject":"A-DOSING-FORMULATION","message":"Manifest entry is not authorized"},{"code":"manifest_unauthorized","subject":"A-GROSS-PATHOLOGY","message":"Manifest entry is not authorized"},{"code":"manifest_unauthorized","subject":"A-HISTOPATHOLOGY","message":"Manifest entry is not authorized"},{"code":"manifest_unauthorized","subje
+HTTP 422
+validation-runs openai_compatible:
+{"detail":[{"code":"manifest_unauthorized","subject":"A-ANIMAL-ROSTER","message":"Manifest entry is not authorized"},{"code":"manifest_unauthorized","subject":"A-BODY-WEIGHTS","message":"Manifest entry is not authorized"},{"code":"manifest_unauthorized","subject":"A-CLINICAL-OBSERVATIONS","message":"Manifest entry is not authorized"},{"code":"manifest_unauthorized","subject":"A-DOSING-FORMULATION"
+HTTP 422
+pinned-runs freeze:
+{"detail":[{"code":"manifest_unauthorized","subject":"A-ANIMAL-ROSTER","message":"Manifest entry is not authorized"},{"code":"manifest_unauthorized","subject":"A-BODY-WEIGHTS","message":"Manifest entry is not authorized"},{"code":"manifest_unauthorized","subject":"A-CLINICAL-OBSERVATIONS","message":"Manifest entry is not authorized"},{"code":"manifest_unauthorized","subject":"A-DOSING-FORMULATION","message":"Manifest entry is not authorized"},{"code":"manifest_unauthorized","subject":"A-GROSS-PATHOLOGY","message":"Manifest entry is not authorized"},{"code":"manifest_unauthorized","subject":"A-HISTOPATHOLOGY","message":"Manifest entry is not authorized"},{"code":"manifest_unauthorized","subje
+HTTP 422
+=== base f5776828, sync upload STUDY-YZ389-BASE2, no override ===
+POST /studies (sync upload) -> HTTP 201
+validation-runs fixture:
+{"detail":[{"code":"manifest_unauthorized","subject":"A-ANIMAL-ROSTER","message":"Manifest entry is not authorized"},{"code":"manifest_unauthorized","subject":"A-BODY-WEIGHTS","message":"Manifest entry is not authorized"},{"code":"manifest_unauthorized","subject":"A-CLINICAL-OBSERVATIONS","message":"Manifest entry is not authorized"},{"code":"manifest_unauthorized","subject":"A-DOSING-FORMULATION","message":"Manifest entry is not authorized"},{"code":"manifest_unauthorized","subject":"A-GROSS-PATHOLOGY","message":"Manifest entry is not authorized"},{"code":"manifest_unauthorized","subject":"A-HISTOPATHOLOGY","message":"Manifest entry is not authorized"},{"code":"manifest_unauthorized","subje
+HTTP 422
+validation-runs openai_compatible:
+{"detail":[{"code":"manifest_unauthorized","subject":"A-ANIMAL-ROSTER","message":"Manifest entry is not authorized"},{"code":"manifest_unauthorized","subject":"A-BODY-WEIGHTS","message":"Manifest entry is not authorized"},{"code":"manifest_unauthorized","subject":"A-CLINICAL-OBSERVATIONS","message":"Manifest entry is not authorized"},{"code":"manifest_unauthorized","subject":"A-DOSING-FORMULATION"
+HTTP 422
+pinned-runs freeze:
+{"detail":[{"code":"manifest_unauthorized","subject":"A-ANIMAL-ROSTER","message":"Manifest entry is not authorized"},{"code":"manifest_unauthorized","subject":"A-BODY-WEIGHTS","message":"Manifest entry is not authorized"},{"code":"manifest_unauthorized","subject":"A-CLINICAL-OBSERVATIONS","message":"Manifest entry is not authorized"},{"code":"manifest_unauthorized","subject":"A-DOSING-FORMULATION","message":"Manifest entry is not authorized"},{"code":"manifest_unauthorized","subject":"A-GROSS-PATHOLOGY","message":"Manifest entry is not authorized"},{"code":"manifest_unauthorized","subject":"A-HISTOPATHOLOGY","message":"Manifest entry is not authorized"},{"code":"manifest_unauthorized","subje
+HTTP 422

@@ -1,0 +1,6 @@
+pattern: ERROR|Traceback|OperationalError|ProgrammingError|UndefinedColumn|UndefinedTable|IntegrityError|DataError|sqlalchemy\.exc|alembic.*(FAILED|Error)|" 500 
+backend-pg.log               lines=167   errors=0  status:  88 " 200 , 1 " 202 , 14 " 422 ,
+backend-override.log         lines=85    errors=0  status:  69 " 200 , 2 " 201 , 1 " 202 , 3 " 422 ,
+backend-agents.log           lines=22    errors=0  status:  5 " 200 , 2 " 201 , 1 " 503 ,
+backend-pre-new-pg.log       lines=26    errors=0  status:  9 " 200 , 1 " 202 ,
+backend-pre-new-sqlite.log   lines=160   errors=5  status:  8 " 200 , 1 " 202 ,
