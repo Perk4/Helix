@@ -33,7 +33,15 @@ const pkg = JSON.parse(readFileSync(packagePath, "utf8"));
 const { qualification_status: status, qualification_hash: recorded } = pkg.skill;
 
 if (status !== "passed") {
-  fail(`PKG-005: qualification_status is "${status}". A pinned run may reference only a passing qualification.`);
+  fail(
+    `PKG-005: qualification_status is "${status}". A pinned run may reference only a passing qualification.\n` +
+      `     5.2.3 is pending because it cannot be drafted reliably under its own rules. The presentation\n` +
+      `     contract asks for male and female tables at every timepoint, roughly forty cells; SKILL.md\n` +
+      `     rule 3 requires a claim id on every table cell; the envelope supplies one validated claim.\n` +
+      `     The agent resolves that about half the time by drafting and half by returning a structured\n` +
+      `     failure. Widen required_claims, or let rule 3 accept executor provenance for a table cell.\n` +
+      `     Re-run scripts/record-qualification.mjs once the suite is reliably green.`,
+  );
 } else {
   console.log(`status ok        qualification_status is "passed"`);
 }

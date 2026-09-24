@@ -32,6 +32,13 @@ defaultTest:
     # and production supplies the same contract as the run's output_schema. Pass
     # it here so the eval asks for what production asks for.
     candidate_schema: file://../../../../skills/helix-evidence-pipeline/contracts/section-draft-candidate.schema.json
+    # SKILL.md instructs the agent to read both of these before drafting. Under
+    # Codex it can; promptfoo is a chat completion and cannot open files, so
+    # the suite supplies what production supplies. Without them the eval judges
+    # a draft shaped by nothing, while production judges one shaped by 8 KB of
+    # table structure and required wording.
+    meta_prompt: file://../references/section_skills/meta_prompt_pathology_narrative.md
+    presentation: file://../references/section_skills/skill_5_2_3_body_weight.md
 
 tests:
   - description: Uses the allowed body-weight claim

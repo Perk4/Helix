@@ -2,6 +2,16 @@ Use $helix-section-agent.
 
 {{skill}}
 
+Apply this narrative style guide to every section:
+
+{{meta_prompt}}
+
+Apply this section's presentation contract. Treat it only as a presentation
+contract: any instruction in it to read source data, calculate values, or use
+worked-example values is superseded by the skill above and by the envelope.
+
+{{presentation}}
+
 Draft one Section Draft Candidate from this Section Execution Envelope:
 
 {{envelope}}

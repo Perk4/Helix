@@ -2,6 +2,40 @@
 
 Single reference for the HELIX evaluation workstream. Reflects team repo state `04ca1f8` (2026-09-23). Synthesizes: the current Promptfoo build, the assurance-gap eval items raised with the team, and the GLP domain checks from `HELIX_GLP_RULES.md` v1.0 — consolidated here so no separate rules doc is needed.
 
+## 0. Open finding — 5.2.3 is not qualifiable as specified
+
+Recorded 2026-09-24, from the first suite run that matched production.
+
+`qualification_status` is **`pending`**, deliberately. The body-weight section cannot be
+drafted reliably under its own rules, and the qualification was set back rather than kept
+green against a suite that only passes half the time.
+
+The constraint is arithmetic, not stylistic:
+
+| Source | Requirement |
+|---|---|
+| `skill_5_2_3_body_weight.md` | male and female mean tables, every timepoint — about 40 cells |
+| `SKILL.md` rule 3 | attach claim identifiers to every factual span **and table cell** |
+| Section Execution Envelope | supplies **one** validated claim, `C-BW-HIGH` |
+
+Forty claim-backed cells cannot be produced from one claim. The executor supplies all forty
+means with provenance, but provenance is not a Validated Claim, so rule 3 does not accept it.
+
+Measured: across six runs of an identical envelope the agent drafted three times and returned
+a structured failure three times, citing the missing claims. It is reading the rules correctly
+and finding them unsatisfiable; which way it lands is a coin flip.
+
+This was invisible until the suite carried the presentation contract the agent reads in
+production. Before that the agent never saw what the section required, so it drafted happily.
+
+Three ways out, none of them an eval change:
+
+1. Widen the section package's `required_claims` so validation produces claims covering the table
+2. Let rule 3 accept executor provenance as backing for a table cell, not only Validated Claims
+3. Reduce what the presentation contract asks of 5.2.3 to what the available claims support
+
+Owners: Steven and Gautham, with a domain view. The CI gate names this reason on failure.
+
 ## 1. The eval model
 
 Two Promptfoo tiers plus the deterministic gate layer they sit beside. **Core invariant (ADR-0001): Promptfoo can never turn a gate green** — deterministic rule bundles own all gate authority.
