@@ -1,0 +1,203 @@
+{
+  "report_sections": [
+    {
+      "section_id": "S1",
+      "template_id": "TPL-28D-RAT-V5",
+      "title": "Study identity and compliance",
+      "required_fields": 6,
+      "status": "validated"
+    },
+    {
+      "section_id": "S2",
+      "template_id": "TPL-28D-RAT-V5",
+      "title": "Objectives",
+      "required_fields": 2,
+      "status": "validated"
+    },
+    {
+      "section_id": "S3",
+      "template_id": "TPL-28D-RAT-V5",
+      "title": "Materials and methods",
+      "required_fields": 12,
+      "status": "validated"
+    },
+    {
+      "section_id": "S4",
+      "template_id": "TPL-28D-RAT-V5",
+      "title": "Dose formulation",
+      "required_fields": 5,
+      "status": "validated"
+    },
+    {
+      "section_id": "S5",
+      "template_id": "TPL-28D-RAT-V5",
+      "title": "In-life observations",
+      "required_fields": 8,
+      "status": "validated"
+    },
+    {
+      "section_id": "S6",
+      "template_id": "TPL-28D-RAT-V5",
+      "title": "Clinical pathology",
+      "required_fields": 7,
+      "status": "needs_review"
+    },
+    {
+      "section_id": "S7",
+      "template_id": "TPL-28D-RAT-V5",
+      "title": "Anatomic pathology",
+      "required_fields": 9,
+      "status": "needs_review"
+    },
+    {
+      "section_id": "S8",
+      "template_id": "TPL-28D-RAT-V5",
+      "title": "Discussion and conclusion",
+      "required_fields": 6,
+      "status": "needs_review"
+    }
+  ],
+  "claims": [
+    {
+      "claim_id": "C-BW-HIGH",
+      "section_id": "S5",
+      "field_id": "terminal-body-weight-high",
+      "value": 286.2,
+      "unit": "g",
+      "grain": "dose_group",
+      "status": "validated"
+    },
+    {
+      "claim_id": "C-MI-LIVER",
+      "section_id": "S7",
+      "field_id": "liver-hypertrophy-incidence",
+      "value": 4,
+      "unit": "animals",
+      "grain": "dose_group",
+      "status": "needs_review"
+    },
+    {
+      "claim_id": "C-NOAEL",
+      "section_id": "S8",
+      "field_id": "noael",
+      "value": null,
+      "unit": "mg/kg/day",
+      "grain": "study",
+      "status": "needs_review"
+    }
+  ],
+  "provenance_edges": [
+    {
+      "edge_id": "PE-BW-1",
+      "claim_id": "C-BW-HIGH",
+      "source_record_id": "BW-HXL-M401-28",
+      "transform_id": "mean-v1",
+      "source_pointer": "A-BW#HXL-M401:DAY28",
+      "authority_tier": 1
+    },
+    {
+      "edge_id": "PE-BW-2",
+      "claim_id": "C-BW-HIGH",
+      "source_record_id": "BW-HXL-M402-28",
+      "transform_id": "mean-v1",
+      "source_pointer": "A-BW#HXL-M402:DAY28",
+      "authority_tier": 1
+    },
+    {
+      "edge_id": "PE-BW-3",
+      "claim_id": "C-BW-HIGH",
+      "source_record_id": "BW-HXL-M403-28",
+      "transform_id": "mean-v1",
+      "source_pointer": "A-BW#HXL-M403:DAY28",
+      "authority_tier": 1
+    },
+    {
+      "edge_id": "PE-BW-4",
+      "claim_id": "C-BW-HIGH",
+      "source_record_id": "BW-HXL-M404-28",
+      "transform_id": "mean-v1",
+      "source_pointer": "A-BW#HXL-M404:DAY28",
+      "authority_tier": 1
+    },
+    {
+      "edge_id": "PE-BW-5",
+      "claim_id": "C-BW-HIGH",
+      "source_record_id": "BW-HXL-M405-28",
+      "transform_id": "mean-v1",
+      "source_pointer": "A-BW#HXL-M405:DAY28",
+      "authority_tier": 1
+    },
+    {
+      "edge_id": "PE-BW-6",
+      "claim_id": "C-BW-HIGH",
+      "source_record_id": "BW-HXL-F401-28",
+      "transform_id": "mean-v1",
+      "source_pointer": "A-BW#HXL-F401:DAY28",
+      "authority_tier": 1
+    },
+    {
+      "edge_id": "PE-BW-7",
+      "claim_id": "C-BW-HIGH",
+      "source_record_id": "BW-HXL-F402-28",
+      "transform_id": "mean-v1",
+      "source_pointer": "A-BW#HXL-F402:DAY28",
+      "authority_tier": 1
+    },
+    {
+      "edge_id": "PE-BW-8",
+      "claim_id": "C-BW-HIGH",
+      "source_record_id": "BW-HXL-F403-28",
+      "transform_id": "mean-v1",
+      "source_pointer": "A-BW#HXL-F403:DAY28",
+      "authority_tier": 1
+    },
+    {
+      "edge_id": "PE-BW-9",
+      "claim_id": "C-BW-HIGH",
+      "source_record_id": "BW-HXL-F404-28",
+      "transform_id": "mean-v1",
+      "source_pointer": "A-BW#HXL-F404:DAY28",
+      "authority_tier": 1
+    },
+    {
+      "edge_id": "PE-BW-10",
+      "claim_id": "C-BW-HIGH",
+      "source_record_id": "BW-HXL-F405-28",
+      "transform_id": "mean-v1",
+      "source_pointer": "A-BW#HXL-F405:DAY28",
+      "authority_tier": 1
+    },
+    {
+      "edge_id": "PE-MI-1",
+      "claim_id": "C-MI-LIVER",
+      "source_record_id": "MI-HXL-M401-LIVER",
+      "transform_id": "incidence-count-v1",
+      "source_pointer": "A-MI#HXL-M401:Liver",
+      "authority_tier": 1
+    },
+    {
+      "edge_id": "PE-MI-2",
+      "claim_id": "C-MI-LIVER",
+      "source_record_id": "MI-HXL-M402-LIVER",
+      "transform_id": "incidence-count-v1",
+      "source_pointer": "A-MI#HXL-M402:Liver",
+      "authority_tier": 1
+    },
+    {
+      "edge_id": "PE-MI-3",
+      "claim_id": "C-MI-LIVER",
+      "source_record_id": "MI-HXL-F401-LIVER",
+      "transform_id": "incidence-count-v1",
+      "source_pointer": "A-MI#HXL-F401:Liver",
+      "authority_tier": 1
+    },
+    {
+      "edge_id": "PE-MI-4",
+      "claim_id": "C-MI-LIVER",
+      "source_record_id": "MI-HXL-F402-LIVER",
+      "transform_id": "incidence-count-v1",
+      "source_pointer": "A-MI#HXL-F402:Liver",
+      "authority_tier": 1
+    }
+  ]
+}

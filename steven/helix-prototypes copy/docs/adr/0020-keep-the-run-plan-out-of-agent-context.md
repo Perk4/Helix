@@ -1,0 +1,3 @@
+# Keep the Run Plan out of agent context
+
+The backend materializes and stores the complete versioned Run Plan in the Study Evidence Package, while the Codex SDK and Code Mode tools expose only narrow operations such as retrieving ready nodes, loading section context, submitting candidates, and reading structured failures. Each Section Agent receives a Section Execution Envelope rather than the full DAG or study package and may make audited on-demand queries only for canonical facts, Validated Claims, and Section Drafts from declared dependencies; every response records exact artifact hashes and excludes unrelated raw data. This preserves context capacity while retaining the exact executed graph and accessed evidence for audit.

@@ -1,0 +1,108 @@
+{
+  "repo": "Steven-Espaillat/Helix",
+  "blocker": {
+    "number": 12,
+    "title": "SLICE 11: Export the exact approved artifact set",
+    "state": "OPEN",
+    "url": "https://github.com/Steven-Espaillat/Helix/issues/12"
+  },
+  "excluded": {
+    "number": 17,
+    "title": "SPEC: HELIX v1 stage-gated UI redesign",
+    "url": "https://github.com/Steven-Espaillat/Helix/issues/17",
+    "reason": "spec issue, not an implementation ticket",
+    "has_process_section": false
+  },
+  "updated": [
+    {
+      "number": 18,
+      "title": "UI SLICE 0: Adopt v1 tokens and one-page shell",
+      "url": "https://github.com/Steven-Espaillat/Helix/issues/18",
+      "changed": true,
+      "old": "Blocked by none.",
+      "new": "Blocked by #12.",
+      "verified": true
+    },
+    {
+      "number": 19,
+      "title": "UI SLICE 1: Implement the reducer and Progress Bar governance",
+      "url": "https://github.com/Steven-Espaillat/Helix/issues/19",
+      "changed": true,
+      "old": "Blocked by #18.",
+      "new": "Blocked by #12, #18.",
+      "verified": true
+    },
+    {
+      "number": 20,
+      "title": "UI SLICE 2: Build the upload authorization gate",
+      "url": "https://github.com/Steven-Espaillat/Helix/issues/20",
+      "changed": true,
+      "old": "Blocked by #18, #19.",
+      "new": "Blocked by #12, #18, #19.",
+      "verified": true
+    },
+    {
+      "number": 21,
+      "title": "UI SLICE 3: Run Agent Steps with live activity and pause or resume",
+      "url": "https://github.com/Steven-Espaillat/Helix/issues/21",
+      "changed": true,
+      "old": "Blocked by #20.",
+      "new": "Blocked by #12, #20.",
+      "verified": true
+    },
+    {
+      "number": 22,
+      "title": "UI SLICE 4: Build the Traceability Review gate",
+      "url": "https://github.com/Steven-Espaillat/Helix/issues/22",
+      "changed": true,
+      "old": "Blocked by #21.",
+      "new": "Blocked by #12, #21.",
+      "verified": true
+    },
+    {
+      "number": 23,
+      "title": "UI SLICE 5: Build the Review and Export gate",
+      "url": "https://github.com/Steven-Espaillat/Helix/issues/23",
+      "changed": true,
+      "old": "Blocked by #22.",
+      "new": "Blocked by #12, #22.",
+      "verified": true
+    },
+    {
+      "number": 24,
+      "title": "UI SLICE 6: Prove accessibility, responsiveness, and full journey parity",
+      "url": "https://github.com/Steven-Espaillat/Helix/issues/24",
+      "changed": true,
+      "old": "Blocked by #23.",
+      "new": "Blocked by #12, #23.",
+      "verified": true
+    },
+    {
+      "number": 25,
+      "title": "UI SLICE 7: Expose backend-owned nine-stage journey and run events",
+      "url": "https://github.com/Steven-Espaillat/Helix/issues/25",
+      "changed": true,
+      "old": "Blocked by #21, #24.",
+      "new": "Blocked by #12, #21, #24.",
+      "verified": true
+    },
+    {
+      "number": 26,
+      "title": "UI SLICE 8: Wire upload gate and run controls to API state",
+      "url": "https://github.com/Steven-Espaillat/Helix/issues/26",
+      "changed": true,
+      "old": "Blocked by #25.",
+      "new": "Blocked by #12, #25.",
+      "verified": true
+    },
+    {
+      "number": 27,
+      "title": "UI SLICE 9: Wire production review, sign-off, export, and checksums",
+      "url": "https://github.com/Steven-Espaillat/Helix/issues/27",
+      "changed": true,
+      "old": "Blocked by #22, #23, #24, #25, #26.",
+      "new": "Blocked by #12, #22, #23, #24, #25, #26.",
+      "verified": true
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "repo": "Steven-Espaillat/Helix",
+  "spec": {
+    "number": 17,
+    "title": "SPEC: HELIX v1 stage-gated UI redesign",
+    "url": "https://github.com/Steven-Espaillat/Helix/issues/17"
+  },
+  "tickets": [
+    {
+      "key": "ui0",
+      "number": 18,
+      "title": "UI SLICE 0: Adopt v1 tokens and one-page shell",
+      "url": "https://github.com/Steven-Espaillat/Helix/issues/18"
+    },
+    {
+      "key": "ui1",
+      "number": 19,
+      "title": "UI SLICE 1: Implement the reducer and Progress Bar governance",
+      "url": "https://github.com/Steven-Espaillat/Helix/issues/19"
+    },
+    {
+      "key": "ui2",
+      "number": 20,
+      "title": "UI SLICE 2: Build the upload authorization gate",
+      "url": "https://github.com/Steven-Espaillat/Helix/issues/20"
+    },
+    {
+      "key": "ui3",
+      "number": 21,
+      "title": "UI SLICE 3: Run Agent Steps with live activity and pause or resume",
+      "url": "https://github.com/Steven-Espaillat/Helix/issues/21"
+    },
+    {
+      "key": "ui4",
+      "number": 22,
+      "title": "UI SLICE 4: Build the Traceability Review gate",
+      "url": "https://github.com/Steven-Espaillat/Helix/issues/22"
+    },
+    {
+      "key": "ui5",
+      "number": 23,
+      "title": "UI SLICE 5: Build the Review and Export gate",
+      "url": "https://github.com/Steven-Espaillat/Helix/issues/23"
+    },
+    {
+      "key": "ui6",
+      "number": 24,
+      "title": "UI SLICE 6: Prove accessibility, responsiveness, and full journey parity",
+      "url": "https://github.com/Steven-Espaillat/Helix/issues/24"
+    },
+    {
+      "key": "ui7",
+      "number": 25,
+      "title": "UI SLICE 7: Expose backend-owned nine-stage journey and run events",
+      "url": "https://github.com/Steven-Espaillat/Helix/issues/25"
+    },
+    {
+      "key": "ui8",
+      "number": 26,
+      "title": "UI SLICE 8: Wire upload gate and run controls to API state",
+      "url": "https://github.com/Steven-Espaillat/Helix/issues/26"
+    },
+    {
+      "key": "ui9",
+      "number": 27,
+      "title": "UI SLICE 9: Wire production review, sign-off, export, and checksums",
+      "url": "https://github.com/Steven-Espaillat/Helix/issues/27"
+    }
+  ]
+}

@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<!-- saved from url=(0060)file:///Users/steven.espaillat/Downloads/HELIX_onepager.html -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<title>HELIX: Nonclinical Report Automation</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #222;
+    background: #fff;
+    max-width: 860px;
+    margin: 0 auto;
+  }
+
+  /* HEADER */
+  .header {
+    background: #1a3a5c;
+    padding: 14px 32px 12px;
+    display: flex;
+    align-items: baseline;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+  .header h1 {
+    font-size: 30px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    color: #fff;
+    flex-shrink: 0;
+  }
+  .header-right { flex: 1; min-width: 260px; }
+  .header .kicker {
+    font-size: 9.5px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #8db4cc;
+    margin-bottom: 3px;
+  }
+  .header .subtitle { font-size: 11px; color: #b8cfe0; line-height: 1.55; }
+  .header .tagline  { font-size: 10px; color: #6aafd4; margin-top: 3px; font-style: italic; }
+
+  /* HOW IT WORKS */
+  .hiw {
+    background: #eef4fb;
+    border-left: 4px solid #1a3a5c;
+    padding: 11px 32px;
+    font-size: 12px;
+    color: #333;
+    line-height: 1.7;
+  }
+
+  /* TWO COLUMNS */
+  .main { display: grid; grid-template-columns: 1.1fr 1fr; }
+
+  .left {
+    padding: 18px 16px 18px 18px;
+    background: #fff;
+    border-right: 1px solid #ddd;
+  }
+  .right { padding: 18px 32px 18px 18px; display: flex; flex-direction: column; gap: 14px; }
+
+  /* PIPELINE CARD: outlined box that contains the whole pipeline */
+  .pipeline-card {
+    border: 1.5px solid #a8c0d8;
+    border-radius: 6px;
+    background: #f2f6fb;
+    padding: 14px 12px 10px;
+  }
+
+  /* SECTION LABEL */
+  .sec-lbl {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #1a3a5c;
+    border-bottom: 1px solid #ccd8e4;
+    padding-bottom: 4px;
+    margin-bottom: 8px;
+  }
+
+  /* PIPELINE LABEL */
+  .pl-lbl {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #1a3a5c;
+    border-bottom: 1px solid #b0c4d8;
+    padding-bottom: 4px;
+    margin-bottom: 10px;
+  }
+
+  .io-box {
+    background: #d4e4f2;
+    border: 1px solid #a8c0d8;
+    border-radius: 4px;
+    padding: 6px 10px;
+    font-size: 10.5px;
+    color: #1a3a5c;
+    text-align: center;
+    font-weight: 600;
+  }
+
+  .arrow {
+    text-align: center;
+    color: #8aaac4;
+    font-size: 13px;
+    line-height: 1.9;
+  }
+
+  /* PIPELINE NODES: white cards on the tinted background */
+  .pnode {
+    border: 1px solid #c8d8ea;
+    border-left: 3px solid #1a3a5c;
+    border-radius: 4px;
+    padding: 8px 11px;
+    background: #fff;
+    width: 100%;
+    box-shadow: 0 1px 3px rgba(26,58,92,0.07);
+  }
+  .pnode-title {
+    font-weight: 700;
+    font-size: 11.5px;
+    color: #1a3a5c;
+    margin-bottom: 2px;
+  }
+  .pnode-desc { font-size: 11px; color: #444; line-height: 1.45; }
+  .pnode-tag  { font-size: 9.5px; color: #888; margin-top: 2px; }
+
+  /* Human gate: single distinct accent */
+  .pnode-human {
+    border: 1px solid #f0d8c8;
+    border-left: 3px solid #c05621;
+    border-radius: 4px;
+    padding: 8px 11px;
+    background: #fff;
+    width: 100%;
+    box-shadow: 0 1px 3px rgba(192,86,33,0.08);
+  }
+  .pnode-human .pnode-title { color: #7d3800; }
+  .pnode-human .pnode-desc  { color: #555; }
+
+  /* LOOP BOX: same width, slightly inset feel */
+  .loop {
+    border: 1px solid #c8d8ea;
+    border-radius: 4px;
+    padding: 9px 10px;
+    background: #eaf1f8;
+    width: 100%;
+    margin-top: 4px;
+  }
+  .loop-lbl {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #6a8aaa;
+    margin-bottom: 7px;
+  }
+  .loop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+  .lstep {
+    background: #fff;
+    border: 1px solid #c8d8ea;
+    border-radius: 3px;
+    padding: 5px 8px;
+  }
+  .lstep-t { font-weight: 700; font-size: 10.5px; color: #1a3a5c; margin-bottom: 1px; }
+  .lstep-d { font-size: 9.5px; color: #666; line-height: 1.4; }
+
+  /* OUTPUT BOX */
+  .out-box {
+    background: #1a3a5c;
+    color: #fff;
+    border-radius: 4px;
+    padding: 8px 11px;
+    font-size: 11px;
+    text-align: center;
+    line-height: 1.6;
+    width: 100%;
+  }
+
+  /* LEGEND */
+  .legend { display: flex; gap: 16px; margin-top: 9px; flex-wrap: wrap; }
+  .leg { display: flex; align-items: center; gap: 5px; font-size: 10px; color: #666; }
+  .leg-bar { width: 12px; height: 3px; border-radius: 2px; flex-shrink: 0; }
+
+  /* RIGHT PANEL BULLETS */
+  ul.blist { list-style: none; }
+  ul.blist li {
+    font-size: 11.5px;
+    color: #333;
+    padding: 2px 0 2px 14px;
+    position: relative;
+    line-height: 1.6;
+  }
+  ul.blist li::before {
+    content: "·";
+    position: absolute;
+    left: 2px;
+    color: #1a3a5c;
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1;
+    top: 4px;
+  }
+
+  /* INPUT/OUTPUT CARDS */
+  .io-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .io-card {
+    background: #f7f9fc;
+    border: 1px solid #dde6ef;
+    border-radius: 4px;
+    padding: 9px 10px;
+  }
+  .io-card-lbl {
+    font-size: 9.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #555;
+    margin-bottom: 6px;
+  }
+  .io-card ul { list-style: none; }
+  .io-card ul li {
+    font-size: 11px;
+    color: #444;
+    padding: 2px 0 2px 12px;
+    position: relative;
+    line-height: 1.5;
+  }
+  .io-card ul li::before {
+    content: "·";
+    position: absolute;
+    left: 0;
+    color: #1a3a5c;
+    font-size: 14px;
+    font-weight: 700;
+    top: 2px;
+  }
+
+  /* TIME CONTRAST — compact inline */
+  .time-compact {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin: 6px 0 2px 14px;
+    font-size: 10.5px;
+    color: #555;
+  }
+  .tc-before {
+    background: #f8d7da;
+    border-radius: 3px;
+    padding: 1px 6px;
+    color: #842029;
+    font-weight: 600;
+  }
+  .tc-arrow { color: #999; font-size: 11px; }
+  .tc-after {
+    background: #d1e7dd;
+    border-radius: 3px;
+    padding: 1px 6px;
+    color: #0a5c36;
+    font-weight: 600;
+  }
+
+  /* BADGES */
+  .nr {
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+    border-radius: 3px;
+    padding: 0 4px;
+    font-size: 10.5px;
+    color: #856404;
+    font-weight: 700;
+  }
+  .ok {
+    background: #d4edda;
+    border: 1px solid #28a745;
+    border-radius: 3px;
+    padding: 0 4px;
+    font-size: 10.5px;
+    color: #155724;
+    font-weight: 700;
+  }
+
+  /* FOOTER */
+  .footer {
+    border-top: 1px solid #ddd;
+    padding: 10px 32px;
+    font-size: 10px;
+    color: #888;
+    line-height: 1.6;
+    background: #fafafa;
+  }
+  .footer strong { color: #555; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <h1>HELIX</h1>
+  <div class="header-right">
+    <div class="kicker">Nonclinical Report Automation &nbsp;·&nbsp; Pharma &amp; Contract Research</div>
+    <div class="subtitle">A tool that learns a report's structure from past approved ones and drafts the next for the scientist to sign. Every number pulled from source data, every gap flagged, nothing guessed.</div>
+    <div class="tagline">Learn once &nbsp;·&nbsp; Generate many &nbsp;·&nbsp; Deterministic where it matters</div>
+  </div>
+</div>
+
+<!-- HOW IT WORKS -->
+<div class="hiw">
+  <strong>How it works.</strong>&nbsp; A study pathologist uploads the new study's data and protocol, a few past approved reports of the same type, and the blank template. HELIX retrieves section patterns from those reports, then works section by section: deterministic code extracts each value from source data and validates it. The LLM writes prose only around what passed. Every gap becomes a <span class="nr">[NEEDS REVIEW]</span> flag. Every number in the final draft links back to its source row. The scientist edits and signs. Nothing is finalised without them.
+</div>
+
+<!-- MAIN GRID -->
+<div class="main">
+
+  <!-- LEFT: PIPELINE -->
+  <div class="left">
+  <div class="pipeline-card">
+    <div class="pl-lbl">Agentic Pipeline &nbsp;·&nbsp; 5 nodes &nbsp;·&nbsp; human gate at close</div>
+
+    <div class="io-box">IN &nbsp;·&nbsp; approved_reports.pdf &nbsp;·&nbsp; study_data.csv &nbsp;·&nbsp; blank_template</div>
+    <div class="arrow">↓</div>
+
+    <div class="pnode">
+      <div class="pnode-title">① Document Parser</div>
+      <div class="pnode-desc">PDF / DOCX to section-structured markdown, tables preserved.</div>
+      <div class="pnode-tag">· Shared across all study types · reusable per template</div>
+      <div class="pnode-tag">· LLM-assisted: complex tables, figures, and ambiguous layouts</div>
+    </div>
+    <div class="arrow">↓</div>
+
+    <div class="pnode">
+      <div class="pnode-title">② Pattern RAG &nbsp;<span style="font-weight:400;font-size:10.5px;color:#888">· one-time per study type</span></div>
+      <div class="pnode-desc">Approved reports chunked by section into vector store. Learns what each section needs and where in the data it lives.</div>
+    </div>
+    <div class="arrow">↓</div>
+
+    <div class="pnode">
+      <div class="pnode-title">③ Section Agent Loop &nbsp;<span style="font-weight:400;font-size:10.5px;color:#888">· one iteration per section</span></div>
+      <div class="pnode-desc" style="margin-bottom:6px">Retrieves the pattern, extracts values from source, validates, then drafts narrative.</div>
+      <div class="loop">
+        <div class="loop-lbl">per section</div>
+        <div class="loop-grid">
+          <div class="lstep">
+            <div class="lstep-t">retrieve_pattern</div>
+            <div class="lstep-d">fetch section template from RAG</div>
+          </div>
+          <div class="lstep">
+            <div class="lstep-t">extract_values</div>
+            <div class="lstep-d">pull from source CSV · code, not LLM</div>
+          </div>
+          <div class="lstep">
+            <div class="lstep-t">validate</div>
+            <div class="lstep-d"><span class="ok">pass</span> or <span class="nr">[NEEDS REVIEW]</span></div>
+          </div>
+          <div class="lstep">
+            <div class="lstep-t">draft_section</div>
+            <div class="lstep-d">LLM writes prose around validated numbers only</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="arrow">↓</div>
+
+    <div class="pnode">
+      <div class="pnode-title">④ Assembly + Provenance Trail</div>
+      <div class="pnode-desc">Sections combined into draft report. Every number tagged to source file, row, and column.</div>
+    </div>
+    <div class="arrow">↓</div>
+
+    <div class="pnode-human">
+      <div class="pnode-title">⑤ Human Gate</div>
+      <div class="pnode-desc">Scientist reviews in UI · edits stored as few-shot memory · nothing finalised without sign-off.</div>
+    </div>
+    <div class="arrow">↓</div>
+
+    <div class="out-box">
+      OUT &nbsp;·&nbsp; Draft report &nbsp;·&nbsp; <span class="nr">[NEEDS REVIEW]</span> markers &nbsp;·&nbsp; provenance trail
+    </div>
+
+    <div class="legend">
+      <div class="leg"><div class="leg-bar" style="background:#1a3a5c"></div>pipeline step</div>
+      <div class="leg"><div class="leg-bar" style="background:#c05621"></div>human gate</div>
+      <div class="leg"><div class="leg-bar" style="background:#856404"></div>[NEEDS REVIEW]</div>
+    </div>
+  </div><!-- end pipeline-card -->
+  </div>
+
+  <!-- RIGHT: INFO -->
+  <div class="right">
+
+    <div>
+      <div class="sec-lbl">Problem</div>
+      <ul class="blist">
+        <li>Authoring a drug safety study report takes a study pathologist 5 to 6 weeks. The bulk of it is manual transcription and cross-checking of study data rather than the scientific judgment only they can provide.</li>
+        <li>Weeks of a scientist's time go to typing, not judgment.</li>
+        <li>One bad number becomes an FDA audit finding.</li>
+      </ul>
+    </div>
+
+    <div>
+      <div class="sec-lbl">Solution</div>
+      <ul class="blist">
+        <li>Learns a report's structure from past approved ones and drafts the next for the scientist to sign.</li>
+        <li>Every number pulled from source data rather than generated, and traceable back to it.</li>
+        <li>Scientist edits and signs. Nothing finalised without them.</li>
+      </ul>
+      <div class="time-compact">
+        <span class="tc-before">5 to 6 weeks today</span>
+        <span class="tc-arrow">→</span>
+        <span class="tc-after">under 2 min · first draft</span>
+      </div>
+    </div>
+
+    <div>
+      <div class="sec-lbl">For Whom</div>
+      <ul class="blist">
+        <li>The study pathologist who authors and signs a drug candidate's safety report, at a pharma preclinical group or a contract research lab.</li>
+        <li>Goal: produce a report the FDA will accept. The science is theirs, and every number matches its source exactly.</li>
+      </ul>
+    </div>
+
+    <div>
+      <div class="sec-lbl">Input to Output</div>
+      <div class="io-pair">
+        <div class="io-card">
+          <div class="io-card-lbl">What goes in</div>
+          <ul>
+            <li>A few approved reports of the same study type</li>
+            <li>The new study's data and protocol</li>
+            <li>The blank report template</li>
+          </ul>
+        </div>
+        <div class="io-card">
+          <div class="io-card-lbl">What comes out</div>
+          <ul>
+            <li>A filled first draft: narrative and tables</li>
+            <li>Every number exact to source and traceable</li>
+            <li><span class="nr">[NEEDS REVIEW]</span> flags instead of guesses</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="sec-lbl">Key Tech</div>
+      <ul class="blist">
+        <li>Section-chunked RAG: retrieves extraction patterns, not raw values</li>
+        <li>Deterministic extraction: code pulls values; LLM never does math</li>
+        <li>Exact string validation: mismatch flags, never hallucinates</li>
+        <li>LangGraph orchestration · React UI with live pipeline status + one-click provenance</li>
+        <li>RAGAS faithfulness eval · target: zero unvalidated numbers</li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <strong>RAG infrastructure:</strong> Pattern RAG indexes approved reports by section to retrieve extraction templates · Study data store indexes the new study CSV for deterministic value lookup and exact-match validation · Every value in the draft traces back to a source row.
+</div>
+
+
+
+</body></html>

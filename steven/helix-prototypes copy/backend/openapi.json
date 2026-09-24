@@ -1,0 +1,4829 @@
+{
+  "components": {
+    "schemas": {
+      "Approval": {
+        "additionalProperties": false,
+        "properties": {
+          "approval_id": {
+            "title": "Approval Id",
+            "type": "string"
+          },
+          "meaning": {
+            "title": "Meaning",
+            "type": "string"
+          },
+          "reviewer": {
+            "title": "Reviewer",
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/ApprovalRole"
+          },
+          "timestamp": {
+            "title": "Timestamp",
+            "type": "string"
+          }
+        },
+        "required": [
+          "approval_id",
+          "role",
+          "reviewer",
+          "meaning",
+          "timestamp"
+        ],
+        "title": "Approval",
+        "type": "object"
+      },
+      "ApprovalCommand": {
+        "additionalProperties": false,
+        "properties": {
+          "meaning": {
+            "maxLength": 200,
+            "minLength": 4,
+            "title": "Meaning",
+            "type": "string"
+          },
+          "reviewer": {
+            "maxLength": 120,
+            "minLength": 2,
+            "title": "Reviewer",
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/ApprovalRole"
+          }
+        },
+        "required": [
+          "role",
+          "reviewer",
+          "meaning"
+        ],
+        "title": "ApprovalCommand",
+        "type": "object"
+      },
+      "ApprovalRole": {
+        "enum": [
+          "pathologist",
+          "peer_reviewer",
+          "qau",
+          "study_director"
+        ],
+        "title": "ApprovalRole",
+        "type": "string"
+      },
+      "AssembledSection": {
+        "additionalProperties": false,
+        "properties": {
+          "blocks": {
+            "items": {
+              "$ref": "#/components/schemas/ReportBlock"
+            },
+            "title": "Blocks",
+            "type": "array"
+          },
+          "fields": {
+            "items": {
+              "$ref": "#/components/schemas/ReportFieldTemplate"
+            },
+            "title": "Fields",
+            "type": "array"
+          },
+          "required_field_count": {
+            "title": "Required Field Count",
+            "type": "integer"
+          },
+          "section_id": {
+            "title": "Section Id",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/SectionStatus"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "section_id",
+          "title",
+          "status",
+          "required_field_count",
+          "fields",
+          "blocks"
+        ],
+        "title": "AssembledSection",
+        "type": "object"
+      },
+      "BoundDisposition": {
+        "additionalProperties": false,
+        "properties": {
+          "artifact_hash": {
+            "pattern": "^sha256:[a-f0-9]{64}$",
+            "title": "Artifact Hash",
+            "type": "string"
+          },
+          "decision": {
+            "minLength": 1,
+            "title": "Decision",
+            "type": "string"
+          },
+          "dependency_fingerprint": {
+            "pattern": "^sha256:[a-f0-9]{64}$",
+            "title": "Dependency Fingerprint",
+            "type": "string"
+          },
+          "disposition_id": {
+            "minLength": 1,
+            "title": "Disposition Id",
+            "type": "string"
+          },
+          "result_id": {
+            "minLength": 1,
+            "title": "Result Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "disposition_id",
+          "result_id",
+          "decision",
+          "artifact_hash",
+          "dependency_fingerprint"
+        ],
+        "title": "BoundDisposition",
+        "type": "object"
+      },
+      "CandidateEvaluation": {
+        "additionalProperties": false,
+        "properties": {
+          "candidate_hash": {
+            "pattern": "^sha256:[a-f0-9]{64}$",
+            "title": "Candidate Hash",
+            "type": "string"
+          },
+          "candidate_id": {
+            "pattern": "^SDC-[A-Z0-9-]+$",
+            "title": "Candidate Id",
+            "type": "string"
+          },
+          "evaluation_id": {
+            "pattern": "^CEV-[A-Z0-9-]+$",
+            "title": "Evaluation Id",
+            "type": "string"
+          },
+          "hashes": {
+            "$ref": "#/components/schemas/CandidateEvaluationHashes"
+          },
+          "idempotent_replay": {
+            "default": false,
+            "title": "Idempotent Replay",
+            "type": "boolean"
+          },
+          "next_attempt_decision": {
+            "$ref": "#/components/schemas/NextAttemptDecision"
+          },
+          "provenance_receipt": {
+            "$ref": "#/components/schemas/ProvenanceReceipt"
+          },
+          "run_id": {
+            "minLength": 1,
+            "title": "Run Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": "helix.candidate-evaluation/v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "section_package_id": {
+            "minLength": 1,
+            "title": "Section Package Id",
+            "type": "string"
+          },
+          "study_output_evaluation_receipt": {
+            "$ref": "#/components/schemas/StudyOutputEvaluationReceipt"
+          },
+          "template_conformance_receipt": {
+            "$ref": "#/components/schemas/TemplateConformanceReceipt"
+          }
+        },
+        "required": [
+          "schema_version",
+          "evaluation_id",
+          "run_id",
+          "candidate_id",
+          "candidate_hash",
+          "section_package_id",
+          "provenance_receipt",
+          "study_output_evaluation_receipt",
+          "template_conformance_receipt",
+          "next_attempt_decision",
+          "hashes"
+        ],
+        "title": "CandidateEvaluation",
+        "type": "object"
+      },
+      "CandidateEvaluationCommand": {
+        "additionalProperties": false,
+        "properties": {
+          "idempotency_key": {
+            "maxLength": 160,
+            "minLength": 8,
+            "title": "Idempotency Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "idempotency_key"
+        ],
+        "title": "CandidateEvaluationCommand",
+        "type": "object"
+      },
+      "CandidateEvaluationHashes": {
+        "additionalProperties": false,
+        "properties": {
+          "candidate": {
+            "pattern": "^sha256:[a-f0-9]{64}$",
+            "title": "Candidate",
+            "type": "string"
+          },
+          "evaluation": {
+            "pattern": "^sha256:[a-f0-9]{64}$",
+            "title": "Evaluation",
+            "type": "string"
+          },
+          "provenance": {
+            "pattern": "^sha256:[a-f0-9]{64}$",
+            "title": "Provenance",
+            "type": "string"
+          },
+          "study_output_evaluation": {
+            "pattern": "^sha256:[a-f0-9]{64}$",
+            "title": "Study Output Evaluation",
+            "type": "string"
+          },
+          "template_conformance": {
+            "pattern": "^sha256:[a-f0-9]{64}$",
+            "title": "Template Conformance",
+            "type": "string"
+          }
+        },
+        "required": [
+          "candidate",
+          "provenance",
+          "study_output_evaluation",
+          "template_conformance",
+          "evaluation"
+        ],
+        "title": "CandidateEvaluationHashes",
+        "type": "object"
+      },
+      "Claim": {
+        "additionalProperties": false,
+        "properties": {
+          "claim_id": {
+            "pattern": "^C-[A-Z0-9-]+$",
+            "title": "Claim Id",
+            "type": "string"
+          },
+          "claim_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Claim Type"
+          },
+          "executor_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Executor Id"
+          },
+          "executor_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Executor Version"
+          },
+          "field_id": {
+            "title": "Field Id",
+            "type": "string"
+          },
+          "grain": {
+            "title": "Grain",
+            "type": "string"
+          },
+          "grain_key": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Grain Key",
+            "type": "object"
+          },
+          "package_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Package Id"
+          },
+          "package_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Package Version"
+          },
+          "rule_versions": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Rule Versions",
+            "type": "object"
+          },
+          "section_id": {
+            "title": "Section Id",
+            "type": "string"
+          },
+          "source_hashes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Source Hashes",
+            "type": "array"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ClaimStatus"
+          },
+          "transform_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transform Id"
+          },
+          "transform_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transform Version"
+          },
+          "unit": {
+            "title": "Unit",
+            "type": "string"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "required": [
+          "claim_id",
+          "section_id",
+          "field_id",
+          "value",
+          "unit",
+          "grain",
+          "status"
+        ],
+        "title": "Claim",
+        "type": "object"
+      },
+      "ClaimStatus": {
+        "enum": [
+          "pending",
+          "validated",
+          "needs_review",
+          "approved"
+        ],
+        "title": "ClaimStatus",
+        "type": "string"
+      },
+      "ConditionDecision": {
+        "additionalProperties": false,
+        "properties": {
+          "condition_id": {
+            "enum": [
+              "package_permission",
+              "no_hard_blocker",
+              "provenance_passed",
+              "conformance_passed",
+              "review_required_current"
+            ],
+            "title": "Condition Id",
+            "type": "string"
+          },
+          "evidence_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Evidence Ids",
+            "type": "array"
+          },
+          "passed": {
+            "title": "Passed",
+            "type": "boolean"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "required": [
+          "condition_id",
+          "passed",
+          "evidence_ids"
+        ],
+        "title": "ConditionDecision",
+        "type": "object"
+      },
+      "CrossSectionQueryCommand": {
+        "additionalProperties": false,
+        "properties": {
+          "artifact_ids": {
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Artifact Ids",
+            "type": "array"
+          },
+          "idempotency_key": {
+            "maxLength": 160,
+            "minLength": 8,
+            "title": "Idempotency Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "artifact_ids",
+          "idempotency_key"
+        ],
+        "title": "CrossSectionQueryCommand",
+        "type": "object"
+      },
+      "CrossSectionQueryReceipt": {
+        "additionalProperties": false,
+        "properties": {
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "query_id": {
+            "pattern": "^CSQ-[A-Z0-9-]+$",
+            "title": "Query Id",
+            "type": "string"
+          },
+          "rejected_artifact_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Rejected Artifact Ids",
+            "type": "array"
+          },
+          "requested_artifact_ids": {
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Requested Artifact Ids",
+            "type": "array"
+          },
+          "returned": {
+            "items": {
+              "$ref": "#/components/schemas/CrossSectionReturnedArtifact"
+            },
+            "title": "Returned",
+            "type": "array"
+          },
+          "run_id": {
+            "minLength": 1,
+            "title": "Run Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": "helix.cross-section-query-receipt/v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "section_package_id": {
+            "minLength": 1,
+            "title": "Section Package Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "returned",
+              "rejected"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "schema_version",
+          "query_id",
+          "run_id",
+          "section_package_id",
+          "requested_artifact_ids",
+          "returned",
+          "rejected_artifact_ids",
+          "status"
+        ],
+        "title": "CrossSectionQueryReceipt",
+        "type": "object"
+      },
+      "CrossSectionReturnedArtifact": {
+        "additionalProperties": false,
+        "properties": {
+          "artifact_id": {
+            "minLength": 1,
+            "title": "Artifact Id",
+            "type": "string"
+          },
+          "hash": {
+            "pattern": "^sha256:[a-f0-9]{64}$",
+            "title": "Hash",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "fact",
+              "claim",
+              "section_draft"
+            ],
+            "title": "Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "artifact_id",
+          "kind",
+          "hash"
+        ],
+        "title": "CrossSectionReturnedArtifact",
+        "type": "object"
+      },
+      "DataValidationCommand": {
+        "additionalProperties": false,
+        "properties": {
+          "actor": {
+            "maxLength": 120,
+            "minLength": 2,
+            "title": "Actor",
+            "type": "string"
+          },
+          "idempotency_key": {
+            "maxLength": 160,
+            "minLength": 8,
+            "title": "Idempotency Key",
+            "type": "string"
+          },
+          "package_id": {
+            "default": "validation.body_weight",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Package Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "actor",
+          "idempotency_key"
+        ],
+        "title": "DataValidationCommand",
+        "type": "object"
+      },
+      "DataValidationExecution": {
+        "additionalProperties": false,
+        "properties": {
+          "claims": {
+            "items": {
+              "$ref": "#/components/schemas/Claim"
+            },
+            "title": "Claims",
+            "type": "array"
+          },
+          "event": {
+            "$ref": "#/components/schemas/WorkflowEvent"
+          },
+          "provenance_edges": {
+            "items": {
+              "$ref": "#/components/schemas/ProvenanceEdge"
+            },
+            "title": "Provenance Edges",
+            "type": "array"
+          },
+          "receipt": {
+            "$ref": "#/components/schemas/DataValidationReceipt"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/DataValidationRuleResult"
+            },
+            "title": "Results",
+            "type": "array"
+          },
+          "section_references": {
+            "items": {
+              "$ref": "#/components/schemas/SectionClaimReference"
+            },
+            "title": "Section References",
+            "type": "array"
+          }
+        },
+        "required": [
+          "receipt",
+          "claims",
+          "results",
+          "provenance_edges",
+          "section_references",
+          "event"
+        ],
+        "title": "DataValidationExecution",
+        "type": "object"
+      },
+      "DataValidationReceipt": {
+        "additionalProperties": false,
+        "properties": {
+          "claim_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Claim Ids",
+            "type": "array"
+          },
+          "event_id": {
+            "title": "Event Id",
+            "type": "string"
+          },
+          "executor_hash": {
+            "pattern": "^sha256:[a-f0-9]{64}$",
+            "title": "Executor Hash",
+            "type": "string"
+          },
+          "executor_id": {
+            "title": "Executor Id",
+            "type": "string"
+          },
+          "executor_version": {
+            "title": "Executor Version",
+            "type": "string"
+          },
+          "governed_versions": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Governed Versions",
+            "type": "object"
+          },
+          "idempotent_replay": {
+            "default": false,
+            "title": "Idempotent Replay",
+            "type": "boolean"
+          },
+          "input_fingerprint": {
+            "pattern": "^sha256:[a-f0-9]{64}$",
+            "title": "Input Fingerprint",
+            "type": "string"
+          },
+          "node_id": {
+            "title": "Node Id",
+            "type": "string"
+          },
+          "package_hash": {
+            "pattern": "^sha256:[a-f0-9]{64}$",
+            "title": "Package Hash",
+            "type": "string"
+          },
+          "package_id": {
+            "title": "Package Id",
+            "type": "string"
+          },
+          "package_version": {
+            "title": "Package Version",
+            "type": "string"
+          },
+          "receipt_id": {
+            "title": "Receipt Id",
+            "type": "string"
+          },
+          "result_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Result Ids",
+            "type": "array"
+          },
+          "rule_bundle_id": {
+            "title": "Rule Bundle Id",
+            "type": "string"
+          },
+          "rule_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Rule Ids",
+            "type": "array"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "source_artifact_id": {
+            "title": "Source Artifact Id",
+            "type": "string"
+          },
+          "source_hash": {
+            "title": "Source Hash",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "passed",
+              "blocked"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "receipt_id",
+          "run_id",
+          "package_id",
+          "package_version",
+          "package_hash",
+          "node_id",
+          "executor_id",
+          "executor_version",
+          "executor_hash",
+          "rule_bundle_id",
+          "rule_ids",
+          "source_artifact_id",
+          "source_hash",
+          "governed_versions",
+          "input_fingerprint",
+          "claim_ids",
+          "result_ids",
+          "event_id",
+          "status"
+        ],
+        "title": "DataValidationReceipt",
+        "type": "object"
+      },
+      "DataValidationRuleResult": {
+        "additionalProperties": false,
+        "properties": {
+          "enforcement_class": {
+            "enum": [
+              "hard_blocker",
+              "review_required",
+              "warning"
+            ],
+            "title": "Enforcement Class",
+            "type": "string"
+          },
+          "evidence_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Evidence Ids",
+            "type": "array"
+          },
+          "executor_id": {
+            "title": "Executor Id",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "package_id": {
+            "title": "Package Id",
+            "type": "string"
+          },
+          "result_id": {
+            "pattern": "^VR-[A-Z0-9-]+$",
+            "title": "Result Id",
+            "type": "string"
+          },
+          "rule_id": {
+            "title": "Rule Id",
+            "type": "string"
+          },
+          "rule_version": {
+            "title": "Rule Version",
+            "type": "string"
+          },
+          "scope_id": {
+            "title": "Scope Id",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ValidationStatus"
+          },
+          "waivable": {
+            "title": "Waivable",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "result_id",
+          "rule_id",
+          "rule_version",
+          "enforcement_class",
+          "status",
+          "scope_id",
+          "evidence_ids",
+          "message",
+          "waivable",
+          "package_id",
+          "executor_id"
+        ],
+        "title": "DataValidationRuleResult",
+        "type": "object"
+      },
+      "DispositionCommand": {
+        "additionalProperties": false,
+        "properties": {
+          "decision": {
+            "enum": [
+              "corrected",
+              "explained_in_nsdrg",
+              "approved_exception"
+            ],
+            "title": "Decision",
+            "type": "string"
+          },
+          "reason": {
+            "maxLength": 500,
+            "minLength": 8,
+            "title": "Reason",
+            "type": "string"
+          },
+          "reviewer": {
+            "maxLength": 120,
+            "minLength": 2,
+            "title": "Reviewer",
+            "type": "string"
+          }
+        },
+        "required": [
+          "decision",
+          "reason",
+          "reviewer"
+        ],
+        "title": "DispositionCommand",
+        "type": "object"
+      },
+      "DispositionDecision": {
+        "enum": [
+          "open",
+          "corrected",
+          "explained_in_nsdrg",
+          "approved_exception",
+          "rejected"
+        ],
+        "title": "DispositionDecision",
+        "type": "string"
+      },
+      "DoseGroup": {
+        "additionalProperties": false,
+        "properties": {
+          "dose": {
+            "title": "Dose",
+            "type": "number"
+          },
+          "dose_unit": {
+            "title": "Dose Unit",
+            "type": "string"
+          },
+          "group_id": {
+            "title": "Group Id",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "planned_n_per_sex": {
+            "exclusiveMinimum": 0.0,
+            "title": "Planned N Per Sex",
+            "type": "integer"
+          },
+          "sexes": {
+            "items": {
+              "enum": [
+                "M",
+                "F"
+              ],
+              "type": "string"
+            },
+            "title": "Sexes",
+            "type": "array"
+          },
+          "study_id": {
+            "title": "Study Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "group_id",
+          "label",
+          "dose",
+          "study_id",
+          "dose_unit",
+          "sexes",
+          "planned_n_per_sex"
+        ],
+        "title": "DoseGroup",
+        "type": "object"
+      },
+      "EvidenceChain": {
+        "additionalProperties": false,
+        "properties": {
+          "claim": {
+            "$ref": "#/components/schemas/Claim"
+          },
+          "exact_match": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exact Match"
+          },
+          "lineage": {
+            "items": {
+              "$ref": "#/components/schemas/ProvenanceEdge"
+            },
+            "title": "Lineage",
+            "type": "array"
+          },
+          "recomputed_value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recomputed Value"
+          },
+          "report_text": {
+            "title": "Report Text",
+            "type": "string"
+          },
+          "rule_versions": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Rule Versions",
+            "type": "object"
+          },
+          "source_hashes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Source Hashes",
+            "type": "array"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/SourceRecord"
+            },
+            "title": "Sources",
+            "type": "array"
+          },
+          "transform_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transform Id"
+          },
+          "transform_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transform Version"
+          },
+          "validations": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationResult"
+            },
+            "title": "Validations",
+            "type": "array"
+          }
+        },
+        "required": [
+          "claim",
+          "sources",
+          "transform_id",
+          "recomputed_value",
+          "exact_match",
+          "validations",
+          "report_text"
+        ],
+        "title": "EvidenceChain",
+        "type": "object"
+      },
+      "ExportArtifact": {
+        "additionalProperties": false,
+        "properties": {
+          "artifact_id": {
+            "title": "Artifact Id",
+            "type": "string"
+          },
+          "checksum": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checksum"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "pending",
+              "exported"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "artifact_id",
+          "kind",
+          "path",
+          "checksum",
+          "status"
+        ],
+        "title": "ExportArtifact",
+        "type": "object"
+      },
+      "ExportCommand": {
+        "additionalProperties": false,
+        "properties": {
+          "actor": {
+            "maxLength": 120,
+            "minLength": 2,
+            "title": "Actor",
+            "type": "string"
+          },
+          "idempotency_key": {
+            "maxLength": 120,
+            "minLength": 8,
+            "title": "Idempotency Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "actor",
+          "idempotency_key"
+        ],
+        "title": "ExportCommand",
+        "type": "object"
+      },
+      "ExportReceipt": {
+        "additionalProperties": false,
+        "properties": {
+          "artifacts": {
+            "items": {
+              "$ref": "#/components/schemas/ExportArtifact"
+            },
+            "title": "Artifacts",
+            "type": "array"
+          },
+          "exported_at": {
+            "title": "Exported At",
+            "type": "string"
+          },
+          "idempotent_replay": {
+            "title": "Idempotent Replay",
+            "type": "boolean"
+          },
+          "status": {
+            "const": "exported",
+            "title": "Status",
+            "type": "string"
+          },
+          "study_id": {
+            "title": "Study Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "study_id",
+          "status",
+          "exported_at",
+          "artifacts",
+          "idempotent_replay"
+        ],
+        "title": "ExportReceipt",
+        "type": "object"
+      },
+      "FreezeRunCommand": {
+        "additionalProperties": false,
+        "properties": {
+          "actor": {
+            "maxLength": 120,
+            "minLength": 2,
+            "title": "Actor",
+            "type": "string"
+          },
+          "idempotency_key": {
+            "maxLength": 160,
+            "minLength": 8,
+            "title": "Idempotency Key",
+            "type": "string"
+          },
+          "supersession": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SupersessionRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "actor",
+          "idempotency_key"
+        ],
+        "title": "FreezeRunCommand",
+        "type": "object"
+      },
+      "GateDecision": {
+        "additionalProperties": false,
+        "properties": {
+          "blocking_result_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Blocking Result Ids",
+            "type": "array"
+          },
+          "decided_at": {
+            "title": "Decided At",
+            "type": "string"
+          },
+          "gate_id": {
+            "title": "Gate Id",
+            "type": "string"
+          },
+          "gate_type": {
+            "enum": [
+              "section",
+              "release"
+            ],
+            "title": "Gate Type",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/GateStatus"
+          }
+        },
+        "required": [
+          "gate_id",
+          "gate_type",
+          "status",
+          "blocking_result_ids",
+          "decided_at"
+        ],
+        "title": "GateDecision",
+        "type": "object"
+      },
+      "GateStatus": {
+        "enum": [
+          "blocked",
+          "ready_for_review",
+          "ready_for_signature",
+          "ready_for_export",
+          "exported"
+        ],
+        "title": "GateStatus",
+        "type": "string"
+      },
+      "GovernedArtifact": {
+        "additionalProperties": false,
+        "properties": {
+          "artifact_id": {
+            "title": "Artifact Id",
+            "type": "string"
+          },
+          "content_hash": {
+            "pattern": "^sha256:[a-f0-9]{64}$",
+            "title": "Content Hash",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "artifact_id",
+          "version",
+          "path",
+          "content_hash"
+        ],
+        "title": "GovernedArtifact",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "ManifestEntry": {
+        "additionalProperties": false,
+        "properties": {
+          "artifact_id": {
+            "title": "Artifact Id",
+            "type": "string"
+          },
+          "authority_tier": {
+            "maximum": 6.0,
+            "minimum": 1.0,
+            "title": "Authority Tier",
+            "type": "integer"
+          },
+          "authorized_by": {
+            "title": "Authorized By",
+            "type": "string"
+          },
+          "checksum": {
+            "title": "Checksum",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "locked": {
+            "title": "Locked",
+            "type": "boolean"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "artifact_id",
+          "kind",
+          "name",
+          "version",
+          "authority_tier",
+          "checksum",
+          "locked",
+          "authorized_by"
+        ],
+        "title": "ManifestEntry",
+        "type": "object"
+      },
+      "NextAttemptDecision": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "enum": [
+              "retry",
+              "stop_for_review",
+              "hold"
+            ],
+            "title": "Action",
+            "type": "string"
+          },
+          "attempt": {
+            "maximum": 3.0,
+            "minimum": 1.0,
+            "title": "Attempt",
+            "type": "integer"
+          },
+          "blocking_receipt_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Blocking Receipt Ids",
+            "type": "array"
+          },
+          "max_attempts": {
+            "const": 3,
+            "title": "Max Attempts",
+            "type": "integer"
+          },
+          "reasons": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Reasons",
+            "type": "array"
+          }
+        },
+        "required": [
+          "action",
+          "attempt",
+          "max_attempts",
+          "reasons",
+          "blocking_receipt_ids"
+        ],
+        "title": "NextAttemptDecision",
+        "type": "object"
+      },
+      "PinnedRun": {
+        "additionalProperties": false,
+        "properties": {
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "event_history": {
+            "items": {
+              "$ref": "#/components/schemas/WorkflowEvent"
+            },
+            "title": "Event History",
+            "type": "array"
+          },
+          "governed_inputs": {
+            "items": {
+              "$ref": "#/components/schemas/GovernedArtifact"
+            },
+            "title": "Governed Inputs",
+            "type": "array"
+          },
+          "manifest_hash": {
+            "pattern": "^sha256:[a-f0-9]{64}$",
+            "title": "Manifest Hash",
+            "type": "string"
+          },
+          "predecessor_run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Predecessor Run Id"
+          },
+          "receipt": {
+            "$ref": "#/components/schemas/RunReceipt"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "run_plan": {
+            "$ref": "#/components/schemas/RunPlan"
+          },
+          "status": {
+            "enum": [
+              "planned",
+              "needs_review"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "study_id": {
+            "title": "Study Id",
+            "type": "string"
+          },
+          "study_type_resolution": {
+            "$ref": "#/components/schemas/StudyTypeResolution"
+          },
+          "supersession_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supersession Reason"
+          }
+        },
+        "required": [
+          "run_id",
+          "study_id",
+          "status",
+          "created_at",
+          "manifest_hash",
+          "governed_inputs",
+          "study_type_resolution",
+          "run_plan",
+          "receipt",
+          "event_history"
+        ],
+        "title": "PinnedRun",
+        "type": "object"
+      },
+      "PlannerCapability": {
+        "additionalProperties": false,
+        "properties": {
+          "available": {
+            "title": "Available",
+            "type": "boolean"
+          },
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "mode": {
+            "$ref": "#/components/schemas/PlannerMode"
+          }
+        },
+        "required": [
+          "mode",
+          "available",
+          "label",
+          "detail"
+        ],
+        "title": "PlannerCapability",
+        "type": "object"
+      },
+      "PlannerMode": {
+        "enum": [
+          "fixture",
+          "openai_compatible"
+        ],
+        "title": "PlannerMode",
+        "type": "string"
+      },
+      "PlanningEvidence": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "subject": {
+            "title": "Subject",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "subject",
+          "message"
+        ],
+        "title": "PlanningEvidence",
+        "type": "object"
+      },
+      "PromotionCommand": {
+        "additionalProperties": false,
+        "properties": {
+          "idempotency_key": {
+            "maxLength": 160,
+            "minLength": 8,
+            "title": "Idempotency Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "idempotency_key"
+        ],
+        "title": "PromotionCommand",
+        "type": "object"
+      },
+      "PromotionDecision": {
+        "additionalProperties": false,
+        "properties": {
+          "candidate_hash": {
+            "pattern": "^sha256:[a-f0-9]{64}$",
+            "title": "Candidate Hash",
+            "type": "string"
+          },
+          "candidate_id": {
+            "pattern": "^SDC-[A-Z0-9-]+$",
+            "title": "Candidate Id",
+            "type": "string"
+          },
+          "conditions": {
+            "items": {
+              "$ref": "#/components/schemas/ConditionDecision"
+            },
+            "maxItems": 5,
+            "minItems": 5,
+            "title": "Conditions",
+            "type": "array"
+          },
+          "current_disposition_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Current Disposition Ids",
+            "type": "array"
+          },
+          "eligible": {
+            "title": "Eligible",
+            "type": "boolean"
+          },
+          "failed_condition_ids": {
+            "items": {
+              "enum": [
+                "package_permission",
+                "no_hard_blocker",
+                "provenance_passed",
+                "conformance_passed",
+                "review_required_current"
+              ],
+              "type": "string"
+            },
+            "title": "Failed Condition Ids",
+            "type": "array"
+          },
+          "gate_decision_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Gate Decision Ids",
+            "type": "array"
+          },
+          "run_id": {
+            "minLength": 1,
+            "title": "Run Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": "helix.section-promotion-decision/v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "schema_version",
+          "eligible",
+          "candidate_id",
+          "candidate_hash",
+          "run_id",
+          "conditions",
+          "failed_condition_ids",
+          "warnings",
+          "current_disposition_ids",
+          "gate_decision_ids"
+        ],
+        "title": "PromotionDecision",
+        "type": "object"
+      },
+      "ProvenanceBinding": {
+        "additionalProperties": false,
+        "properties": {
+          "artifact_hash": {
+            "pattern": "^sha256:[a-f0-9]{64}$",
+            "title": "Artifact Hash",
+            "type": "string"
+          },
+          "claim_hash": {
+            "pattern": "^sha256:[a-f0-9]{64}$",
+            "title": "Claim Hash",
+            "type": "string"
+          },
+          "claim_id": {
+            "minLength": 1,
+            "title": "Claim Id",
+            "type": "string"
+          },
+          "location": {
+            "minLength": 1,
+            "title": "Location",
+            "type": "string"
+          },
+          "text": {
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "location",
+          "text",
+          "claim_id",
+          "claim_hash",
+          "artifact_hash"
+        ],
+        "title": "ProvenanceBinding",
+        "type": "object"
+      },
+      "ProvenanceBlocker": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "minLength": 1,
+            "title": "Code",
+            "type": "string"
+          },
+          "location": {
+            "minLength": 1,
+            "title": "Location",
+            "type": "string"
+          },
+          "message": {
+            "minLength": 1,
+            "title": "Message",
+            "type": "string"
+          },
+          "text": {
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "location",
+          "text",
+          "message"
+        ],
+        "title": "ProvenanceBlocker",
+        "type": "object"
+      },
+      "ProvenanceEdge": {
+        "additionalProperties": false,
+        "properties": {
+          "authority_tier": {
+            "maximum": 6.0,
+            "minimum": 1.0,
+            "title": "Authority Tier",
+            "type": "integer"
+          },
+          "claim_id": {
+            "title": "Claim Id",
+            "type": "string"
+          },
+          "edge_id": {
+            "title": "Edge Id",
+            "type": "string"
+          },
+          "source_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Hash"
+          },
+          "source_pointer": {
+            "title": "Source Pointer",
+            "type": "string"
+          },
+          "source_record_id": {
+            "title": "Source Record Id",
+            "type": "string"
+          },
+          "transform_id": {
+            "title": "Transform Id",
+            "type": "string"
+          },
+          "transform_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transform Version"
+          }
+        },
+        "required": [
+          "edge_id",
+          "claim_id",
+          "source_record_id",
+          "transform_id",
+          "source_pointer",
+          "authority_tier"
+        ],
+        "title": "ProvenanceEdge",
+        "type": "object"
+      },
+      "ProvenanceReceipt": {
+        "additionalProperties": false,
+        "properties": {
+          "bindings": {
+            "items": {
+              "$ref": "#/components/schemas/ProvenanceBinding"
+            },
+            "title": "Bindings",
+            "type": "array"
+          },
+          "blockers": {
+            "items": {
+              "$ref": "#/components/schemas/ProvenanceBlocker"
+            },
+            "title": "Blockers",
+            "type": "array"
+          },
+          "candidate_hash": {
+            "pattern": "^sha256:[a-f0-9]{64}$",
+            "title": "Candidate Hash",
+            "type": "string"
+          },
+          "candidate_id": {
+            "pattern": "^SDC-[A-Z0-9-]+$",
+            "title": "Candidate Id",
+            "type": "string"
+          },
+          "enforcement_class": {
+            "const": "hard_blocker",
+            "title": "Enforcement Class",
+            "type": "string"
+          },
+          "receipt_id": {
+            "pattern": "^PRV-[A-Z0-9-]+$",
+            "title": "Receipt Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": "helix.provenance-receipt/v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "passed",
+              "blocked"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "waivable": {
+            "const": false,
+            "title": "Waivable",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "schema_version",
+          "receipt_id",
+          "candidate_id",
+          "candidate_hash",
+          "status",
+          "enforcement_class",
+          "waivable",
+          "bindings",
+          "blockers"
+        ],
+        "title": "ProvenanceReceipt",
+        "type": "object"
+      },
+      "RegulatoryReference": {
+        "additionalProperties": false,
+        "properties": {
+          "authority": {
+            "enum": [
+              "regulation",
+              "guidance",
+              "standard",
+              "test_guideline"
+            ],
+            "title": "Authority",
+            "type": "string"
+          },
+          "binding": {
+            "title": "Binding",
+            "type": "boolean"
+          },
+          "citation": {
+            "title": "Citation",
+            "type": "string"
+          },
+          "reference_id": {
+            "title": "Reference Id",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "url": {
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reference_id",
+          "title",
+          "citation",
+          "url",
+          "authority",
+          "binding"
+        ],
+        "title": "RegulatoryReference",
+        "type": "object"
+      },
+      "ReportAssembly": {
+        "additionalProperties": false,
+        "properties": {
+          "sections": {
+            "items": {
+              "$ref": "#/components/schemas/AssembledSection"
+            },
+            "title": "Sections",
+            "type": "array"
+          },
+          "template": {
+            "$ref": "#/components/schemas/ReportTemplate"
+          }
+        },
+        "required": [
+          "template",
+          "sections"
+        ],
+        "title": "ReportAssembly",
+        "type": "object"
+      },
+      "ReportBlock": {
+        "additionalProperties": false,
+        "properties": {
+          "block_id": {
+            "title": "Block Id",
+            "type": "string"
+          },
+          "claim_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Claim Id"
+          },
+          "kind": {
+            "enum": [
+              "paragraph",
+              "claim",
+              "review_marker"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "provenance_count": {
+            "default": 0,
+            "title": "Provenance Count",
+            "type": "integer"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "block_id",
+          "kind",
+          "text"
+        ],
+        "title": "ReportBlock",
+        "type": "object"
+      },
+      "ReportFieldTemplate": {
+        "additionalProperties": false,
+        "properties": {
+          "expected_grain": {
+            "title": "Expected Grain",
+            "type": "string"
+          },
+          "field_id": {
+            "title": "Field Id",
+            "type": "string"
+          },
+          "human_judgment": {
+            "title": "Human Judgment",
+            "type": "boolean"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "regulatory_reference_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Regulatory Reference Ids",
+            "type": "array"
+          },
+          "required": {
+            "title": "Required",
+            "type": "boolean"
+          },
+          "source_expectation": {
+            "title": "Source Expectation",
+            "type": "string"
+          },
+          "style_constraints": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TemplateStyleConstraints"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "table_shape": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TemplateTableShape"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit"
+          }
+        },
+        "required": [
+          "field_id",
+          "label",
+          "required",
+          "expected_grain",
+          "human_judgment",
+          "source_expectation",
+          "regulatory_reference_ids"
+        ],
+        "title": "ReportFieldTemplate",
+        "type": "object"
+      },
+      "ReportSectionTemplate": {
+        "additionalProperties": false,
+        "properties": {
+          "fields": {
+            "items": {
+              "$ref": "#/components/schemas/ReportFieldTemplate"
+            },
+            "title": "Fields",
+            "type": "array"
+          },
+          "purpose": {
+            "title": "Purpose",
+            "type": "string"
+          },
+          "section_id": {
+            "title": "Section Id",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "section_id",
+          "title",
+          "purpose",
+          "fields"
+        ],
+        "title": "ReportSectionTemplate",
+        "type": "object"
+      },
+      "ReportTemplate": {
+        "additionalProperties": false,
+        "properties": {
+          "ctd_location": {
+            "title": "Ctd Location",
+            "type": "string"
+          },
+          "disclaimer": {
+            "title": "Disclaimer",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "references": {
+            "items": {
+              "$ref": "#/components/schemas/RegulatoryReference"
+            },
+            "title": "References",
+            "type": "array"
+          },
+          "sections": {
+            "items": {
+              "$ref": "#/components/schemas/ReportSectionTemplate"
+            },
+            "title": "Sections",
+            "type": "array"
+          },
+          "study_type_id": {
+            "title": "Study Type Id",
+            "type": "string"
+          },
+          "template_id": {
+            "title": "Template Id",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "template_id",
+          "name",
+          "version",
+          "study_type_id",
+          "ctd_location",
+          "disclaimer",
+          "references",
+          "sections"
+        ],
+        "title": "ReportTemplate",
+        "type": "object"
+      },
+      "ReviewDisposition": {
+        "additionalProperties": false,
+        "properties": {
+          "artifact_hash": {
+            "anyOf": [
+              {
+                "pattern": "^sha256:[a-f0-9]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Artifact Hash"
+          },
+          "artifact_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Artifact Id"
+          },
+          "decision": {
+            "$ref": "#/components/schemas/DispositionDecision"
+          },
+          "dependency_fingerprint": {
+            "anyOf": [
+              {
+                "pattern": "^sha256:[a-f0-9]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dependency Fingerprint"
+          },
+          "disposition_id": {
+            "title": "Disposition Id",
+            "type": "string"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "result_id": {
+            "title": "Result Id",
+            "type": "string"
+          },
+          "reviewer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewer"
+          },
+          "timestamp": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timestamp"
+          }
+        },
+        "required": [
+          "disposition_id",
+          "result_id",
+          "decision",
+          "reason",
+          "reviewer",
+          "timestamp"
+        ],
+        "title": "ReviewDisposition",
+        "type": "object"
+      },
+      "RunPlan": {
+        "additionalProperties": false,
+        "properties": {
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "fingerprint": {
+            "pattern": "^sha256:[a-f0-9]{64}$",
+            "title": "Fingerprint",
+            "type": "string"
+          },
+          "governed_versions": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Governed Versions",
+            "type": "object"
+          },
+          "manifest_hash": {
+            "pattern": "^sha256:[a-f0-9]{64}$",
+            "title": "Manifest Hash",
+            "type": "string"
+          },
+          "nodes": {
+            "items": {
+              "$ref": "#/components/schemas/RunPlanNode"
+            },
+            "title": "Nodes",
+            "type": "array"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "run_plan_id": {
+            "title": "Run Plan Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": "helix.run-plan/v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "version": {
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "schema_version",
+          "run_plan_id",
+          "run_id",
+          "version",
+          "fingerprint",
+          "created_at",
+          "manifest_hash",
+          "governed_versions",
+          "nodes"
+        ],
+        "title": "RunPlan",
+        "type": "object"
+      },
+      "RunPlanNode": {
+        "additionalProperties": false,
+        "properties": {
+          "depends_on": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Depends On",
+            "type": "array"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/PlanningEvidence"
+            },
+            "title": "Evidence",
+            "type": "array"
+          },
+          "input_fingerprint": {
+            "pattern": "^sha256:[a-f0-9]{64}$",
+            "title": "Input Fingerprint",
+            "type": "string"
+          },
+          "node_id": {
+            "title": "Node Id",
+            "type": "string"
+          },
+          "node_type": {
+            "enum": [
+              "parse",
+              "study_type_resolution",
+              "data_validation",
+              "template_contract",
+              "section_agent",
+              "provenance",
+              "study_output_evaluation",
+              "template_conformance",
+              "section_promotion",
+              "review_scaffold"
+            ],
+            "title": "Node Type",
+            "type": "string"
+          },
+          "package_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Package Id"
+          },
+          "package_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Package Version"
+          },
+          "status": {
+            "enum": [
+              "pending",
+              "blocked"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "node_id",
+          "node_type",
+          "depends_on",
+          "input_fingerprint",
+          "status",
+          "evidence"
+        ],
+        "title": "RunPlanNode",
+        "type": "object"
+      },
+      "RunReceipt": {
+        "additionalProperties": false,
+        "properties": {
+          "event_id": {
+            "title": "Event Id",
+            "type": "string"
+          },
+          "governed_inputs_fingerprint": {
+            "pattern": "^sha256:[a-f0-9]{64}$",
+            "title": "Governed Inputs Fingerprint",
+            "type": "string"
+          },
+          "manifest_hash": {
+            "pattern": "^sha256:[a-f0-9]{64}$",
+            "title": "Manifest Hash",
+            "type": "string"
+          },
+          "receipt_id": {
+            "title": "Receipt Id",
+            "type": "string"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "run_plan_fingerprint": {
+            "pattern": "^sha256:[a-f0-9]{64}$",
+            "title": "Run Plan Fingerprint",
+            "type": "string"
+          }
+        },
+        "required": [
+          "receipt_id",
+          "run_id",
+          "manifest_hash",
+          "run_plan_fingerprint",
+          "governed_inputs_fingerprint",
+          "event_id"
+        ],
+        "title": "RunReceipt",
+        "type": "object"
+      },
+      "SectionClaimReference": {
+        "additionalProperties": false,
+        "properties": {
+          "claim_id": {
+            "pattern": "^C-[A-Z0-9-]+$",
+            "title": "Claim Id",
+            "type": "string"
+          },
+          "executor_receipt_id": {
+            "title": "Executor Receipt Id",
+            "type": "string"
+          },
+          "section_id": {
+            "title": "Section Id",
+            "type": "string"
+          },
+          "section_package_id": {
+            "title": "Section Package Id",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "section_id",
+          "section_package_id",
+          "title",
+          "claim_id",
+          "executor_receipt_id"
+        ],
+        "title": "SectionClaimReference",
+        "type": "object"
+      },
+      "SectionDraft": {
+        "additionalProperties": false,
+        "properties": {
+          "bound_dispositions": {
+            "items": {
+              "$ref": "#/components/schemas/BoundDisposition"
+            },
+            "title": "Bound Dispositions",
+            "type": "array"
+          },
+          "candidate_hash": {
+            "pattern": "^sha256:[a-f0-9]{64}$",
+            "title": "Candidate Hash",
+            "type": "string"
+          },
+          "candidate_id": {
+            "pattern": "^SDC-[A-Z0-9-]+$",
+            "title": "Candidate Id",
+            "type": "string"
+          },
+          "content_hash": {
+            "pattern": "^sha256:[a-f0-9]{64}$",
+            "title": "Content Hash",
+            "type": "string"
+          },
+          "draft_id": {
+            "pattern": "^SD-[A-Z0-9-]+$",
+            "title": "Draft Id",
+            "type": "string"
+          },
+          "gate_decision_ids": {
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Gate Decision Ids",
+            "type": "array"
+          },
+          "promoted_at": {
+            "title": "Promoted At",
+            "type": "string"
+          },
+          "run_id": {
+            "minLength": 1,
+            "title": "Run Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": "helix.section-draft/v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "section_id": {
+            "minLength": 1,
+            "title": "Section Id",
+            "type": "string"
+          },
+          "status": {
+            "const": "section_draft",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "schema_version",
+          "status",
+          "draft_id",
+          "run_id",
+          "section_id",
+          "candidate_id",
+          "candidate_hash",
+          "content_hash",
+          "promoted_at",
+          "gate_decision_ids",
+          "bound_dispositions"
+        ],
+        "title": "SectionDraft",
+        "type": "object"
+      },
+      "SectionDraftCandidate": {
+        "additionalProperties": false,
+        "properties": {
+          "agent_receipt": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Agent Receipt",
+            "type": "object"
+          },
+          "attempt": {
+            "maximum": 3.0,
+            "minimum": 1.0,
+            "title": "Attempt",
+            "type": "integer"
+          },
+          "candidate_id": {
+            "pattern": "^SDC-[A-Z0-9-]+$",
+            "title": "Candidate Id",
+            "type": "string"
+          },
+          "content_blocks": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "minItems": 1,
+            "title": "Content Blocks",
+            "type": "array"
+          },
+          "drafting_cycle_id": {
+            "title": "Drafting Cycle Id",
+            "type": "string"
+          },
+          "executor_receipt_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Executor Receipt Ids",
+            "type": "array"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": "helix.section-draft-candidate/v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "section_id": {
+            "title": "Section Id",
+            "type": "string"
+          },
+          "section_package_id": {
+            "title": "Section Package Id",
+            "type": "string"
+          },
+          "section_package_version": {
+            "title": "Section Package Version",
+            "type": "string"
+          },
+          "status": {
+            "const": "section_draft_candidate",
+            "title": "Status",
+            "type": "string"
+          },
+          "validated_claim_ids": {
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Validated Claim Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "schema_version",
+          "status",
+          "candidate_id",
+          "run_id",
+          "section_id",
+          "section_package_id",
+          "section_package_version",
+          "drafting_cycle_id",
+          "attempt",
+          "validated_claim_ids",
+          "content_blocks",
+          "executor_receipt_ids",
+          "agent_receipt"
+        ],
+        "title": "SectionDraftCandidate",
+        "type": "object"
+      },
+      "SectionImpactSet": {
+        "additionalProperties": false,
+        "properties": {
+          "direct": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Direct",
+            "type": "array"
+          },
+          "origin_section_package_id": {
+            "title": "Origin Section Package Id",
+            "type": "string"
+          },
+          "transitive": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Transitive",
+            "type": "array"
+          }
+        },
+        "required": [
+          "origin_section_package_id",
+          "direct",
+          "transitive"
+        ],
+        "title": "SectionImpactSet",
+        "type": "object"
+      },
+      "SectionRunCommand": {
+        "additionalProperties": false,
+        "properties": {
+          "idempotency_key": {
+            "maxLength": 160,
+            "minLength": 8,
+            "title": "Idempotency Key",
+            "type": "string"
+          },
+          "section_package_id": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Section Package Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "section_package_id",
+          "idempotency_key"
+        ],
+        "title": "SectionRunCommand",
+        "type": "object"
+      },
+      "SectionRunEligibility": {
+        "additionalProperties": false,
+        "properties": {
+          "eligible": {
+            "title": "Eligible",
+            "type": "boolean"
+          },
+          "gate_results": {
+            "items": {
+              "$ref": "#/components/schemas/TemplateContractGateResult"
+            },
+            "title": "Gate Results",
+            "type": "array"
+          },
+          "impact_set": {
+            "$ref": "#/components/schemas/SectionImpactSet"
+          },
+          "reasons": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Reasons",
+            "type": "array"
+          },
+          "section_package_id": {
+            "title": "Section Package Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "section_package_id",
+          "eligible",
+          "reasons",
+          "gate_results",
+          "impact_set"
+        ],
+        "title": "SectionRunEligibility",
+        "type": "object"
+      },
+      "SectionRunReceipt": {
+        "additionalProperties": false,
+        "properties": {
+          "agent_runtime": {
+            "const": "codex_sdk",
+            "title": "Agent Runtime",
+            "type": "string"
+          },
+          "candidate_hash": {
+            "title": "Candidate Hash",
+            "type": "string"
+          },
+          "candidate_id": {
+            "title": "Candidate Id",
+            "type": "string"
+          },
+          "codex_thread_id": {
+            "title": "Codex Thread Id",
+            "type": "string"
+          },
+          "envelope_hash": {
+            "title": "Envelope Hash",
+            "type": "string"
+          },
+          "idempotent_replay": {
+            "default": false,
+            "title": "Idempotent Replay",
+            "type": "boolean"
+          },
+          "review_scaffold_revision": {
+            "title": "Review Scaffold Revision",
+            "type": "integer"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "section_id": {
+            "title": "Section Id",
+            "type": "string"
+          },
+          "section_package_id": {
+            "title": "Section Package Id",
+            "type": "string"
+          },
+          "skill_hash": {
+            "title": "Skill Hash",
+            "type": "string"
+          },
+          "skill_name": {
+            "const": "helix-section-agent",
+            "title": "Skill Name",
+            "type": "string"
+          },
+          "status": {
+            "const": "candidate_recorded",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "section_id",
+          "section_package_id",
+          "status",
+          "candidate_id",
+          "candidate_hash",
+          "envelope_hash",
+          "agent_runtime",
+          "codex_thread_id",
+          "skill_name",
+          "skill_hash",
+          "review_scaffold_revision"
+        ],
+        "title": "SectionRunReceipt",
+        "type": "object"
+      },
+      "SectionStatus": {
+        "enum": [
+          "validated",
+          "needs_review",
+          "reviewed"
+        ],
+        "title": "SectionStatus",
+        "type": "string"
+      },
+      "SourceRecord": {
+        "additionalProperties": false,
+        "properties": {
+          "attributes": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Attributes",
+            "type": "object"
+          },
+          "domain": {
+            "title": "Domain",
+            "type": "string"
+          },
+          "grain": {
+            "title": "Grain",
+            "type": "string"
+          },
+          "record_id": {
+            "title": "Record Id",
+            "type": "string"
+          },
+          "source_pointer": {
+            "title": "Source Pointer",
+            "type": "string"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "required": [
+          "record_id",
+          "domain",
+          "source_pointer",
+          "value",
+          "unit",
+          "grain",
+          "attributes"
+        ],
+        "title": "SourceRecord",
+        "type": "object"
+      },
+      "Stage": {
+        "additionalProperties": false,
+        "properties": {
+          "boundary": {
+            "title": "Boundary",
+            "type": "string"
+          },
+          "checks": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Checks",
+            "type": "array"
+          },
+          "input_detail": {
+            "title": "Input Detail",
+            "type": "string"
+          },
+          "input_title": {
+            "title": "Input Title",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "output_detail": {
+            "title": "Output Detail",
+            "type": "string"
+          },
+          "output_title": {
+            "title": "Output Title",
+            "type": "string"
+          },
+          "owner": {
+            "enum": [
+              "agent",
+              "human",
+              "hybrid"
+            ],
+            "title": "Owner",
+            "type": "string"
+          },
+          "stage_id": {
+            "title": "Stage Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "complete",
+              "current",
+              "blocked",
+              "pending"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          }
+        },
+        "required": [
+          "stage_id",
+          "name",
+          "owner",
+          "status",
+          "summary",
+          "input_title",
+          "input_detail",
+          "output_title",
+          "output_detail",
+          "boundary",
+          "checks"
+        ],
+        "title": "Stage",
+        "type": "object"
+      },
+      "StoredSectionRun": {
+        "additionalProperties": false,
+        "properties": {
+          "candidate": {
+            "$ref": "#/components/schemas/SectionDraftCandidate"
+          },
+          "envelope": {
+            "additionalProperties": true,
+            "title": "Envelope",
+            "type": "object"
+          },
+          "receipt": {
+            "$ref": "#/components/schemas/SectionRunReceipt"
+          },
+          "review_scaffold": {
+            "additionalProperties": true,
+            "title": "Review Scaffold",
+            "type": "object"
+          }
+        },
+        "required": [
+          "receipt",
+          "candidate",
+          "envelope",
+          "review_scaffold"
+        ],
+        "title": "StoredSectionRun",
+        "type": "object"
+      },
+      "Study": {
+        "additionalProperties": false,
+        "properties": {
+          "dose_groups": {
+            "items": {
+              "$ref": "#/components/schemas/DoseGroup"
+            },
+            "title": "Dose Groups",
+            "type": "array"
+          },
+          "duration_days": {
+            "exclusiveMinimum": 0.0,
+            "title": "Duration Days",
+            "type": "integer"
+          },
+          "protocol_version": {
+            "title": "Protocol Version",
+            "type": "string"
+          },
+          "route": {
+            "title": "Route",
+            "type": "string"
+          },
+          "species": {
+            "title": "Species",
+            "type": "string"
+          },
+          "study_id": {
+            "pattern": "^STUDY-[A-Z0-9-]+$",
+            "title": "Study Id",
+            "type": "string"
+          },
+          "study_start": {
+            "title": "Study Start",
+            "type": "string"
+          },
+          "study_type_id": {
+            "title": "Study Type Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "study_id",
+          "study_type_id",
+          "species",
+          "route",
+          "duration_days",
+          "study_start",
+          "protocol_version",
+          "dose_groups"
+        ],
+        "title": "Study",
+        "type": "object"
+      },
+      "StudyListItem": {
+        "additionalProperties": false,
+        "properties": {
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "release_status": {
+            "$ref": "#/components/schemas/GateStatus"
+          },
+          "study_id": {
+            "title": "Study Id",
+            "type": "string"
+          },
+          "study_type_id": {
+            "title": "Study Type Id",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "workflow_state": {
+            "title": "Workflow State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "study_id",
+          "study_type_id",
+          "title",
+          "workflow_state",
+          "release_status",
+          "label"
+        ],
+        "title": "StudyListItem",
+        "type": "object"
+      },
+      "StudyOutputAssertionResult": {
+        "additionalProperties": false,
+        "properties": {
+          "assertion": {
+            "minLength": 1,
+            "title": "Assertion",
+            "type": "string"
+          },
+          "message": {
+            "minLength": 1,
+            "title": "Message",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "passed",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "assertion",
+          "status",
+          "message"
+        ],
+        "title": "StudyOutputAssertionResult",
+        "type": "object"
+      },
+      "StudyOutputEvaluationReceipt": {
+        "additionalProperties": false,
+        "properties": {
+          "candidate_hash": {
+            "pattern": "^sha256:[a-f0-9]{64}$",
+            "title": "Candidate Hash",
+            "type": "string"
+          },
+          "candidate_id": {
+            "pattern": "^SDC-[A-Z0-9-]+$",
+            "title": "Candidate Id",
+            "type": "string"
+          },
+          "enforcement_class": {
+            "const": "review_required",
+            "title": "Enforcement Class",
+            "type": "string"
+          },
+          "receipt_id": {
+            "pattern": "^SOE-[A-Z0-9-]+$",
+            "title": "Receipt Id",
+            "type": "string"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/StudyOutputAssertionResult"
+            },
+            "minItems": 1,
+            "title": "Results",
+            "type": "array"
+          },
+          "schema_version": {
+            "const": "helix.study-output-evaluation-receipt/v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "passed",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "suite_hash": {
+            "pattern": "^sha256:[a-f0-9]{64}$",
+            "title": "Suite Hash",
+            "type": "string"
+          },
+          "suite_id": {
+            "minLength": 1,
+            "title": "Suite Id",
+            "type": "string"
+          },
+          "suite_version": {
+            "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+            "title": "Suite Version",
+            "type": "string"
+          },
+          "waivable": {
+            "title": "Waivable",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "schema_version",
+          "receipt_id",
+          "candidate_id",
+          "candidate_hash",
+          "suite_id",
+          "suite_version",
+          "suite_hash",
+          "status",
+          "enforcement_class",
+          "waivable",
+          "results"
+        ],
+        "title": "StudyOutputEvaluationReceipt",
+        "type": "object"
+      },
+      "StudyTypeResolution": {
+        "additionalProperties": false,
+        "properties": {
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/PlanningEvidence"
+            },
+            "title": "Evidence",
+            "type": "array"
+          },
+          "mapping_hash": {
+            "pattern": "^sha256:[a-f0-9]{64}$",
+            "title": "Mapping Hash",
+            "type": "string"
+          },
+          "mapping_version": {
+            "title": "Mapping Version",
+            "type": "string"
+          },
+          "protocol_fields": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Protocol Fields",
+            "type": "object"
+          },
+          "status": {
+            "enum": [
+              "resolved",
+              "needs_review"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "study_type_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Study Type Id"
+          }
+        },
+        "required": [
+          "status",
+          "study_type_id",
+          "mapping_version",
+          "mapping_hash",
+          "protocol_fields",
+          "evidence"
+        ],
+        "title": "StudyTypeResolution",
+        "type": "object"
+      },
+      "SupersessionRef": {
+        "additionalProperties": false,
+        "properties": {
+          "predecessor_run_id": {
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Predecessor Run Id",
+            "type": "string"
+          },
+          "reason": {
+            "maxLength": 240,
+            "minLength": 8,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "predecessor_run_id",
+          "reason"
+        ],
+        "title": "SupersessionRef",
+        "type": "object"
+      },
+      "TemplateConformanceReceipt": {
+        "additionalProperties": false,
+        "properties": {
+          "candidate_hash": {
+            "pattern": "^sha256:[a-f0-9]{64}$",
+            "title": "Candidate Hash",
+            "type": "string"
+          },
+          "candidate_id": {
+            "pattern": "^SDC-[A-Z0-9-]+$",
+            "title": "Candidate Id",
+            "type": "string"
+          },
+          "receipt_id": {
+            "pattern": "^TCF-[A-Z0-9-]+$",
+            "title": "Receipt Id",
+            "type": "string"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/TemplateConformanceResult"
+            },
+            "minItems": 1,
+            "title": "Results",
+            "type": "array"
+          },
+          "schema_version": {
+            "const": "helix.template-conformance-receipt/v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "section_package_id": {
+            "minLength": 1,
+            "title": "Section Package Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "passed",
+              "blocked"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "schema_version",
+          "receipt_id",
+          "candidate_id",
+          "candidate_hash",
+          "section_package_id",
+          "status",
+          "results"
+        ],
+        "title": "TemplateConformanceReceipt",
+        "type": "object"
+      },
+      "TemplateConformanceResult": {
+        "additionalProperties": false,
+        "properties": {
+          "check_kind": {
+            "enum": [
+              "completeness",
+              "table_coverage",
+              "terminology",
+              "units",
+              "rounding",
+              "approved_language"
+            ],
+            "title": "Check Kind",
+            "type": "string"
+          },
+          "enforcement_class": {
+            "const": "hard_blocker",
+            "title": "Enforcement Class",
+            "type": "string"
+          },
+          "gate_id": {
+            "minLength": 1,
+            "title": "Gate Id",
+            "type": "string"
+          },
+          "message": {
+            "minLength": 1,
+            "title": "Message",
+            "type": "string"
+          },
+          "rule_id": {
+            "minLength": 1,
+            "title": "Rule Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "passed",
+              "blocked"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "waivable": {
+            "const": false,
+            "title": "Waivable",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "gate_id",
+          "rule_id",
+          "check_kind",
+          "status",
+          "enforcement_class",
+          "waivable",
+          "message"
+        ],
+        "title": "TemplateConformanceResult",
+        "type": "object"
+      },
+      "TemplateContractGateResult": {
+        "additionalProperties": false,
+        "properties": {
+          "check_kind": {
+            "enum": [
+              "fields",
+              "locations",
+              "table_shapes",
+              "labels",
+              "units",
+              "style_constraints"
+            ],
+            "title": "Check Kind",
+            "type": "string"
+          },
+          "enforcement_class": {
+            "const": "hard_blocker",
+            "title": "Enforcement Class",
+            "type": "string"
+          },
+          "gate_id": {
+            "title": "Gate Id",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "result_id": {
+            "title": "Result Id",
+            "type": "string"
+          },
+          "section_package_id": {
+            "title": "Section Package Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "passed",
+              "blocked"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "waivable": {
+            "const": false,
+            "title": "Waivable",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "gate_id",
+          "section_package_id",
+          "result_id",
+          "status",
+          "enforcement_class",
+          "waivable",
+          "check_kind",
+          "message"
+        ],
+        "title": "TemplateContractGateResult",
+        "type": "object"
+      },
+      "TemplateStyleConstraints": {
+        "additionalProperties": false,
+        "properties": {
+          "decimal_places": {
+            "maximum": 6.0,
+            "minimum": 0.0,
+            "title": "Decimal Places",
+            "type": "integer"
+          },
+          "forbidden_terms": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Forbidden Terms",
+            "type": "array"
+          },
+          "unit_display": {
+            "title": "Unit Display",
+            "type": "string"
+          }
+        },
+        "required": [
+          "decimal_places",
+          "unit_display"
+        ],
+        "title": "TemplateStyleConstraints",
+        "type": "object"
+      },
+      "TemplateTableShape": {
+        "additionalProperties": false,
+        "properties": {
+          "column_axis": {
+            "title": "Column Axis",
+            "type": "string"
+          },
+          "grain": {
+            "title": "Grain",
+            "type": "string"
+          },
+          "row_axis": {
+            "title": "Row Axis",
+            "type": "string"
+          },
+          "value_columns": {
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Value Columns",
+            "type": "array"
+          }
+        },
+        "required": [
+          "grain",
+          "row_axis",
+          "column_axis",
+          "value_columns"
+        ],
+        "title": "TemplateTableShape",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      },
+      "ValidationKind": {
+        "enum": [
+          "deterministic",
+          "agent_planned"
+        ],
+        "title": "ValidationKind",
+        "type": "string"
+      },
+      "ValidationRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "planner": {
+            "$ref": "#/components/schemas/PlannerMode",
+            "default": "fixture"
+          }
+        },
+        "title": "ValidationRequest",
+        "type": "object"
+      },
+      "ValidationResult": {
+        "additionalProperties": false,
+        "properties": {
+          "enforcement_class": {
+            "anyOf": [
+              {
+                "enum": [
+                  "hard_blocker",
+                  "review_required",
+                  "warning"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enforcement Class"
+          },
+          "evidence_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Evidence Ids",
+            "type": "array"
+          },
+          "executor_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Executor Id"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ValidationKind",
+            "default": "deterministic"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "package_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Package Id"
+          },
+          "result_id": {
+            "pattern": "^VR-[A-Z0-9-]+$",
+            "title": "Result Id",
+            "type": "string"
+          },
+          "rule_id": {
+            "title": "Rule Id",
+            "type": "string"
+          },
+          "rule_version": {
+            "title": "Rule Version",
+            "type": "string"
+          },
+          "scope_id": {
+            "title": "Scope Id",
+            "type": "string"
+          },
+          "severity": {
+            "enum": [
+              "info",
+              "warning",
+              "blocker"
+            ],
+            "title": "Severity",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ValidationStatus"
+          },
+          "tool_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tool Name"
+          },
+          "waivable": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Waivable"
+          }
+        },
+        "required": [
+          "result_id",
+          "rule_id",
+          "scope_id",
+          "severity",
+          "status",
+          "evidence_ids",
+          "message",
+          "rule_version"
+        ],
+        "title": "ValidationResult",
+        "type": "object"
+      },
+      "ValidationRun": {
+        "additionalProperties": false,
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "llm_used": {
+            "title": "Llm Used",
+            "type": "boolean"
+          },
+          "planner": {
+            "$ref": "#/components/schemas/PlannerMode"
+          },
+          "planner_label": {
+            "title": "Planner Label",
+            "type": "string"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationResult"
+            },
+            "title": "Results",
+            "type": "array"
+          },
+          "rule_bundle_version": {
+            "title": "Rule Bundle Version",
+            "type": "string"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "study_id": {
+            "title": "Study Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "study_id",
+          "planner",
+          "llm_used",
+          "planner_label",
+          "rule_bundle_version",
+          "results",
+          "created_at"
+        ],
+        "title": "ValidationRun",
+        "type": "object"
+      },
+      "ValidationStatus": {
+        "enum": [
+          "pass",
+          "warn",
+          "fail",
+          "skipped"
+        ],
+        "title": "ValidationStatus",
+        "type": "string"
+      },
+      "WorkflowEvent": {
+        "additionalProperties": false,
+        "properties": {
+          "actor": {
+            "title": "Actor",
+            "type": "string"
+          },
+          "details": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Details",
+            "type": "object"
+          },
+          "event": {
+            "title": "Event",
+            "type": "string"
+          },
+          "event_id": {
+            "title": "Event Id",
+            "type": "string"
+          },
+          "outcome": {
+            "title": "Outcome",
+            "type": "string"
+          },
+          "timestamp": {
+            "title": "Timestamp",
+            "type": "string"
+          }
+        },
+        "required": [
+          "event_id",
+          "event",
+          "actor",
+          "timestamp",
+          "outcome"
+        ],
+        "title": "WorkflowEvent",
+        "type": "object"
+      },
+      "WorkspaceResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "approvals": {
+            "items": {
+              "$ref": "#/components/schemas/Approval"
+            },
+            "title": "Approvals",
+            "type": "array"
+          },
+          "candidate_evaluations": {
+            "items": {
+              "$ref": "#/components/schemas/CandidateEvaluation"
+            },
+            "title": "Candidate Evaluations",
+            "type": "array"
+          },
+          "claims": {
+            "items": {
+              "$ref": "#/components/schemas/Claim"
+            },
+            "title": "Claims",
+            "type": "array"
+          },
+          "cross_section_queries": {
+            "items": {
+              "$ref": "#/components/schemas/CrossSectionQueryReceipt"
+            },
+            "title": "Cross Section Queries",
+            "type": "array"
+          },
+          "data_validation_executions": {
+            "items": {
+              "$ref": "#/components/schemas/DataValidationExecution"
+            },
+            "title": "Data Validation Executions",
+            "type": "array"
+          },
+          "dispositions": {
+            "items": {
+              "$ref": "#/components/schemas/ReviewDisposition"
+            },
+            "title": "Dispositions",
+            "type": "array"
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/WorkflowEvent"
+            },
+            "title": "Events",
+            "type": "array"
+          },
+          "export_artifacts": {
+            "items": {
+              "$ref": "#/components/schemas/ExportArtifact"
+            },
+            "title": "Export Artifacts",
+            "type": "array"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "manifest": {
+            "items": {
+              "$ref": "#/components/schemas/ManifestEntry"
+            },
+            "title": "Manifest",
+            "type": "array"
+          },
+          "pinned_run": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PinnedRun"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "planner_capabilities": {
+            "items": {
+              "$ref": "#/components/schemas/PlannerCapability"
+            },
+            "title": "Planner Capabilities",
+            "type": "array"
+          },
+          "promotion_decisions": {
+            "items": {
+              "$ref": "#/components/schemas/PromotionDecision"
+            },
+            "title": "Promotion Decisions",
+            "type": "array"
+          },
+          "release_gate": {
+            "$ref": "#/components/schemas/GateDecision"
+          },
+          "report": {
+            "$ref": "#/components/schemas/ReportAssembly"
+          },
+          "review_scaffold_revisions": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Review Scaffold Revisions",
+            "type": "array"
+          },
+          "section_drafts": {
+            "items": {
+              "$ref": "#/components/schemas/SectionDraft"
+            },
+            "title": "Section Drafts",
+            "type": "array"
+          },
+          "section_run_eligibility": {
+            "items": {
+              "$ref": "#/components/schemas/SectionRunEligibility"
+            },
+            "title": "Section Run Eligibility",
+            "type": "array"
+          },
+          "section_runs": {
+            "items": {
+              "$ref": "#/components/schemas/StoredSectionRun"
+            },
+            "title": "Section Runs",
+            "type": "array"
+          },
+          "stages": {
+            "items": {
+              "$ref": "#/components/schemas/Stage"
+            },
+            "title": "Stages",
+            "type": "array"
+          },
+          "study": {
+            "$ref": "#/components/schemas/Study"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/WorkspaceSummary"
+          },
+          "validations": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationResult"
+            },
+            "title": "Validations",
+            "type": "array"
+          },
+          "workflow_state": {
+            "title": "Workflow State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "label",
+          "study",
+          "manifest",
+          "workflow_state",
+          "stages",
+          "summary",
+          "claims",
+          "validations",
+          "dispositions",
+          "approvals",
+          "release_gate",
+          "export_artifacts",
+          "report",
+          "events",
+          "planner_capabilities",
+          "pinned_run",
+          "data_validation_executions",
+          "section_run_eligibility",
+          "section_runs"
+        ],
+        "title": "WorkspaceResponse",
+        "type": "object"
+      },
+      "WorkspaceSummary": {
+        "additionalProperties": false,
+        "properties": {
+          "blocker_count": {
+            "title": "Blocker Count",
+            "type": "integer"
+          },
+          "provenance_count": {
+            "title": "Provenance Count",
+            "type": "integer"
+          },
+          "record_count": {
+            "title": "Record Count",
+            "type": "integer"
+          },
+          "resolved_blocker_count": {
+            "title": "Resolved Blocker Count",
+            "type": "integer"
+          },
+          "section_count": {
+            "title": "Section Count",
+            "type": "integer"
+          },
+          "source_count": {
+            "title": "Source Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "record_count",
+          "source_count",
+          "provenance_count",
+          "blocker_count",
+          "resolved_blocker_count",
+          "section_count"
+        ],
+        "title": "WorkspaceSummary",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "description": "A synthetic pattern-testing API. It does not certify GLP, Part 11, SEND, eCTD, or FDA acceptance.",
+    "title": "HELIX synthetic nonclinical workflow API",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/v1/studies": {
+      "get": {
+        "operationId": "list_studies_api_v1_studies_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/StudyListItem"
+                  },
+                  "title": "Response List Studies Api V1 Studies Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Studies",
+        "tags": [
+          "studies"
+        ]
+      }
+    },
+    "/api/v1/studies/{study_id}/approvals": {
+      "post": {
+        "operationId": "record_approval_api_v1_studies__study_id__approvals_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "study_id",
+            "required": true,
+            "schema": {
+              "title": "Study Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApprovalCommand"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspaceResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Record Approval",
+        "tags": [
+          "review"
+        ]
+      }
+    },
+    "/api/v1/studies/{study_id}/claims/{claim_id}/evidence": {
+      "get": {
+        "operationId": "get_evidence_api_v1_studies__study_id__claims__claim_id__evidence_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "study_id",
+            "required": true,
+            "schema": {
+              "title": "Study Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "claim_id",
+            "required": true,
+            "schema": {
+              "title": "Claim Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvidenceChain"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Evidence",
+        "tags": [
+          "evidence"
+        ]
+      }
+    },
+    "/api/v1/studies/{study_id}/data-validation-packages": {
+      "post": {
+        "operationId": "run_data_validation_api_v1_studies__study_id__data_validation_packages_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "study_id",
+            "required": true,
+            "schema": {
+              "title": "Study Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DataValidationCommand"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataValidationExecution"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Run Data Validation",
+        "tags": [
+          "data-validation"
+        ]
+      }
+    },
+    "/api/v1/studies/{study_id}/exports": {
+      "post": {
+        "operationId": "export_package_api_v1_studies__study_id__exports_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "study_id",
+            "required": true,
+            "schema": {
+              "title": "Study Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExportCommand"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExportReceipt"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Export Package",
+        "tags": [
+          "export"
+        ]
+      }
+    },
+    "/api/v1/studies/{study_id}/exports/{artifact_id}": {
+      "get": {
+        "operationId": "download_artifact_api_v1_studies__study_id__exports__artifact_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "study_id",
+            "required": true,
+            "schema": {
+              "title": "Study Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "artifact_id",
+            "required": true,
+            "schema": {
+              "title": "Artifact Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Download Artifact",
+        "tags": [
+          "export"
+        ]
+      }
+    },
+    "/api/v1/studies/{study_id}/pinned-runs": {
+      "post": {
+        "operationId": "freeze_run_api_v1_studies__study_id__pinned_runs_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "study_id",
+            "required": true,
+            "schema": {
+              "title": "Study Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FreezeRunCommand"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PinnedRun"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Freeze Run",
+        "tags": [
+          "run-plans"
+        ]
+      }
+    },
+    "/api/v1/studies/{study_id}/section-runs": {
+      "post": {
+        "operationId": "run_section_api_v1_studies__study_id__section_runs_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "study_id",
+            "required": true,
+            "schema": {
+              "title": "Study Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SectionRunCommand"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SectionRunReceipt"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Run Section",
+        "tags": [
+          "section-runs"
+        ]
+      }
+    },
+    "/api/v1/studies/{study_id}/section-runs/{run_id}/cross-section-queries": {
+      "post": {
+        "operationId": "query_cross_section_api_v1_studies__study_id__section_runs__run_id__cross_section_queries_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "study_id",
+            "required": true,
+            "schema": {
+              "title": "Study Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrossSectionQueryCommand"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CrossSectionQueryReceipt"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Query Cross Section",
+        "tags": [
+          "cross-section-queries"
+        ]
+      }
+    },
+    "/api/v1/studies/{study_id}/section-runs/{run_id}/evaluations": {
+      "post": {
+        "operationId": "evaluate_candidate_api_v1_studies__study_id__section_runs__run_id__evaluations_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "study_id",
+            "required": true,
+            "schema": {
+              "title": "Study Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CandidateEvaluationCommand"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateEvaluation"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Evaluate Candidate",
+        "tags": [
+          "candidate-evaluations"
+        ]
+      }
+    },
+    "/api/v1/studies/{study_id}/section-runs/{run_id}/promotions": {
+      "post": {
+        "operationId": "promote_section_draft_api_v1_studies__study_id__section_runs__run_id__promotions_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "study_id",
+            "required": true,
+            "schema": {
+              "title": "Study Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PromotionCommand"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SectionDraft"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Promote Section Draft",
+        "tags": [
+          "section-promotion"
+        ]
+      }
+    },
+    "/api/v1/studies/{study_id}/validation-results/{result_id}/dispositions": {
+      "post": {
+        "operationId": "record_disposition_api_v1_studies__study_id__validation_results__result_id__dispositions_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "study_id",
+            "required": true,
+            "schema": {
+              "title": "Study Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "result_id",
+            "required": true,
+            "schema": {
+              "title": "Result Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DispositionCommand"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspaceResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Record Disposition",
+        "tags": [
+          "review"
+        ]
+      }
+    },
+    "/api/v1/studies/{study_id}/validation-runs": {
+      "post": {
+        "operationId": "run_validation_api_v1_studies__study_id__validation_runs_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "study_id",
+            "required": true,
+            "schema": {
+              "title": "Study Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ValidationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationRun"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Run Validation",
+        "tags": [
+          "validation"
+        ]
+      }
+    },
+    "/api/v1/studies/{study_id}/workspace": {
+      "get": {
+        "operationId": "get_workspace_api_v1_studies__study_id__workspace_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "study_id",
+            "required": true,
+            "schema": {
+              "title": "Study Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspaceResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Workspace",
+        "tags": [
+          "workspace"
+        ]
+      }
+    },
+    "/health": {
+      "get": {
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Health Health Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Health",
+        "tags": [
+          "system"
+        ]
+      }
+    }
+  }
+}

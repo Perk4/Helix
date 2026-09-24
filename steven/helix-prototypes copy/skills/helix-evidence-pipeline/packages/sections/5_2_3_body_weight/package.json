@@ -1,0 +1,72 @@
+{
+  "schema_version": "helix.section-package/v1",
+  "package_id": "section.5_2_3_body_weight",
+  "version": "0.1.0",
+  "section_id": "5_2_3_body_weight",
+  "prototype_section_id": "S5",
+  "title": "5.2.3 Body Weight",
+  "maturity": "vertical_slice",
+  "promotion_allowed": false,
+  "study_type_ids": [
+    "REPEAT_DOSE_28D_RODENT"
+  ],
+  "depends_on": [
+    "validation.body_weight"
+  ],
+  "required_claims": [
+    {
+      "claim_selector": "C-BW-HIGH",
+      "input_grain": "dose_group",
+      "output_grain": "dose_group_x_sex",
+      "required": true
+    }
+  ],
+  "template_contract_gate_ids": [
+    "body-weight-template-fields",
+    "body-weight-table-shape",
+    "body-weight-style-policy"
+  ],
+  "skill": {
+    "name": "helix-section-agent",
+    "version": "0.1.0",
+    "promptfoo_suite": {
+      "id": "helix-section-agent-qualification",
+      "version": "0.1.0",
+      "path": ".agents/skills/helix-section-agent/evals/promptfooconfig.yaml"
+    },
+    "qualification_status": "passed",
+    "qualification_id": "QUAL-HELIX-SECTION-AGENT-0.1.0",
+    "qualification_hash": "sha256:a1a80bdccea9965598f8547f02d853cf232e6e445627db5fc4d5f3a5507c652d"
+  },
+  "output_schema": "skills/helix-evidence-pipeline/contracts/section-draft-candidate.schema.json",
+  "provenance_policy": {
+    "require_factual_span_claims": true,
+    "require_table_cell_claims": true
+  },
+  "study_output_eval_suite": {
+    "id": "helix-section-study-output",
+    "version": "0.1.0",
+    "path": ".agents/skills/helix-section-agent/evals/study-output.yaml"
+  },
+  "template_conformance_gate_ids": [
+    "body-weight-content-completeness",
+    "body-weight-output-table-shape",
+    "body-weight-output-style"
+  ],
+  "retry_policy": {
+    "max_attempts_per_cycle": 3
+  },
+  "drafting_constraints": {
+    "instructions": [
+      "Use only the supplied body-weight claims.",
+      "Keep male and female results separate when the claims provide both sexes.",
+      "Preserve grams as the unit and the package rounding rule.",
+      "Separate observed values from treatment-relatedness interpretation."
+    ],
+    "forbidden_claims": [
+      "treatment related",
+      "adverse",
+      "statistically significant"
+    ]
+  }
+}

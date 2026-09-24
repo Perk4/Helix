@@ -1,0 +1,196 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "helix://contracts/review-scaffold-revision/v1",
+  "title": "HELIX Review Scaffold Revision",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "status",
+    "revision_id",
+    "run_id",
+    "study_id",
+    "sequence",
+    "content_hash",
+    "created_at",
+    "triggering_event_id",
+    "predecessor_id",
+    "overall_study_context",
+    "sections",
+    "section_impact_sets",
+    "export_eligible"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "helix.review-scaffold-revision/v1"
+    },
+    "status": {
+      "const": "review_scaffold"
+    },
+    "revision_id": {
+      "type": "string",
+      "pattern": "^RSR-[A-Z0-9-]+$"
+    },
+    "run_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "study_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sequence": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "content_hash": {
+      "$ref": "#/$defs/sha256"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "triggering_event_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "predecessor_id": {
+      "type": ["string", "null"]
+    },
+    "overall_study_context": {
+      "type": "object"
+    },
+    "sections": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/sectionEntry"
+      }
+    },
+    "section_impact_sets": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/sectionImpactSet"
+      }
+    },
+    "export_eligible": {
+      "const": false
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "sectionImpactSet": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["origin_section_package_id", "direct", "transitive"],
+      "properties": {
+        "origin_section_package_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "direct": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "transitive": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "sectionEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "section_id",
+        "heading",
+        "render_state",
+        "artifact_ids",
+        "validated_claim_ids",
+        "blocker_result_ids",
+        "placeholder"
+      ],
+      "properties": {
+        "section_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "heading": {
+          "type": "string",
+          "minLength": 1
+        },
+        "render_state": {
+          "enum": ["section_draft", "validated_content", "needs_review"]
+        },
+        "artifact_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "validated_claim_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "blocker_result_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "placeholder": {
+          "type": ["string", "null"]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "render_state": {
+                "const": "needs_review"
+              }
+            },
+            "required": ["render_state"]
+          },
+          "then": {
+            "properties": {
+              "placeholder": {
+                "const": "[NEEDS REVIEW]"
+              },
+              "blocker_result_ids": {
+                "minItems": 1
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "placeholder": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

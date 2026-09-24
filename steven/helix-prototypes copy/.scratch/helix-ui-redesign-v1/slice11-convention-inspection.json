@@ -1,0 +1,106 @@
+{
+  "labels": [
+    "accessibility\tBarrier affecting people with disabilities\t#f143ab",
+    "bug\tSomething isn't working\t#d73a4a",
+    "documentation\tImprovements or additions to documentation\t#0075ca",
+    "duplicate\tThis issue or pull request already exists\t#cfd3d7",
+    "enhancement\tNew feature or request\t#a2eeef",
+    "good first issue\tGood for newcomers\t#7057ff",
+    "help wanted\tExtra attention is needed\t#008672",
+    "invalid\tThis doesn't seem right\t#e4e669",
+    "question\tFurther information is requested\t#d876e3",
+    "wontfix\tThis will not be worked on\t#ffffff",
+    "agent:claimed\tClaimed by the HELIX ticket orchestrator\t#1D76DB",
+    "READY-FOR-MERGE\tAll orchestrator gates passed; awaiting human merge\t#0E8A16"
+  ],
+  "issues": [
+    {
+      "number": 17,
+      "title": "SPEC: HELIX v1 stage-gated UI redesign",
+      "state": "OPEN",
+      "url": "https://github.com/Steven-Espaillat/Helix/issues/17",
+      "labels": [],
+      "process": null
+    },
+    {
+      "number": 18,
+      "title": "UI SLICE 0: Adopt v1 tokens and one-page shell",
+      "state": "OPEN",
+      "url": "https://github.com/Steven-Espaillat/Helix/issues/18",
+      "labels": [],
+      "process": "Blocked by #12. Blocks #19, #20. One vertical PR."
+    },
+    {
+      "number": 19,
+      "title": "UI SLICE 1: Implement the reducer and Progress Bar governance",
+      "state": "OPEN",
+      "url": "https://github.com/Steven-Espaillat/Helix/issues/19",
+      "labels": [],
+      "process": "Blocked by #12, #18. Blocks #20, #21, #22, #23. One vertical PR."
+    },
+    {
+      "number": 20,
+      "title": "UI SLICE 2: Build the upload authorization gate",
+      "state": "OPEN",
+      "url": "https://github.com/Steven-Espaillat/Helix/issues/20",
+      "labels": [],
+      "process": "Blocked by #12, #18, #19. Blocks #21. One vertical PR."
+    },
+    {
+      "number": 21,
+      "title": "UI SLICE 3: Run Agent Steps with live activity and pause or resume",
+      "state": "OPEN",
+      "url": "https://github.com/Steven-Espaillat/Helix/issues/21",
+      "labels": [],
+      "process": "Blocked by #12, #20. Blocks #22, #25. One vertical PR."
+    },
+    {
+      "number": 22,
+      "title": "UI SLICE 4: Build the Traceability Review gate",
+      "state": "OPEN",
+      "url": "https://github.com/Steven-Espaillat/Helix/issues/22",
+      "labels": [],
+      "process": "Blocked by #12, #21. Blocks #23, #27. One vertical PR."
+    },
+    {
+      "number": 23,
+      "title": "UI SLICE 5: Build the Review and Export gate",
+      "state": "OPEN",
+      "url": "https://github.com/Steven-Espaillat/Helix/issues/23",
+      "labels": [],
+      "process": "Blocked by #12, #22. Blocks #24, #27. One vertical PR."
+    },
+    {
+      "number": 24,
+      "title": "UI SLICE 6: Prove accessibility, responsiveness, and full journey parity",
+      "state": "OPEN",
+      "url": "https://github.com/Steven-Espaillat/Helix/issues/24",
+      "labels": [],
+      "process": "Blocked by #12, #23. Blocks #25, #26, #27. One vertical PR."
+    },
+    {
+      "number": 25,
+      "title": "UI SLICE 7: Expose backend-owned nine-stage journey and run events",
+      "state": "OPEN",
+      "url": "https://github.com/Steven-Espaillat/Helix/issues/25",
+      "labels": [],
+      "process": "Blocked by #12, #21, #24. Blocks #26, #27. One vertical PR."
+    },
+    {
+      "number": 26,
+      "title": "UI SLICE 8: Wire upload gate and run controls to API state",
+      "state": "OPEN",
+      "url": "https://github.com/Steven-Espaillat/Helix/issues/26",
+      "labels": [],
+      "process": "Blocked by #12, #25. Blocks #27. One vertical PR."
+    },
+    {
+      "number": 27,
+      "title": "UI SLICE 9: Wire production review, sign-off, export, and checksums",
+      "state": "OPEN",
+      "url": "https://github.com/Steven-Espaillat/Helix/issues/27",
+      "labels": [],
+      "process": "Blocked by #12, #22, #23, #24, #25, #26. Blocks none. One vertical PR."
+    }
+  ]
+}

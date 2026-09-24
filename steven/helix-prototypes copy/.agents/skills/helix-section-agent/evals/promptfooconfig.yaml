@@ -1,0 +1,32 @@
+description: HELIX Section Agent qualification
+
+prompts:
+  - file://prompt.txt
+
+providers:
+  - ${HELIX_PROMPTFOO_PROVIDER}
+
+tests:
+  - description: Uses the allowed body-weight claim
+    vars:
+      envelope: file://fixtures/body-weight-envelope.json
+    assert:
+      - type: is-json
+      - type: contains
+        value: C-BW-HIGH
+      - type: contains
+        value: "286.2"
+      - type: not-contains
+        value: release-ready
+      - type: not-contains
+        value: approved
+
+  - description: Does not invent treatment relatedness
+    vars:
+      envelope: file://fixtures/body-weight-envelope.json
+    assert:
+      - type: is-json
+      - type: not-contains
+        value: treatment related
+      - type: not-contains
+        value: statistically significant

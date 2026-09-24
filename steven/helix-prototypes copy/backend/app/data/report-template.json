@@ -1,0 +1,162 @@
+{
+  "template_id": "TPL-28D-RAT-FDA-OECD-V1",
+  "name": "28-day oral rodent nonclinical study report",
+  "version": "1.0.0",
+  "study_type_id": "REPEAT_DOSE_28D_RODENT",
+  "ctd_location": "Module 4.2.3.2 Repeat-dose toxicity",
+  "disclaimer": "Sponsor working template. FDA defines required content and submission structure, not one universal report document. SYNTHETIC / NOT FOR SUBMISSION.",
+  "references": [
+    {
+      "reference_id": "CFR-58.185",
+      "title": "Reporting of nonclinical laboratory study results",
+      "citation": "21 CFR 58.185",
+      "url": "https://www.ecfr.gov/current/title-21/chapter-I/subchapter-A/part-58/subpart-J/section-58.185",
+      "authority": "regulation",
+      "binding": true
+    },
+    {
+      "reference_id": "CFR-58.130",
+      "title": "Conduct of a nonclinical laboratory study",
+      "citation": "21 CFR 58.130",
+      "url": "https://www.ecfr.gov/current/title-21/chapter-I/subchapter-A/part-58/subpart-G/section-58.130",
+      "authority": "regulation",
+      "binding": true
+    },
+    {
+      "reference_id": "CFR-58.35",
+      "title": "Quality assurance unit",
+      "citation": "21 CFR 58.35",
+      "url": "https://www.ecfr.gov/current/title-21/chapter-I/subchapter-A/part-58/subpart-B/section-58.35",
+      "authority": "regulation",
+      "binding": true
+    },
+    {
+      "reference_id": "CFR-58.190",
+      "title": "Storage and retrieval of records and data",
+      "citation": "21 CFR 58.190",
+      "url": "https://www.ecfr.gov/current/title-21/chapter-I/subchapter-A/part-58/subpart-J/section-58.190",
+      "authority": "regulation",
+      "binding": true
+    },
+    {
+      "reference_id": "OECD-TG-407",
+      "title": "Repeated Dose 28-day Oral Toxicity Study in Rodents",
+      "citation": "OECD TG 407, 2025",
+      "url": "https://www.oecd.org/en/publications/test-no-407-repeated-dose-28-day-oral-toxicity-study-in-rodents_9789264070684-en.html",
+      "authority": "test_guideline",
+      "binding": false
+    },
+    {
+      "reference_id": "FDA-SDTCG-2026",
+      "title": "Study Data Technical Conformance Guide",
+      "citation": "FDA sdTCG v6.2.1, June 2026",
+      "url": "https://www.fda.gov/media/153632/download",
+      "authority": "guidance",
+      "binding": false
+    },
+    {
+      "reference_id": "ICH-M4S-R2",
+      "title": "Common Technical Document Safety",
+      "citation": "ICH M4S(R2)",
+      "url": "https://database.ich.org/sites/default/files/M4S_R2_Guideline.pdf",
+      "authority": "standard",
+      "binding": false
+    }
+  ],
+  "sections": [
+    {
+      "section_id": "S1",
+      "title": "Study identity and compliance",
+      "purpose": "Identify the study, responsible people, quality assurance statement, signatures, and retained records.",
+      "fields": [
+        {"field_id": "facility-and-dates", "label": "Testing facility and study dates", "required": true, "expected_grain": "study", "human_judgment": false, "source_expectation": "Approved protocol and facility record", "regulatory_reference_ids": ["CFR-58.185"]},
+        {"field_id": "study-personnel", "label": "Study director, scientists, and supervisors", "required": true, "expected_grain": "study", "human_judgment": false, "source_expectation": "Protocol, delegation record, and contributor reports", "regulatory_reference_ids": ["CFR-58.185"]},
+        {"field_id": "contributor-reports", "label": "Signed and dated contributor reports", "required": true, "expected_grain": "study", "human_judgment": true, "source_expectation": "Signed contributor reports", "regulatory_reference_ids": ["CFR-58.185"]},
+        {"field_id": "archive-locations", "label": "Specimen, raw data, and report storage locations", "required": true, "expected_grain": "study", "human_judgment": false, "source_expectation": "Archive index", "regulatory_reference_ids": ["CFR-58.185", "CFR-58.190"]},
+        {"field_id": "qau-statement", "label": "Signed Quality Assurance Unit statement", "required": true, "expected_grain": "study", "human_judgment": true, "source_expectation": "Independent Quality Assurance Unit statement", "regulatory_reference_ids": ["CFR-58.35", "CFR-58.185"]},
+        {"field_id": "study-director-signature", "label": "Study director signature and date", "required": true, "expected_grain": "study", "human_judgment": true, "source_expectation": "Final report signature", "regulatory_reference_ids": ["CFR-58.185"]}
+      ]
+    },
+    {
+      "section_id": "S2",
+      "title": "Objectives and protocol",
+      "purpose": "State the approved objective, procedures, and controlled protocol changes.",
+      "fields": [
+        {"field_id": "study-objectives", "label": "Study objectives", "required": true, "expected_grain": "study", "human_judgment": false, "source_expectation": "Approved protocol", "regulatory_reference_ids": ["CFR-58.185"]},
+        {"field_id": "protocol-procedures", "label": "Approved protocol procedures", "required": true, "expected_grain": "study", "human_judgment": false, "source_expectation": "Approved protocol", "regulatory_reference_ids": ["CFR-58.185"]},
+        {"field_id": "protocol-changes", "label": "Protocol amendments and deviations", "required": true, "expected_grain": "study", "human_judgment": true, "source_expectation": "Protocol amendments and deviation log", "regulatory_reference_ids": ["CFR-58.130", "CFR-58.185"]}
+      ]
+    },
+    {
+      "section_id": "S3",
+      "title": "Materials and methods",
+      "purpose": "Describe the articles, test system, methods, design, statistics, and data operations.",
+      "fields": [
+        {"field_id": "statistical-methods", "label": "Statistical methods", "required": true, "expected_grain": "endpoint_x_group_comparison", "human_judgment": false, "source_expectation": "Protocol and signed statistical output", "regulatory_reference_ids": ["CFR-58.185", "OECD-TG-407"]},
+        {"field_id": "test-control-articles", "label": "Test and control article identity and characteristics", "required": true, "expected_grain": "study", "human_judgment": false, "source_expectation": "Certificate of Analysis and protocol", "regulatory_reference_ids": ["CFR-58.185", "OECD-TG-407"]},
+        {"field_id": "article-stability", "label": "Stability under administration conditions", "required": true, "expected_grain": "concentration_x_timepoint", "human_judgment": false, "source_expectation": "Signed formulation analysis", "regulatory_reference_ids": ["CFR-58.185"]},
+        {"field_id": "methods", "label": "Study methods", "required": true, "expected_grain": "study", "human_judgment": false, "source_expectation": "Protocol and standard operating procedures", "regulatory_reference_ids": ["CFR-58.185", "OECD-TG-407"]},
+        {"field_id": "test-system", "label": "Animal test system and identification", "required": true, "expected_grain": "animal", "human_judgment": false, "source_expectation": "Protocol, supplier record, and demographics", "regulatory_reference_ids": ["CFR-58.185", "OECD-TG-407"]},
+        {"field_id": "dosing-design", "label": "Dose, regimen, route, and duration", "required": true, "expected_grain": "dose_group_x_sex", "human_judgment": false, "source_expectation": "Protocol and exposure records", "regulatory_reference_ids": ["CFR-58.185", "OECD-TG-407"]},
+        {"field_id": "data-integrity-circumstances", "label": "Circumstances affecting data quality or integrity", "required": true, "expected_grain": "study", "human_judgment": true, "source_expectation": "Deviation log and study director assessment", "regulatory_reference_ids": ["CFR-58.185"]},
+        {"field_id": "data-transformations", "label": "Transformations, calculations, and operations", "required": true, "expected_grain": "study", "human_judgment": false, "source_expectation": "Versioned transform registry and statistical programs", "regulatory_reference_ids": ["CFR-58.185", "FDA-SDTCG-2026"]}
+      ]
+    },
+    {
+      "section_id": "S4",
+      "title": "Dose formulation",
+      "purpose": "Report preparation, administration, concentration, homogeneity, and stability evidence.",
+      "fields": [
+        {"field_id": "vehicle", "label": "Vehicle and formulation preparation", "required": true, "expected_grain": "study", "human_judgment": false, "source_expectation": "Protocol and formulation record", "regulatory_reference_ids": ["OECD-TG-407"]},
+        {"field_id": "formulation-concentration", "label": "Achieved concentration", "required": true, "expected_grain": "concentration_x_timepoint", "human_judgment": false, "source_expectation": "Signed analytical result", "regulatory_reference_ids": ["CFR-58.185", "OECD-TG-407"]},
+        {"field_id": "formulation-homogeneity", "label": "Homogeneity", "required": true, "expected_grain": "concentration_x_timepoint", "human_judgment": false, "source_expectation": "Signed analytical result", "regulatory_reference_ids": ["OECD-TG-407"]},
+        {"field_id": "formulation-stability", "label": "Formulation stability", "required": true, "expected_grain": "concentration_x_timepoint", "human_judgment": false, "source_expectation": "Signed analytical result", "regulatory_reference_ids": ["CFR-58.185", "OECD-TG-407"]}
+      ]
+    },
+    {
+      "section_id": "S5",
+      "title": "In-life observations",
+      "purpose": "Report survival, clinical observations, functional observations, body weight, and consumption by sex and dose.",
+      "fields": [
+        {"field_id": "mortality-morbidity", "label": "Mortality and morbidity", "required": true, "expected_grain": "animal_x_day", "human_judgment": false, "source_expectation": "Disposition and clinical observation records", "regulatory_reference_ids": ["OECD-TG-407"]},
+        {"field_id": "clinical-observations", "label": "Clinical observations", "required": true, "expected_grain": "animal_x_day", "human_judgment": true, "source_expectation": "Locked clinical observation records", "regulatory_reference_ids": ["OECD-TG-407"]},
+        {"field_id": "functional-observations", "label": "Functional observations", "required": true, "expected_grain": "animal", "human_judgment": true, "source_expectation": "Locked functional observation records", "regulatory_reference_ids": ["OECD-TG-407"]},
+        {"field_id": "body-weight", "label": "Body weight and changes by sex and dose", "required": true, "expected_grain": "dose_group_x_sex", "human_judgment": false, "source_expectation": "Locked body weight records and deterministic summaries", "regulatory_reference_ids": ["OECD-TG-407", "FDA-SDTCG-2026"], "location": "Module 4.2.3.2 / 5.2.3 Body Weight", "unit": "g", "table_shape": {"grain": "dose_group_x_sex", "row_axis": "dose_group", "column_axis": "sex", "value_columns": ["mean", "sd", "n"]}, "style_constraints": {"decimal_places": 1, "unit_display": "g", "forbidden_terms": ["treatment related", "adverse", "statistically significant"]}},
+        {"field_id": "food-water-consumption", "label": "Food and water consumption when applicable", "required": true, "expected_grain": "group_x_week", "human_judgment": false, "source_expectation": "Locked consumption records", "regulatory_reference_ids": ["OECD-TG-407"]}
+      ]
+    },
+    {
+      "section_id": "S6",
+      "title": "Clinical pathology",
+      "purpose": "Report hematology, clinical chemistry, and other protocol-specified clinical pathology.",
+      "fields": [
+        {"field_id": "hematology", "label": "Hematology", "required": true, "expected_grain": "animal", "human_judgment": true, "source_expectation": "Locked hematology records and signed statistics", "regulatory_reference_ids": ["OECD-TG-407"]},
+        {"field_id": "clinical-chemistry", "label": "Clinical chemistry", "required": true, "expected_grain": "animal", "human_judgment": true, "source_expectation": "Locked clinical chemistry records and signed statistics", "regulatory_reference_ids": ["OECD-TG-407"]},
+        {"field_id": "coagulation", "label": "Coagulation", "required": true, "expected_grain": "animal", "human_judgment": true, "source_expectation": "Locked coagulation records", "regulatory_reference_ids": ["OECD-TG-407"]},
+        {"field_id": "urinalysis", "label": "Urinalysis when specified", "required": false, "expected_grain": "animal", "human_judgment": true, "source_expectation": "Locked urinalysis records", "regulatory_reference_ids": ["OECD-TG-407"]}
+      ]
+    },
+    {
+      "section_id": "S7",
+      "title": "Anatomic pathology",
+      "purpose": "Report necropsy, organ weights, tissue handling, and microscopic findings.",
+      "fields": [
+        {"field_id": "gross-necropsy", "label": "Gross necropsy findings", "required": true, "expected_grain": "animal_x_tissue", "human_judgment": true, "source_expectation": "Locked macroscopic finding records", "regulatory_reference_ids": ["OECD-TG-407"]},
+        {"field_id": "organ-weights", "label": "Terminal body and organ weights", "required": true, "expected_grain": "animal", "human_judgment": false, "source_expectation": "Locked organ weight records and deterministic ratios", "regulatory_reference_ids": ["OECD-TG-407"]},
+        {"field_id": "tissue-preservation", "label": "Tissue collection and preservation", "required": true, "expected_grain": "animal_x_tissue", "human_judgment": false, "source_expectation": "Protocol and specimen inventory", "regulatory_reference_ids": ["CFR-58.130", "OECD-TG-407"]},
+        {"field_id": "microscopic-findings", "label": "Microscopic findings with severity", "required": true, "expected_grain": "animal_x_tissue", "human_judgment": true, "source_expectation": "Locked microscopic finding records", "regulatory_reference_ids": ["OECD-TG-407"]}
+      ]
+    },
+    {
+      "section_id": "S8",
+      "title": "Discussion and conclusion",
+      "purpose": "Summarize the data, discuss biological relevance, and record qualified scientific conclusions.",
+      "fields": [
+        {"field_id": "data-summary-analysis", "label": "Data summary and analysis", "required": true, "expected_grain": "study", "human_judgment": true, "source_expectation": "Validated claims and signed statistical output", "regulatory_reference_ids": ["CFR-58.185", "OECD-TG-407"], "location": "Module 4.2.3.2 / Discussion data summary"},
+        {"field_id": "discussion", "label": "Discussion of results", "required": true, "expected_grain": "study", "human_judgment": true, "source_expectation": "Qualified scientist assessment", "regulatory_reference_ids": ["OECD-TG-407"], "location": "Module 4.2.3.2 / Discussion"},
+        {"field_id": "study-conclusions", "label": "Study conclusions", "required": true, "expected_grain": "study", "human_judgment": true, "source_expectation": "Study director conclusion", "regulatory_reference_ids": ["CFR-58.185"], "location": "Module 4.2.3.2 / Conclusions"},
+        {"field_id": "noael", "label": "NOAEL or reason no NOAEL is assigned", "required": true, "expected_grain": "study", "human_judgment": true, "source_expectation": "Study director interpretation with peer review", "regulatory_reference_ids": ["CFR-58.185", "OECD-TG-407"], "location": "Module 4.2.3.2 / NOAEL"}
+      ]
+    }
+  ]
+}
