@@ -309,6 +309,7 @@ class StudyPackageRepository:
         scope: str,
         section_id: str | None,
         intent: str = "ask",
+        draft_version: int | None = None,
     ) -> ChatMessageRow:
         row = ChatMessageRow(
             study_id=study_id,
@@ -317,6 +318,7 @@ class StudyPackageRepository:
             scope=scope,
             section_id=section_id,
             intent=intent,
+            draft_version=draft_version,
         )
         self.session.add(row)
         self.session.flush()

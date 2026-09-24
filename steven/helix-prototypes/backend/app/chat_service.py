@@ -119,6 +119,7 @@ class ChatService:
                 reply = reply or "I could not draft that change just now. Please try again."
 
         recorded_intent = "revise" if proposed is not None else "ask"
+        draft_version = proposed.version if proposed is not None else None
         self.repository.add_chat_message(
             study_id=study_id,
             role="user",
@@ -134,6 +135,7 @@ class ChatService:
             scope=scope,
             section_id=section_id,
             intent=recorded_intent,
+            draft_version=draft_version,
         )
         self.session.commit()
         return ChatTurn(message=_to_schema(assistant), proposed=proposed)
@@ -208,5 +210,6 @@ def _to_schema(row: Any) -> ChatMessage:
         scope=row.scope,
         section_id=row.section_id,
         intent=row.intent,
+        draft_version=row.draft_version,
         created_at=created_at,
     )

@@ -594,6 +594,17 @@
             "title": "Created At",
             "type": "string"
           },
+          "draft_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Version"
+          },
           "intent": {
             "default": "ask",
             "enum": [
@@ -7022,6 +7033,66 @@
           }
         },
         "summary": "Generate Section Draft",
+        "tags": [
+          "sections"
+        ]
+      }
+    },
+    "/api/v1/studies/{study_id}/sections/{section_id}/drafts/{version}": {
+      "get": {
+        "operationId": "get_section_draft_version_api_v1_studies__study_id__sections__section_id__drafts__version__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "study_id",
+            "required": true,
+            "schema": {
+              "title": "Study Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "section_id",
+            "required": true,
+            "schema": {
+              "title": "Section Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "version",
+            "required": true,
+            "schema": {
+              "title": "Version",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SectionContentDraft"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Section Draft Version",
         "tags": [
           "sections"
         ]

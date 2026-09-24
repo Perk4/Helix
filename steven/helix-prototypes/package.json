@@ -5,6 +5,7 @@
   "description": "Runner for the HELIX Promptfoo evaluation suites.",
   "scripts": {
     "evals": "promptfoo eval -c .agents/skills/helix-section-agent/evals/promptfooconfig.yaml",
+    "evals:apim-draft-chat": "promptfoo eval -c .agents/evals/apim-draft-chat/promptfooconfig.yaml",
     "verify:evals-config": "node scripts/verify-evals-config.mjs"
   },
   "devDependencies": {

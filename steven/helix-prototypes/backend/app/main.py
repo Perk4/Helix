@@ -441,6 +441,19 @@ def create_app(
     ) -> SectionContentDraft | None:
         return _call(lambda: drafts.get_current(study_id, section_id))
 
+    @app.get(
+        "/api/v1/studies/{study_id}/sections/{section_id}/drafts/{version}",
+        response_model=SectionContentDraft,
+        tags=["sections"],
+    )
+    def get_section_draft_version(
+        study_id: str,
+        section_id: str,
+        version: int,
+        drafts: DraftServiceDependency,
+    ) -> SectionContentDraft:
+        return _call(lambda: drafts.get_version(study_id, section_id, version))
+
     @app.post(
         "/api/v1/studies/{study_id}/sections/{section_id}/draft",
         response_model=SectionContentDraft,

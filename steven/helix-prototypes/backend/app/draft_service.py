@@ -197,6 +197,9 @@ class DraftService:
         row = self.repository.current_section_draft(study_id, section_id)
         return _to_schema(row) if row else None
 
+    def get_version(self, study_id: str, section_id: str, version: int) -> SectionContentDraft:
+        return _to_schema(self._require_draft(study_id, section_id, version))
+
     def generate(
         self,
         study_id: str,

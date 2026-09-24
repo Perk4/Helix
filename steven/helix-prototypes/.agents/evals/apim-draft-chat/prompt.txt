@@ -1,0 +1,8 @@
+{{system_prompt}}
+
+{{context}}
+
+USER REQUEST:
+{{request}}
+
+{{response_contract}}

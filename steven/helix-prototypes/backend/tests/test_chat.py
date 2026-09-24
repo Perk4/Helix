@@ -81,6 +81,41 @@ def test_edit_intent_produces_a_proposed_rewrite() -> None:
     assert turn.proposed is not None
     assert turn.proposed.status == "proposed"
     assert turn.message.content  # an acknowledgement is recorded
+    assert turn.message.draft_version == turn.proposed.version
+    assert chat.history(STUDY_ID)[-1].draft_version == turn.proposed.version
+
+
+def test_proposed_rewrite_survives_api_refresh(monkeypatch) -> None:
+    from app import llm
+
+    def render(messages):
+        if "RESPONSE FORMAT" in messages[0]["content"]:
+            return '{"intent": "edit", "reply": "Proposed a change."}'
+        return "Base narrative."
+
+    monkeypatch.setattr(llm, "chat", render)
+    section_id = "5_2_3_body_weight"
+    client = TestClient(create_app(_settings(), create_database_engine(_settings())))
+    with client:
+        client.post(
+            f"/api/v1/studies/{STUDY_ID}/sections/{section_id}/draft",
+            json={"feedback": []},
+        )
+        turn = client.post(
+            f"/api/v1/studies/{STUDY_ID}/chat",
+            json={"message": "make it shorter", "scope": "section", "section_id": section_id},
+        ).json()
+        history = client.get(f"/api/v1/studies/{STUDY_ID}/chat").json()
+        recovered = client.get(
+            f"/api/v1/studies/{STUDY_ID}/sections/{section_id}/drafts/"
+            f"{history[-1]['draft_version']}"
+        )
+
+    assert history[-1]["draft_version"] == turn["proposed"]["version"]
+    assert recovered.status_code == 200
+    assert recovered.json()["section_id"] == turn["proposed"]["section_id"]
+    assert recovered.json()["version"] == turn["proposed"]["version"]
+    assert recovered.json()["status"] == "proposed"
 
 
 def test_chat_endpoints(monkeypatch) -> None:

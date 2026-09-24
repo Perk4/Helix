@@ -238,6 +238,7 @@ class ChatMessageRow(Base):
     scope: Mapped[str] = mapped_column(String(16), nullable=False, default="section")  # section | study
     section_id: Mapped[str | None] = mapped_column(String(80), nullable=True)
     intent: Mapped[str] = mapped_column(String(16), nullable=False, default="ask")  # ask | revise
+    draft_version: Mapped[int | None] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
 
 

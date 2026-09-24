@@ -10,7 +10,8 @@ from .config import Settings
 from .models import Base
 
 BASELINE_REVISION = "bf13e5f55c15"
-BASELINE_TABLES = frozenset(Base.metadata.tables) - {"intake_jobs"}
+MIGRATED_TABLES = frozenset({"intake_jobs", "content_drafts", "chat_messages"})
+BASELINE_TABLES = frozenset(Base.metadata.tables) - MIGRATED_TABLES
 
 
 def create_database_engine(settings: Settings) -> Engine:
@@ -83,7 +84,7 @@ def _adopt_unversioned_baseline(connection: Connection, config: object,
         return
 
     missing_tables = BASELINE_TABLES - existing
-    unexpected_migrated_tables = (existing - BASELINE_TABLES) & {"intake_jobs"}
+    unexpected_migrated_tables = (existing - BASELINE_TABLES) & MIGRATED_TABLES
     mismatched_columns: list[str] = []
     for table_name in BASELINE_TABLES & existing:
         expected = set(Base.metadata.tables[table_name].columns.keys())
@@ -96,7 +97,10 @@ def _adopt_unversioned_baseline(connection: Connection, config: object,
         if missing_tables:
             details.append(f"missing tables: {', '.join(sorted(missing_tables))}")
         if unexpected_migrated_tables:
-            details.append("post-baseline tables already exist: intake_jobs")
+            details.append(
+                "post-baseline tables already exist: "
+                + ", ".join(sorted(unexpected_migrated_tables))
+            )
         if mismatched_columns:
             details.append(f"column mismatch: {', '.join(sorted(mismatched_columns))}")
         raise RuntimeError(

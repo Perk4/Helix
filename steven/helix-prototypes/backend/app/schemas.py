@@ -1177,6 +1177,7 @@ class ChatMessage(StrictModel):
     scope: ChatScope
     section_id: str | None = None
     intent: Literal["ask", "revise"] = "ask"
+    draft_version: int | None = None
     created_at: str
 
 

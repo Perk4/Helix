@@ -112,6 +112,17 @@ export async function getSectionDraft(
   return (value ?? null) as SectionContentDraft | null;
 }
 
+export async function getSectionDraftVersion(
+  studyId: string,
+  sectionId: string,
+  version: number,
+): Promise<SectionContentDraft> {
+  const value = await request(
+    `/studies/${encodeURIComponent(studyId)}/sections/${encodeURIComponent(sectionId)}/drafts/${version}`,
+  );
+  return value as SectionContentDraft;
+}
+
 export async function generateSectionDraft(
   studyId: string,
   sectionId: string,

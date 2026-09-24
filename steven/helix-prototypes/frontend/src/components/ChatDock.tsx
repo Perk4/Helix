@@ -4,7 +4,14 @@ import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-import { ApiError, applySection, discardSection, getChat, sendChat } from "@/lib/api";
+import {
+  ApiError,
+  applySection,
+  discardSection,
+  getChat,
+  getSectionDraftVersion,
+  sendChat,
+} from "@/lib/api";
 import type { ChatMessage, SectionContentDraft } from "@/lib/types";
 
 type Props = {
@@ -22,16 +29,39 @@ export function ChatDock({ studyId, sectionId, sectionTitle, onApplied }: Props)
   const [busy, setBusy] = useState<null | "send" | "apply">(null);
   const [error, setError] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const selectionRef = useRef(`${studyId}:${sectionId}`);
+  selectionRef.current = `${studyId}:${sectionId}`;
 
   useEffect(() => {
     let active = true;
+    setProposed(null);
     getChat(studyId)
-      .then((value) => active && setMessages(value))
+      .then(async (value) => {
+        if (!active) return;
+        setMessages(value);
+        const versions = new Set<number>();
+        for (const message of [...value].reverse()) {
+          if (
+            message.role === "assistant" &&
+            message.section_id === sectionId &&
+            typeof message.draft_version === "number"
+          ) {
+            versions.add(message.draft_version);
+          }
+        }
+        for (const version of versions) {
+          const draft = await getSectionDraftVersion(studyId, sectionId, version);
+          if (active && draft.status === "proposed") {
+            setProposed(draft);
+            return;
+          }
+        }
+      })
       .catch(() => undefined);
     return () => {
       active = false;
     };
-  }, [studyId]);
+  }, [studyId, sectionId]);
 
   useEffect(() => {
     if (open && listRef.current) {
@@ -56,6 +86,7 @@ export function ChatDock({ studyId, sectionId, sectionTitle, onApplied }: Props)
 
   async function send() {
     const text = input.trim();
+    const selection = `${studyId}:${sectionId}`;
     if (!text || busy) return;
     setBusy("send");
     setError(null);
@@ -76,7 +107,7 @@ export function ChatDock({ studyId, sectionId, sectionTitle, onApplied }: Props)
     try {
       const turn = await sendChat(studyId, text, "section", sectionId);
       setMessages(await getChat(studyId));
-      if (turn.proposed) {
+      if (turn.proposed && selectionRef.current === selection) {
         setProposed(turn.proposed);
       }
     } catch (cause) {
@@ -91,8 +122,8 @@ export function ChatDock({ studyId, sectionId, sectionTitle, onApplied }: Props)
     setBusy("apply");
     setError(null);
     try {
-      await applySection(studyId, sectionId, proposed.version);
-      note(`Applied v${proposed.version} to “${sectionTitle}”.`);
+      await applySection(studyId, proposed.section_id, proposed.version);
+      note(`Applied v${proposed.version} to “${proposed.title}”.`);
       setProposed(null);
       onApplied?.();
     } catch (cause) {
@@ -107,7 +138,7 @@ export function ChatDock({ studyId, sectionId, sectionTitle, onApplied }: Props)
     setBusy("apply");
     setError(null);
     try {
-      await discardSection(studyId, sectionId, proposed.version);
+      await discardSection(studyId, proposed.section_id, proposed.version);
       note(`Discarded v${proposed.version}. Describe the change differently to try again.`);
       setProposed(null);
     } catch (cause) {
@@ -174,7 +205,7 @@ export function ChatDock({ studyId, sectionId, sectionTitle, onApplied }: Props)
               <div className="proposed-card" data-testid="proposed-card">
                 <div className="proposed-head">
                   <strong>Proposed rewrite · v{proposed.version}</strong>
-                  <span>{sectionTitle}</span>
+                  <span>{proposed.title}</span>
                 </div>
                 <div className="proposed-body draft-prose">
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>
