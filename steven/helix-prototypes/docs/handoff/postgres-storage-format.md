@@ -132,22 +132,54 @@ compress badly, which the current data gives no reason to expect.
 
 ---
 
-## Operational notes for this database
+## The `helix_team03` schema
 
-`titaniumdb` is shared. PostgreSQL 16.15 on Cosmos DB for PostgreSQL (Citus).
+`titaniumdb` is shared — PostgreSQL 16.15 on Cosmos DB for PostgreSQL (Citus) — and teams
+isolate by schema. **Ours is `helix_team03`**, created and in use:
 
-- **Teams isolate by schema**: `team04`, `team05`, `team07`, `team8`, `team9`,
-  `craft_team6`, `policypulse`. There is no HELIX schema yet, and no `study_packages`
-  table anywhere in the database.
-- **`team04` is not us** despite the `04` in the repo name — it holds `borrower_profiles`
-  and `hmda_sample`, a lending project.
-- `public` already has 18 tables from other projects. Scope the connection so
-  `create_schema` cannot land tables there:
-
-```
-postgresql+psycopg://…/titaniumdb?sslmode=require&options=-csearch_path%3Dhelix
+```sql
+CREATE SCHEMA helix_team03;
+COMMENT ON SCHEMA helix_team03 IS 'HELIX — nonclinical evidence workbench (Team 3)';
 ```
 
-Verified working: `create_schema`, auto-seed, `GET /workspace`, and
-`POST /api/v1/studies` all ran against this database in a throwaway schema, which was
-dropped afterwards.
+Point the backend at it with a `search_path`, so `create_schema` cannot land tables in
+`public`, which already holds 18 belonging to other projects:
+
+```
+HELIX_DATABASE_URL=postgresql+psycopg://<user>:<pw>@<host>:5432/titaniumdb?sslmode=require&options=-csearch_path%3Dhelix_team03
+```
+
+Two things to know about the neighbours: **`team04` is not us**, despite the `04` in the
+repo name — it holds `borrower_profiles` and `hmda_sample`, a lending project. And the
+other schemas (`team05`, `team07`, `team8`, `team9`, `craft_team6`, `policypulse`) are
+likewise other teams'.
+
+### Verified against it
+
+```
+/health                        {"status":"ok","storage":"postgresql"}
+tables created                 audit_events, export_files, section_runs,
+                               study_packages, validation_runs
+tables leaked into public      0
+seeded STUDY-HLX-028           /workspace 200, 3 claims, manifest 10
+uploaded STUDY-YZ-389          201 — 937 records, manifest 8, claims 0
+both served after restart      auto_seed off, fresh app, both still there
+```
+
+Storage, read from the table:
+
+| study | raw | stored | compressed |
+|---|---|---|---|
+| `STUDY-HLX-028` | 427 KB | 33 KB | 92 % |
+| `STUDY-YZ-389` | 208 KB | 22 KB | 90 % |
+
+Total schema size: **304 kB** for two studies. The JSONB round-trips —
+`StudyEvidencePackage.model_validate` on the raw column returns the study, its route, its
+28 days and all 200 body weights.
+
+### The database needs VPN
+
+Port 5432 is VNet-gated: it answered while connected and timed out when the VPN dropped
+mid-session, while ordinary HTTPS kept working. Same constraint as the direct Azure
+OpenAI endpoint. Anything deployed outside the VNet, or run by a teammate off-network,
+needs to account for it.
