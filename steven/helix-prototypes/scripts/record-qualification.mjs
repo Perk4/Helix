@@ -1,0 +1,144 @@
+// Records a Tier-1 skill qualification on a section package (PKG-005).
+//
+// Recording by hand is forbidden: the digest has to be reproducible by a
+// reviewer who checks out the tree and re-runs this. So the script owns the
+// whole path — run the suite, refuse on red, hash the inputs, write the fields.
+//
+//   node scripts/record-qualification.mjs [--dry-run]
+
+import { createHash } from "node:crypto";
+import { execFileSync } from "node:child_process";
+import { mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { relative, resolve } from "node:path";
+
+const root = resolve(import.meta.dirname, "..");
+const evalsDir = resolve(root, ".agents/skills/helix-section-agent/evals");
+const skillPath = resolve(root, ".agents/skills/helix-section-agent/SKILL.md");
+const packagePath = resolve(root, "skills/helix-evidence-pipeline/packages/sections/5_2_3_body_weight/package.json");
+const qualificationsDir = resolve(evalsDir, "qualifications");
+const dryRun = process.argv.includes("--dry-run");
+
+// Matches SectionRunService._file_hash in backend/app/section_runs.py. One
+// algorithm across both languages, so a Python reviewer and this script agree.
+const fileHash = (path) => `sha256:${createHash("sha256").update(readFileSync(path)).digest("hex")}`;
+
+// Matches canonical_hash in the same module: compact separators, sorted keys.
+const canonicalHash = (value) => {
+  const canonical = (node) =>
+    Array.isArray(node)
+      ? node.map(canonical)
+      : node && typeof node === "object"
+        ? Object.fromEntries(Object.keys(node).sort().map((key) => [key, canonical(node[key])]))
+        : node;
+  return `sha256:${createHash("sha256").update(JSON.stringify(canonical(value))).digest("hex")}`;
+};
+
+const walk = (dir) =>
+  readdirSync(dir).flatMap((name) => {
+    const path = resolve(dir, name);
+    return statSync(path).isDirectory() ? walk(path) : [path];
+  });
+
+// Everything the judged prompt is built from. The suite pulls prompt.txt, the
+// skill, and the fixtures in by `file://`, so any of them can change behaviour
+// while promptfooconfig.yaml stays byte-identical. A config-only digest would
+// certify a skill that no longer behaves the way it was qualified.
+const inputPaths = [
+  skillPath,
+  resolve(evalsDir, "promptfooconfig.yaml"),
+  resolve(evalsDir, "prompt.txt"),
+  ...walk(resolve(evalsDir, "fixtures")),
+].sort();
+
+const inputs = Object.fromEntries(
+  inputPaths.map((path) => [relative(root, path).split("\\").join("/"), fileHash(path)]),
+);
+
+const runSuite = () => {
+  const outPath = resolve(root, ".promptfoo-qualification.json");
+  try {
+    execFileSync("npx", ["promptfoo", "eval", "-c", resolve(evalsDir, "promptfooconfig.yaml"), "-o", outPath, "--no-cache"], {
+      cwd: root,
+      stdio: "inherit",
+      shell: process.platform === "win32",
+    });
+  } catch {
+    // promptfoo exits non-zero when a test fails; read the report and report why.
+  }
+  const report = JSON.parse(readFileSync(outPath, "utf8"));
+  rmSync(outPath, { force: true });
+  return report;
+};
+
+const report = runSuite();
+const stats = report.results?.stats ?? {};
+const cases = (report.results?.results ?? []).map((entry) => ({
+  description: entry.testCase?.description ?? "",
+  assertions: (entry.gradingResult?.componentResults ?? []).map((component) => ({
+    type: component.assertion?.type,
+    value: component.assertion?.value,
+    pass: component.pass === true,
+  })),
+}));
+
+const assertions = cases.flatMap((entry) => entry.assertions);
+const failures = assertions.filter((assertion) => !assertion.pass);
+
+if (stats.failures > 0 || stats.errors > 0 || failures.length > 0 || cases.length === 0) {
+  console.error(`FAIL suite is not green: ${stats.failures ?? "?"} failing cases, ${failures.length} failing assertions`);
+  for (const assertion of failures) {
+    console.error(`  - ${assertion.type}${assertion.value ? ` ${JSON.stringify(assertion.value)}` : ""}`);
+  }
+  console.error("No qualification recorded.");
+  process.exit(1);
+}
+
+const suite = JSON.parse(readFileSync(packagePath, "utf8")).skill.promptfoo_suite;
+
+// The outcome, not the transcript. promptfoo's report carries an eval id,
+// timestamps, latency, token counts, and the model's prose — all of which move
+// between runs. Hashing those would produce a digest nobody could reproduce.
+const outcome = {
+  suite_id: suite.id,
+  suite_version: suite.version,
+  cases: cases.length,
+  assertions: assertions.length,
+  assertion_shape: cases.map((entry) => ({
+    description: entry.description,
+    assertions: entry.assertions.map((assertion) => ({ type: assertion.type, value: assertion.value ?? null })),
+  })),
+};
+
+const qualificationHash = canonicalHash({ inputs, outcome });
+const pkg = JSON.parse(readFileSync(packagePath, "utf8"));
+const recorded = pkg.skill.qualification_hash;
+
+if (recorded === qualificationHash && pkg.skill.qualification_status === "passed") {
+  console.log(`unchanged ${qualificationHash}`);
+  console.log("Tree matches the recorded qualification. Nothing rewritten.");
+  process.exit(0);
+}
+
+const qualificationId = `${suite.id}@${suite.version}/${new Date().toISOString().replace(/\.\d{3}Z$/, "Z")}`;
+
+if (dryRun) {
+  console.log(`would record ${qualificationHash}`);
+  console.log(`would set    qualification_id ${qualificationId}`);
+  for (const [path, hash] of Object.entries(inputs)) console.log(`  input ${hash}  ${path}`);
+  process.exit(0);
+}
+
+pkg.skill.qualification_status = "passed";
+pkg.skill.qualification_id = qualificationId;
+pkg.skill.qualification_hash = qualificationHash;
+writeFileSync(packagePath, `${JSON.stringify(pkg, null, 2)}\n`, "utf8");
+
+mkdirSync(qualificationsDir, { recursive: true });
+writeFileSync(
+  resolve(qualificationsDir, `${suite.id}.json`),
+  `${JSON.stringify({ qualification_id: qualificationId, qualification_hash: qualificationHash, inputs, outcome }, null, 2)}\n`,
+  "utf8",
+);
+
+console.log(`recorded ${qualificationHash}`);
+for (const [path, hash] of Object.entries(inputs)) console.log(`  input ${hash}  ${path}`);
