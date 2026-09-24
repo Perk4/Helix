@@ -93,11 +93,12 @@
 ## Organ Weight Language
 
 ✅ State absolute value and percentage change together: "2.33 g vs. 2.20 g control; +5.8%"
-✅ State statistical result: "did not reach statistical significance (p > 0.05, Dunnett's test)"
-  or "statistically significant (p < 0.01, Dunnett's test)"
 ✅ Note both sexes when both affected: "+18.4% males, +16.2% females"
 ❌ Never state percentage change without the direction (+ or −)
-❌ Never state statistical significance without naming the test used
+❌ Never state, imply, or name a statistical test or p-value. No layer of this
+  pipeline runs one. The executor supplies group means and incidence counts, not
+  variance, group n, or a test result, so any significance claim would be invented.
+  Describe magnitude and direction from the supplied values and stop there.
 
 ---
 
