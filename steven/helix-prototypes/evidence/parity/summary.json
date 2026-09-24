@@ -1,0 +1,184 @@
+{
+  "viewport": {
+    "width": 1440,
+    "height": 900
+  },
+  "rows": [
+    {
+      "id": "shell-header-light",
+      "lane": "step0",
+      "status": "enforced",
+      "colorScheme": "light",
+      "ratio": 0,
+      "maxDiffRatio": 0.01,
+      "pass": true,
+      "size": "1440x60 vs 1440x60",
+      "note": ""
+    },
+    {
+      "id": "shell-header-dark",
+      "lane": "step0",
+      "status": "enforced",
+      "colorScheme": "dark",
+      "ratio": 0,
+      "maxDiffRatio": 0.01,
+      "pass": true,
+      "size": "1440x60 vs 1440x60",
+      "note": ""
+    },
+    {
+      "id": "component-stage-rail-s0-light",
+      "lane": "step0",
+      "status": "enforced",
+      "colorScheme": "light",
+      "ratio": 0,
+      "maxDiffRatio": 0.01,
+      "pass": true,
+      "size": "1360x144 vs 1360x144",
+      "note": ""
+    },
+    {
+      "id": "component-stage-rail-s7-light",
+      "lane": "step0",
+      "status": "enforced",
+      "colorScheme": "light",
+      "ratio": 0,
+      "maxDiffRatio": 0.01,
+      "pass": true,
+      "size": "1360x144 vs 1360x144",
+      "note": ""
+    },
+    {
+      "id": "component-stage-rail-s0-dark",
+      "lane": "step0",
+      "status": "enforced",
+      "colorScheme": "dark",
+      "ratio": 0,
+      "maxDiffRatio": 0.01,
+      "pass": true,
+      "size": "1360x144 vs 1360x144",
+      "note": ""
+    },
+    {
+      "id": "component-gate-banner-light",
+      "lane": "step0",
+      "status": "enforced",
+      "colorScheme": "light",
+      "ratio": 0,
+      "maxDiffRatio": 0.01,
+      "pass": true,
+      "size": "1360x70 vs 1360x70",
+      "note": ""
+    },
+    {
+      "id": "component-file-table-light",
+      "lane": "step0",
+      "status": "enforced",
+      "colorScheme": "light",
+      "ratio": 0,
+      "maxDiffRatio": 0.01,
+      "pass": true,
+      "size": "930x442 vs 930x442",
+      "note": ""
+    },
+    {
+      "id": "component-auth-card-light",
+      "lane": "step0",
+      "status": "enforced",
+      "colorScheme": "light",
+      "ratio": 0,
+      "maxDiffRatio": 0.01,
+      "pass": true,
+      "size": "360x450 vs 360x450",
+      "note": ""
+    },
+    {
+      "id": "component-upload-composition-light",
+      "lane": "step0",
+      "status": "enforced",
+      "colorScheme": "light",
+      "ratio": 0,
+      "maxDiffRatio": 0.01,
+      "pass": true,
+      "size": "1440x900 vs 1440x900",
+      "note": ""
+    },
+    {
+      "id": "shell-viewport-light",
+      "lane": "step0",
+      "status": "report-only",
+      "colorScheme": "light",
+      "ratio": 0.06181824678825392,
+      "maxDiffRatio": 0.01,
+      "pass": null,
+      "size": "1440x900 vs 1440x900",
+      "note": ""
+    },
+    {
+      "id": "journey-progress-light",
+      "lane": "A",
+      "status": "pending",
+      "colorScheme": "light",
+      "ratio": null,
+      "maxDiffRatio": 0.01,
+      "pass": null,
+      "size": "",
+      "note": "skipped: owned by lane A (#19)"
+    },
+    {
+      "id": "upload-gate-light",
+      "lane": "A",
+      "status": "pending",
+      "colorScheme": "light",
+      "ratio": null,
+      "maxDiffRatio": 0.01,
+      "pass": null,
+      "size": "",
+      "note": "skipped: owned by lane A (#20)"
+    },
+    {
+      "id": "agent-step-light",
+      "lane": "B",
+      "status": "pending",
+      "colorScheme": "light",
+      "ratio": null,
+      "maxDiffRatio": 0.01,
+      "pass": null,
+      "size": "",
+      "note": "skipped: owned by lane B (#21)"
+    },
+    {
+      "id": "traceability-gate-light",
+      "lane": "C",
+      "status": "pending",
+      "colorScheme": "light",
+      "ratio": null,
+      "maxDiffRatio": 0.01,
+      "pass": null,
+      "size": "",
+      "note": "skipped: owned by lane C (#22)"
+    },
+    {
+      "id": "review-export-light",
+      "lane": "D",
+      "status": "pending",
+      "colorScheme": "light",
+      "ratio": null,
+      "maxDiffRatio": 0.01,
+      "pass": null,
+      "size": "",
+      "note": "skipped: owned by lane D (#23)"
+    },
+    {
+      "id": "review-export-dark",
+      "lane": "D",
+      "status": "pending",
+      "colorScheme": "dark",
+      "ratio": null,
+      "maxDiffRatio": 0.01,
+      "pass": null,
+      "size": "",
+      "note": "skipped: owned by lane D (#23)"
+    }
+  ]
+}
