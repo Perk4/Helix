@@ -1,6 +1,6 @@
 {
   "schema_version": "helix.section-execution-envelope/v1",
-  "envelope_id": "ENV-BW-001",
+  "envelope_id": "ENV-BW-002",
   "run_id": "RUN-SYNTHETIC-001",
   "pinned_run_id": "RUN-SYNTHETIC-001",
   "run_plan_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
@@ -19,12 +19,12 @@
   ],
   "validated_claims": [
     {
-      "claim_id": "C-BW-HIGH",
-      "field_id": "terminal-body-weight-high",
-      "value": 286.2,
-      "unit": "g",
+      "claim_id": "C-CO-TREMOR",
+      "field_id": "clinical-observation-incidence",
+      "value": 0,
+      "unit": "count",
       "grain": "dose_group_x_sex",
-      "hash": "sha256:5555555555555555555555555555555555555555555555555555555555555555"
+      "hash": "sha256:6666666666666666666666666666666666666666666666666666666666666666"
     }
   ],
   "study_context": {
@@ -33,7 +33,13 @@
     "group": "high-dose",
     "timepoint": "terminal"
   },
-  "structured_failures": [],
+  "structured_failures": [
+    {
+      "result_id": "VR-011",
+      "code": "missing-required-claim",
+      "message": "The required claim C-BW-HIGH is not present in this envelope. No terminal body-weight value is available."
+    }
+  ],
   "executor_receipts": [
     {
       "artifact_id": "EXEC-BW-SUMMARY-001",

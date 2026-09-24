@@ -1,14 +1,110 @@
-description: HELIX study-output checks for a Section Draft Candidate
+description: HELIX study-output guardrails G-1 and G-2, qualified against fixtures
 
-assert:
-  - type: is-json
-  - type: contains
-    value: section_draft_candidate
-  - type: contains
-    value: validated_claim_ids
-  - type: contains
-    value: factual_spans
-  - type: not-contains
-    value: release-ready
-  - type: not-contains
-    value: approved
+# What this file is, and what it is not.
+#
+# Tier 2 is advisory. GATE-006 says a study-output failure creates
+# `review_required` and a pass changes no deterministic gate, and ADR-0001
+# reserves gate authority to the rule bundles. Nothing here can turn a gate
+# green or red.
+#
+# At this stage the fixtures qualify the *judge*, not a drafted section. Phase 1
+# produces real candidates and Phase 5 runs these against them; until then each
+# case presents a draft whose correct verdict is already known and checks that
+# the judge reaches it. That is what the roadmap means by "author now against
+# fixtures, live at Phase 5". The judge questions below are the roadmap's
+# verbatim wording, so the same rubric carries over unchanged when the target
+# becomes real output.
+#
+# The sections G-1 reads, 5.3.3 and 5.3.4, are beyond the current 5.2.3 slice.
+# These guardrails are inert until those sections exist.
+
+providers:
+  # The fixture is the output under review, so the provider only has to hand it
+  # back. The model that matters here is the grader below.
+  - id: echo
+
+defaultTest:
+  options:
+    # A different family from the gpt-5.5 drafter, on purpose: a judge that
+    # shares the drafter's blind spots misses what the drafter got wrong.
+    provider:
+      id: "{{ env.HELIX_PROMPTFOO_JUDGE_PROVIDER }}"
+      config:
+        max_tokens: 4000
+        temperature: 0
+
+prompts:
+  - "{{ draft }}"
+
+tests:
+  # ---------------------------------------------------------------- G-1 ------
+  # "Read §5.3.3 and §5.3.4 together. Is the NOAEL the highest dose group with
+  #  no adverse findings in 5.3.3? Is the LOAEL the lowest dose with an adverse
+  #  finding? Score 1 if consistent, 0 if contradictory/unsupported."
+  #
+  # The highest-value check in the system: a wrong NOAEL sets the human starting
+  # dose in clinical trials.
+
+  - description: G-1 holds when the NOAEL matches the findings
+    vars:
+      draft: file://fixtures/study-hlx-041-section-5-3.json
+    assert:
+      - type: llm-rubric
+        metric: G-1
+        value: >-
+          Read section 5.3.3 and section 5.3.4 together. Is the NOAEL the
+          highest dose group with no adverse findings in 5.3.3? Is the LOAEL the
+          lowest dose with an adverse finding? The two sections are consistent:
+          the highest dose free of adverse findings carries the NOAEL, and the
+          lowest dose with an adverse finding carries the LOAEL. Score 1 if you
+          agree they are consistent and your reason names the dose group that
+          carries the NOAEL. Score 0 otherwise.
+
+  - description: G-1 catches a NOAEL set at a dose with adverse findings
+    vars:
+      draft: file://fixtures/study-hlx-052-section-5-3.json
+    assert:
+      - type: llm-rubric
+        metric: G-1
+        value: >-
+          Read section 5.3.3 and section 5.3.4 together. Is the NOAEL the
+          highest dose group with no adverse findings in 5.3.3? Is the LOAEL the
+          lowest dose with an adverse finding? The two sections contradict each
+          other: the dose group named as the NOAEL carries an adverse finding in
+          5.3.3. Score 1 if you identify that contradiction and your reason
+          names the adverse finding at the NOAEL dose. Score 0 if you find the
+          sections consistent.
+
+  # ---------------------------------------------------------------- G-2 ------
+  # "When a finding is called adaptive/non-adverse, does the text give >=2
+  #  specific scientific reasons (no necrosis, no macro correlate, low grade,
+  #  low incidence, known pharmacological mechanism)? Score 1 if present+
+  #  specific, 0 if asserted without criteria."
+
+  - description: G-2 holds when the non-adverse call carries criteria
+    vars:
+      draft: file://fixtures/study-hlx-063-section-5-3.json
+    assert:
+      - type: llm-rubric
+        metric: G-2
+        value: >-
+          A finding in this draft is called adaptive or non-adverse. Does the
+          text give at least two specific scientific reasons, such as absence of
+          necrosis, absence of a macroscopic correlate, low severity grade, low
+          incidence, or a known pharmacological mechanism? It does. Score 1 if
+          you agree the criteria are present and specific, and your reason
+          identifies at least two of them. Score 0 otherwise.
+
+  - description: G-2 catches a non-adverse call asserted without criteria
+    vars:
+      draft: file://fixtures/study-hlx-074-section-5-3.json
+    assert:
+      - type: llm-rubric
+        metric: G-2
+        value: >-
+          A finding in this draft is called adaptive or non-adverse. Does the
+          text give at least two specific scientific reasons, such as absence of
+          necrosis, absence of a macroscopic correlate, low severity grade, low
+          incidence, or a known pharmacological mechanism? It does not: the call
+          is asserted with no criteria. Score 1 if you identify that the
+          rationale is missing. Score 0 if you accept the call as supported.
