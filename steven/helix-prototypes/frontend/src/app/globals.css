@@ -885,6 +885,33 @@ code {
   font-size: 9px;
 }
 
+.validation-console > .button + .button {
+  margin-top: 8px;
+}
+
+.section-run-receipt {
+  display: grid;
+  gap: 5px;
+  margin-top: 10px;
+  padding: 10px;
+  overflow-wrap: anywhere;
+  border: 1px solid #92c4df;
+  border-radius: var(--radius-sm);
+  background: var(--blue-100);
+  color: var(--ink-700);
+  font-size: 9px;
+}
+
+.section-run-receipt strong {
+  color: var(--ink-900);
+  font-size: 11px;
+}
+
+.section-run-receipt code {
+  color: var(--blue-700);
+  font-size: 8px;
+}
+
 .fine-print {
   margin: 9px 0 0;
   color: var(--ink-500);

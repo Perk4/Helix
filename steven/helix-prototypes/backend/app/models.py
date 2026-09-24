@@ -68,3 +68,19 @@ class ValidationRunRow(Base):
     rule_bundle_version: Mapped[str] = mapped_column(String(40), nullable=False)
     results: Mapped[list[dict[str, Any]]] = mapped_column(JsonDocument, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+
+
+class SectionRunRow(Base):
+    __tablename__ = "section_runs"
+    __table_args__ = (UniqueConstraint("study_id", "idempotency_key", name="uq_section_run_key"),)
+
+    run_id: Mapped[str] = mapped_column(String(80), primary_key=True)
+    study_id: Mapped[str] = mapped_column(String(80), index=True, nullable=False)
+    section_package_id: Mapped[str] = mapped_column(String(120), nullable=False)
+    idempotency_key: Mapped[str] = mapped_column(String(160), nullable=False)
+    request_hash: Mapped[str] = mapped_column(String(80), nullable=False)
+    envelope: Mapped[dict[str, Any]] = mapped_column(JsonDocument, nullable=False)
+    candidate: Mapped[dict[str, Any] | None] = mapped_column(JsonDocument, nullable=True)
+    receipt: Mapped[dict[str, Any] | None] = mapped_column(JsonDocument, nullable=True)
+    review_scaffold: Mapped[dict[str, Any] | None] = mapped_column(JsonDocument, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)

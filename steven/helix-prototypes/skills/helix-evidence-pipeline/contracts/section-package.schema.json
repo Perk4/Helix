@@ -77,13 +77,17 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["claim_selector", "grain", "required"],
+        "required": ["claim_selector", "input_grain", "output_grain", "required"],
         "properties": {
           "claim_selector": {
             "type": "string",
             "minLength": 1
           },
-          "grain": {
+          "input_grain": {
+            "type": "string",
+            "minLength": 1
+          },
+          "output_grain": {
             "type": "string",
             "minLength": 1
           },

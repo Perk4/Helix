@@ -8,6 +8,7 @@ import {
   getWorkspace,
   recordApproval,
   recordDisposition,
+  runSectionAgent,
   runValidation,
 } from "@/lib/api";
 import type { ApprovalRole, PlannerMode, Workspace } from "@/lib/types";
@@ -59,6 +60,23 @@ export function HelixWorkbench({ studyId }: Props) {
       await refresh();
       setNotice(
         `${run.results.length} checks completed with ${run.planner_label}. LLM used: ${run.llm_used ? "yes" : "no"}.`,
+      );
+    } catch (cause) {
+      setError(messageFrom(cause));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function draftBodyWeight() {
+    setBusy("section-run");
+    setNotice(null);
+    setError(null);
+    try {
+      const receipt = await runSectionAgent(studyId);
+      await refresh();
+      setNotice(
+        `${receipt.candidate_id} recorded from Codex SDK in Review Scaffold Revision ${receipt.review_scaffold_revision}.`,
       );
     } catch (cause) {
       setError(messageFrom(cause));
@@ -215,9 +233,11 @@ export function HelixWorkbench({ studyId }: Props) {
           <StudyJourney
             workspace={workspace}
             planner={planner}
-            busy={busy === "validation"}
+            validationBusy={busy === "validation"}
+            sectionRunBusy={busy === "section-run"}
             onPlannerChange={setPlanner}
             onValidate={() => void validate()}
+            onDraftBodyWeight={() => void draftBodyWeight()}
           />
         )}
         {activeView === "evidence" && (
