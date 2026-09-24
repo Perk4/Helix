@@ -4,7 +4,12 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 from sqlalchemy import func, select
 
-from app.body_weight import compute_body_weight_summary, load_frozen_fixture, recompute_matches_fixture
+from app.body_weight import (
+    compute_body_weight_summary,
+    load_frozen_fixture,
+    load_section_consumers,
+    recompute_matches_fixture,
+)
 from app.config import Settings
 from app.database import create_database_engine
 from app.main import create_app
@@ -79,6 +84,8 @@ def test_one_validation_action_records_pinned_identity_and_exact_replay() -> Non
         assert receipt["source_artifact_id"] == "A-BW"
         assert receipt["source_hash"].startswith("sha256:")
         assert "validation.body_weight" in receipt["governed_versions"]
+        assert receipt["rule_bundle_id"] == "validation.body_weight"
+        assert receipt["rule_bundle_id"] in receipt["governed_versions"]
         assert receipt["rule_ids"] == [
             "body-weight-required-grain",
             "body-weight-summary-recompute",
@@ -123,6 +130,13 @@ def test_one_validation_action_records_pinned_identity_and_exact_replay() -> Non
             )
             claim_ids = [claim.claim_id for claim in stored.claims if claim.claim_id == "C-BW-HIGH"]
             assert claim_ids == ["C-BW-HIGH"]
+            cell_claims = [claim for claim in stored.claims if claim.claim_id.startswith("C-BW-MEAN-")]
+            assert cell_claims
+            assert all(claim.status == "validated" for claim in cell_claims)
+            cell_edges = [
+                edge for edge in stored.provenance_edges if edge.claim_id.startswith("C-BW-MEAN-")
+            ]
+            assert cell_edges
     engine.dispose()
 
 
@@ -131,11 +145,19 @@ def test_two_sections_reuse_the_stored_claim_without_rerunning() -> None:
     with client:
         first = execute(client).json()
         replay = execute(client).json()
+        consumers = load_section_consumers(ROOT)
         references = first["section_references"]
+        assert {item[1] for item in consumers} == {
+            "section.5_2_3_body_weight",
+            "section.5_3_discussion",
+        }
         assert len(references) == 2
         assert references[0]["claim_id"] == references[1]["claim_id"] == "C-BW-HIGH"
         assert references[0]["executor_receipt_id"] == references[1]["executor_receipt_id"]
+        assert {item["section_package_id"] for item in references} == {item[1] for item in consumers}
         assert replay["receipt"]["receipt_id"] == first["receipt"]["receipt_id"]
+        assert replay["receipt"]["idempotent_replay"] is True
+        assert replay["claims"] == first["claims"]
         assert [item["section_id"] for item in references] == ["S5", "S8"]
     engine.dispose()
 
@@ -209,6 +231,8 @@ def test_missing_provenance_edge_creates_non_waivable_hard_blocker() -> None:
         assert provenance["status"] == "fail"
         assert provenance["enforcement_class"] == "hard_blocker"
         assert provenance["waivable"] is False
+        assert body["receipt"]["status"] == "blocked"
+        assert body["claims"] == []
         waiver = client.post(
             f"/api/v1/studies/{STUDY_ID}/validation-results/VR-BW-PROVENANCE/dispositions",
             json={
@@ -221,6 +245,53 @@ def test_missing_provenance_edge_creates_non_waivable_hard_blocker() -> None:
         workspace = client.get(f"/api/v1/studies/{STUDY_ID}/workspace").json()
         assert "VR-BW-PROVENANCE" in workspace["release_gate"]["blocking_result_ids"]
     engine.dispose()
+
+
+def test_mixed_blank_source_pointer_hard_blocks_without_validated_claims() -> None:
+    client, engine = build_client()
+    with client:
+        with client.app.state.session_factory() as session:
+            repository = StudyPackageRepository(session)
+            package = repository.get(STUDY_ID)
+            weights = list(package.records.body_weights)
+            weights[0] = weights[0].model_copy(update={"source_pointer": ""})
+            records = package.records.model_copy(update={"body_weights": weights})
+            repository.save(package.model_copy(update={"records": records}))
+            session.commit()
+
+        response = execute(client)
+        assert response.status_code == 201
+        body = response.json()
+        provenance = next(
+            result for result in body["results"] if result["rule_id"] == "body-weight-cell-provenance"
+        )
+        assert provenance["status"] == "fail"
+        assert provenance["enforcement_class"] == "hard_blocker"
+        assert provenance["waivable"] is False
+        assert body["receipt"]["status"] == "blocked"
+        assert body["claims"] == []
+        with client.app.state.session_factory() as session:
+            stored = StudyPackageRepository(session).get(STUDY_ID)
+            execution = stored.data_validation_executions[-1]
+            assert execution.receipt.status == "blocked"
+            assert execution.claims == []
+    engine.dispose()
+
+
+def test_sample_sd_and_missing_day1_baseline_do_not_store_success() -> None:
+    package = load_seed_package(ROOT / "synthetic-e2e" / "helix-synthetic-bundle.json")
+    single = package.records.model_copy(update={"body_weights": package.records.body_weights[:1]})
+    singleton = compute_body_weight_summary(package.model_copy(update={"records": single}))
+    assert singleton.claims == []
+    assert any(issue.endswith(":n<2") for issue in singleton.aggregate_issues)
+
+    later = [
+        item for item in package.records.body_weights if item.timepoint != "DAY 1"
+    ]
+    without_day1 = package.records.model_copy(update={"body_weights": later})
+    missing_baseline = compute_body_weight_summary(package.model_copy(update={"records": without_day1}))
+    assert missing_baseline.claims == []
+    assert any("missing-day1-baseline" in issue for issue in missing_baseline.aggregate_issues)
 
 
 def test_unknown_package_is_not_executed() -> None:

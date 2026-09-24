@@ -11,13 +11,13 @@ from .body_weight import (
     PACKAGE_ID,
     PACKAGE_VERSION,
     RULES,
-    SECTION_CONSUMERS,
     SOURCE_ARTIFACT_ID,
     TERMINAL_CLAIM_ID,
     BodyWeightComputation,
     compute_body_weight_summary,
     file_hash,
     load_frozen_fixture,
+    load_section_consumers,
     provenance_failures,
     recompute_matches_fixture,
 )
@@ -167,7 +167,7 @@ class DataValidationService:
             executor_id=EXECUTOR_ID,
             executor_version=EXECUTOR_VERSION,
             executor_hash=file_hash(self.repository_root / EXECUTOR_RELATIVE),
-            rule_bundle_id="validation.body_weight.rules",
+            rule_bundle_id=PACKAGE_ID,
             rule_ids=[rule_id for rule_id, _, _ in RULES],
             source_artifact_id=SOURCE_ARTIFACT_ID,
             source_hash=self._source_hash(package),
@@ -201,7 +201,7 @@ class DataValidationService:
                 claim_id=TERMINAL_CLAIM_ID,
                 executor_receipt_id=receipt.receipt_id,
             )
-            for section_id, section_package_id, title in SECTION_CONSUMERS
+            for section_id, section_package_id, title in load_section_consumers(self.repository_root)
             if TERMINAL_CLAIM_ID in receipt.claim_ids
         ]
         return DataValidationExecution(
@@ -293,8 +293,8 @@ class DataValidationService:
             )
         ]
         executions.append(execution)
-        claims = _upsert_terminal_claim(package.claims, execution.claims)
-        edges = _upsert_terminal_edges(package.provenance_edges, execution.provenance_edges)
+        claims = _upsert_claims(package.claims, execution.claims)
+        edges = _upsert_edges(package.provenance_edges, execution.provenance_edges)
         events = [*package.events, execution.event]
         return package.model_copy(
             update={
@@ -345,29 +345,29 @@ def as_validation_results(execution: DataValidationExecution) -> list[Validation
     ]
 
 
-def _upsert_terminal_claim(existing: list[Claim], produced: list[Claim]) -> list[Claim]:
-    terminal = next((claim for claim in produced if claim.claim_id == TERMINAL_CLAIM_ID), None)
-    if terminal is None:
+def _upsert_claims(existing: list[Claim], produced: list[Claim]) -> list[Claim]:
+    if not produced:
         return existing
-    replaced = False
+    incoming = {claim.claim_id: claim for claim in produced}
     claims: list[Claim] = []
+    seen: set[str] = set()
     for claim in existing:
-        if claim.claim_id == TERMINAL_CLAIM_ID:
-            claims.append(terminal)
-            replaced = True
+        replacement = incoming.get(claim.claim_id)
+        if replacement is not None:
+            claims.append(replacement)
+            seen.add(claim.claim_id)
         else:
             claims.append(claim)
-    if not replaced:
-        claims.append(terminal)
+    claims.extend(claim for claim in produced if claim.claim_id not in seen)
     return claims
 
 
-def _upsert_terminal_edges(
+def _upsert_edges(
     existing: list[ProvenanceEdge],
     produced: list[ProvenanceEdge],
 ) -> list[ProvenanceEdge]:
-    terminal_edges = [edge for edge in produced if edge.claim_id == TERMINAL_CLAIM_ID]
-    if not terminal_edges:
+    if not produced:
         return existing
-    retained = [edge for edge in existing if edge.claim_id != TERMINAL_CLAIM_ID]
-    return [*retained, *terminal_edges]
+    produced_ids = {edge.claim_id for edge in produced}
+    retained = [edge for edge in existing if edge.claim_id not in produced_ids]
+    return [*retained, *produced]

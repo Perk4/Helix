@@ -2,7 +2,7 @@ import hashlib
 import json
 import statistics
 from collections import defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Literal
 
@@ -24,6 +24,7 @@ TRANSFORM_VERSION = "1.0.0"
 FIXTURE_PATH = Path("backend/tests/fixtures/body-weight-summary.json")
 SOURCE_ARTIFACT_ID = "A-BW"
 ROUNDING_DIGITS = 1
+SECTIONS_RELATIVE = Path("skills/helix-evidence-pipeline/packages/sections")
 
 CLAIM_TYPES = (
     "body_weight.mean",
@@ -67,11 +68,39 @@ def load_frozen_fixture(repository_root: Path | None = None) -> dict[str, object
     candidates = []
     if repository_root is not None:
         candidates.append(repository_root / FIXTURE_PATH)
-    candidates.append(Path(__file__).resolve().parents[1] / "tests" / "fixtures" / "body-weight-summary.json")
+    fixture = Path(__file__).resolve().parents[1] / "tests" / "fixtures" / "body-weight-summary.json"
+    candidates.append(fixture)
     for path in candidates:
         if path.is_file():
             return json.loads(path.read_text())
     raise FileNotFoundError("Frozen body-weight summary fixture is missing")
+
+
+def load_section_consumers(repository_root: Path) -> list[tuple[str, str, str]]:
+    directory = repository_root / SECTIONS_RELATIVE
+    if not directory.is_dir():
+        return list(SECTION_CONSUMERS)
+    found: list[tuple[str, str, str]] = []
+    for path in sorted(directory.glob("*/package.json")):
+        definition = json.loads(path.read_text())
+        if not isinstance(definition, dict):
+            continue
+        required = definition.get("required_claims")
+        if not isinstance(required, list):
+            continue
+        selectors = {
+            item.get("claim_selector") for item in required if isinstance(item, dict)
+        }
+        if TERMINAL_CLAIM_ID not in selectors:
+            continue
+        found.append(
+            (
+                str(definition.get("prototype_section_id") or definition.get("section_id") or ""),
+                str(definition.get("package_id") or ""),
+                str(definition.get("title") or ""),
+            )
+        )
+    return found or list(SECTION_CONSUMERS)
 
 
 @dataclass(frozen=True)
@@ -93,16 +122,22 @@ class BodyWeightComputation:
     provenance_edges: list[ProvenanceEdge]
     grain_issues: list[GrainIssue]
     cell_count: int
+    pointer_issues: list[GrainIssue] = field(default_factory=list)
+    aggregate_issues: list[str] = field(default_factory=list)
 
 
 def compute_body_weight_summary(package: StudyEvidencePackage) -> BodyWeightComputation:
     animals = {animal.animal_id: animal for animal in package.records.animals}
     grain_issues: list[GrainIssue] = []
+    pointer_issues: list[GrainIssue] = []
     grouped: dict[CellKey, list[Measurement]] = defaultdict(list)
     for record in package.records.body_weights:
         issue = _grain_issue(record, animals)
         if issue is not None:
             grain_issues.append(issue)
+            continue
+        if not record.source_pointer.strip():
+            pointer_issues.append(GrainIssue(record.record_id, "missing_source_pointer"))
             continue
         animal = animals[record.animal_id or ""]
         grouped[
@@ -114,6 +149,15 @@ def compute_body_weight_summary(package: StudyEvidencePackage) -> BodyWeightComp
             claims=[],
             provenance_edges=[],
             grain_issues=grain_issues,
+            pointer_issues=pointer_issues,
+            cell_count=0,
+        )
+    if pointer_issues:
+        return BodyWeightComputation(
+            claims=[],
+            provenance_edges=[],
+            grain_issues=[],
+            pointer_issues=pointer_issues,
             cell_count=0,
         )
 
@@ -124,26 +168,34 @@ def compute_body_weight_summary(package: StudyEvidencePackage) -> BodyWeightComp
     }
     claims: list[Claim] = []
     edges: list[ProvenanceEdge] = []
+    aggregate_issues: list[str] = []
     rule_versions = {rule_id: version for rule_id, version, _ in RULES}
     for key in sorted(grouped, key=lambda item: (item.study_day, item.sex, item.dose_group)):
         records = grouped[key]
         mean = _mean(records)
         deviation = _sample_sd(records)
-        baseline = day1_means.get((key.sex, key.dose_group))
-        percent_change = 0.0 if baseline in {None, 0.0} else round_value((mean - baseline) / baseline * 100)
+        if mean is None:
+            aggregate_issues.append(f"{_cell_claim_id('body_weight.mean', key)}:empty-cell")
+            continue
+        if deviation is None:
+            aggregate_issues.append(f"{_cell_claim_id('body_weight.standard_deviation', key)}:n<2")
+            continue
+        if key.study_day == "DAY 1":
+            percent_change = 0.0
+        else:
+            baseline = day1_means.get((key.sex, key.dose_group))
+            if baseline is None or baseline == 0.0:
+                issue_id = _cell_claim_id("body_weight.percent_change", key)
+                aggregate_issues.append(f"{issue_id}:missing-day1-baseline")
+                continue
+            percent_change = round_value((mean - baseline) / baseline * 100)
         values = {
             "body_weight.mean": mean,
             "body_weight.standard_deviation": deviation,
             "body_weight.percent_change": percent_change,
         }
         for claim_type, value in values.items():
-            claim, claim_edges = _cell_claim(
-                key,
-                claim_type,
-                value,
-                records,
-                rule_versions,
-            )
+            claim, claim_edges = _cell_claim(key, claim_type, value, records, rule_versions)
             claims.append(claim)
             edges.extend(claim_edges)
 
@@ -153,15 +205,26 @@ def compute_body_weight_summary(package: StudyEvidencePackage) -> BodyWeightComp
         if key.study_day == "DAY 28" and key.dose_group == "G4"
         for record in records
     ]
-    if terminal_records:
+    if terminal_records and not aggregate_issues:
         claim, claim_edges = _terminal_claim(terminal_records, rule_versions)
         claims.append(claim)
         edges.extend(claim_edges)
+
+    if aggregate_issues:
+        return BodyWeightComputation(
+            claims=[],
+            provenance_edges=[],
+            grain_issues=[],
+            pointer_issues=[],
+            aggregate_issues=aggregate_issues,
+            cell_count=len(grouped),
+        )
 
     return BodyWeightComputation(
         claims=claims,
         provenance_edges=edges,
         grain_issues=[],
+        pointer_issues=[],
         cell_count=len(grouped),
     )
 
@@ -170,6 +233,8 @@ def recompute_matches_fixture(
     computation: BodyWeightComputation,
     fixture: dict[str, object],
 ) -> tuple[bool, list[str]]:
+    if computation.aggregate_issues:
+        return False, list(computation.aggregate_issues)
     evidence: list[str] = []
     cells = {
         (str(item["study_day"]), str(item["sex"]), str(item["dose_group"])): item
@@ -196,6 +261,8 @@ def recompute_matches_fixture(
 
 
 def provenance_failures(computation: BodyWeightComputation) -> list[str]:
+    if computation.pointer_issues:
+        return [issue.record_id for issue in computation.pointer_issues]
     failures: list[str] = []
     edges_by_claim: dict[str, list[ProvenanceEdge]] = defaultdict(list)
     for edge in computation.provenance_edges:
@@ -249,9 +316,9 @@ def _cell_claim(
 ) -> tuple[Claim, list[ProvenanceEdge]]:
     transform_id = TRANSFORM_BY_CLAIM_TYPE[claim_type]
     claim_id = _cell_claim_id(claim_type, key)
-    hashed_records = [(record, canonical_hash(record.model_dump(mode="json"))) for record in records]
     hashed_records = [
-        (record, digest) for record, digest in hashed_records if record.source_pointer.strip()
+        (record, canonical_hash(record.model_dump(mode="json")))
+        for record in _sourced(records)
     ]
     field_token = claim_type.removeprefix("body_weight.").replace("_", "-")
     claim = Claim(
@@ -295,14 +362,14 @@ def _terminal_claim(
 ) -> tuple[Claim, list[ProvenanceEdge]]:
     hashed_records = [
         (record, canonical_hash(record.model_dump(mode="json")))
-        for record in records
-        if record.source_pointer.strip()
+        for record in _sourced(records)
     ]
+    mean = _mean(records)
     claim = Claim(
         claim_id=TERMINAL_CLAIM_ID,
         section_id="S5",
         field_id="terminal-body-weight-high",
-        value=_mean(records),
+        value=mean if mean is not None else 0.0,
         unit="g",
         grain="dose_group",
         status=ClaimStatus.VALIDATED,
@@ -342,13 +409,23 @@ def _cell_claim_id(claim_type: str, key: CellKey) -> str:
     return f"C-BW-{token}-{day_token(key.study_day)}-{key.dose_group}-{key.sex}"
 
 
-def _mean(records: list[Measurement]) -> float:
-    values = [float(record.value) for record in records]
+def _sourced(records: list[Measurement]) -> list[Measurement]:
+    return [record for record in records if record.source_pointer.strip()]
+
+
+def _mean(records: list[Measurement]) -> float | None:
+    sourced = _sourced(records)
+    if not sourced:
+        return None
+    values = [float(record.value) for record in sourced]
     return round_value(sum(values) / len(values))
 
 
-def _sample_sd(records: list[Measurement]) -> float:
-    values = [float(record.value) for record in records]
+def _sample_sd(records: list[Measurement]) -> float | None:
+    sourced = _sourced(records)
+    if len(sourced) < 2:
+        return None
+    values = [float(record.value) for record in sourced]
     return round_value(statistics.stdev(values))
 
 

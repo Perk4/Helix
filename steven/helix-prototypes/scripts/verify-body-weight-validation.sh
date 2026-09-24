@@ -62,7 +62,10 @@ receipt = first["receipt"]
 assert receipt["package_id"] == "validation.body_weight"
 assert receipt["executor_id"] == "body-weight-summary"
 assert receipt["source_artifact_id"] == "A-BW"
+assert receipt["rule_bundle_id"] == "validation.body_weight"
+assert receipt["rule_bundle_id"] in receipt["governed_versions"]
 assert receipt["status"] == "passed"
+assert any(item["claim_id"].startswith("C-BW-MEAN-") for item in first["claims"])
 assert replay["receipt"]["idempotent_replay"] is True
 assert replay["receipt"]["receipt_id"] == receipt["receipt_id"]
 assert {item["claim_id"] for item in first["section_references"]} == {"C-BW-HIGH"}
