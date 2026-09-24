@@ -256,6 +256,7 @@ class StudyEvidencePackage(StrictModel):
     export_artifacts: list[ExportArtifact]
     retrieval_index: list[RetrievalIndexEntry]
     events: list[WorkflowEvent]
+    pinned_run: "PinnedRun | None" = None
 
 
 class PlannerMode(StrEnum):
@@ -417,6 +418,90 @@ class StudyListItem(StrictModel):
     label: str
 
 
+class FreezeRunCommand(StrictModel):
+    actor: str = Field(min_length=2, max_length=120)
+    idempotency_key: str = Field(min_length=8, max_length=160)
+
+
+class PlanningEvidence(StrictModel):
+    code: str
+    subject: str
+    message: str
+
+
+class GovernedArtifact(StrictModel):
+    kind: str
+    artifact_id: str
+    version: str
+    path: str
+    content_hash: Annotated[str, Field(pattern=r"^sha256:[a-f0-9]{64}$")]
+
+
+class StudyTypeResolution(StrictModel):
+    status: Literal["resolved", "needs_review"]
+    study_type_id: str | None
+    mapping_version: str
+    mapping_hash: Annotated[str, Field(pattern=r"^sha256:[a-f0-9]{64}$")]
+    protocol_fields: dict[str, str | int]
+    evidence: list[PlanningEvidence]
+
+
+class RunPlanNode(StrictModel):
+    node_id: str
+    node_type: Literal[
+        "parse",
+        "study_type_resolution",
+        "data_validation",
+        "template_contract",
+        "section_agent",
+        "provenance",
+        "study_output_evaluation",
+        "template_conformance",
+        "section_promotion",
+        "review_scaffold",
+    ]
+    package_id: str | None = None
+    package_version: str | None = None
+    depends_on: list[str]
+    input_fingerprint: Annotated[str, Field(pattern=r"^sha256:[a-f0-9]{64}$")]
+    status: Literal["pending", "blocked"]
+    evidence: list[PlanningEvidence]
+
+
+class RunPlan(StrictModel):
+    schema_version: Literal["helix.run-plan/v1"]
+    run_plan_id: str
+    run_id: str
+    version: int = Field(ge=1)
+    fingerprint: Annotated[str, Field(pattern=r"^sha256:[a-f0-9]{64}$")]
+    created_at: str
+    manifest_hash: Annotated[str, Field(pattern=r"^sha256:[a-f0-9]{64}$")]
+    governed_versions: dict[str, str]
+    nodes: list[RunPlanNode]
+
+
+class RunReceipt(StrictModel):
+    receipt_id: str
+    run_id: str
+    manifest_hash: Annotated[str, Field(pattern=r"^sha256:[a-f0-9]{64}$")]
+    run_plan_fingerprint: Annotated[str, Field(pattern=r"^sha256:[a-f0-9]{64}$")]
+    governed_inputs_fingerprint: Annotated[str, Field(pattern=r"^sha256:[a-f0-9]{64}$")]
+    event_id: str
+
+
+class PinnedRun(StrictModel):
+    run_id: str
+    study_id: str
+    status: Literal["planned", "needs_review"]
+    created_at: str
+    manifest_hash: Annotated[str, Field(pattern=r"^sha256:[a-f0-9]{64}$")]
+    governed_inputs: list[GovernedArtifact]
+    study_type_resolution: StudyTypeResolution
+    run_plan: RunPlan
+    receipt: RunReceipt
+    event_history: list[WorkflowEvent]
+
+
 class SectionRunCommand(StrictModel):
     section_package_id: str = Field(min_length=1, max_length=120)
     idempotency_key: str = Field(min_length=8, max_length=160)
@@ -483,6 +568,7 @@ class WorkspaceResponse(StrictModel):
     report: ReportAssembly
     events: list[WorkflowEvent]
     planner_capabilities: list[PlannerCapability]
+    pinned_run: PinnedRun | None
     section_run_eligibility: list[SectionRunEligibility]
     section_runs: list[StoredSectionRun]
 

@@ -171,6 +171,9 @@ def test_section_run_records_candidate_receipt_scaffold_and_exact_replay() -> No
             "PROMOTION-DISABLED-section.5_2_3_body_weight",
         ]
         assert stored["envelope"]["validated_claims"][0]["grain"] == "dose_group"
+        assert "run_plan" not in stored["envelope"]
+        assert "study_evidence_package" not in stored["envelope"]
+        assert "records" not in stored["envelope"]
         assert stored["envelope"]["pinned_run_id"].startswith("RUN-")
         assert stored["envelope"]["manifest_hash"].startswith("sha256:")
         assert stored["envelope"]["structured_failures"] == [
@@ -318,10 +321,9 @@ def test_pinned_run_rejects_manifest_and_governed_version_drift() -> None:
         with client.app.state.session_factory() as session:
             repository = StudyPackageRepository(session)
             package = repository.get(STUDY_ID)
+            original_checksum = package.manifest[0].checksum
             changed_manifest = [*package.manifest]
-            changed_manifest[0] = changed_manifest[0].model_copy(
-                update={"checksum": "sha256:" + "0" * 64}
-            )
+            changed_manifest[0] = changed_manifest[0].model_copy(update={"checksum": "sha256:" + "0" * 64})
             repository.save(package.model_copy(update={"manifest": changed_manifest}))
             session.commit()
 
@@ -333,20 +335,25 @@ def test_pinned_run_rejects_manifest_and_governed_version_drift() -> None:
             repository = StudyPackageRepository(session)
             package = repository.get(STUDY_ID)
             original_manifest = [*package.manifest]
-            original_manifest[0] = original_manifest[0].model_copy(
-                update={"checksum": "sha256:" + "a" * 64}
-            )
+            original_manifest[0] = original_manifest[0].model_copy(update={"checksum": original_checksum})
             repository.save(package.model_copy(update={"manifest": original_manifest}))
             session.commit()
         validate(client)
 
-        with patch("app.section_runs.GOVERNED_VERSIONS", {"schema": "2.0.0"}):
+        original_file_hash = SectionRunService._file_hash
+
+        def drifted_file_hash(path: Path) -> str:
+            if path.name == "ontology.md":
+                return "sha256:" + "0" * 64
+            return original_file_hash(path)
+
+        with patch.object(SectionRunService, "_file_hash", side_effect=drifted_file_hash):
             governed_drift = client.post(
                 f"/api/v1/studies/{STUDY_ID}/section-runs",
                 json={**COMMAND, "idempotency_key": "governed-version-drift"},
             )
         assert governed_drift.status_code == 409
-        assert "governed-version fingerprint" in governed_drift.json()["detail"]
+        assert "governed-input fingerprint" in governed_drift.json()["detail"]
         assert agent.calls == 0
     engine.dispose()
 
@@ -370,9 +377,7 @@ def test_unpromoted_candidate_blocks_release_and_export() -> None:
             disposition = client.post(
                 f"/api/v1/studies/{STUDY_ID}/validation-results/{result['result_id']}/dispositions",
                 json={
-                    "decision": (
-                        "approved_exception" if result["result_id"] == "VR-006" else "corrected"
-                    ),
+                    "decision": ("approved_exception" if result["result_id"] == "VR-006" else "corrected"),
                     "reason": f"Synthetic disposition recorded for {result['rule_id']}.",
                     "reviewer": "Dr. Ada Path",
                 },

@@ -8,6 +8,7 @@ from .artifacts import GeneratedArtifact, generate_artifact
 from .config import Settings
 from .reporting import assemble_report, claim_report_text
 from .repository import StudyPackageRepository
+from .run_plans import PinnedRunService
 from .schemas import (
     RESOLVED_DISPOSITIONS,
     Approval,
@@ -21,6 +22,7 @@ from .schemas import (
     ExportArtifact,
     ExportCommand,
     ExportReceipt,
+    FreezeRunCommand,
     GateDecision,
     GateStatus,
     PlannerCapability,
@@ -78,11 +80,13 @@ class StudyService:
         session: Session,
         settings: Settings,
         section_runs: SectionRunService,
+        pinned_runs: PinnedRunService,
     ):
         self.session = session
         self.settings = settings
         self.repository = StudyPackageRepository(session)
         self.section_runs = section_runs
+        self.pinned_runs = pinned_runs
 
     def workspace(self, study_id: str) -> WorkspaceResponse:
         package = self.repository.get(study_id)
@@ -102,6 +106,13 @@ class StudyService:
         ]
 
     def run_validation(self, study_id: str, request: ValidationRequest) -> ValidationRun:
+        self.pinned_runs.freeze(
+            study_id,
+            FreezeRunCommand(
+                actor="HELIX validation service",
+                idempotency_key=f"validation-freeze-{study_id}",
+            ),
+        )
         package = self.repository.get(study_id, for_update=True)
         self._ensure_mutable(package)
         planner = self._planner(request.planner)
@@ -424,9 +435,7 @@ class StudyService:
     def _workspace(self, package: StudyEvidencePackage) -> WorkspaceResponse:
         gate = self._release_gate(package)
         unresolved = set(gate.blocking_result_ids)
-        validation_blockers = {
-            result.result_id for result in blocking_failures(package.validation_results)
-        }
+        validation_blockers = {result.result_id for result in blocking_failures(package.validation_results)}
         resolved = len(validation_blockers - unresolved)
         return WorkspaceResponse(
             label=package.label,
@@ -467,6 +476,7 @@ class StudyService:
                     ),
                 ),
             ],
+            pinned_run=self.pinned_runs.latest(package.study.study_id),
             section_run_eligibility=[self.section_runs.eligibility(package)],
             section_runs=self.repository.list_section_runs(package.study.study_id),
         )

@@ -11,12 +11,15 @@ from .agents.codex_section_agent import CodexSectionAgent, SectionAgent
 from .config import Settings, get_settings
 from .database import create_database_engine, create_schema, create_session_factory
 from .repository import StudyNotFoundError
+from .run_plans import PinnedRunService, RunConflictError, RunPlanRejectedError
 from .schemas import (
     ApprovalCommand,
     DispositionCommand,
     EvidenceChain,
     ExportCommand,
     ExportReceipt,
+    FreezeRunCommand,
+    PinnedRun,
     SectionRunCommand,
     SectionRunReceipt,
     StudyListItem,
@@ -87,7 +90,8 @@ def create_app(
             active_section_agent,
             active_settings.codex_repository_root,
         )
-        return StudyService(session, active_settings, section_runs)
+        pinned_runs = PinnedRunService(session, active_settings.codex_repository_root)
+        return StudyService(session, active_settings, section_runs, pinned_runs)
 
     ServiceDependency = Annotated[StudyService, Depends(service)]
 
@@ -99,6 +103,11 @@ def create_app(
         )
 
     SectionRunServiceDependency = Annotated[SectionRunService, Depends(section_run_service)]
+
+    def pinned_run_service(session: SessionDependency) -> PinnedRunService:
+        return PinnedRunService(session, active_settings.codex_repository_root)
+
+    PinnedRunServiceDependency = Annotated[PinnedRunService, Depends(pinned_run_service)]
 
     @app.get("/health", tags=["system"])
     def health(session: SessionDependency) -> dict[str, str]:
@@ -116,6 +125,19 @@ def create_app(
     )
     def get_workspace(study_id: str, study_service: ServiceDependency) -> WorkspaceResponse:
         return _call(lambda: study_service.workspace(study_id))
+
+    @app.post(
+        "/api/v1/studies/{study_id}/pinned-runs",
+        response_model=PinnedRun,
+        status_code=status.HTTP_201_CREATED,
+        tags=["run-plans"],
+    )
+    def freeze_run(
+        study_id: str,
+        command: FreezeRunCommand,
+        run_service: PinnedRunServiceDependency,
+    ) -> PinnedRun:
+        return _call(lambda: run_service.freeze(study_id, command))
 
     @app.post(
         "/api/v1/studies/{study_id}/validation-runs",
@@ -219,8 +241,13 @@ def _call[ResponseT](operation: Callable[[], ResponseT]) -> ResponseT:
         raise HTTPException(status_code=404, detail=f"Unknown study {error.args[0]}") from error
     except (InvalidCommandError, UnknownSectionPackageError) as error:
         raise HTTPException(status_code=404, detail=str(error)) from error
-    except (WorkflowConflictError, SectionRunConflictError) as error:
+    except (WorkflowConflictError, SectionRunConflictError, RunConflictError) as error:
         raise HTTPException(status_code=409, detail=str(error)) from error
+    except RunPlanRejectedError as error:
+        raise HTTPException(
+            status_code=422,
+            detail=[item.model_dump(mode="json") for item in error.evidence],
+        ) from error
     except CandidateValidationError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
     except (PlannerUnavailableError, SectionRunUnavailableError) as error:
