@@ -64,6 +64,13 @@ steps:
     displayName: Check the eval config
     workingDirectory: $(workingDirectory)
 
+  # Static, and cheapest of the three. Catches a section that cannot be drafted
+  # from the claims it declares, which otherwise shows up as a model refusing
+  # half its runs and costs a provider call each time to observe.
+  - script: node scripts/verify-claim-coverage.mjs
+    displayName: Check claims cover what the section reports
+    workingDirectory: $(workingDirectory)
+
   # PKG-005. Fails when the package is not `passed`, or when any certified input
   # no longer hashes to what was recorded — which is what editing prompt.txt or
   # a fixture without re-qualifying looks like.

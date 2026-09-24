@@ -1,8 +1,10 @@
+import re
 from collections.abc import Callable, Iterator
 from contextlib import asynccontextmanager
 from typing import Annotated
 
-from fastapi import Depends, FastAPI, HTTPException, Response, status
+from fastapi import (Depends, FastAPI, File, Form, HTTPException, Response,
+                     UploadFile, status)
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import Engine, text
 from sqlalchemy.orm import Session
@@ -16,7 +18,8 @@ from .candidate_evaluations import (
 from .config import Settings, get_settings
 from .data_validation import DataValidationConflictError, UnknownValidationPackageError
 from .database import create_database_engine, create_schema, create_session_factory
-from .repository import StudyNotFoundError
+from .intake import IntakeRejected, build_package
+from .repository import StudyNotFoundError, StudyPackageRepository
 from .run_plans import PinnedRunService, RunConflictError, RunPlanRejectedError
 from .schemas import (
     ApprovalCommand,
@@ -61,6 +64,9 @@ from .section_runs import (
 from .seed import seed_database
 from .service import InvalidCommandError, StudyService, WorkflowConflictError
 from .validation import PlannerUnavailableError
+
+
+STUDY_ID_PATTERN = re.compile(r"^STUDY-[A-Z0-9-]+$")
 
 
 def create_app(
@@ -139,6 +145,73 @@ def create_app(
     def health(session: SessionDependency) -> dict[str, str]:
         session.execute(text("SELECT 1"))
         return {"status": "ok", "storage": active_engine.dialect.name}
+
+    @app.post(
+        "/api/v1/studies",
+        response_model=dict,
+        status_code=status.HTTP_201_CREATED,
+        tags=["studies"],
+    )
+    async def create_study_from_upload(
+        session: SessionDependency,
+        files: list[UploadFile] = File(...),
+        study_id: str = Form(..., min_length=7, max_length=64),
+        route: str = Form(..., min_length=2, max_length=80),
+        protocol_version: str = Form(..., min_length=1, max_length=40),
+        authorized_by: str = Form(..., min_length=2, max_length=120),
+        study_type_id: str = Form("REPEAT_DOSE_28D_RODENT", max_length=80),
+        study_start: str = Form("", max_length=32),
+    ) -> dict:
+        """Create a study from uploaded source files.
+
+        Route and protocol version are required because no column carries them
+        and a governed fact is never inferred from data; the caller is recorded
+        as their source.
+
+        The package is stored with no claims. Computing those is the section
+        executor's job, so the release gate starts blocked and stays blocked
+        until real validation runs.
+        """
+        if not STUDY_ID_PATTERN.match(study_id):
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"study_id {study_id!r} must match ^STUDY-[A-Z0-9-]+$")
+
+        repository = StudyPackageRepository(session)
+        try:
+            repository.get(study_id)
+        except (LookupError, StudyNotFoundError):
+            pass
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"{study_id} already exists. A frozen manifest that "
+                       f"changed underneath a run would invalidate every claim "
+                       f"citing it.")
+
+        uploads = [(item.filename or "unnamed", await item.read()) for item in files]
+        try:
+            package, report = build_package(
+                study_id=study_id, uploads=uploads, route=route,
+                protocol_version=protocol_version, authorized_by=authorized_by,
+                study_type_id=study_type_id, study_start=study_start)
+        except IntakeRejected as exc:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=str(exc)) from None
+
+        repository.save(package)
+        session.commit()
+        return {
+            "study_id": package.study.study_id,
+            "package_id": package.package_id,
+            "records": {domain: len(getattr(package.records, domain))
+                        for domain in package.records.model_fields},
+            "manifest_entries": len(package.manifest),
+            "claims": len(package.claims),
+            "receipt": report.as_record(),
+            "next": "no claims were stored; run validation to compute them",
+        }
 
     @app.get("/api/v1/studies", response_model=list[StudyListItem], tags=["studies"])
     def list_studies(study_service: ServiceDependency) -> list[StudyListItem]:
