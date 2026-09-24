@@ -1,0 +1,13 @@
+study_id,study_day,sample_date,group_number,group_name,dose_mgkg_day,intended_conc_mgml,measured_conc_mgml,pct_of_nominal,acceptance_criterion_pct,pass_fail,analyst_comment
+PC201708,1,2016-02-01,1,Vehicle Control,0.0,0.0,ND,N/A,10,PASS,No test article detected
+PC201708,1,2016-02-01,2,2 mg/kg PCDRUG,2.0,0.2,0.203,101.5,10,PASS,Within acceptance criteria (±10%)
+PC201708,1,2016-02-01,3,20 mg/kg PCDRUG,20.0,2.0,1.905,95.2,10,PASS,Within acceptance criteria (±10%)
+PC201708,1,2016-02-01,4,200 mg/kg PCDRUG,200.0,20.0,19.55,97.8,10,PASS,Within acceptance criteria (±10%)
+PC201708,45,2016-03-16,1,Vehicle Control,0.0,0.0,ND,N/A,10,PASS,No test article detected
+PC201708,45,2016-03-16,2,2 mg/kg PCDRUG,2.0,0.2,0.194,97.0,10,PASS,Within acceptance criteria (±10%)
+PC201708,45,2016-03-16,3,20 mg/kg PCDRUG,20.0,2.0,2.047,102.4,10,PASS,Within acceptance criteria (±10%)
+PC201708,45,2016-03-16,4,200 mg/kg PCDRUG,200.0,20.0,20.353,101.8,10,PASS,Within acceptance criteria (±10%)
+PC201708,91,2016-05-01,1,Vehicle Control,0.0,0.0,ND,N/A,10,PASS,No test article detected
+PC201708,91,2016-05-01,2,2 mg/kg PCDRUG,2.0,0.2,0.208,104.0,10,PASS,Within acceptance criteria (±10%)
+PC201708,91,2016-05-01,3,20 mg/kg PCDRUG,20.0,2.0,1.917,95.9,10,PASS,Within acceptance criteria (±10%)
+PC201708,91,2016-05-01,4,200 mg/kg PCDRUG,200.0,20.0,19.844,99.2,10,PASS,Within acceptance criteria (±10%)

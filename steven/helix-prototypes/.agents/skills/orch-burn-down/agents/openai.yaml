@@ -1,0 +1,4 @@
+interface:
+  display_name: "Orch Burn Down"
+  short_description: "Drive tickets safely to ready-for-merge"
+  default_prompt: "Use $orch-burn-down to process the next eligible ticket until its PR is ready for merge."

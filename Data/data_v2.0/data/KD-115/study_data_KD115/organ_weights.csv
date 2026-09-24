@@ -1,0 +1,241 @@
+study_id,animal_id,group_number,group_name,sex,dose_mgkg_day,organ,organ_label,paired,weight_g,bw_at_necropsy_g,organ_to_bw_ratio,necropsy_date
+TOX-2025-0421-P,M101,1,Vehicle Control,M,0,liver,Liver,False,11.789,341,3.457,2025-04-14
+TOX-2025-0421-P,M101,1,Vehicle Control,M,0,kidney,Kidneys (paired),True,2.207,341,0.647,2025-04-14
+TOX-2025-0421-P,M101,1,Vehicle Control,M,0,heart,Heart,False,1.09,341,0.32,2025-04-14
+TOX-2025-0421-P,M101,1,Vehicle Control,M,0,brain,Brain,False,1.906,341,0.559,2025-04-14
+TOX-2025-0421-P,M101,1,Vehicle Control,M,0,spleen,Spleen,False,0.696,341,0.204,2025-04-14
+TOX-2025-0421-P,M101,1,Vehicle Control,M,0,thymus,Thymus,False,0.409,341,0.12,2025-04-14
+TOX-2025-0421-P,M102,1,Vehicle Control,M,0,liver,Liver,False,11.031,338,3.264,2025-04-14
+TOX-2025-0421-P,M102,1,Vehicle Control,M,0,kidney,Kidneys (paired),True,2.18,338,0.645,2025-04-14
+TOX-2025-0421-P,M102,1,Vehicle Control,M,0,heart,Heart,False,1.124,338,0.333,2025-04-14
+TOX-2025-0421-P,M102,1,Vehicle Control,M,0,brain,Brain,False,1.802,338,0.533,2025-04-14
+TOX-2025-0421-P,M102,1,Vehicle Control,M,0,spleen,Spleen,False,0.734,338,0.217,2025-04-14
+TOX-2025-0421-P,M102,1,Vehicle Control,M,0,thymus,Thymus,False,0.406,338,0.12,2025-04-14
+TOX-2025-0421-P,M103,1,Vehicle Control,M,0,liver,Liver,False,10.983,344,3.193,2025-04-14
+TOX-2025-0421-P,M103,1,Vehicle Control,M,0,kidney,Kidneys (paired),True,2.329,344,0.677,2025-04-14
+TOX-2025-0421-P,M103,1,Vehicle Control,M,0,heart,Heart,False,1.104,344,0.321,2025-04-14
+TOX-2025-0421-P,M103,1,Vehicle Control,M,0,brain,Brain,False,1.942,344,0.565,2025-04-14
+TOX-2025-0421-P,M103,1,Vehicle Control,M,0,spleen,Spleen,False,0.717,344,0.208,2025-04-14
+TOX-2025-0421-P,M103,1,Vehicle Control,M,0,thymus,Thymus,False,0.385,344,0.112,2025-04-14
+TOX-2025-0421-P,M104,1,Vehicle Control,M,0,liver,Liver,False,10.89,340,3.203,2025-04-14
+TOX-2025-0421-P,M104,1,Vehicle Control,M,0,kidney,Kidneys (paired),True,2.079,340,0.611,2025-04-14
+TOX-2025-0421-P,M104,1,Vehicle Control,M,0,heart,Heart,False,1.061,340,0.312,2025-04-14
+TOX-2025-0421-P,M104,1,Vehicle Control,M,0,brain,Brain,False,1.99,340,0.585,2025-04-14
+TOX-2025-0421-P,M104,1,Vehicle Control,M,0,spleen,Spleen,False,0.723,340,0.213,2025-04-14
+TOX-2025-0421-P,M104,1,Vehicle Control,M,0,thymus,Thymus,False,0.388,340,0.114,2025-04-14
+TOX-2025-0421-P,M105,1,Vehicle Control,M,0,liver,Liver,False,11.738,336,3.493,2025-04-14
+TOX-2025-0421-P,M105,1,Vehicle Control,M,0,kidney,Kidneys (paired),True,2.238,336,0.666,2025-04-14
+TOX-2025-0421-P,M105,1,Vehicle Control,M,0,heart,Heart,False,1.163,336,0.346,2025-04-14
+TOX-2025-0421-P,M105,1,Vehicle Control,M,0,brain,Brain,False,1.848,336,0.55,2025-04-14
+TOX-2025-0421-P,M105,1,Vehicle Control,M,0,spleen,Spleen,False,0.695,336,0.207,2025-04-14
+TOX-2025-0421-P,M105,1,Vehicle Control,M,0,thymus,Thymus,False,0.41,336,0.122,2025-04-14
+TOX-2025-0421-P,F101,1,Vehicle Control,F,0,liver,Liver,False,8.154,246,3.315,2025-04-14
+TOX-2025-0421-P,F101,1,Vehicle Control,F,0,kidney,Kidneys (paired),True,1.573,246,0.639,2025-04-14
+TOX-2025-0421-P,F101,1,Vehicle Control,F,0,heart,Heart,False,0.87,246,0.354,2025-04-14
+TOX-2025-0421-P,F101,1,Vehicle Control,F,0,brain,Brain,False,1.957,246,0.796,2025-04-14
+TOX-2025-0421-P,F101,1,Vehicle Control,F,0,spleen,Spleen,False,0.642,246,0.261,2025-04-14
+TOX-2025-0421-P,F101,1,Vehicle Control,F,0,thymus,Thymus,False,0.418,246,0.17,2025-04-14
+TOX-2025-0421-P,F102,1,Vehicle Control,F,0,liver,Liver,False,8.028,244,3.29,2025-04-14
+TOX-2025-0421-P,F102,1,Vehicle Control,F,0,kidney,Kidneys (paired),True,1.433,244,0.587,2025-04-14
+TOX-2025-0421-P,F102,1,Vehicle Control,F,0,heart,Heart,False,0.857,244,0.351,2025-04-14
+TOX-2025-0421-P,F102,1,Vehicle Control,F,0,brain,Brain,False,1.921,244,0.787,2025-04-14
+TOX-2025-0421-P,F102,1,Vehicle Control,F,0,spleen,Spleen,False,0.579,244,0.237,2025-04-14
+TOX-2025-0421-P,F102,1,Vehicle Control,F,0,thymus,Thymus,False,0.406,244,0.166,2025-04-14
+TOX-2025-0421-P,F103,1,Vehicle Control,F,0,liver,Liver,False,8.078,248,3.257,2025-04-14
+TOX-2025-0421-P,F103,1,Vehicle Control,F,0,kidney,Kidneys (paired),True,1.485,248,0.599,2025-04-14
+TOX-2025-0421-P,F103,1,Vehicle Control,F,0,heart,Heart,False,0.809,248,0.326,2025-04-14
+TOX-2025-0421-P,F103,1,Vehicle Control,F,0,brain,Brain,False,1.812,248,0.731,2025-04-14
+TOX-2025-0421-P,F103,1,Vehicle Control,F,0,spleen,Spleen,False,0.612,248,0.247,2025-04-14
+TOX-2025-0421-P,F103,1,Vehicle Control,F,0,thymus,Thymus,False,0.395,248,0.159,2025-04-14
+TOX-2025-0421-P,F104,1,Vehicle Control,F,0,liver,Liver,False,8.793,245,3.589,2025-04-14
+TOX-2025-0421-P,F104,1,Vehicle Control,F,0,kidney,Kidneys (paired),True,1.439,245,0.587,2025-04-14
+TOX-2025-0421-P,F104,1,Vehicle Control,F,0,heart,Heart,False,0.83,245,0.339,2025-04-14
+TOX-2025-0421-P,F104,1,Vehicle Control,F,0,brain,Brain,False,1.796,245,0.733,2025-04-14
+TOX-2025-0421-P,F104,1,Vehicle Control,F,0,spleen,Spleen,False,0.603,245,0.246,2025-04-14
+TOX-2025-0421-P,F104,1,Vehicle Control,F,0,thymus,Thymus,False,0.423,245,0.173,2025-04-14
+TOX-2025-0421-P,F105,1,Vehicle Control,F,0,liver,Liver,False,8.351,247,3.381,2025-04-14
+TOX-2025-0421-P,F105,1,Vehicle Control,F,0,kidney,Kidneys (paired),True,1.556,247,0.63,2025-04-14
+TOX-2025-0421-P,F105,1,Vehicle Control,F,0,heart,Heart,False,0.904,247,0.366,2025-04-14
+TOX-2025-0421-P,F105,1,Vehicle Control,F,0,brain,Brain,False,1.768,247,0.716,2025-04-14
+TOX-2025-0421-P,F105,1,Vehicle Control,F,0,spleen,Spleen,False,0.637,247,0.258,2025-04-14
+TOX-2025-0421-P,F105,1,Vehicle Control,F,0,thymus,Thymus,False,0.415,247,0.168,2025-04-14
+TOX-2025-0421-P,M201,2,Low Dose,M,5,liver,Liver,False,11.648,338,3.446,2025-04-14
+TOX-2025-0421-P,M201,2,Low Dose,M,5,kidney,Kidneys (paired),True,2.328,338,0.689,2025-04-14
+TOX-2025-0421-P,M201,2,Low Dose,M,5,heart,Heart,False,1.088,338,0.322,2025-04-14
+TOX-2025-0421-P,M201,2,Low Dose,M,5,brain,Brain,False,1.789,338,0.529,2025-04-14
+TOX-2025-0421-P,M201,2,Low Dose,M,5,spleen,Spleen,False,0.689,338,0.204,2025-04-14
+TOX-2025-0421-P,M201,2,Low Dose,M,5,thymus,Thymus,False,0.375,338,0.111,2025-04-14
+TOX-2025-0421-P,M202,2,Low Dose,M,5,liver,Liver,False,10.874,336,3.236,2025-04-14
+TOX-2025-0421-P,M202,2,Low Dose,M,5,kidney,Kidneys (paired),True,2.201,336,0.655,2025-04-14
+TOX-2025-0421-P,M202,2,Low Dose,M,5,heart,Heart,False,1.061,336,0.316,2025-04-14
+TOX-2025-0421-P,M202,2,Low Dose,M,5,brain,Brain,False,1.894,336,0.564,2025-04-14
+TOX-2025-0421-P,M202,2,Low Dose,M,5,spleen,Spleen,False,0.743,336,0.221,2025-04-14
+TOX-2025-0421-P,M202,2,Low Dose,M,5,thymus,Thymus,False,0.404,336,0.12,2025-04-14
+TOX-2025-0421-P,M203,2,Low Dose,M,5,liver,Liver,False,11.782,342,3.445,2025-04-14
+TOX-2025-0421-P,M203,2,Low Dose,M,5,kidney,Kidneys (paired),True,2.193,342,0.641,2025-04-14
+TOX-2025-0421-P,M203,2,Low Dose,M,5,heart,Heart,False,1.143,342,0.334,2025-04-14
+TOX-2025-0421-P,M203,2,Low Dose,M,5,brain,Brain,False,1.809,342,0.529,2025-04-14
+TOX-2025-0421-P,M203,2,Low Dose,M,5,spleen,Spleen,False,0.683,342,0.2,2025-04-14
+TOX-2025-0421-P,M203,2,Low Dose,M,5,thymus,Thymus,False,0.38,342,0.111,2025-04-14
+TOX-2025-0421-P,M204,2,Low Dose,M,5,liver,Liver,False,11.428,339,3.371,2025-04-14
+TOX-2025-0421-P,M204,2,Low Dose,M,5,kidney,Kidneys (paired),True,2.174,339,0.641,2025-04-14
+TOX-2025-0421-P,M204,2,Low Dose,M,5,heart,Heart,False,1.063,339,0.314,2025-04-14
+TOX-2025-0421-P,M204,2,Low Dose,M,5,brain,Brain,False,1.857,339,0.548,2025-04-14
+TOX-2025-0421-P,M204,2,Low Dose,M,5,spleen,Spleen,False,0.748,339,0.221,2025-04-14
+TOX-2025-0421-P,M204,2,Low Dose,M,5,thymus,Thymus,False,0.385,339,0.114,2025-04-14
+TOX-2025-0421-P,M205,2,Low Dose,M,5,liver,Liver,False,11.195,337,3.322,2025-04-14
+TOX-2025-0421-P,M205,2,Low Dose,M,5,kidney,Kidneys (paired),True,2.263,337,0.672,2025-04-14
+TOX-2025-0421-P,M205,2,Low Dose,M,5,heart,Heart,False,1.046,337,0.31,2025-04-14
+TOX-2025-0421-P,M205,2,Low Dose,M,5,brain,Brain,False,1.966,337,0.583,2025-04-14
+TOX-2025-0421-P,M205,2,Low Dose,M,5,spleen,Spleen,False,0.757,337,0.225,2025-04-14
+TOX-2025-0421-P,M205,2,Low Dose,M,5,thymus,Thymus,False,0.4,337,0.119,2025-04-14
+TOX-2025-0421-P,F201,2,Low Dose,F,5,liver,Liver,False,8.481,244,3.476,2025-04-14
+TOX-2025-0421-P,F201,2,Low Dose,F,5,kidney,Kidneys (paired),True,1.57,244,0.643,2025-04-14
+TOX-2025-0421-P,F201,2,Low Dose,F,5,heart,Heart,False,0.841,244,0.345,2025-04-14
+TOX-2025-0421-P,F201,2,Low Dose,F,5,brain,Brain,False,1.884,244,0.772,2025-04-14
+TOX-2025-0421-P,F201,2,Low Dose,F,5,spleen,Spleen,False,0.621,244,0.255,2025-04-14
+TOX-2025-0421-P,F201,2,Low Dose,F,5,thymus,Thymus,False,0.401,244,0.164,2025-04-14
+TOX-2025-0421-P,F202,2,Low Dose,F,5,liver,Liver,False,8.971,242,3.707,2025-04-14
+TOX-2025-0421-P,F202,2,Low Dose,F,5,kidney,Kidneys (paired),True,1.623,242,0.671,2025-04-14
+TOX-2025-0421-P,F202,2,Low Dose,F,5,heart,Heart,False,0.831,242,0.343,2025-04-14
+TOX-2025-0421-P,F202,2,Low Dose,F,5,brain,Brain,False,1.919,242,0.793,2025-04-14
+TOX-2025-0421-P,F202,2,Low Dose,F,5,spleen,Spleen,False,0.623,242,0.257,2025-04-14
+TOX-2025-0421-P,F202,2,Low Dose,F,5,thymus,Thymus,False,0.398,242,0.164,2025-04-14
+TOX-2025-0421-P,F203,2,Low Dose,F,5,liver,Liver,False,8.375,246,3.404,2025-04-14
+TOX-2025-0421-P,F203,2,Low Dose,F,5,kidney,Kidneys (paired),True,1.629,246,0.662,2025-04-14
+TOX-2025-0421-P,F203,2,Low Dose,F,5,heart,Heart,False,0.817,246,0.332,2025-04-14
+TOX-2025-0421-P,F203,2,Low Dose,F,5,brain,Brain,False,1.836,246,0.746,2025-04-14
+TOX-2025-0421-P,F203,2,Low Dose,F,5,spleen,Spleen,False,0.644,246,0.262,2025-04-14
+TOX-2025-0421-P,F203,2,Low Dose,F,5,thymus,Thymus,False,0.398,246,0.162,2025-04-14
+TOX-2025-0421-P,F204,2,Low Dose,F,5,liver,Liver,False,8.588,245,3.505,2025-04-14
+TOX-2025-0421-P,F204,2,Low Dose,F,5,kidney,Kidneys (paired),True,1.658,245,0.677,2025-04-14
+TOX-2025-0421-P,F204,2,Low Dose,F,5,heart,Heart,False,0.899,245,0.367,2025-04-14
+TOX-2025-0421-P,F204,2,Low Dose,F,5,brain,Brain,False,1.914,245,0.781,2025-04-14
+TOX-2025-0421-P,F204,2,Low Dose,F,5,spleen,Spleen,False,0.612,245,0.25,2025-04-14
+TOX-2025-0421-P,F204,2,Low Dose,F,5,thymus,Thymus,False,0.431,245,0.176,2025-04-14
+TOX-2025-0421-P,F205,2,Low Dose,F,5,liver,Liver,False,8.334,243,3.43,2025-04-14
+TOX-2025-0421-P,F205,2,Low Dose,F,5,kidney,Kidneys (paired),True,1.653,243,0.68,2025-04-14
+TOX-2025-0421-P,F205,2,Low Dose,F,5,heart,Heart,False,0.851,243,0.35,2025-04-14
+TOX-2025-0421-P,F205,2,Low Dose,F,5,brain,Brain,False,1.885,243,0.776,2025-04-14
+TOX-2025-0421-P,F205,2,Low Dose,F,5,spleen,Spleen,False,0.618,243,0.254,2025-04-14
+TOX-2025-0421-P,F205,2,Low Dose,F,5,thymus,Thymus,False,0.399,243,0.164,2025-04-14
+TOX-2025-0421-P,M301,3,Mid Dose,M,25,liver,Liver,False,12.012,318,3.777,2025-04-14
+TOX-2025-0421-P,M301,3,Mid Dose,M,25,kidney,Kidneys (paired),True,2.64,318,0.83,2025-04-14
+TOX-2025-0421-P,M301,3,Mid Dose,M,25,heart,Heart,False,1.164,318,0.366,2025-04-14
+TOX-2025-0421-P,M301,3,Mid Dose,M,25,brain,Brain,False,1.918,318,0.603,2025-04-14
+TOX-2025-0421-P,M301,3,Mid Dose,M,25,spleen,Spleen,False,0.715,318,0.225,2025-04-14
+TOX-2025-0421-P,M301,3,Mid Dose,M,25,thymus,Thymus,False,0.384,318,0.121,2025-04-14
+TOX-2025-0421-P,M302,3,Mid Dose,M,25,liver,Liver,False,12.307,315,3.907,2025-04-14
+TOX-2025-0421-P,M302,3,Mid Dose,M,25,kidney,Kidneys (paired),True,2.559,315,0.812,2025-04-14
+TOX-2025-0421-P,M302,3,Mid Dose,M,25,heart,Heart,False,1.122,315,0.356,2025-04-14
+TOX-2025-0421-P,M302,3,Mid Dose,M,25,brain,Brain,False,1.924,315,0.611,2025-04-14
+TOX-2025-0421-P,M302,3,Mid Dose,M,25,spleen,Spleen,False,0.76,315,0.241,2025-04-14
+TOX-2025-0421-P,M302,3,Mid Dose,M,25,thymus,Thymus,False,0.376,315,0.119,2025-04-14
+TOX-2025-0421-P,M303,3,Mid Dose,M,25,liver,Liver,False,11.993,320,3.748,2025-04-14
+TOX-2025-0421-P,M303,3,Mid Dose,M,25,kidney,Kidneys (paired),True,2.505,320,0.783,2025-04-14
+TOX-2025-0421-P,M303,3,Mid Dose,M,25,heart,Heart,False,1.118,320,0.349,2025-04-14
+TOX-2025-0421-P,M303,3,Mid Dose,M,25,brain,Brain,False,1.915,320,0.598,2025-04-14
+TOX-2025-0421-P,M303,3,Mid Dose,M,25,spleen,Spleen,False,0.741,320,0.232,2025-04-14
+TOX-2025-0421-P,M303,3,Mid Dose,M,25,thymus,Thymus,False,0.407,320,0.127,2025-04-14
+TOX-2025-0421-P,M304,3,Mid Dose,M,25,liver,Liver,False,11.381,316,3.602,2025-04-14
+TOX-2025-0421-P,M304,3,Mid Dose,M,25,kidney,Kidneys (paired),True,2.721,316,0.861,2025-04-14
+TOX-2025-0421-P,M304,3,Mid Dose,M,25,heart,Heart,False,1.08,316,0.342,2025-04-14
+TOX-2025-0421-P,M304,3,Mid Dose,M,25,brain,Brain,False,1.857,316,0.588,2025-04-14
+TOX-2025-0421-P,M304,3,Mid Dose,M,25,spleen,Spleen,False,0.687,316,0.217,2025-04-14
+TOX-2025-0421-P,M304,3,Mid Dose,M,25,thymus,Thymus,False,0.391,316,0.124,2025-04-14
+TOX-2025-0421-P,M305,3,Mid Dose,M,25,liver,Liver,False,11.056,313,3.532,2025-04-14
+TOX-2025-0421-P,M305,3,Mid Dose,M,25,kidney,Kidneys (paired),True,2.549,313,0.814,2025-04-14
+TOX-2025-0421-P,M305,3,Mid Dose,M,25,heart,Heart,False,1.123,313,0.359,2025-04-14
+TOX-2025-0421-P,M305,3,Mid Dose,M,25,brain,Brain,False,1.936,313,0.619,2025-04-14
+TOX-2025-0421-P,M305,3,Mid Dose,M,25,spleen,Spleen,False,0.691,313,0.221,2025-04-14
+TOX-2025-0421-P,M305,3,Mid Dose,M,25,thymus,Thymus,False,0.403,313,0.129,2025-04-14
+TOX-2025-0421-P,F301,3,Mid Dose,F,25,liver,Liver,False,8.865,235,3.772,2025-04-14
+TOX-2025-0421-P,F301,3,Mid Dose,F,25,kidney,Kidneys (paired),True,1.73,235,0.736,2025-04-14
+TOX-2025-0421-P,F301,3,Mid Dose,F,25,heart,Heart,False,0.886,235,0.377,2025-04-14
+TOX-2025-0421-P,F301,3,Mid Dose,F,25,brain,Brain,False,1.903,235,0.81,2025-04-14
+TOX-2025-0421-P,F301,3,Mid Dose,F,25,spleen,Spleen,False,0.608,235,0.259,2025-04-14
+TOX-2025-0421-P,F301,3,Mid Dose,F,25,thymus,Thymus,False,0.412,235,0.175,2025-04-14
+TOX-2025-0421-P,F302,3,Mid Dose,F,25,liver,Liver,False,9.053,232,3.902,2025-04-14
+TOX-2025-0421-P,F302,3,Mid Dose,F,25,kidney,Kidneys (paired),True,1.822,232,0.785,2025-04-14
+TOX-2025-0421-P,F302,3,Mid Dose,F,25,heart,Heart,False,0.887,232,0.382,2025-04-14
+TOX-2025-0421-P,F302,3,Mid Dose,F,25,brain,Brain,False,1.91,232,0.823,2025-04-14
+TOX-2025-0421-P,F302,3,Mid Dose,F,25,spleen,Spleen,False,0.588,232,0.253,2025-04-14
+TOX-2025-0421-P,F302,3,Mid Dose,F,25,thymus,Thymus,False,0.386,232,0.166,2025-04-14
+TOX-2025-0421-P,F303,3,Mid Dose,F,25,liver,Liver,False,8.502,236,3.603,2025-04-14
+TOX-2025-0421-P,F303,3,Mid Dose,F,25,kidney,Kidneys (paired),True,1.752,236,0.742,2025-04-14
+TOX-2025-0421-P,F303,3,Mid Dose,F,25,heart,Heart,False,0.868,236,0.368,2025-04-14
+TOX-2025-0421-P,F303,3,Mid Dose,F,25,brain,Brain,False,1.952,236,0.827,2025-04-14
+TOX-2025-0421-P,F303,3,Mid Dose,F,25,spleen,Spleen,False,0.604,236,0.256,2025-04-14
+TOX-2025-0421-P,F303,3,Mid Dose,F,25,thymus,Thymus,False,0.404,236,0.171,2025-04-14
+TOX-2025-0421-P,F304,3,Mid Dose,F,25,liver,Liver,False,8.986,233,3.857,2025-04-14
+TOX-2025-0421-P,F304,3,Mid Dose,F,25,kidney,Kidneys (paired),True,1.89,233,0.811,2025-04-14
+TOX-2025-0421-P,F304,3,Mid Dose,F,25,heart,Heart,False,0.869,233,0.373,2025-04-14
+TOX-2025-0421-P,F304,3,Mid Dose,F,25,brain,Brain,False,1.805,233,0.775,2025-04-14
+TOX-2025-0421-P,F304,3,Mid Dose,F,25,spleen,Spleen,False,0.629,233,0.27,2025-04-14
+TOX-2025-0421-P,F304,3,Mid Dose,F,25,thymus,Thymus,False,0.434,233,0.186,2025-04-14
+TOX-2025-0421-P,F305,3,Mid Dose,F,25,liver,Liver,False,9.239,231,4.0,2025-04-14
+TOX-2025-0421-P,F305,3,Mid Dose,F,25,kidney,Kidneys (paired),True,1.772,231,0.767,2025-04-14
+TOX-2025-0421-P,F305,3,Mid Dose,F,25,heart,Heart,False,0.826,231,0.358,2025-04-14
+TOX-2025-0421-P,F305,3,Mid Dose,F,25,brain,Brain,False,1.841,231,0.797,2025-04-14
+TOX-2025-0421-P,F305,3,Mid Dose,F,25,spleen,Spleen,False,0.583,231,0.252,2025-04-14
+TOX-2025-0421-P,F305,3,Mid Dose,F,25,thymus,Thymus,False,0.392,231,0.17,2025-04-14
+TOX-2025-0421-P,M401,4,High Dose,M,100,liver,Liver,False,12.018,271,4.435,2025-04-14
+TOX-2025-0421-P,M401,4,High Dose,M,100,kidney,Kidneys (paired),True,3.017,271,1.113,2025-04-14
+TOX-2025-0421-P,M401,4,High Dose,M,100,heart,Heart,False,1.127,271,0.416,2025-04-14
+TOX-2025-0421-P,M401,4,High Dose,M,100,brain,Brain,False,1.862,271,0.687,2025-04-14
+TOX-2025-0421-P,M401,4,High Dose,M,100,spleen,Spleen,False,0.759,271,0.28,2025-04-14
+TOX-2025-0421-P,M401,4,High Dose,M,100,thymus,Thymus,False,0.232,271,0.086,2025-04-14
+TOX-2025-0421-P,M402,4,High Dose,M,100,liver,Liver,False,11.733,268,4.378,2025-04-14
+TOX-2025-0421-P,M402,4,High Dose,M,100,kidney,Kidneys (paired),True,2.816,268,1.051,2025-04-14
+TOX-2025-0421-P,M402,4,High Dose,M,100,heart,Heart,False,1.11,268,0.414,2025-04-14
+TOX-2025-0421-P,M402,4,High Dose,M,100,brain,Brain,False,1.968,268,0.734,2025-04-14
+TOX-2025-0421-P,M402,4,High Dose,M,100,spleen,Spleen,False,0.71,268,0.265,2025-04-14
+TOX-2025-0421-P,M402,4,High Dose,M,100,thymus,Thymus,False,0.251,268,0.094,2025-04-14
+TOX-2025-0421-P,M403,4,High Dose,M,100,liver,Liver,False,12.73,274,4.646,2025-04-14
+TOX-2025-0421-P,M403,4,High Dose,M,100,kidney,Kidneys (paired),True,2.888,274,1.054,2025-04-14
+TOX-2025-0421-P,M403,4,High Dose,M,100,heart,Heart,False,1.152,274,0.42,2025-04-14
+TOX-2025-0421-P,M403,4,High Dose,M,100,brain,Brain,False,1.968,274,0.718,2025-04-14
+TOX-2025-0421-P,M403,4,High Dose,M,100,spleen,Spleen,False,0.718,274,0.262,2025-04-14
+TOX-2025-0421-P,M403,4,High Dose,M,100,thymus,Thymus,False,0.232,274,0.085,2025-04-14
+TOX-2025-0421-P,M404,4,High Dose,M,100,liver,Liver,False,11.479,270,4.251,2025-04-14
+TOX-2025-0421-P,M404,4,High Dose,M,100,kidney,Kidneys (paired),True,2.805,270,1.039,2025-04-14
+TOX-2025-0421-P,M404,4,High Dose,M,100,heart,Heart,False,1.095,270,0.406,2025-04-14
+TOX-2025-0421-P,M404,4,High Dose,M,100,brain,Brain,False,1.771,270,0.656,2025-04-14
+TOX-2025-0421-P,M404,4,High Dose,M,100,spleen,Spleen,False,0.705,270,0.261,2025-04-14
+TOX-2025-0421-P,M404,4,High Dose,M,100,thymus,Thymus,False,0.242,270,0.09,2025-04-14
+TOX-2025-0421-P,M405,4,High Dose,M,100,liver,Liver,False,11.858,272,4.36,2025-04-14
+TOX-2025-0421-P,M405,4,High Dose,M,100,kidney,Kidneys (paired),True,2.976,272,1.094,2025-04-14
+TOX-2025-0421-P,M405,4,High Dose,M,100,heart,Heart,False,1.109,272,0.408,2025-04-14
+TOX-2025-0421-P,M405,4,High Dose,M,100,brain,Brain,False,1.887,272,0.694,2025-04-14
+TOX-2025-0421-P,M405,4,High Dose,M,100,spleen,Spleen,False,0.732,272,0.269,2025-04-14
+TOX-2025-0421-P,M405,4,High Dose,M,100,thymus,Thymus,False,0.244,272,0.09,2025-04-14
+TOX-2025-0421-P,F401,4,High Dose,F,100,liver,Liver,False,9.085,211,4.306,2025-04-14
+TOX-2025-0421-P,F401,4,High Dose,F,100,kidney,Kidneys (paired),True,1.911,211,0.906,2025-04-14
+TOX-2025-0421-P,F401,4,High Dose,F,100,heart,Heart,False,0.869,211,0.412,2025-04-14
+TOX-2025-0421-P,F401,4,High Dose,F,100,brain,Brain,False,1.75,211,0.829,2025-04-14
+TOX-2025-0421-P,F401,4,High Dose,F,100,spleen,Spleen,False,0.576,211,0.273,2025-04-14
+TOX-2025-0421-P,F401,4,High Dose,F,100,thymus,Thymus,False,0.249,211,0.118,2025-04-14
+TOX-2025-0421-P,F402,4,High Dose,F,100,liver,Liver,False,8.883,209,4.25,2025-04-14
+TOX-2025-0421-P,F402,4,High Dose,F,100,kidney,Kidneys (paired),True,2.052,209,0.982,2025-04-14
+TOX-2025-0421-P,F402,4,High Dose,F,100,heart,Heart,False,0.825,209,0.395,2025-04-14
+TOX-2025-0421-P,F402,4,High Dose,F,100,brain,Brain,False,1.836,209,0.878,2025-04-14
+TOX-2025-0421-P,F402,4,High Dose,F,100,spleen,Spleen,False,0.624,209,0.299,2025-04-14
+TOX-2025-0421-P,F402,4,High Dose,F,100,thymus,Thymus,False,0.252,209,0.121,2025-04-14
+TOX-2025-0421-P,F403,4,High Dose,F,100,liver,Liver,False,9.516,212,4.489,2025-04-14
+TOX-2025-0421-P,F403,4,High Dose,F,100,kidney,Kidneys (paired),True,1.9,212,0.896,2025-04-14
+TOX-2025-0421-P,F403,4,High Dose,F,100,heart,Heart,False,0.826,212,0.39,2025-04-14
+TOX-2025-0421-P,F403,4,High Dose,F,100,brain,Brain,False,1.8,212,0.849,2025-04-14
+TOX-2025-0421-P,F403,4,High Dose,F,100,spleen,Spleen,False,0.6,212,0.283,2025-04-14
+TOX-2025-0421-P,F403,4,High Dose,F,100,thymus,Thymus,False,0.256,212,0.121,2025-04-14
+TOX-2025-0421-P,F404,4,High Dose,F,100,liver,Liver,False,8.848,210,4.213,2025-04-14
+TOX-2025-0421-P,F404,4,High Dose,F,100,kidney,Kidneys (paired),True,2.005,210,0.955,2025-04-14
+TOX-2025-0421-P,F404,4,High Dose,F,100,heart,Heart,False,0.881,210,0.42,2025-04-14
+TOX-2025-0421-P,F404,4,High Dose,F,100,brain,Brain,False,1.884,210,0.897,2025-04-14
+TOX-2025-0421-P,F404,4,High Dose,F,100,spleen,Spleen,False,0.633,210,0.301,2025-04-14
+TOX-2025-0421-P,F404,4,High Dose,F,100,thymus,Thymus,False,0.241,210,0.115,2025-04-14
+TOX-2025-0421-P,F405,4,High Dose,F,100,liver,Liver,False,9.376,213,4.402,2025-04-14
+TOX-2025-0421-P,F405,4,High Dose,F,100,kidney,Kidneys (paired),True,2.045,213,0.96,2025-04-14
+TOX-2025-0421-P,F405,4,High Dose,F,100,heart,Heart,False,0.894,213,0.42,2025-04-14
+TOX-2025-0421-P,F405,4,High Dose,F,100,brain,Brain,False,1.772,213,0.832,2025-04-14
+TOX-2025-0421-P,F405,4,High Dose,F,100,spleen,Spleen,False,0.58,213,0.272,2025-04-14
+TOX-2025-0421-P,F405,4,High Dose,F,100,thymus,Thymus,False,0.262,213,0.123,2025-04-14

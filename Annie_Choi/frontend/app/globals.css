@@ -1,0 +1,392 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700&display=swap");
+
+/* ============================================================
+   Mindful Coach — Framer marketing design language
+   Near-black canvas · oversized white display type (extreme
+   negative tracking) · white pill CTAs · charcoal cards · one
+   blue accent · a single violet gradient spotlight card.
+   Dark only — the brand IS dark.
+   ============================================================ */
+
+:root {
+  /* Surface */
+  --canvas: #0a0a0b;
+  --surface-1: #161618;
+  --surface-2: #232326;
+  --hairline: #2a2a2e;
+  --hairline-soft: #1e1e21;
+  --inverse-canvas: #ffffff;
+
+  /* Text */
+  --ink: #ffffff;
+  --ink-muted: #9a9a9f;
+
+  /* Accent — single chromatic signal, links/focus/selection only */
+  --accent-blue: #0099ff;
+
+  /* Semantic */
+  --success: #37d67a;
+
+  /* Signature gradient spotlight (violet ground, most common) */
+  --grad-violet: radial-gradient(
+      120% 120% at 15% 15%,
+      #8b6bff 0%,
+      transparent 55%
+    ),
+    linear-gradient(135deg, #6d4bff 0%, #b64cff 55%, #ff6ac1 100%);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  background: var(--canvas);
+  color: var(--ink);
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-feature-settings: "cv01", "cv05", "cv09", "cv11", "ss03", "ss07", "dlig";
+  -webkit-font-smoothing: antialiased;
+  font-size: 15px;
+  line-height: 1.3;
+  letter-spacing: -0.15px;
+}
+
+a {
+  color: var(--accent-blue);
+  text-decoration: none;
+}
+
+::selection {
+  background: rgba(0, 153, 255, 0.25);
+}
+
+/* ---- Type voices ---- */
+.eyebrow {
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin: 0;
+}
+.display {
+  font-weight: 500;
+  line-height: 0.9;
+  letter-spacing: -0.05em; /* percentage preserved across sizes */
+  margin: 0;
+}
+.subhead {
+  font-size: clamp(16px, 2.1vw, 24px);
+  font-weight: 400;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  color: var(--ink-muted);
+  margin: 0;
+}
+
+/* ---- Shell ---- */
+.page {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 0 24px 64px;
+}
+
+/* ---- Top nav ---- */
+.top-nav {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  height: 64px;
+  background: rgba(10, 10, 11, 0.72);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--hairline-soft);
+}
+.wordmark {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.wordmark .dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 9999px;
+  background: var(--grad-violet);
+  box-shadow: 0 0 22px rgba(139, 107, 255, 0.55);
+}
+.nav-links {
+  display: flex;
+  gap: 22px;
+  margin-left: 8px;
+  flex: 1;
+}
+.nav-links span {
+  font-size: 14px;
+  color: var(--ink-muted);
+}
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  color: var(--ink-muted);
+}
+.status .led {
+  width: 7px;
+  height: 7px;
+  border-radius: 9999px;
+  background: var(--success);
+  box-shadow: 0 0 10px rgba(55, 214, 122, 0.7);
+}
+.status .led.off {
+  background: #ff5470;
+  box-shadow: 0 0 10px rgba(255, 84, 112, 0.7);
+}
+
+/* ---- Buttons ---- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  padding: 10px 16px;
+  border-radius: 100px;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.12s ease, background 0.15s ease, opacity 0.15s ease;
+}
+.btn:active {
+  transform: scale(0.96);
+}
+.btn-primary {
+  background: var(--inverse-canvas);
+  color: #0a0a0b;
+}
+.btn-primary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+.btn-secondary {
+  background: var(--surface-1);
+  color: var(--ink);
+}
+
+/* ---- Hero ---- */
+.hero {
+  padding: 72px 0 40px;
+}
+.hero .eyebrow {
+  margin-bottom: 22px;
+}
+.hero .display {
+  font-size: clamp(52px, 9.5vw, 104px);
+}
+.hero .subhead {
+  margin-top: 24px;
+  max-width: 44ch;
+}
+
+/* ---- Chat shell (surface-1 card) ---- */
+.chat-shell {
+  background: var(--surface-1);
+  border: 1px solid var(--hairline);
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+.chat-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 6px 14px;
+}
+.chat-head .eyebrow {
+  letter-spacing: 0.14em;
+}
+
+.messages {
+  height: 380px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 6px 4px;
+}
+
+/* Empty state = the single gradient spotlight card */
+.spotlight {
+  margin: auto;
+  width: 100%;
+  background: var(--grad-violet);
+  border-radius: 30px;
+  padding: 32px;
+  color: var(--ink);
+}
+.spotlight h2 {
+  margin: 0;
+  font-size: clamp(24px, 3.4vw, 34px);
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+}
+.spotlight p {
+  margin: 12px 0 20px;
+  max-width: 40ch;
+  color: rgba(255, 255, 255, 0.85);
+  letter-spacing: -0.01em;
+}
+.spotlight .chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.chip {
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  padding: 8px 14px;
+  border-radius: 100px;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+  transition: background 0.15s ease, transform 0.12s ease;
+}
+.chip:hover {
+  background: rgba(255, 255, 255, 0.24);
+}
+.chip:active {
+  transform: scale(0.96);
+}
+.chip:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Message rows */
+.row {
+  display: flex;
+}
+.row.user {
+  justify-content: flex-end;
+}
+.row.bot {
+  justify-content: flex-start;
+}
+.bubble {
+  max-width: 82%;
+  padding: 13px 16px;
+  border-radius: 16px;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+.row.bot .bubble {
+  background: var(--canvas);
+  border: 1px solid var(--hairline);
+  color: var(--ink);
+  border-bottom-left-radius: 5px;
+}
+.row.user .bubble {
+  background: var(--surface-2);
+  color: var(--ink);
+  border-bottom-right-radius: 5px;
+}
+.speaker {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.typing {
+  color: var(--ink-muted);
+}
+
+/* Composer */
+.composer {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--hairline-soft);
+}
+.text-input {
+  flex: 1;
+  background: var(--surface-2);
+  border: 1px solid var(--hairline);
+  color: var(--ink);
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-family: inherit;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+  outline: none;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+.text-input::placeholder {
+  color: var(--ink-muted);
+}
+.text-input:focus {
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 0 3px rgba(0, 153, 255, 0.15);
+}
+
+/* Quick prompts row (below composer once a chat has started) */
+.quick-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+.quick-row .chip {
+  color: var(--ink);
+  background: var(--surface-2);
+  border: 1px solid var(--hairline);
+}
+.quick-row .chip:hover {
+  background: #2c2c30;
+}
+
+/* ---- Footer ---- */
+.footer {
+  margin-top: 56px;
+  padding-top: 28px;
+  border-top: 1px solid var(--hairline-soft);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.footer .meta {
+  font-size: 13px;
+  color: var(--ink-muted);
+  letter-spacing: -0.01em;
+}
+
+@media (max-width: 640px) {
+  .nav-links {
+    display: none;
+  }
+  .messages {
+    height: 340px;
+  }
+}

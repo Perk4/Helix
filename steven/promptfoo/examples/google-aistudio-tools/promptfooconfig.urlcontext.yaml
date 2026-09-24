@@ -1,0 +1,32 @@
+# yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
+
+description: Url context with Google Gemini models
+
+prompts:
+  - '{{query}}'
+
+providers:
+  - id: google:gemini-3.8-flash
+    config:
+      maxOutputTokens: 2048
+      tools:
+        - urlContext: {}
+
+  # Advanced version with thinking capabilities and additional search
+  - id: google:gemini-3.5-flash-lite
+    config:
+      maxOutputTokens: 2048
+      generationConfig:
+        thinkingConfig:
+          thinkingLevel: MEDIUM
+      tools:
+        - googleSearch: {}
+        - urlContext: {}
+
+tests:
+  - vars:
+      query: 'Could you make a tour plan inspired by https://www.nhm.ac.uk/visit/whats-on.html, https://www.tate.org.uk/whats-on/tate-modern/expressionists'
+    assert:
+      - type: llm-rubric
+        value: |
+          Contains a comprehensive plan to visit Natural History Museum and Tate Modern.

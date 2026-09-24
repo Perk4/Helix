@@ -1,0 +1,220 @@
+import logger from '../../../logger';
+import { ElevenLabsWebSocketClient, StreamingMessage } from '../websocket-client';
+
+import type { StreamingChunk, TTSStreamConfig } from './types';
+
+export interface StreamingSession {
+  client: ElevenLabsWebSocketClient;
+  chunks: StreamingChunk[];
+  alignments: any[];
+  errors: string[];
+  startTime: number;
+}
+
+/**
+ * Create a WebSocket connection for TTS streaming
+ */
+export async function createStreamingConnection(
+  apiKey: string,
+  voiceId: string,
+  config: TTSStreamConfig,
+): Promise<ElevenLabsWebSocketClient> {
+  const client = new ElevenLabsWebSocketClient({
+    apiKey,
+    baseUrl: config.baseUrl || 'wss://api.elevenlabs.io',
+    keepAliveInterval: config.keepAliveInterval,
+  });
+
+  // Connect to TTS streaming endpoint
+  const query = new URLSearchParams({ model_id: config.modelId });
+  if (config.outputFormat) {
+    query.set('output_format', config.outputFormat);
+  }
+  if (config.seed !== undefined) {
+    query.set('seed', String(config.seed));
+  }
+  const endpoint = `/v1/text-to-speech/${voiceId}/stream-input?${query}`;
+
+  // Initial configuration
+  const streamConfig: Record<string, any> = {
+    text: ' ',
+    voice_settings: config.voiceSettings,
+    generation_config: {
+      chunk_length_schedule: config.chunkLengthSchedule || [120, 160, 250, 290],
+    },
+    xi_api_key: apiKey,
+  };
+
+  // Add pronunciation dictionary locators if provided
+  if (config.pronunciationDictionaryLocators) {
+    streamConfig.pronunciation_dictionary_locators = config.pronunciationDictionaryLocators;
+  }
+
+  try {
+    await client.connect(endpoint, streamConfig);
+  } catch (error) {
+    client.close();
+    throw error;
+  }
+
+  return client;
+}
+
+/**
+ * Handle streaming TTS by sending text and collecting audio chunks
+ */
+export async function handleStreamingTTS(
+  client: ElevenLabsWebSocketClient,
+  text: string,
+  onChunk?: (chunk: StreamingChunk) => void,
+  startTime?: number,
+): Promise<StreamingSession> {
+  const sessionStart = startTime ?? Date.now();
+  const session: StreamingSession = {
+    client,
+    chunks: [],
+    alignments: [],
+    errors: [],
+    startTime: sessionStart,
+  };
+
+  return new Promise((resolve, reject) => {
+    let completionTimeout: NodeJS.Timeout | undefined;
+    let settled = false;
+    const audioChunks: Buffer[] = [];
+    let totalChunks = 0;
+
+    const settle = (error?: Error) => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      clearTimeout(completionTimeout);
+      if (error) {
+        reject(error);
+      } else {
+        resolve(session);
+      }
+    };
+
+    // Set up message handler
+    client.onMessage((message: StreamingMessage) => {
+      if (settled) {
+        return;
+      }
+      // Reset timeout on any message.
+      clearTimeout(completionTimeout);
+      completionTimeout = setTimeout(() => {
+        logger.debug('[ElevenLabs Streaming] Stream complete (timeout)');
+        settle();
+      }, 2000); // 2 second silence = complete
+
+      switch (message.type) {
+        case 'audio': {
+          const audioBuffer = Buffer.from(message.data, 'base64');
+          audioChunks.push(audioBuffer);
+          totalChunks++;
+
+          const chunk: StreamingChunk = {
+            audio: message.data,
+            chunkIndex: totalChunks - 1,
+            timestamp: Date.now(),
+          };
+
+          session.chunks.push(chunk);
+
+          if (onChunk) {
+            onChunk(chunk);
+          }
+
+          logger.debug('[ElevenLabs Streaming] Received audio chunk', {
+            chunkIndex: chunk.chunkIndex,
+            size: audioBuffer.length,
+          });
+          break;
+        }
+
+        case 'alignment': {
+          session.alignments.push(message.data);
+          logger.debug('[ElevenLabs Streaming] Received alignment data');
+          break;
+        }
+
+        case 'error': {
+          const errorMsg = message.data?.message || 'Unknown streaming error';
+          session.errors.push(errorMsg);
+          logger.error('[ElevenLabs Streaming] Error', { error: errorMsg });
+          settle(new Error(errorMsg));
+          break;
+        }
+
+        case 'flush': {
+          logger.debug('[ElevenLabs Streaming] Received flush signal');
+          settle();
+          break;
+        }
+      }
+    });
+
+    // Send the text for generation
+    try {
+      // Start before sending so synchronous messages can replace or clear the timer.
+      completionTimeout = setTimeout(() => {
+        logger.debug('[ElevenLabs Streaming] Stream complete (initial timeout)');
+        settle();
+      }, 5000); // 5 second initial timeout
+
+      client.sendText(text, false);
+
+      // Send flush to signal end of input
+      client.flush();
+
+      logger.debug('[ElevenLabs Streaming] Text sent', {
+        totalLength: text.length,
+      });
+    } catch (error) {
+      settled = true;
+      clearTimeout(completionTimeout);
+      reject(error);
+    }
+  });
+}
+
+/**
+ * Combine streaming chunks into a single audio buffer
+ */
+export function combineStreamingChunks(chunks: StreamingChunk[]): Buffer {
+  const buffers = chunks.map((chunk) => Buffer.from(chunk.audio, 'base64'));
+  return Buffer.concat(buffers);
+}
+
+/**
+ * Calculate streaming metrics
+ */
+export function calculateStreamingMetrics(session: StreamingSession, textLength: number) {
+  if (session.chunks.length === 0) {
+    return {
+      totalChunks: 0,
+      firstChunkLatency: 0,
+      totalLatency: 0,
+      avgChunkLatency: 0,
+      charactersPerSecond: 0,
+    };
+  }
+
+  const firstChunk = session.chunks[0];
+  const lastChunk = session.chunks[session.chunks.length - 1];
+
+  const firstChunkLatency = firstChunk.timestamp - session.startTime;
+  const totalLatency = lastChunk.timestamp - session.startTime;
+  const avgChunkLatency = totalLatency / session.chunks.length;
+  const charactersPerSecond = totalLatency > 0 ? (textLength / totalLatency) * 1000 : 0;
+
+  return {
+    totalChunks: session.chunks.length,
+    firstChunkLatency,
+    totalLatency,
+    avgChunkLatency,
+    charactersPerSecond,
+  };
+}
