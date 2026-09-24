@@ -1,0 +1,32 @@
+{
+  "repository_root": "..",
+  "agent_argv": [
+    "pi",
+    "--print",
+    "--no-session",
+    "--approve"
+  ],
+  "verification_commands": [
+    {
+      "name": "orchestrator-tests",
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "steven/ops/orchestrator/test_orch.py"
+      ]
+    },
+    {
+      "name": "helix-tests",
+      "argv": [
+        "make",
+        "-C",
+        "steven/helix-prototypes",
+        "test"
+      ]
+    }
+  ],
+  "poll_seconds": 30,
+  "timeout_seconds": 3600,
+  "max_attempts": 3
+}

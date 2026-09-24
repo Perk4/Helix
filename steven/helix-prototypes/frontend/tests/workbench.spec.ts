@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { expect, test } from "@playwright/test";
 import { mkdir, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
@@ -80,8 +81,16 @@ test("runs the synthetic study from validation through explicit export", async (
   await expect(page.getByTestId("impact-section.5_2_3_body_weight")).toContainText(
     "origin section.5_2_3_body_weight",
   );
+  await expect(page.getByTestId("review-scaffold-history")).toBeVisible();
   await expect(page.getByTestId("review-scaffold-revision")).toBeVisible();
+  const workspaceAfterValidation = eligibilityWorkspace as { review_scaffold_revisions?: Array<{ triggering_event_id?: string }> };
+  const triggeringEventId = workspaceAfterValidation.review_scaffold_revisions?.[0]?.triggering_event_id;
+  expect(triggeringEventId).toBeTruthy();
+  await expect(page.getByTestId("review-scaffold-history")).toContainText(String(triggeringEventId));
   await expect(page.getByText("3", { exact: true }).first()).toBeVisible();
+  await page.getByRole("button", { name: /Report assembly/ }).click();
+  await expect(page.getByTestId("review-scaffold-history")).toHaveCount(0);
+  await page.getByRole("button", { name: /Study journey/ }).click();
   const runPlan = page.getByTestId("run-plan");
   await expect(runPlan.getByText(/^RUN-/)).toBeVisible();
   await expect(runPlan.getByText("REPEAT_DOSE_28D_RODENT", { exact: true })).toBeVisible();
@@ -160,22 +169,50 @@ test("runs the synthetic study from validation through explicit export", async (
   await recordApproval(page, "Quality Assurance Unit statement");
   await recordApproval(page, "Study director approval");
 
+  await expect(page.getByTestId("release-status")).toHaveText("ready for signature");
+  await expect(page.getByText("FDA approved")).toHaveCount(0);
+  await expect(page.getByTestId("final-study-approval-scope")).toBeVisible();
+  await page.getByTestId("record-final-study-approval").click();
+  await expect(page.getByTestId("approval-current")).toHaveText("current");
+  await expect(page.getByTestId("approval-manifest-hash")).toHaveText(/^sha256:[a-f0-9]{64}$/);
   await expect(page.getByTestId("release-status")).toHaveText("ready for export");
   await expect(page.getByTestId("export-package")).toBeEnabled();
   await page.getByTestId("export-package").click();
   await expect(page.getByTestId("release-status")).toHaveText("exported");
-  await expect(page.getByText("4 synthetic artifacts checksummed", { exact: false })).toBeVisible();
-  const downloadPromise = page.waitForEvent("download");
-  await page.getByRole("link", { name: /Study report PDF/ }).click();
-  const download = await downloadPromise;
-  expect(download.suggestedFilename()).toBe("repeat-dose-study-report.pdf");
-  expect(await download.failure()).toBeNull();
+  await expect(page.getByText(/\d+ approved artifacts exported\. Status: exported\./)).toBeVisible();
+  await expect(page.getByText("FDA approved")).toHaveCount(0);
 
   const workspaceResponse = await request.get(`${apiRoot}/studies/STUDY-HLX-028/workspace`);
   expect(workspaceResponse.ok()).toBeTruthy();
   const workspace: unknown = await workspaceResponse.json();
   expect(isExportedWorkspace(workspace)).toBeTruthy();
   expect(hasSingleBodyWeightExecution(workspace)).toBeTruthy();
+  const exported = asExportedWorkspace(workspace);
+  const approval = exported.final_study_approval;
+  expect(approval).not.toBeNull();
+  const approved = new Map(
+    approval!.included_artifact_hashes.map((item) => [item.artifact_id, item.content_hash]),
+  );
+  expect(exported.export_artifacts.length).toBe(approved.size);
+  for (const artifact of exported.export_artifacts) {
+    expect(artifact.status).toBe("exported");
+    expect(artifact.checksum).toBe(approved.get(artifact.artifact_id));
+    const downloadPromise = page.waitForEvent("download");
+    await page.getByTestId(`export-checksum-${artifact.artifact_id}`).click();
+    const download = await downloadPromise;
+    expect(await download.failure()).toBeNull();
+    const downloadPath = await download.path();
+    expect(downloadPath).toBeTruthy();
+    const bytes = await import("node:fs/promises").then((fs) => fs.readFile(downloadPath!));
+    const digest = `sha256:${createHash("sha256").update(bytes).digest("hex")}`;
+    expect(digest).toBe(artifact.checksum);
+    const apiDownload = await request.get(
+      `${apiRoot}/studies/STUDY-HLX-028/exports/${encodeURIComponent(artifact.artifact_id)}`,
+    );
+    expect(apiDownload.ok()).toBeTruthy();
+    const apiBytes = Buffer.from(await apiDownload.body());
+    expect(apiBytes.equals(bytes)).toBeTruthy();
+  }
 
   await page.screenshot({ path: "../evidence/helix-workbench-exported.png", fullPage: true });
   expect(browserErrors).toEqual([]);
@@ -363,6 +400,50 @@ test("renders candidate evaluation and cross-section query from backend-owned wo
   await expect(page.getByTestId("section-draft")).toHaveCount(0);
 });
 
+test("renders predecessor run identity and carry-forward counts from the workspace", async ({ page }) => {
+  await page.route("**/api/v1/studies/*/workspace", async (route) => {
+    const response = await route.fetch();
+    const workspace: unknown = await response.json();
+    await route.fulfill({
+      status: response.status(),
+      contentType: "application/json",
+      body: JSON.stringify(withSupersedingRun(workspace)),
+    });
+  });
+
+  await page.goto("/");
+  await page.getByRole("button", { name: /Study journey/ }).click();
+  await expect(page.getByTestId("superseding-run")).toBeVisible();
+  await expect(page.getByTestId("predecessor-run-id")).toHaveText("RUN-PRED00000001");
+  await expect(page.getByTestId("supersession-reason")).toHaveText(
+    "Correct the locked body-weight source after authorized review",
+  );
+  await expect(page.getByTestId("parse-reuse")).toHaveText("parse.body_weights reused");
+  await expect(page.getByTestId("carried-forward-count")).toHaveText("1");
+  await expect(page.getByTestId("rerun-nodes")).toHaveText("section.5_3_discussion");
+  await expect(page.getByTestId("predecessor-snapshot-hash")).toHaveText(INJECTED_HASH);
+});
+
+test("renders the exact Final Study Approval scope from the workspace", async ({ page }) => {
+  await page.route("**/api/v1/studies/*/workspace", async (route) => {
+    const response = await route.fetch();
+    const workspace: unknown = await response.json();
+    await route.fulfill({
+      status: response.status(),
+      contentType: "application/json",
+      body: JSON.stringify(withFinalStudyApproval(workspace)),
+    });
+  });
+
+  await page.goto("/");
+  await page.getByRole("button", { name: /Report assembly/ }).click();
+  await expect(page.getByTestId("final-study-approval-scope")).toBeVisible();
+  await expect(page.getByTestId("approval-current")).toHaveText("current");
+  await expect(page.getByTestId("approval-manifest-hash")).toHaveText(INJECTED_HASH);
+  await expect(page.getByTestId("approval-artifact-RUN-PRED00000001")).toHaveText(INJECTED_HASH);
+  await expect(page.getByText("FDA approved")).toHaveCount(0);
+});
+
 test("renders backend promotion status and draft evidence without recalculating eligibility", async ({
   page,
 }) => {
@@ -443,14 +524,64 @@ test("shows every immutable attempt and offers no fourth attempt after stop_for_
   });
 
   await page.goto("/");
-  await expect(page.getByTestId("candidate-attempt-1")).toBeVisible();
-  await expect(page.getByTestId("candidate-attempt-2")).toBeVisible();
-  await expect(page.getByTestId("candidate-attempt-3")).toBeVisible();
-  await expect(page.getByTestId("candidate-attempt-3")).toContainText("Candidate attempt 3 of 3");
+  await expect(page.getByTestId("candidate-attempt-CYCLE-BW-001-1")).toBeVisible();
+  await expect(page.getByTestId("candidate-attempt-CYCLE-BW-001-2")).toBeVisible();
+  await expect(page.getByTestId("candidate-attempt-CYCLE-BW-001-3")).toBeVisible();
+  await expect(page.getByTestId("candidate-attempt-CYCLE-BW-001-3")).toContainText(
+    "Candidate attempt 3 of 3",
+  );
   await expect(page.getByTestId("next-attempt-action")).toHaveText("Next attempt stop_for_review");
   await expect(page.getByTestId("retry-body-weight")).toHaveCount(0);
-  await expect(page.getByTestId("candidate-attempt-4")).toHaveCount(0);
+  await expect(page.getByTestId("candidate-attempt-CYCLE-BW-001-4")).toHaveCount(0);
   expect(sectionRunPosts).toBe(0);
+});
+
+test("offers revise after stop_for_review and shows a new cycle without changing discussion hashes", async ({
+  page,
+}) => {
+  const cycleTwo = "CYCLE-REV0000001";
+  let revised = false;
+  let revisionPosts = 0;
+  await page.route("**/api/v1/studies/*/section-runs", async (route) => {
+    if (route.request().method() === "POST") {
+      await route.fulfill({
+        status: 409,
+        contentType: "application/json",
+        body: JSON.stringify({ detail: "This drafting cycle already used three Candidate Attempts" }),
+      });
+      return;
+    }
+    await route.continue();
+  });
+  await page.route("**/api/v1/studies/*/section-revisions", async (route) => {
+    revisionPosts += 1;
+    revised = true;
+    await route.fulfill({
+      status: 201,
+      contentType: "application/json",
+      body: JSON.stringify(injectedRevisionReceipt(cycleTwo)),
+    });
+  });
+  await page.route("**/api/v1/studies/*/workspace", async (route) => {
+    const response = await route.fetch();
+    const workspace: unknown = await response.json();
+    await route.fulfill({
+      status: response.status(),
+      contentType: "application/json",
+      body: JSON.stringify(
+        revised ? withRevisedCycle(workspace, cycleTwo) : withStoppedCycle(workspace, true),
+      ),
+    });
+  });
+
+  await page.goto("/");
+  await expect(page.getByTestId("revise-body-weight")).toBeEnabled();
+  const discussionBefore = await page.getByTestId("impact-section.5_3_discussion").textContent();
+  await page.getByTestId("revise-body-weight").click();
+  await expect(page.getByTestId(`drafting-cycle-${cycleTwo}`)).toBeVisible();
+  await expect(page.getByTestId("revise-body-weight")).toBeDisabled();
+  await expect(page.getByTestId("impact-section.5_3_discussion")).toHaveText(discussionBefore ?? "");
+  expect(revisionPosts).toBe(1);
 });
 
 async function recordApproval(page: import("@playwright/test").Page, label: string) {
@@ -499,6 +630,29 @@ function hasSingleBodyWeightExecution(value: unknown): boolean {
   );
 }
 
+
+function asExportedWorkspace(value: unknown): {
+  export_artifacts: Array<{ artifact_id: string; checksum: string | null; status: string }>;
+  final_study_approval: {
+    included_artifact_hashes: Array<{ artifact_id: string; content_hash: string }>;
+  } | null;
+} {
+  if (!isExportedWorkspace(value) || !isObject(value)) {
+    throw new Error("workspace is not exported");
+  }
+  const approval = value.final_study_approval;
+  return {
+    export_artifacts: value.export_artifacts as Array<{
+      artifact_id: string;
+      checksum: string | null;
+      status: string;
+    }>,
+    final_study_approval: (approval ?? null) as {
+      included_artifact_hashes: Array<{ artifact_id: string; content_hash: string }>;
+    } | null,
+  };
+}
+
 function isExportedWorkspace(value: unknown): boolean {
   if (typeof value !== "object" || value === null) {
     return false;
@@ -514,7 +668,7 @@ function isExportedWorkspace(value: unknown): boolean {
     "status" in gate &&
     gate.status === "exported" &&
     Array.isArray(artifacts) &&
-    artifacts.length === 4 &&
+    artifacts.length > 0 &&
     artifacts.every(
       (artifact) =>
         typeof artifact === "object" &&
@@ -734,6 +888,7 @@ function withRecordedCandidate(
           codex_thread_id: "thread-eval-001",
           skill_name: "helix-section-agent",
           skill_hash: INJECTED_CLAIM_HASH,
+          skill_references_hash: INJECTED_CLAIM_HASH,
           review_scaffold_revision: 2,
           idempotent_replay: false,
         },
@@ -764,6 +919,7 @@ function withRecordedCandidate(
             thread_id: "thread-eval-001",
             skill_name: "helix-section-agent",
             skill_hash: INJECTED_CLAIM_HASH,
+            skill_references_hash: INJECTED_CLAIM_HASH,
           },
         },
         envelope: {},
@@ -777,7 +933,7 @@ function withRecordedCandidate(
   };
 }
 
-function withStoppedCycle(workspace: unknown): unknown {
+function withStoppedCycle(workspace: unknown, canOpenRevision = false): unknown {
   if (!isObject(workspace)) {
     throw new Error("Workspace is missing.");
   }
@@ -789,6 +945,170 @@ function withStoppedCycle(workspace: unknown): unknown {
     ...workspace,
     section_runs: runs,
     candidate_evaluations: evaluations,
+    drafting_cycles: [injectedCycle("CYCLE-BW-001", null)],
+    can_open_revision: canOpenRevision,
+  };
+}
+
+function withFinalStudyApproval(workspace: unknown): unknown {
+  if (!isObject(workspace)) {
+    throw new Error("Workspace is missing.");
+  }
+  return {
+    ...workspace,
+    approval_current: true,
+    release_candidate: {
+      schema_version: "helix.release-candidate/v1",
+      status: "release_candidate",
+      export_eligible: true,
+      run_id: "RUN-PRED00000001",
+      study_id: "TOX-2026-014",
+      included_artifacts: [
+        {
+          artifact_id: "RUN-PRED00000001",
+          kind: "pinned_run",
+          content_hash: INJECTED_HASH,
+        },
+      ],
+      current_drafting_cycles: [],
+      content_hash: INJECTED_HASH,
+    },
+    final_study_approval: {
+      schema_version: "helix.final-study-approval/v1",
+      approval_id: "FSA-SCOPE000001",
+      run_id: "RUN-PRED00000001",
+      study_id: "TOX-2026-014",
+      reviewer: "Dr. Sam Director",
+      recorded_at: "2026-09-24T00:00:00Z",
+      manifest_hash: INJECTED_HASH,
+      included_artifact_hashes: [
+        { artifact_id: "RUN-PRED00000001", content_hash: INJECTED_HASH },
+      ],
+      idempotency_key: "injected-fsa-scope",
+    },
+  };
+}
+
+function withSupersedingRun(workspace: unknown): unknown {
+  if (!isObject(workspace) || !isObject(workspace.pinned_run)) {
+    throw new Error("Workspace is missing a pinned run.");
+  }
+  return {
+    ...workspace,
+    pinned_run: {
+      ...workspace.pinned_run,
+      predecessor_run_id: "RUN-PRED00000001",
+      supersession_reason: "Correct the locked body-weight source after authorized review",
+    },
+    predecessor_snapshots: [
+      {
+        schema_version: "helix.predecessor-snapshot/v1",
+        snapshot_hash: INJECTED_HASH,
+        pinned_run: workspace.pinned_run,
+        frozen_inputs: {
+          records: { animals: [], body_weights: [], clinical_observations: [], food_consumption: [], organ_weights: [], microscopic_findings: [], formulation: [] },
+          manifest: [],
+          template: {},
+          validation_package: {},
+          section_packages: {},
+          skill_hash: INJECTED_HASH,
+          suite_hash: INJECTED_HASH,
+          executor_hash: INJECTED_HASH,
+          validation_package_hash: INJECTED_HASH,
+        },
+        claims: [],
+        provenance_edges: [],
+        validation_results: [],
+        data_validation_executions: [],
+        gate_decisions: [],
+        review_dispositions: [],
+        approvals: [],
+        events: [],
+        review_scaffold_revisions: [],
+        section_runs: [],
+        section_drafts: [],
+        candidate_evaluations: [],
+        drafting_cycles: [],
+      },
+    ],
+    superseding_run_receipt: {
+      schema_version: "helix.superseding-run/v1",
+      run_id: workspace.pinned_run.run_id,
+      predecessor_run_id: "RUN-PRED00000001",
+      predecessor_snapshot_hash: INJECTED_HASH,
+      reason: "Correct the locked body-weight source after authorized review",
+      parse_reuse: [{ node_id: "parse.body_weights", content_hash: INJECTED_HASH, reused: true }],
+      carried_forward: [
+        {
+          kind: "section_draft_candidate",
+          section_package_id: "section.5_2_3_body_weight",
+          artifact_id: "SDC-PRED0000001",
+          content_hash: INJECTED_HASH,
+          dependency_fingerprint: INJECTED_HASH,
+          lineage: {
+            predecessor_run_id: "RUN-PRED00000001",
+            predecessor_artifact_id: "SDC-PRED0000001",
+            predecessor_content_hash: INJECTED_HASH,
+            predecessor_dependency_fingerprint: INJECTED_HASH,
+          },
+          stored_run: null,
+          section_draft: null,
+        },
+      ],
+      rerun_node_ids: ["section.5_3_discussion"],
+      impact_set: {
+        origin_section_package_id: "section.5_3_discussion",
+        direct: ["section.5_3_discussion"],
+        transitive: [],
+      },
+      fresh_validation_receipt_ids: ["DVR-FRESH000001"],
+      fresh_gate_ids: ["GATE-RELEASE"],
+      fresh_scaffold_revision: 1,
+    },
+  };
+}
+
+function withRevisedCycle(workspace: unknown, cycleId: string): unknown {
+  if (!isObject(workspace)) {
+    throw new Error("Workspace is missing.");
+  }
+  const stopped = withStoppedCycle(workspace, false);
+  if (!isObject(stopped)) {
+    throw new Error("Stopped workspace is missing.");
+  }
+  return {
+    ...stopped,
+    drafting_cycles: [injectedCycle("CYCLE-BW-001", null), injectedCycle(cycleId, "CYCLE-BW-001")],
+    can_open_revision: false,
+  };
+}
+
+function injectedCycle(cycleId: string, predecessor: string | null): Record<string, unknown> {
+  return {
+    schema_version: "helix.drafting-cycle/v1",
+    cycle_id: cycleId,
+    run_id: "RUN-CYCLE000001",
+    section_package_id: "section.5_2_3_body_weight",
+    predecessor_cycle_id: predecessor,
+    max_attempts: 3,
+    impact_set: {
+      origin_section_package_id: "section.5_2_3_body_weight",
+      direct: ["section.5_2_3_body_weight"],
+      transitive: [],
+    },
+    opened_at: "2026-09-24T12:00:00Z",
+    opened_by: predecessor ? "Dr. Ada Path" : "HELIX Codex section runtime",
+    triggering_event_id: `EV-${cycleId.replace("CYCLE-", "")}`,
+  };
+}
+
+function injectedRevisionReceipt(cycleId: string): Record<string, unknown> {
+  return {
+    cycle: injectedCycle(cycleId, "CYCLE-BW-001"),
+    stale_disposition_ids: [],
+    stale_approval_ids: [],
+    review_scaffold_revision: 4,
+    idempotent_replay: false,
   };
 }
 
@@ -808,6 +1128,7 @@ function storedAttempt(attempt: number): Record<string, unknown> {
       codex_thread_id: `thread-cycle-00${attempt}`,
       skill_name: "helix-section-agent",
       skill_hash: INJECTED_CLAIM_HASH,
+      skill_references_hash: INJECTED_CLAIM_HASH,
       review_scaffold_revision: attempt + 1,
       idempotent_replay: false,
     },
@@ -838,6 +1159,7 @@ function storedAttempt(attempt: number): Record<string, unknown> {
         thread_id: `thread-cycle-00${attempt}`,
         skill_name: "helix-section-agent",
         skill_hash: INJECTED_CLAIM_HASH,
+        skill_references_hash: INJECTED_CLAIM_HASH,
       },
     },
     envelope: {},

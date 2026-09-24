@@ -1,3 +1,0 @@
-# Separate the study Review Scaffold from section artifacts
-
-HELIX maintains one non-exportable, study-wide Review Scaffold showing every section's state, immutable cross-section context, blockers, and explicit `[NEEDS REVIEW]` placeholders. A Section Agent emits a Section Draft Candidate only after that section's blocking deterministic gates and pre-draft Template Contract Gates pass; shared executors promote it to a Section Draft after post-draft Template Conformance Gates pass. The Review Scaffold can never enter final export, and cross-section context cannot substitute evidence or override a section gate.

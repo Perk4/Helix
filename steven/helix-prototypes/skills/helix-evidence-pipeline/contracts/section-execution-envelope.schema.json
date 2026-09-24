@@ -44,7 +44,12 @@
     "section_package": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["package_id", "version", "path", "hash"],
+      "required": [
+        "package_id",
+        "version",
+        "path",
+        "hash"
+      ],
       "properties": {
         "package_id": {
           "type": "string",
@@ -74,7 +79,14 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["claim_id", "field_id", "value", "unit", "grain", "hash"],
+        "required": [
+          "claim_id",
+          "field_id",
+          "value",
+          "unit",
+          "grain",
+          "hash"
+        ],
         "properties": {
           "claim_id": {
             "type": "string",
@@ -86,7 +98,10 @@
           },
           "value": {},
           "unit": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "grain": {
             "type": "string",
@@ -106,7 +121,11 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["result_id", "code", "message"],
+        "required": [
+          "result_id",
+          "code",
+          "message"
+        ],
         "properties": {
           "result_id": {
             "type": "string",
@@ -126,7 +145,7 @@
     "executor_receipts": {
       "type": "array",
       "items": {
-        "$ref": "#/$defs/artifactReference"
+        "$ref": "#/$defs/executorReceipt"
       }
     },
     "governed_versions": {
@@ -135,6 +154,37 @@
       "additionalProperties": {
         "type": "string",
         "minLength": 1
+      }
+    },
+    "reference_drafts": {
+      "type": "array",
+      "description": "Approved sections from earlier studies, supplied as style exemplars. They carry no claim authority: they come from a different study, and every value in them belongs to that study. The agent may follow their structure and wording and must take no number from them. Only validated_claims and executor_receipts supply values.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "report_id",
+          "section_title",
+          "hash",
+          "content"
+        ],
+        "properties": {
+          "report_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "section_title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "hash": {
+            "$ref": "#/$defs/sha256"
+          },
+          "content": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
       }
     }
   },
@@ -150,7 +200,10 @@
     "artifactReference": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["artifact_id", "hash"],
+      "required": [
+        "artifact_id",
+        "hash"
+      ],
       "properties": {
         "artifact_id": {
           "type": "string",
@@ -158,6 +211,62 @@
         },
         "hash": {
           "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "executorReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "artifact_id",
+        "hash"
+      ],
+      "properties": {
+        "artifact_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "hash": {
+          "$ref": "#/$defs/sha256"
+        },
+        "facts": {
+          "type": "object",
+          "description": "Values the deterministic executor computed for this section. The agent renders these; it never recalculates them."
+        },
+        "provenance": {
+          "type": "array",
+          "description": "Source records behind each computed value, per ADR-0013.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "section_id",
+              "claim",
+              "source_record_ids",
+              "agg"
+            ],
+            "properties": {
+              "section_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "claim": {
+                "type": "string",
+                "minLength": 1
+              },
+              "source_record_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "agg": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
         }
       }
     }

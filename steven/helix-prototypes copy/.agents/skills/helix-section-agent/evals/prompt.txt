@@ -1,7 +1,0 @@
-Use $helix-section-agent.
-
-Draft one Section Draft Candidate from this Section Execution Envelope:
-
-{{envelope}}
-
-Return one JSON object and no surrounding prose.

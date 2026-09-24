@@ -1,0 +1,13 @@
+{
+  "name": "helix-prototypes",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Runner for the HELIX Promptfoo evaluation suites.",
+  "scripts": {
+    "evals": "promptfoo eval -c .agents/skills/helix-section-agent/evals/promptfooconfig.yaml",
+    "verify:evals-config": "node scripts/verify-evals-config.mjs"
+  },
+  "devDependencies": {
+    "promptfoo": "0.123.1"
+  }
+}

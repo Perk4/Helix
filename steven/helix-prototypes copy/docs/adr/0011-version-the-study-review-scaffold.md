@@ -1,3 +1,0 @@
-# Version the study Review Scaffold
-
-A deterministic shared assembler is the sole producer of the study-wide Review Scaffold and records it as an append-only sequence of immutable revisions. A revision is created only when scaffold-visible state changes, such as a gate result, candidate, draft, blocker, disposition, or approval, and carries a monotonic sequence, content hash, timestamp, triggering event, and predecessor reference. Each revision preserves the section states, cross-section context, `[NEEDS REVIEW]` placeholders, and source artifact references used to assemble that view; Section Agents submit candidates but never edit scaffold history directly.

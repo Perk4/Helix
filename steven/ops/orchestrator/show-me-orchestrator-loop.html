@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>orch — control loop review</title>
+<style>
+  :root{--bg:#0b1020;--panel:#131a2d;--panel2:#19223a;--ink:#eef2ff;--muted:#9eabc8;--line:#34415f;--cyan:#55d8ff;--green:#63e6a5;--amber:#ffc857;--red:#ff6b7d;--violet:#ad8cff;--code:#080c17}
+  *{box-sizing:border-box} body{margin:0;background:radial-gradient(circle at 15% 0,#172141 0,transparent 38%),var(--bg);color:var(--ink);font:15px/1.48 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+  main{max-width:1180px;margin:auto;padding:40px 24px 64px} h1{font-size:clamp(30px,5vw,54px);line-height:1;margin:0 0 12px;letter-spacing:-.04em} h2{font-size:23px;margin:42px 0 16px} h3{font-size:16px;margin:0 0 8px} p{color:var(--muted);margin:6px 0}.eyebrow{color:var(--cyan);font-weight:800;letter-spacing:.13em;text-transform:uppercase;font-size:12px}.lede{font-size:18px;max-width:790px}.tag{display:inline-flex;padding:4px 9px;border:1px solid var(--line);border-radius:999px;color:var(--muted);font-size:12px;margin:12px 5px 0 0}.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}.card{background:linear-gradient(145deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:0 14px 34px #0004}.summary .card{grid-column:span 4}.number{font-size:30px;font-weight:850;color:var(--cyan)}
+  .loop{position:relative;display:grid;grid-template-columns:1fr 64px 1fr 64px 1fr;align-items:center;gap:6px}.node{min-height:114px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px}.node b{display:block;color:var(--ink);font-size:16px}.node small{color:var(--muted)}.arrow{text-align:center;color:var(--cyan);font-size:27px}.loop-return{margin:10px 8% 0;border:2px solid var(--violet);border-top:0;border-radius:0 0 24px 24px;color:var(--violet);text-align:center;padding:8px;font-weight:700}.branch{margin-top:14px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.branch .node{min-height:auto}.human{border-color:#6c58a6}.machine{border-color:#28748c}.gate{border-color:#8b6a29}
+  .decision{display:grid;grid-template-columns:34px 1fr auto;gap:10px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line)}.decision:last-child{border:0}.step{width:28px;height:28px;display:grid;place-items:center;border-radius:50%;background:#24304f;color:var(--cyan);font-weight:800}.decision code{color:var(--ink)}.pill{font-size:11px;font-weight:800;padding:4px 8px;border-radius:999px;background:#24304f;color:var(--muted)}.pill.prompt{background:#2d2450;color:#d8caff}.pill.gh{background:#163a3b;color:#7cf0c4}.pill.wait{background:#3d321b;color:#ffd980}
+  .prompt-card{grid-column:span 6;padding:0;overflow:hidden}.prompt-head{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:14px 16px;background:#202a46;border-bottom:1px solid var(--line)}.prompt-head span{font-weight:850}.prompt-body{padding:16px}pre{margin:0;background:var(--code);border:1px solid #293450;border-radius:10px;padding:14px;white-space:pre-wrap;overflow:auto;color:#d9e3ff;font:12px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace}.variable{color:var(--amber)}
+  .finding{display:grid;grid-template-columns:24px 1fr;gap:11px;padding:13px 0;border-bottom:1px solid var(--line)}.finding:last-child{border:0}.status{width:12px;height:12px;border-radius:50%;margin-top:5px;background:var(--green);box-shadow:0 0 0 4px #63e6a51d}.status.warn{background:var(--amber);box-shadow:0 0 0 4px #ffc8571d}.status.bad{background:var(--red);box-shadow:0 0 0 4px #ff6b7d1d}.finding strong{display:block}.finding p{font-size:13px}.wide{grid-column:span 12}.half{grid-column:span 6}.legend{display:flex;flex-wrap:wrap;gap:10px;margin:10px 0 18px}.legend span{font-size:12px;color:var(--muted)}.dot{width:8px;height:8px;display:inline-block;border-radius:50%;margin-right:5px}.footer{margin-top:34px;color:#7482a2;font-size:12px}
+  @media(max-width:780px){main{padding:28px 14px 50px}.summary .card,.prompt-card,.half{grid-column:span 12}.loop{grid-template-columns:1fr}.arrow{transform:rotate(90deg)}.branch{grid-template-columns:1fr}.loop-return{margin:8px 0}.decision{grid-template-columns:34px 1fr}.decision .pill{grid-column:2;justify-self:start}}
+</style>
+</head>
+<body><main>
+  <div class="eyebrow">ops/orchestrator · source review</div>
+  <h1>A resumable ticket burn-down loop</h1>
+  <p class="lede"><code>orch run</code> snapshots GitHub, reserves one stable action, launches the configured agent, executes policy-owned verification, and records proof in trusted PR comments. It stops at <code>READY-FOR-MERGE</code> so a human can review and merge, then resumes on the next invocation.</p>
+  <span class="tag">Python stdlib only</span><span class="tag">state: .codex/orchestrator/state.json</span><span class="tag">48 tests passing</span>
+
+  <h2>Components</h2>
+  <div class="grid summary">
+    <section class="card"><div class="number">01</div><h3>GitHubAdapter</h3><p>Reads repo, issues, PRs, status checks, and trusted collaborator comments through <code>gh</code>. Normalizes them into snapshots.</p></section>
+    <section class="card"><div class="number">02</div><h3>Reconciler + state file</h3><p>Atomically persists normalized state under an exclusive file lock. Clears a pending action only when its effect is observable.</p></section>
+    <section class="card"><div class="number">03</div><h3>Deterministic planner</h3><p>Chooses one eligible issue by priority → creation time → number, then computes exactly one action.</p></section>
+    <section class="card"><div class="number">04</div><h3>Run controller</h3><p>Owns agent launch, bounded retries, CI polling, idempotent GitHub mutations, and the terminal human handoff.</p></section>
+    <section class="card"><div class="number">05</div><h3>Proof recorder</h3><p>Turns strict result JSON into policy-, SHA-, and stack-bound proof. Finding events fold by stable ID.</p></section>
+    <section class="card"><div class="number">06</div><h3>Ready gate</h3><p>Requires an open non-draft PR, successful checks, no current P0/P1 findings, current review and test proof, and a valid stack parent.</p></section>
+  </div>
+
+  <h2>The built-in <code>orch run</code> loop</h2>
+  <div class="legend"><span><i class="dot" style="background:var(--cyan)"></i>orch-owned step</span><span><i class="dot" style="background:var(--violet)"></i>agent process</span><span><i class="dot" style="background:var(--amber)"></i>human handoff</span></div>
+  <section class="card">
+    <div class="loop">
+      <div class="node machine"><b>1 · Reconcile</b><small>Fetch live GitHub state.<br>Adopt effects from a prior crash or retry.</small></div>
+      <div class="arrow">→</div>
+      <div class="node machine"><b>2 · Reserve</b><small>Choose one dependency-ready issue.<br>Persist the action and attempt count.</small></div>
+      <div class="arrow">→</div>
+      <div class="node machine"><b>3 · Execute</b><small>Mutate GitHub, launch the agent, run verification, or poll CI.</small></div>
+    </div>
+    <div class="branch">
+      <div class="node human"><b>Agent action</b><small>Send the prompt on stdin. Accept only one exact JSON object. Reconcile the claimed postcondition.</small></div>
+      <div class="node machine"><b>GitHub action</b><small>Add <code>agent:claimed</code>, publish proof, or add <code>READY-FOR-MERGE</code> idempotently.</small></div>
+      <div class="node gate"><b>Human handoff</b><small>After every gate passes, return <code>ready_for_merge</code>. Review and merge, then run the same command again.</small></div>
+    </div>
+    <div class="loop-return">↶ reconcile until ready_for_merge or all managed issues are closed</div>
+  </section>
+
+  <h2>Planner decision order</h2>
+  <section class="card">
+    <div class="decision"><span class="step">1</span><code>No open issues</code><span class="pill wait">complete</span></div>
+    <div class="decision"><span class="step">2</span><code>No issue whose dependencies are all closed</code><span class="pill wait">wait</span></div>
+    <div class="decision"><span class="step">3</span><code>Selected issue has merged PR</code><span class="pill wait">wait_for_merge</span></div>
+    <div class="decision"><span class="step">4</span><code>No active PR and issue is unclaimed</code><span class="pill gh">claim_issue</span></div>
+    <div class="decision"><span class="step">5</span><code>No active PR, or active PR is draft</code><span class="pill prompt">implement_issue</span></div>
+    <div class="decision"><span class="step">6</span><code>Stack parent missing / stale</code><span class="pill wait">wait</span></div>
+    <div class="decision"><span class="step">7</span><code>Any unresolved P0/P1 finding</code><span class="pill prompt">patch_pr</span></div>
+    <div class="decision"><span class="step">8</span><code>No passing review proof for current head + stack</code><span class="pill prompt">review_pr</span></div>
+    <div class="decision"><span class="step">9</span><code>No passing test proof for current head + stack</code><span class="pill prompt">verify_pr</span></div>
+    <div class="decision"><span class="step">10</span><code>Checks absent, pending, or non-success</code><span class="pill wait">wait_for_ci</span></div>
+    <div class="decision"><span class="step">11</span><code>Not labeled ready</code><span class="pill gh">mark_ready</span></div>
+    <div class="decision"><span class="step">12</span><code>Already ready</code><span class="pill wait">wait_for_merge</span></div>
+  </section>
+
+  <h2>Exact prompt shape</h2>
+  <p>All four prompt actions use the same wrapper; only target values and the highlighted instruction change.</p>
+  <div class="grid">
+    <section class="card wide"><pre>$pstack:poteto-mode
+
+Execute orchestrator action <span class="variable">{kind}</span> for <span class="variable">{PR #n | issue #n}</span> in <span class="variable">{owner/repo}</span>.
+Action ID: <span class="variable">{action_id}</span>
+Expected head SHA: <span class="variable">{sha | none}</span>
+Expected stack fingerprint: <span class="variable">{fingerprint | none}</span>
+
+<span class="variable">{action-specific instruction below}</span>
+
+Work only on this ticket. Preserve unrelated changes. Do not label the PR READY-FOR-MERGE.
+Write exactly one JSON object to stdout. Use the supplied action-specific schema and identity values.
+Output JSON only. No Markdown. No extra keys.</pre></section>
+    <section class="card prompt-card"><div class="prompt-head"><span>implement_issue</span><span class="pill prompt">agent prompt</span></div><div class="prompt-body"><pre>Implement the issue acceptance criteria, run proof tests, push the ticket branch, and open its correctly based PR.</pre><p>Completion is observed indirectly when an open/merged PR closes the issue.</p></div></section>
+    <section class="card prompt-card"><div class="prompt-head"><span>review_pr</span><span class="pill prompt">agent prompt + complete</span></div><div class="prompt-body"><pre>Invoke $mattpocock-skills:code-review on the current PR head and report every finding with severity and resolution state.</pre><p>Must return action ID, head SHA, fingerprint, pass/fail, summary, and optional findings; then call <code>orch complete</code>.</p></div></section>
+    <section class="card prompt-card"><div class="prompt-head"><span>patch_pr</span><span class="pill prompt">agent prompt</span></div><div class="prompt-body"><pre>Patch the unresolved review findings only, run focused proof tests, and push the updated head.</pre><p>Completion is observed through a changed PR head or disappearance of blocking findings.</p></div></section>
+    <section class="card prompt-card"><div class="prompt-head"><span>verify_pr</span><span class="pill prompt">agent prompt + complete</span></div><div class="prompt-body"><pre>Run the trusted repository verification commands and report their exact exit status and evidence.</pre><p>Must return the same proof result shape as review; <code>findings</code> may be omitted.</p></div></section>
+  </div>
+
+  <h2>Completeness review</h2>
+  <div class="grid">
+    <section class="card half">
+      <div class="finding"><i class="status"></i><div><strong>Strong: deterministic and resumable</strong><p>Action IDs derive from action identity; duplicate <code>next</code>, claim, completion, and ready application converge safely.</p></div></div>
+      <div class="finding"><i class="status"></i><div><strong>Strong: stale proof protection</strong><p>Head SHA and stack fingerprint bind both review and test receipts; parent/head changes invalidate old proof.</p></div></div>
+      <div class="finding"><i class="status"></i><div><strong>Strong: fail-closed merge gate</strong><p>Missing checks, proof, valid parent, or clean P0/P1 state prevents readiness.</p></div></div>
+    </section>
+    <section class="card half">
+      <div class="finding"><i class="status"></i><div><strong>Closed: built-in loop and agent launcher</strong><p><code>orch run</code> owns scheduling, process launch, bounded retries, CI polling, reconciliation, and stop behavior.</p></div></div>
+      <div class="finding"><i class="status"></i><div><strong>Closed: finding identity and lifecycle</strong><p>Finding markers carry stable IDs, head SHA, and stack identity. Later events replace earlier state for the same ID. Old-head findings do not block a new head.</p></div></div>
+      <div class="finding"><i class="status"></i><div><strong>Closed: exact result contracts</strong><p>Every prompt includes its full JSON shape. Boundary parsing rejects missing keys, extra keys, prose, and mismatched action identity.</p></div></div>
+      <div class="finding"><i class="status"></i><div><strong>Closed: policy-owned verification</strong><p>The policy names exact argv arrays. The runner verifies a clean checkout at the PR head, executes the commands itself, and binds proof to the policy digest.</p></div></div>
+      <div class="finding"><i class="status warn"></i><div><strong>Remaining limit: 1,000-item boundary</strong><p>Multiple open PRs for one issue are rejected. Issue and PR queries now fail closed at 1,000 results, but cursor pagination is still required for larger repositories.</p></div></div>
+    </section>
+  </div>
+  <p class="footer">Reviewed from <code>ops/orchestrator/orch.py</code>, <code>orch</code>, and <code>test_orch.py</code>. Test run: 48/48 passing.</p>
+</main></body></html>

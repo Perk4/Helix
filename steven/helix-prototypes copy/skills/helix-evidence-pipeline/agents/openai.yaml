@@ -1,4 +1,0 @@
-interface:
-  display_name: "HELIX Evidence Pipeline"
-  short_description: "Build traceable nonclinical report evidence"
-  default_prompt: "Use $helix-evidence-pipeline to simulate a traceable nonclinical study workflow from authorized inputs through gated export."

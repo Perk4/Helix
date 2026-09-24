@@ -10,13 +10,15 @@ from fastapi.testclient import TestClient
 from sqlalchemy import func, select
 
 from app.agents.codex_section_agent import AgentResult, CodexSectionAgent
+from app.approved_exports import note_agent_start
 from app.config import Settings
 from app.database import create_database_engine
 from app.main import create_app
 from app.models import AuditEventRow, SectionRunRow
 from app.repository import StudyPackageRepository
 from app.schemas import SectionRunCommand
-from app.section_runs import SectionRunService
+from app.section_runs import SectionRunService, canonical_hash
+from app.skill_integrity import SECTION_AGENT_ROOT, skill_integrity
 from app.template_contracts import evaluate_template_contract
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -56,6 +58,7 @@ class FakeSectionAgent:
         self.calls = 0
 
     def run(self, *, envelope_id: str, prompt: str, output_schema: dict[str, object]) -> AgentResult:
+        note_agent_start()
         self.calls += 1
         if self.mode == "failure":
             raise RuntimeError("SDK unavailable")
@@ -64,6 +67,9 @@ class FakeSectionAgent:
         candidate_id = re.search(r"candidate_id (SDC-[A-Z0-9-]+)", prompt).group(1)
         run_id = re.search(r"run_id (SRUN-[A-Z0-9-]+)", prompt).group(1)
         skill_hash = re.search(r"skill_hash to (sha256:[a-f0-9]{64})", prompt).group(1)
+        skill_references_hash = re.search(
+            r"skill_references_hash to (sha256:[a-f0-9]{64})", prompt
+        ).group(1)
         cycle_match = re.search(r"drafting_cycle_id ([A-Z0-9-]+)", prompt)
         attempt_match = re.search(r"and attempt (\d+)", prompt)
         drafting_cycle_id = cycle_match.group(1) if cycle_match else "CYCLE-BW-001"
@@ -94,6 +100,7 @@ class FakeSectionAgent:
             "thread_id": "thread-test-001",
             "skill_name": "helix-section-agent",
             "skill_hash": skill_hash,
+            "skill_references_hash": skill_references_hash,
         }
         if self.mode == "missing_receipt":
             receipt.pop("thread_id")
@@ -195,9 +202,10 @@ def build_client(
     *,
     repository_root: Path = ROOT,
     raise_server_exceptions: bool = True,
+    database_url: str = "sqlite+pysqlite:///:memory:",
 ):
     settings = Settings(
-        database_url="sqlite+pysqlite:///:memory:",
+        database_url=database_url,
         seed_path=ROOT / "synthetic-e2e" / "helix-synthetic-bundle.json",
         codex_repository_root=repository_root,
         auto_seed=True,
@@ -248,6 +256,10 @@ def test_section_run_records_candidate_receipt_scaffold_and_exact_replay() -> No
         assert receipt["candidate_hash"].startswith("sha256:")
         assert receipt["envelope_hash"].startswith("sha256:")
         assert receipt["skill_hash"].startswith("sha256:")
+        assert (
+            receipt["skill_references_hash"]
+            == skill_integrity(ROOT / SECTION_AGENT_ROOT).skill_references_hash
+        )
         assert receipt["review_scaffold_revision"] == 2
         assert len(workspace["section_runs"]) == 1
         stored = workspace["section_runs"][0]
@@ -274,6 +286,35 @@ def test_section_run_records_candidate_receipt_scaffold_and_exact_replay() -> No
         assert "records" not in stored["envelope"]
         assert stored["envelope"]["pinned_run_id"].startswith("RUN-")
         assert stored["envelope"]["manifest_hash"].startswith("sha256:")
+
+        # Style exemplars travel inside the envelope so they are hashed with it.
+        # They come from another study, so their values must never reach a
+        # draft: the corpus carries 291.5 g against this study's 286.2 g claim.
+        exemplars = stored["envelope"]["reference_drafts"]
+        assert exemplars, "the drafter needs an example of an approved section"
+        for exemplar in exemplars:
+            assert exemplar["report_id"] != stored["envelope"]["study_context"]["study_id"]
+            assert exemplar["hash"].startswith("sha256:")
+        assert stored["envelope"]["validated_claims"][0]["claim_id"] == "C-BW-HIGH"
+        exemplar_text = json.dumps(exemplars)
+        assert "291.5" in exemplar_text, "corpus changed; the contamination guard below is now vacuous"
+        assert "291.5" not in json.dumps(stored["candidate"])
+
+
+        # The agent renders values the executor computed. A receipt carrying only
+        # a hash leaves it nothing to render, so it has to derive them itself.
+        receipt = stored["envelope"]["executor_receipts"][0]
+        assert receipt["artifact_id"] == "EXEC-BW-SUMMARY-001"
+        assert receipt["facts"]["unit"] == "g"
+        assert receipt["facts"]["male_means"]["G1"]
+        assert receipt["facts"]["female_means"]["G1"]
+        # No layer runs a statistical test, so nothing may name one.
+        assert "statistical_test" not in receipt["facts"]
+        assert receipt["provenance"]
+        assert all(entry["source_record_ids"] for entry in receipt["provenance"])
+        assert receipt["hash"] == canonical_hash(
+            {"facts": receipt["facts"], "provenance": receipt["provenance"]}
+        )
         assert stored["envelope"]["structured_failures"] == [
             {
                 "result_id": "VR-004",

@@ -1,0 +1,96 @@
+source	kind	issues	proof
+DEMO-001	requirement	#33,#34	Playwright golden-path and exported-artifact assertions.
+DEMO-002	requirement	#29,#34	Playwright golden-path and exported-artifact assertions.
+DEMO-003	requirement	#29,#34	Playwright golden-path and exported-artifact assertions.
+DEMO-004	requirement	#29,#34	Playwright golden-path and exported-artifact assertions.
+DEMO-005	requirement	#31,#32,#34	Playwright golden-path and exported-artifact assertions.
+DEMO-006	requirement	#32,#34	Playwright golden-path and exported-artifact assertions.
+DEMO-007	requirement	#32,#34	Playwright golden-path and exported-artifact assertions.
+DEMO-008	requirement	#32,#34	Playwright golden-path and exported-artifact assertions.
+DEMO-009	requirement	#32,#33,#34	Playwright golden-path and exported-artifact assertions.
+DEMO-010	requirement	#34	Playwright golden-path and exported-artifact assertions.
+AUTH-001	requirement	#30,#32,#34	API authority tests and visible authority labels.
+AUTH-002	requirement	#29,#30,#32,#34	API authority tests and visible authority labels.
+AUTH-003	requirement	#29,#31,#32,#34	API authority tests and visible authority labels.
+AUTH-004	requirement	#31,#32,#34	API authority tests and visible authority labels.
+AUTH-005	requirement	#30,#32,#34	API authority tests and visible authority labels.
+AUTH-006	requirement	#30,#32,#34	API authority tests and visible authority labels.
+AUTH-007	requirement	#29,#34	API authority tests and visible authority labels.
+AUTH-008	requirement	#29,#34	API authority tests and visible authority labels.
+AUTH-009	requirement	#33,#34	API authority tests and visible authority labels.
+TRACE-001	requirement	#30,#34	Step Receipt, artifact lookup, replay, and hash-validation assertions.
+TRACE-002	requirement	#30,#34	Step Receipt, artifact lookup, replay, and hash-validation assertions.
+TRACE-003	requirement	#30,#34	Step Receipt, artifact lookup, replay, and hash-validation assertions.
+TRACE-004	requirement	#30,#34	Step Receipt, artifact lookup, replay, and hash-validation assertions.
+TRACE-005	requirement	#30,#34	Step Receipt, artifact lookup, replay, and hash-validation assertions.
+TRACE-006	requirement	#30,#34	Step Receipt, artifact lookup, replay, and hash-validation assertions.
+TRACE-007	requirement	#30,#34	Step Receipt, artifact lookup, replay, and hash-validation assertions.
+TRACE-008	requirement	#30,#34	Step Receipt, artifact lookup, replay, and hash-validation assertions.
+TRACE-009	requirement	#30,#34	Step Receipt, artifact lookup, replay, and hash-validation assertions.
+TRACE-010	requirement	#30,#34	Step Receipt, artifact lookup, replay, and hash-validation assertions.
+TRACE-011	requirement	#30,#34	Step Receipt, artifact lookup, replay, and hash-validation assertions.
+TRACE-012	requirement	#30,#34	Step Receipt, artifact lookup, replay, and hash-validation assertions.
+EVAL-001	requirement	#31,#34	Qualification and study-output Evaluation Artifact tests.
+EVAL-002	requirement	#31,#34	Qualification and study-output Evaluation Artifact tests.
+EVAL-003	requirement	#31,#34	Qualification and study-output Evaluation Artifact tests.
+EVAL-004	requirement	#31,#34	Qualification and study-output Evaluation Artifact tests.
+EVAL-005	requirement	#31,#34	Qualification and study-output Evaluation Artifact tests.
+EVAL-006	requirement	#31,#34	Qualification and study-output Evaluation Artifact tests.
+EVAL-007	requirement	#31,#34	Qualification and study-output Evaluation Artifact tests.
+EVAL-008	requirement	#31,#34	Qualification and study-output Evaluation Artifact tests.
+UX-001	requirement	#30,#34	Playwright journey, reload, accessibility, and responsive assertions.
+UX-002	requirement	#30,#34	Playwright journey, reload, accessibility, and responsive assertions.
+UX-003	requirement	#30,#34	Playwright journey, reload, accessibility, and responsive assertions.
+UX-004	requirement	#30,#34	Playwright journey, reload, accessibility, and responsive assertions.
+UX-005	requirement	#30,#34	Playwright journey, reload, accessibility, and responsive assertions.
+UX-006	requirement	#30,#34	Playwright journey, reload, accessibility, and responsive assertions.
+UX-007	requirement	#30,#34	Playwright journey, reload, accessibility, and responsive assertions.
+UX-008	requirement	#30,#34	Playwright journey, reload, accessibility, and responsive assertions.
+UX-009	requirement	#34	Playwright journey, reload, accessibility, and responsive assertions.
+UX-010	requirement	#34	Playwright journey, reload, accessibility, and responsive assertions.
+AZURE-001	requirement	#33,#34	Bicep deployment, network, identity, migration, and revision smoke evidence.
+AZURE-002	requirement	#33,#34	Bicep deployment, network, identity, migration, and revision smoke evidence.
+AZURE-003	requirement	#33,#34	Bicep deployment, network, identity, migration, and revision smoke evidence.
+AZURE-004	requirement	#33,#34	Bicep deployment, network, identity, migration, and revision smoke evidence.
+AZURE-005	requirement	#33,#34	Bicep deployment, network, identity, migration, and revision smoke evidence.
+AZURE-006	requirement	#33,#34	Bicep deployment, network, identity, migration, and revision smoke evidence.
+AZURE-007	requirement	#33,#34	Bicep deployment, network, identity, migration, and revision smoke evidence.
+AZURE-008	requirement	#33,#34	Bicep deployment, network, identity, migration, and revision smoke evidence.
+AZURE-009	requirement	#33,#34	Bicep deployment, network, identity, migration, and revision smoke evidence.
+AZURE-010	requirement	#33,#34	Bicep deployment, network, identity, migration, and revision smoke evidence.
+AZURE-011	requirement	#33,#34	Bicep deployment, network, identity, migration, and revision smoke evidence.
+AZURE-012	requirement	#33,#34	Bicep deployment, network, identity, migration, and revision smoke evidence.
+PROOF-001	requirement	#29,#34	Rerunnable container or Azure evidence-bundle verification.
+PROOF-002	requirement	#29,#33,#34	Rerunnable container or Azure evidence-bundle verification.
+PROOF-003	requirement	#29,#30,#33,#34	Rerunnable container or Azure evidence-bundle verification.
+PROOF-004	requirement	#29,#30,#34	Rerunnable container or Azure evidence-bundle verification.
+PROOF-005	requirement	#31,#34	Rerunnable container or Azure evidence-bundle verification.
+PROOF-006	requirement	#34	Rerunnable container or Azure evidence-bundle verification.
+PROOF-007	requirement	#32,#34	Rerunnable container or Azure evidence-bundle verification.
+PROOF-008	requirement	#34	Rerunnable container or Azure evidence-bundle verification.
+PROOF-009	requirement	#34	Rerunnable container or Azure evidence-bundle verification.
+PROOF-010	requirement	#29,#30,#31,#32,#34	Rerunnable container or Azure evidence-bundle verification.
+ADR-0001	adr	#29,#31	The issue Refs and Locked sections preserve this decision.
+ADR-0007	adr	#31	The issue Refs and Locked sections preserve this decision.
+ADR-0009	adr	#29	The issue Refs and Locked sections preserve this decision.
+ADR-0012	adr	#32	The issue Refs and Locked sections preserve this decision.
+ADR-0013	adr	#32	The issue Refs and Locked sections preserve this decision.
+ADR-0015	adr	#32	The issue Refs and Locked sections preserve this decision.
+ADR-0017	adr	#32	The issue Refs and Locked sections preserve this decision.
+ADR-0021	adr	#29,#31	The issue Refs and Locked sections preserve this decision.
+ADR-0022	adr	#30	The issue Refs and Locked sections preserve this decision.
+ADR-0023	adr	#30,#31,#32,#34	The issue Refs and Locked sections preserve this decision.
+ADR-0024	adr	#33,#34	The issue Refs and Locked sections preserve this decision.
+#29 -> #30	dependency	#30	Issue #30 names #29 in its Process blocker list.
+#29 -> #33	dependency	#33	Issue #33 names #29 in its Process blocker list.
+#30 -> #31	dependency	#31	Issue #31 names #30 in its Process blocker list.
+#31 -> #32	dependency	#32	Issue #32 names #31 in its Process blocker list.
+#32 -> #34	dependency	#34	Issue #34 names #32 in its Process blocker list.
+#33 -> #34	dependency	#34	Issue #34 names #33 in its Process blocker list.
+#3 -> #30	dependency	#30	Issue #30 names #3 in its Process blocker list.
+#4 -> #30	dependency	#30	Issue #30 names #4 in its Process blocker list.
+#25 -> #30	dependency	#30	Issue #30 names #25 in its Process blocker list.
+#5 -> #31	dependency	#31	Issue #31 names #5 in its Process blocker list.
+#12 -> #32	dependency	#32	Issue #32 names #12 in its Process blocker list.
+#27 -> #32	dependency	#32	Issue #32 names #27 in its Process blocker list.
+#24 -> #34	dependency	#34	Issue #34 names #24 in its Process blocker list.

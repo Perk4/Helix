@@ -140,6 +140,46 @@ _Avoid_: hard failure, optional warning
 A visible validation outcome that does not block progression.
 _Avoid_: blocker, required disposition
 
+## Workspace UI
+
+**Workspace Journey**:
+The one-page study workspace organized as nine ordered stages. The Progress Bar selects which reached stage the user reviews, while progress itself changes only through authorized gate actions or recorded agent events.
+_Avoid_: tab set, side navigation, view mode
+
+**Human Gate**:
+A Workspace Journey stage that waits for an explicit qualified-person action before the study can progress. An agent may stop at a Human Gate and expose evidence, but it cannot pass the gate.
+_Avoid_: agent approval, automatic gate pass
+
+**Agent Step**:
+A Workspace Journey stage that runs between Human Gates from recorded run events. The UI may show live activity and pause or resume controls, but the backend remains the authority for run state.
+_Avoid_: simulated production progress, client-owned workflow state
+
+**Traceability Review**:
+The Human Gate where validation results, evidence lineage, and blocker dispositions are reviewed before report review starts.
+_Avoid_: evidence tab, optional evidence inspection
+
+**Review and Export Gate**:
+The final Human Gate where role sign-offs and the separate export action are completed for the exact approved package.
+_Avoid_: combined approval export, FDA approval
+
+## Workflow trace
+
+**Workflow Trace**:
+An ordered, run-scoped view of Human Gates, deterministic executors, Skill Invocations, evaluations, and artifact transitions. It is derived from immutable Step Receipts and has no gate authority.
+_Avoid_: activity animation, client progress, audit authority
+
+**Step Receipt**:
+An immutable, content-addressed record of one workflow-step attempt and its exact inputs, outputs, executor or skill identity, authority class, status, and parent receipt.
+_Avoid_: mutable step state, log line
+
+**Skill Invocation**:
+One agent turn explicitly bound to a reviewed skill version and a scoped input envelope. A Skill Invocation may propose an artifact but cannot create evidence or decide a deterministic gate.
+_Avoid_: arbitrary prompt, user-selected plugin
+
+**Evaluation Artifact**:
+An immutable result from Skill Qualification or Study Output Evaluation, bound to the exact evaluated artifact, suite, rubric, and evaluator versions. It is advisory and cannot satisfy a deterministic rule.
+_Avoid_: gate result, unversioned score
+
 ## Review and approval
 
 **Artifact-Bound Disposition**:
