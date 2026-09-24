@@ -256,7 +256,7 @@ export function ReportAssembly({
                   {draft.provenance_count > 0
                     ? `${draft.provenance_count} values traced to source records.`
                     : "No numeric values in this section."}
-                  {draft.model ? ` · narrative by ${draft.model}` : " · narrative pending (model not configured)"}
+                  {!draft.model && " · narrative pending (model not configured)"}
                 </p>
               </div>
             )}
