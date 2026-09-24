@@ -7,7 +7,7 @@
 //   node scripts/record-qualification.mjs [--dry-run]
 
 import { execFileSync } from "node:child_process";
-import { mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { relative, resolve } from "node:path";
 
 import { canonicalHash, fileHash } from "./lib/hash.mjs";
@@ -17,6 +17,7 @@ const evalsDir = resolve(root, ".agents/skills/helix-section-agent/evals");
 const skillPath = resolve(root, ".agents/skills/helix-section-agent/SKILL.md");
 const packagePath = resolve(root, "skills/helix-evidence-pipeline/packages/sections/5_2_3_body_weight/package.json");
 const qualificationsDir = resolve(evalsDir, "qualifications");
+const artifactPath = resolve(qualificationsDir, "helix-section-agent-qualification.json");
 const dryRun = process.argv.includes("--dry-run");
 
 const walk = (dir) =>
@@ -66,41 +67,6 @@ const runSuite = () => {
   return report;
 };
 
-// Warn when a feature branch already changes something this digest covers.
-//
-// A qualification certifies the tree it was taken from, so one taken the day
-// before an upstream branch lands is stale on arrival. That has happened three
-// times: a section-skills move, a SKILL.md edit, and a retry cap — each found
-// only after the work was done. Checking here means it surfaces at the one
-// moment it matters, when you are about to certify.
-//
-// Informational. It does not block: the branch may never merge, and a warning
-// a reviewer can weigh beats a gate that cries wolf.
-const warnOnUpstreamChanges = () => {
-  const ref = process.env.HELIX_UPSTREAM_REF ?? "origin/feat/steven-workspace";
-  let changed;
-  try {
-    // The package is not a hashed input, but it is where the qualification is
-    // written. An upstream branch editing it is the collision we actually hit:
-    // a hand-written status and hash landing on top of a recorded one.
-    changed = execFileSync("git", ["diff", "--name-only", `origin/main...${ref}`, "--", ...inputPaths, packagePath], {
-      cwd: root,
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "ignore"],
-    })
-      .split("\n")
-      .filter(Boolean);
-  } catch {
-    return; // ref not fetched, or not a git checkout; nothing to say
-  }
-  if (changed.length === 0) return;
-  console.warn(`\nWARNING ${ref} already changes ${changed.length} file(s) this digest covers:`);
-  for (const path of changed) console.warn(`  ${path}`);
-  console.warn("Recording now certifies a tree that branch will replace. Consider waiting for it to land.\n");
-};
-
-warnOnUpstreamChanges();
-
 const report = runSuite();
 const stats = report.results?.stats ?? {};
 const cases = (report.results?.results ?? []).map((entry) => ({
@@ -129,9 +95,16 @@ const suite = JSON.parse(readFileSync(packagePath, "utf8")).skill.promptfoo_suit
 // The outcome, not the transcript. promptfoo's report carries an eval id,
 // timestamps, latency, token counts, and the model's prose — all of which move
 // between runs. Hashing those would produce a digest nobody could reproduce.
+// Token cost belongs in the certificate. It went from 8.5k to 68k across one
+// week of making the suite faithful, and nothing noticed, because the perf
+// rule only ever watched wall-clock. A qualification that silently costs eight
+// times what it used to is a qualification nobody runs before pushing.
+const tokens = stats.tokenUsage?.total ?? 0;
+
 const outcome = {
   suite_id: suite.id,
   suite_version: suite.version,
+  tokens,
   cases: cases.length,
   assertions: assertions.length,
   assertion_shape: cases.map((entry) => ({
@@ -139,6 +112,20 @@ const outcome = {
     assertions: entry.assertions.map((assertion) => ({ type: assertion.type, value: assertion.value ?? null })),
   })),
 };
+
+// Compare against the last certificate before writing a new one. Growth is
+// expected as coverage grows; doubling without anyone deciding to is not.
+const previous = existsSync(artifactPath) ? JSON.parse(readFileSync(artifactPath, "utf8")) : null;
+const before = previous?.outcome?.tokens ?? 0;
+if (before > 0 && tokens > before * 2) {
+  console.error(`FAIL cost doubled: ${before} tokens at the last qualification, ${tokens} now.`);
+  console.error("     Re-run to rule out variance. If the growth is intended, record it in the");
+  console.error("     roadmap and delete the previous artifact to accept the new baseline.");
+  process.exit(1);
+}
+if (before > 0) {
+  console.log(`cost ok          ${tokens} tokens against ${before} at the last qualification`);
+}
 
 const qualificationHash = canonicalHash({ inputs, outcome });
 const pkg = JSON.parse(readFileSync(packagePath, "utf8"));
@@ -166,7 +153,7 @@ writeFileSync(packagePath, `${JSON.stringify(pkg, null, 2)}\n`, "utf8");
 
 mkdirSync(qualificationsDir, { recursive: true });
 writeFileSync(
-  resolve(qualificationsDir, `${suite.id}.json`),
+  artifactPath,
   `${JSON.stringify({ qualification_id: qualificationId, qualification_hash: qualificationHash, inputs, outcome }, null, 2)}\n`,
   "utf8",
 );
