@@ -2,8 +2,9 @@
 
 Design (deliberately simple, single file):
 
-    section_skills/skill_<id>.md   the presentation contract (referenced, never executed)
-    compute_<id>(package)          the deterministic calculation (this file)
+    .agents/skills/helix-section-agent/references/section_skills/skill_<id>.md
+                                  the presentation contract (referenced, never executed)
+    compute_<id>(package)         the deterministic calculation (this file)
 
 The executor NEVER calls an LLM. Each compute function reads the frozen study
 records, computes the numbers a section needs, and returns a `SectionResult`
@@ -24,7 +25,14 @@ from statistics import mean
 
 from .schemas import Animal, StudyEvidencePackage
 
-SKILLS_DIR = Path(__file__).parent / "section_skills"
+SKILLS_DIR = (
+    Path(__file__).resolve().parents[2]
+    / ".agents"
+    / "skills"
+    / "helix-section-agent"
+    / "references"
+    / "section_skills"
+)
 
 
 # --------------------------------------------------------------------------- #

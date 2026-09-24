@@ -1,0 +1,44 @@
+{
+  "verified": true,
+  "requirements": 71,
+  "coverage_rows": 95,
+  "spec_hash": "sha256:f27eb5d22d97e20d771bbdd4f5b9b0cf32475a2270ec9f58bf542151f4d8775c",
+  "coverage_hash": "sha256:ef4e531c5b14d325f7c4d2f834e08fd69721278fa369145ec3e92c173734b998",
+  "published_issues": [
+    {
+      "number": 28,
+      "url": "https://github.com/Steven-Espaillat/Helix/issues/28",
+      "body_hash": "sha256:f27eb5d22d97e20d771bbdd4f5b9b0cf32475a2270ec9f58bf542151f4d8775c"
+    },
+    {
+      "number": 29,
+      "url": "https://github.com/Steven-Espaillat/Helix/issues/29",
+      "body_hash": "sha256:e39d73aa65c8f00ed9809218a2c69e83c0c36562b8037fe83ae4f68d555c11b8"
+    },
+    {
+      "number": 30,
+      "url": "https://github.com/Steven-Espaillat/Helix/issues/30",
+      "body_hash": "sha256:195c7d1712ce02b6844d2bb6a0edbed172957b707ef8c4066dbd62e0f5870d4a"
+    },
+    {
+      "number": 31,
+      "url": "https://github.com/Steven-Espaillat/Helix/issues/31",
+      "body_hash": "sha256:5f7908db1898c4044202dd74bbec2b77dc7c89f6782ffd83dfa6b1b5d584e9c7"
+    },
+    {
+      "number": 32,
+      "url": "https://github.com/Steven-Espaillat/Helix/issues/32",
+      "body_hash": "sha256:db7293c3275b2095c0d5d4e4b0cedcbf82bf722df803c9253c8b7fa096127d3a"
+    },
+    {
+      "number": 33,
+      "url": "https://github.com/Steven-Espaillat/Helix/issues/33",
+      "body_hash": "sha256:d120b609a2df8acef79ecca9d34af3ee35d86d57e1e8b878b5b06eb15f04708b"
+    },
+    {
+      "number": 34,
+      "url": "https://github.com/Steven-Espaillat/Helix/issues/34",
+      "body_hash": "sha256:0804c26dc2eda6d063b0d4c34e9d0635e6171754db0ab6178bd9ef64be3e7b57"
+    }
+  ]
+}

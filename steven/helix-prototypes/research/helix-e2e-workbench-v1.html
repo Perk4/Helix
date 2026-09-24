@@ -1,0 +1,549 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HELIX · Report workspace (v1 reference)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<!--
+  HELIX v1 reference implementation.
+  Plain HTML/CSS/JS, no build step. Same scoping convention as v0 (#helix-e2e, hx- classes).
+  This file is the behavioral + visual reference. Port it into the production stack;
+  see HANDOFF.md for the spec and acceptance criteria.
+-->
+<style>
+  #helix-e2e {
+    color-scheme: light dark;
+    --hx-bg:          light-dark(#F5F7F8, #0D141B);
+    --hx-surface:     light-dark(#FFFFFF, #141E28);
+    --hx-surface-2:   light-dark(#F5F7F8, #1B2936);
+    --hx-line:        light-dark(#DCE3E8, #34485B);
+    --hx-line-soft:   light-dark(#EEF1F3, #24374A);
+    --hx-ink:         light-dark(#111C24, #E7EEF6);
+    --hx-ink-2:       light-dark(#33434F, #C4D1DC);
+    --hx-muted:       light-dark(#5A6B78, #9EB0C1);
+    --hx-faint:       light-dark(#8FA0AC, #6F8395);
+    --hx-accent:      light-dark(#0A5F66, #5CC3CB);
+    --hx-accent-soft: light-dark(#EEF5F5, #133538);
+    --hx-accent-ring: light-dark(#D6E8E9, #1E4A4E);
+    --hx-on-accent:   light-dark(#FFFFFF, #07181A);
+    --hx-pass:        light-dark(#17663F, #5DD5A7);
+    --hx-pass-soft:   light-dark(#E7F4EC, #12382D);
+    --hx-pass-line:   light-dark(#CFE6D8, #1F5140);
+    --hx-warn:        light-dark(#8A4B00, #F5BD67);
+    --hx-gate:        light-dark(#B26A00, #F5BD67);
+    --hx-warn-soft:   light-dark(#FDF1DE, #3F2C12);
+    --hx-warn-line:   light-dark(#F1DDB8, #5C4318);
+    --hx-gate-ring:   light-dark(#FBE7C6, #4A3413);
+    --hx-block:       light-dark(#A61B1B, #FF8D89);
+    --hx-block-soft:  light-dark(#FCEBEA, #421E20);
+    --hx-info:        light-dark(#1D4F7A, #69B6F4);
+    --hx-info-soft:   light-dark(#E6EEF6, #16354C);
+    --hx-radius: 12px;
+    --hx-mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+    --hx-serif: Georgia, 'Times New Roman', serif;
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+    font-size: 14px; line-height: 1.45; color: var(--hx-ink);
+  }
+  body { margin: 0; background: light-dark(#F5F7F8, #0D141B); color-scheme: light dark; }
+  #helix-e2e * { box-sizing: border-box; }
+  #helix-e2e button { font: inherit; }
+  #helix-e2e .hx-app { min-height: 100vh; display: flex; flex-direction: column; background: var(--hx-bg); }
+
+  /* Header */
+  #helix-e2e .hx-top { height: 60px; flex-shrink: 0; padding: 0 40px; display: flex; align-items: center; justify-content: space-between; gap: 16px; background: var(--hx-surface); border-bottom: 1px solid var(--hx-line); }
+  #helix-e2e .hx-brand { display: flex; align-items: center; gap: 20px; min-width: 0; }
+  #helix-e2e .hx-logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 16px; letter-spacing: .08em; }
+  #helix-e2e .hx-vr { width: 1px; height: 24px; background: var(--hx-line); }
+  #helix-e2e .hx-study strong { display: block; font-size: 14px; }
+  #helix-e2e .hx-study span { font-size: 12px; color: var(--hx-muted); }
+  #helix-e2e .hx-top-meta { display: flex; align-items: center; gap: 12px; }
+  #helix-e2e .hx-synthetic { font-size: 12px; font-weight: 500; padding: 4px 10px; border-radius: 999px; background: var(--hx-surface-2); color: var(--hx-ink-2); border: 1px dashed var(--hx-faint); }
+  #helix-e2e .hx-pill { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: 999px; }
+  #helix-e2e .hx-pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+  #helix-e2e .hx-avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--hx-surface-2); color: var(--hx-ink-2); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; }
+
+  #helix-e2e .hx-main { flex-grow: 1; padding: 20px 40px 28px; display: flex; flex-direction: column; gap: 20px; }
+
+  /* Tone helpers */
+  #helix-e2e .t-pass  { background: var(--hx-pass-soft);  color: var(--hx-pass); }
+  #helix-e2e .t-warn  { background: var(--hx-warn-soft);  color: var(--hx-warn); }
+  #helix-e2e .t-block { background: var(--hx-block-soft); color: var(--hx-block); }
+  #helix-e2e .t-block-solid { background: var(--hx-block); color: #FFFFFF; }
+  #helix-e2e .t-info  { background: var(--hx-info-soft);  color: var(--hx-info); }
+  #helix-e2e .t-muted { background: var(--hx-surface-2);  color: var(--hx-ink-2); }
+  #helix-e2e .t-accent{ background: var(--hx-accent-soft);color: var(--hx-accent); }
+
+  /* Cards, type, buttons */
+  #helix-e2e .hx-card { background: var(--hx-surface); border: 1px solid var(--hx-line); border-radius: var(--hx-radius); padding: 24px; }
+  #helix-e2e .hx-kicker { font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--hx-muted); }
+  #helix-e2e h1, #helix-e2e h2, #helix-e2e h3 { margin: 0; font-weight: 600; }
+  #helix-e2e h1 { font-size: 22px; } #helix-e2e h2 { font-size: 18px; } #helix-e2e h3 { font-size: 16px; }
+  #helix-e2e .hx-sub { margin: 4px 0 0; color: var(--hx-muted); }
+  #helix-e2e .hx-chip { font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 999px; white-space: nowrap; }
+  #helix-e2e .hx-btn { min-height: 44px; padding: 0 18px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; border: 1px solid var(--hx-line); background: var(--hx-surface); color: var(--hx-ink); }
+  #helix-e2e .hx-btn.primary { border: 0; background: var(--hx-accent); color: var(--hx-on-accent); }
+  #helix-e2e .hx-btn.sm { min-height: 40px; padding: 0 14px; }
+  #helix-e2e .hx-btn:disabled { opacity: .45; cursor: not-allowed; }
+  #helix-e2e :focus-visible { outline: 2px solid var(--hx-accent); outline-offset: 2px; }
+  #helix-e2e .hx-mono { font-family: var(--hx-mono); font-size: 12px; color: var(--hx-muted); overflow-wrap: anywhere; }
+  #helix-e2e .hx-list-row { display: flex; align-items: center; gap: 10px; min-height: 40px; border-bottom: 1px solid var(--hx-line-soft); font-size: 13px; }
+  #helix-e2e .hx-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+  /* Spinner */
+  @keyframes hx-spin { to { transform: rotate(360deg); } }
+  #helix-e2e .hx-spin { display: inline-block; width: 16px; height: 16px; border-radius: 50%; border: 2.5px solid var(--hx-accent-ring); border-top-color: var(--hx-accent); animation: hx-spin .8s linear infinite; }
+  #helix-e2e .hx-spin.on-fill { width: 14px; height: 14px; border-width: 2px; border-color: rgba(255,255,255,.35); border-top-color: #FFFFFF; }
+  @media (prefers-reduced-motion: reduce) { #helix-e2e .hx-spin { animation-duration: 2.4s; } }
+
+  /* Stepper */
+  #helix-e2e .hx-stepper { background: var(--hx-surface); border: 1px solid var(--hx-line); border-radius: var(--hx-radius); padding: 14px 16px 10px; }
+  #helix-e2e .hx-stepper-head { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 10px; flex-wrap: wrap; }
+  #helix-e2e .hx-stepper-head .hx-progress { display: flex; align-items: baseline; gap: 10px; }
+  #helix-e2e .hx-legend { display: flex; align-items: center; gap: 16px; font-size: 12px; color: var(--hx-muted); }
+  #helix-e2e .hx-legend i { display: inline-block; width: 12px; height: 12px; border: 2px solid; margin-right: 6px; vertical-align: -2px; }
+  #helix-e2e .hx-steps { display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); list-style: none; margin: 0; padding: 0; }
+  #helix-e2e .hx-step { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 6px; min-height: 80px; padding: 6px 0; border: 0; border-radius: 10px; background: transparent; cursor: pointer; color: var(--hx-muted); }
+  #helix-e2e .hx-step:not(:disabled):hover { background: var(--hx-accent-soft); }
+  #helix-e2e .hx-step:disabled { cursor: default; }
+  #helix-e2e .hx-step.is-selected { background: var(--hx-accent-soft); }
+  #helix-e2e .hx-step-track { width: 100%; display: flex; align-items: center; }
+  #helix-e2e .hx-step-line { flex-grow: 1; height: 3px; background: var(--hx-line); }
+  #helix-e2e .hx-step-line.done { background: var(--hx-pass); }
+  #helix-e2e .hx-step-line.none { background: transparent; }
+  #helix-e2e .hx-node { width: 30px; height: 30px; flex-shrink: 0; border-radius: 50%; border: 2px solid var(--hx-line); background: var(--hx-surface); color: var(--hx-muted); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; }
+  #helix-e2e .hx-node.gate { border-radius: 8px; border-color: var(--hx-gate); color: var(--hx-gate); }
+  #helix-e2e .hx-node.done { background: var(--hx-pass); border-color: var(--hx-pass); color: #FFFFFF; }
+  #helix-e2e .hx-node.current { background: var(--hx-accent); border-color: var(--hx-accent); color: var(--hx-on-accent); box-shadow: 0 0 0 4px var(--hx-accent-ring); }
+  #helix-e2e .hx-node.gate.current { background: var(--hx-warn-soft); border-color: var(--hx-gate); color: var(--hx-warn); box-shadow: 0 0 0 4px var(--hx-gate-ring); }
+  #helix-e2e .hx-step-label { max-width: 100%; padding: 0 4px; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #helix-e2e .hx-step.is-selected .hx-step-label, #helix-e2e .hx-step.is-current .hx-step-label { color: var(--hx-ink); font-weight: 600; }
+  #helix-e2e .hx-step-status { font-size: 11px; font-weight: 500; }
+
+  /* Gate / run banners */
+  #helix-e2e .hx-banner { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 18px; border-radius: var(--hx-radius); border: 1px solid; flex-wrap: wrap; }
+  #helix-e2e .hx-banner.awaiting { background: var(--hx-warn-soft); border-color: var(--hx-warn-line); }
+  #helix-e2e .hx-banner.awaiting .hx-kicker, #helix-e2e .hx-banner.awaiting svg { color: var(--hx-warn); }
+  #helix-e2e .hx-banner.passed { background: var(--hx-pass-soft); border-color: var(--hx-pass-line); }
+  #helix-e2e .hx-banner.passed .hx-kicker, #helix-e2e .hx-banner.passed svg { color: var(--hx-pass); }
+  #helix-e2e .hx-banner.running { background: var(--hx-accent-soft); border-color: var(--hx-accent-ring); }
+  #helix-e2e .hx-banner.running .hx-kicker { color: var(--hx-accent); }
+  #helix-e2e .hx-banner.paused { background: var(--hx-surface); border-color: var(--hx-line); }
+  #helix-e2e .hx-banner-title { font-size: 15px; font-weight: 600; }
+  #helix-e2e .hx-banner-left { display: flex; align-items: center; gap: 12px; }
+  #helix-e2e .hx-banner-right { display: flex; align-items: center; gap: 12px; font-size: 13px; color: var(--hx-ink-2); }
+  #helix-e2e .hx-dot { width: 10px; height: 10px; border-radius: 50%; background: currentColor; }
+
+  /* Layout grids */
+  #helix-e2e .g-upload { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 20px; align-items: start; }
+  #helix-e2e .g-agent  { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+  #helix-e2e .g-review { display: grid; grid-template-columns: 260px minmax(0, 1fr) 320px; gap: 20px; align-items: start; }
+  #helix-e2e .stack { display: flex; flex-direction: column; gap: 18px; }
+
+  /* Upload */
+  #helix-e2e .hx-drop { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 28px; border-radius: var(--hx-radius); border: 2px dashed var(--hx-faint); background: var(--hx-surface-2); text-align: center; }
+  #helix-e2e .hx-drop.is-over { border-color: var(--hx-accent); background: var(--hx-accent-soft); }
+  #helix-e2e .hx-table { border: 1px solid var(--hx-line-soft); border-radius: 10px; overflow: hidden; }
+  #helix-e2e .hx-trow { display: grid; grid-template-columns: minmax(0, 1fr) 90px 170px 110px; gap: 12px; align-items: center; min-height: 40px; padding: 4px 16px; border-top: 1px solid var(--hx-line-soft); font-size: 13px; }
+  #helix-e2e .hx-trow.head { border-top: 0; background: var(--hx-surface-2); font-size: 12px; font-weight: 600; color: var(--hx-muted); }
+  #helix-e2e .hx-ellipsis { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #helix-e2e .hx-consent { display: flex; align-items: flex-start; gap: 10px; padding: 12px; border-radius: 8px; background: var(--hx-surface-2); font-size: 13px; cursor: pointer; }
+  #helix-e2e .hx-consent input { width: 18px; height: 18px; margin: 1px 0 0; accent-color: var(--hx-accent); }
+
+  /* Agent */
+  #helix-e2e .hx-io { display: grid; grid-template-columns: minmax(0, 1fr) 28px minmax(0, 1fr); gap: 8px; }
+  #helix-e2e .hx-io > div { padding: 14px 16px; border-radius: 10px; background: var(--hx-surface-2); border: 1px solid var(--hx-line-soft); }
+  #helix-e2e .hx-io > div.out { background: var(--hx-accent-soft); border-color: var(--hx-accent-ring); }
+  #helix-e2e .hx-io .arrow { display: flex; align-items: center; justify-content: center; padding: 0; background: none; border: 0; color: var(--hx-muted); }
+  #helix-e2e .hx-boundary { display: flex; gap: 12px; padding: 12px 16px; border-radius: 10px; background: var(--hx-warn-soft); border: 1px solid var(--hx-warn-line); color: var(--hx-ink-2); }
+  #helix-e2e .hx-boundary strong { color: var(--hx-warn); }
+  #helix-e2e .hx-act { display: flex; align-items: center; gap: 12px; min-height: 44px; border-bottom: 1px solid var(--hx-line-soft); font-size: 14px; }
+  #helix-e2e .hx-act .ic { width: 22px; display: flex; justify-content: center; }
+  #helix-e2e .hx-act .txt { flex-grow: 1; }
+  #helix-e2e .hx-act.queued { color: var(--hx-faint); }
+  #helix-e2e .hx-act.active .txt { font-weight: 600; }
+  #helix-e2e .hx-act .tag { font-size: 12px; }
+  #helix-e2e .hx-hollow { width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--hx-faint); }
+
+  /* Traceability accordion */
+  #helix-e2e .hx-acc { background: var(--hx-surface); border: 1px solid var(--hx-line); border-radius: var(--hx-radius); overflow: hidden; }
+  #helix-e2e .hx-acc-cols { display: grid; grid-template-columns: 36px 260px minmax(0, 1fr) 150px; gap: 12px; align-items: center; }
+  #helix-e2e .hx-acc-head { padding: 12px 20px; background: var(--hx-surface-2); border-bottom: 1px solid var(--hx-line); font-size: 12px; font-weight: 600; color: var(--hx-muted); }
+  #helix-e2e .hx-acc-item { border-bottom: 1px solid var(--hx-line-soft); }
+  #helix-e2e .hx-acc-item:last-child { border-bottom: 0; }
+  #helix-e2e .hx-acc-item.is-open { background: var(--hx-surface-2); }
+  #helix-e2e .hx-acc-btn { width: 100%; min-height: 56px; padding: 8px 20px; border: 0; background: transparent; text-align: left; color: var(--hx-ink); cursor: pointer; }
+  #helix-e2e .hx-acc-btn:hover { background: var(--hx-accent-soft); }
+  #helix-e2e .hx-chev { width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--hx-line); background: var(--hx-surface); display: flex; align-items: center; justify-content: center; }
+  #helix-e2e .hx-chev svg { transition: transform .15s; }
+  #helix-e2e .is-open .hx-chev svg { transform: rotate(90deg); }
+  #helix-e2e .hx-acc-panel { padding: 4px 20px 20px 68px; display: flex; flex-direction: column; gap: 14px; }
+  #helix-e2e .hx-flow { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 24px; list-style: none; margin: 0; padding: 0; }
+  #helix-e2e .hx-flow li { position: relative; padding: 14px; border-radius: 10px; border: 1px solid var(--hx-line); background: var(--hx-surface); }
+  #helix-e2e .hx-flow li:not(:last-child)::after { content: "→"; position: absolute; right: -18px; top: 50%; transform: translateY(-50%); color: var(--hx-faint); font-weight: 700; }
+  #helix-e2e .hx-flow li.f-pass  { border-color: var(--hx-pass);  background: var(--hx-pass-soft);  box-shadow: 0 0 0 1px var(--hx-pass); }
+  #helix-e2e .hx-flow li.f-block { border-color: var(--hx-block); background: var(--hx-block-soft); box-shadow: 0 0 0 1px var(--hx-block); }
+  #helix-e2e .hx-flow li.f-warn  { border-color: var(--hx-gate);  background: var(--hx-warn-soft);  box-shadow: 0 0 0 1px var(--hx-gate); }
+  #helix-e2e .hx-flow .val { font-size: 15px; font-weight: 600; margin: 4px 0; }
+  #helix-e2e .hx-note { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px; border-radius: 8px; font-size: 13px; color: var(--hx-ink-2); }
+
+  /* Review */
+  #helix-e2e .hx-sec { display: flex; justify-content: space-between; align-items: center; min-height: 40px; padding: 0 10px; font-size: 13px; border-radius: 8px; }
+  #helix-e2e .hx-sec.is-active { background: var(--hx-accent-soft); font-weight: 600; }
+  #helix-e2e .hx-doc p { font-family: var(--hx-serif); font-size: 16px; line-height: 1.65; margin: 0 0 14px; }
+  #helix-e2e .hx-flag { margin: 0 0 14px; padding: 12px 14px; border-radius: 8px; background: var(--hx-warn-soft); border: 1px solid var(--hx-warn-line); font-size: 14px; }
+  #helix-e2e .hx-flag strong { color: var(--hx-warn); }
+
+  @media (max-width: 1100px) {
+    #helix-e2e .g-upload, #helix-e2e .g-agent, #helix-e2e .g-review { grid-template-columns: 1fr; }
+    #helix-e2e .hx-steps { grid-template-columns: repeat(9, minmax(64px, 1fr)); overflow-x: auto; }
+    #helix-e2e .hx-flow { grid-template-columns: 1fr; }
+    #helix-e2e .hx-flow li:not(:last-child)::after { content: "↓"; right: 50%; top: auto; bottom: -20px; transform: none; }
+    #helix-e2e .hx-acc-cols { grid-template-columns: 36px minmax(0, 1fr) 120px; }
+    #helix-e2e .hx-acc-cols .ev { display: none; }
+    #helix-e2e .hx-acc-panel { padding-left: 20px; }
+    #helix-e2e .hx-top, #helix-e2e .hx-main { padding-left: 16px; padding-right: 16px; }
+    #helix-e2e .hx-study span, #helix-e2e .hx-synthetic { display: none; }
+  }
+</style>
+</head>
+<body>
+<section id="helix-e2e" aria-label="HELIX agent-assisted report workspace">
+  <div class="hx-app">
+    <header class="hx-top">
+      <div class="hx-brand">
+        <div class="hx-logo">
+          <svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><rect x="1" y="1" width="26" height="26" rx="7" fill="var(--hx-accent)"/><path d="M9 7v14M19 7v14M9 14h10" stroke="#fff" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg>
+          HELIX
+        </div>
+        <div class="hx-vr"></div>
+        <div class="hx-study"><strong>STUDY-HLX-028</strong><span>28-day oral repeat-dose toxicity · Rodent · 40 animals · Sponsor template v5</span></div>
+      </div>
+      <div class="hx-top-meta">
+        <span class="hx-synthetic">Synthetic data · Not for submission</span>
+        <span class="hx-pill" id="hx-release" role="status"></span>
+        <div class="hx-avatar" aria-label="Signed-in user">AB</div>
+      </div>
+    </header>
+    <main class="hx-main">
+      <nav class="hx-stepper" aria-label="Journey progress">
+        <div class="hx-stepper-head">
+          <div class="hx-progress"><span class="hx-kicker">Journey progress</span><strong id="hx-done-label"></strong><span class="hx-sub" id="hx-pct" style="margin:0"></span></div>
+          <div class="hx-legend"><span><i style="border-color:var(--hx-gate);border-radius:3px"></i>Human gate</span><span><i style="border-color:var(--hx-faint);border-radius:50%"></i>Agent step</span><span>Select a completed stage to review it</span></div>
+        </div>
+        <ol class="hx-steps" id="hx-steps"></ol>
+      </nav>
+      <div id="hx-panel"></div>
+      <div class="hx-sr" aria-live="polite" id="hx-announce"></div>
+    </main>
+  </div>
+</section>
+
+<script>
+(() => {
+  'use strict';
+  const root = document.getElementById('helix-e2e');
+  const $ = (sel) => root.querySelector(sel);
+
+  /* ---------- Icons ---------- */
+  const svg = (p, o = {}) => `<svg width="${o.s || 18}" height="${o.s || 18}" viewBox="0 0 24 24" fill="none" stroke="${o.c || 'currentColor'}" stroke-width="${o.w || 2}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
+  const I = {
+    check: (o) => svg('<polyline points="20 6 9 17 4 12"/>', Object.assign({ w: 2.5 }, o)),
+    person: (o) => svg('<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/>', o),
+    shield: (o) => svg('<path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6l8-3z"/>', o),
+    warn: (o) => svg('<path d="M12 3l10 18H2z"/><line x1="12" y1="10" x2="12" y2="14"/><line x1="12" y1="17.5" x2="12" y2="17.6"/>', o),
+    clock: (o) => svg('<circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/>', o),
+    arrow: (o) => svg('<line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>', o),
+    chev: (o) => svg('<polyline points="9 6 15 12 9 18"/>', Object.assign({ w: 2.5, s: 14 }, o)),
+    file: (o) => svg('<path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><polyline points="14 3 14 8 19 8"/>', Object.assign({ s: 16, w: 1.8 }, o)),
+    upload: (o) => svg('<path d="M12 16V4"/><polyline points="7 9 12 4 17 9"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/>', Object.assign({ s: 32, w: 1.8 }, o))
+  };
+
+  /* ---------- Data (synthetic) ---------- */
+  const GATES = { 0: 1, 7: 2, 8: 3 };            // stage index -> gate number
+  const isGate = (i) => i in GATES;
+  const STAGES = [
+    { short: 'Upload', name: 'Upload and authorize inputs' },
+    { short: 'Parse', name: 'Parse protocol, template and source data', summary: 'Format-specific parsers convert each frozen file into normalized facts without changing the originals.', input: ['10 frozen files', 'PDF · DOCX · CSV · XLSX'], output: ['Typed source records', '40 animals · 1,662 evidence records'], boundary: 'Parsing may flag ambiguity. It may not repair or overwrite raw study data.',
+      acts: [['Read protocol v3'], ['Parsed sponsor template v5 · 48 report fields'], ['Parsed LIMS, pathology and statistics files'], ['Created 1,662 source records with pointers']] },
+    { short: 'Resolve', name: 'Resolve study type and pattern', summary: 'HELIX resolves the study as a 28-day repeat-dose rodent study and retrieves the approved report pattern for structure only.', input: ['Protocol facts', 'species · route · duration · endpoints'], output: ['Study profile', 'REPEAT_DOSE_28D_RODENT · template v5'], boundary: 'Prior reports may guide structure and phrasing. Their values never enter the new study.',
+      acts: [['Read species, route, duration and endpoints'], ['Resolved REPEAT_DOSE_28D_RODENT'], ['Selected pattern set P-28D-05 for structure only'], ['Recorded catalog context']] },
+    { short: 'Extract', name: 'Deterministic extraction', summary: 'Code reads the selected source rows and computes report-ready values at the required grain.', input: ['Normalized study records', 'BW · CL · FW · OM · MI · PC'], output: ['Candidate claims', 'values · units · grain · transform IDs'], boundary: 'The model selects tools and evidence. Deterministic code reads values and performs math.',
+      acts: [['Ran mean-v1 on 200 BW rows'], ['Ran incidence-count-v1 on 200 MI findings'], ['Versioned every transform'], ['Confirmed no model-generated numbers']] },
+    { short: 'Validate', name: 'Deterministic validation', summary: 'Rules check keys, terminology, units, grain, authority, aggregation and source-to-report reconciliation.', input: ['Candidate claims', 'claims + field rule registry'], output: ['Validation evidence', 'passes · blockers · exact evidence IDs'], boundary: 'A failed rule creates a blocker. The agent cannot downgrade it to green.',
+      acts: [['Ran schema, key and unit checks'], ['Grain mismatch in C-BW-HIGH', 'Blocker'], ['MI severity conflict in section 7', 'Blocker'], ['Recorded evidence IDs for each result']] },
+    { short: 'Draft', name: 'Structured section drafting', summary: 'The narrative model writes only around validated claims and inserts explicit review markers for unresolved fields.', input: ['Validated claims + pattern', 'facts separated from style pattern'], output: ['Eight structured sections', 'draft text · tables · review markers'], boundary: 'The model may write prose. It may not invent a value or make the final scientific judgment.',
+      acts: [['Instantiated 8 report sections'], ['Inserted validated claims'], ['Kept 3 review markers for unresolved fields'], ['Left NOAEL for human judgment']] },
+    { short: 'Provenance', name: 'Compile provenance', summary: 'Every report claim is linked to exact source records, the deterministic transform, validation results and manifest version.', input: ['Draft claims + evidence IDs', 'all numeric claims'], output: ['Provenance graph', '12 edges · source → transform → claim'], boundary: 'A numeric claim without a provenance edge cannot pass its section gate.',
+      acts: [['Inspected all numeric claims'], ['Compiled 12 provenance edges'], ['Attached authority tiers'], ['Linked claims to MANIFEST-HLX-028']] },
+    { short: 'Gates', name: 'Traceability review' },
+    { short: 'Review & export', name: 'Review, sign and export' }
+  ];
+  const FILES = [
+    ['Protocol_HLX-028_v3.pdf', 'PDF', 'Protocol'],
+    ['Sponsor_report_template_v5.docx', 'DOCX', 'Report template'],
+    ['LIMS_body_weight.csv', 'CSV', 'Source data · BW'],
+    ['LIMS_clinical_observations.csv', 'CSV', 'Source data · CL'],
+    ['LIMS_food_consumption.csv', 'CSV', 'Source data · FW'],
+    ['Organ_weights.xlsx', 'XLSX', 'Source data · OM'],
+    ['Pathology_MI_findings.xlsx', 'XLSX', 'Pathology'],
+    ['Formulation_analysis.pdf', 'PDF', 'Formulation'],
+    ['Statistics_output.xlsx', 'XLSX', 'Statistics'],
+    ['Report_pattern_P-28D-05.docx', 'DOCX', 'Approved pattern']
+  ];
+  const TRACE = [
+    ['1 · Frozen source', '10 BW records', 'A-BW#HXL-M401:DAY28 … HXL-F405:DAY28'],
+    ['2 · Normalized facts', 'Animal × day', 'domain=BW · unit=g · authority=1'],
+    ['3 · Transform', 'mean-v1', 'group=G4 · day=28 · arithmetic mean'],
+    ['4 · Validated claim', '263.8 g', 'C-BW-HIGH · dose group'],
+    ['5 · Report field', 'Section 5.2', 'Terminal mean body weight, high-dose group']
+  ];
+  const RULES = [
+    { rule: 'Frozen manifest match', evidence: '10/10 source pointers', pass: true, focus: [0, 1], note: 'All 10 source pointers resolve to MANIFEST-HLX-028 checksums.' },
+    { rule: 'Authority threshold', evidence: 'Tier 1 locked study data', pass: true, focus: [1], note: 'Every normalized fact comes from Tier 1 locked study data.' },
+    { rule: 'Expected grain', evidence: 'Claim uses dose group; template expects dose group × sex', pass: false, focus: [2, 3, 4], note: 'mean-v1 grouped by dose only. Section 5.2 expects dose group × sex.', disposition: 'Study director accepted. Re-run mean-v1 by sex before release. Flag kept in section 5.' },
+    { rule: 'Report reconciliation', evidence: '263.8 g equals derived value', pass: true, focus: [3, 4], note: 'The value in Section 5.2 matches the derived claim exactly.' }
+  ];
+  const SECTIONS = [
+    ['1. Compliance', 'Ready', 't-pass'], ['2. Objectives', 'Ready', 't-pass'], ['3. Methods', 'Ready', 't-pass'], ['4. Formulation', 'Ready', 't-pass'],
+    ['5. In-life', 'Flagged', 't-warn'], ['6. Clinical pathology', 'In review', 't-warn'], ['7. Anatomic pathology', '1 issue', 't-block'], ['8. Conclusion', 'Judgment', 't-warn']
+  ];
+  const TICK_MS = 700;
+
+  /* ---------- State ---------- */
+  // ?stage=N (0-8) deep-links to a gate for demos and tests.
+  const q = new URLSearchParams(location.search);
+  const start = Math.max(0, Math.min(8, parseInt(q.get('stage') || '0', 10) || 0));
+  const state = {
+    current: start,        // furthest stage reached (0-8); 9 = journey complete
+    sel: start,            // stage whose view is shown
+    running: false,        // agent auto-run between gates
+    tick: 0,               // actions finished in the current agent stage
+    authChecked: start > 0,
+    disposed: start > 7,
+    approved: false,
+    exported: false,
+    openRule: 2,
+    lineage: 'MI-HXL-M401-LIVER … MI-HXL-F402-LIVER · incidence-count-v1'
+  };
+  let timer = null;
+  const set = (patch) => { Object.assign(state, patch); render(); };
+  const announce = (msg) => { $('#hx-announce').textContent = msg; };
+
+  /* ---------- Agent runner ---------- */
+  function schedule() { clearTimeout(timer); timer = setTimeout(step, TICK_MS); }
+  function step() {
+    if (!state.running) return;
+    const st = STAGES[state.current];
+    if (state.tick < st.acts.length) { set({ tick: state.tick + 1 }); schedule(); return; }
+    const n = state.current + 1;
+    const stop = isGate(n);
+    set({ current: n, sel: n, tick: 0, running: !stop });
+    announce(stop ? `Agent stopped at human gate: ${STAGES[n].name}` : `Agent started stage ${n + 1}: ${STAGES[n].name}`);
+    if (!stop) schedule();
+  }
+
+  /* ---------- Actions (event delegation via data-action) ---------- */
+  const actions = {
+    pick: (el) => { const i = +el.dataset.i; if (i <= state.current) set({ sel: i }); },
+    toggleAuth: () => { if (state.current === 0) set({ authChecked: !state.authChecked }); },
+    authorize: () => { if (state.current === 0 && state.authChecked) { set({ current: 1, sel: 1, tick: 0, running: true }); announce('Manifest frozen. Agent started.'); schedule(); } },
+    pause: () => { clearTimeout(timer); set({ running: false }); announce('Agent paused.'); },
+    resume: () => { set({ running: true, sel: state.current }); announce('Agent resumed.'); schedule(); },
+    toggleRule: (el) => { const i = +el.dataset.i; set({ openRule: state.openRule === i ? -1 : i }); },
+    dispose: () => { if (state.current === 7) set({ disposed: true }); },
+    passTrace: () => { if (state.current === 7 && state.disposed) { set({ current: 8, sel: 8 }); announce('Traceability gate approved.'); } },
+    approve: () => { if (state.current === 8) set({ approved: true }); },
+    exportPkg: () => { if (state.current === 8 && state.approved && !state.exported) { set({ exported: true, current: 9, lineage: 'Export recorded · Report, SEND, define.xml and nSDRG checksummed' }); announce('Package exported. Journey complete.'); } },
+    lineage: () => set({ lineage: 'MI-HXL-M401-LIVER → incidence-count-v1 → rule bundle 1.0 → S7 claim (4 edges)' })
+  };
+  root.addEventListener('click', (e) => {
+    const el = e.target.closest('[data-action]');
+    if (!el || el.disabled || el.tagName === 'INPUT') return;
+    actions[el.dataset.action]?.(el);
+  });
+  root.addEventListener('change', (e) => {
+    const el = e.target.closest('input[data-action]');
+    if (el) actions[el.dataset.action]?.(el);
+  });
+
+  /* ---------- Render ---------- */
+  const doneCount = () => Math.min(state.current, 9);
+  const gatePassed = (i) => i < state.current;
+
+  function renderHeader() {
+    const r = state.exported ? ['Package exported', 't-info'] : state.approved ? ['Ready for export', 't-pass'] : ['Release blocked', 't-block'];
+    const pill = $('#hx-release'); pill.textContent = r[0]; pill.className = `hx-pill ${r[1]}`;
+    $('#hx-done-label').textContent = `${doneCount()} of 9 stages complete`;
+    $('#hx-pct').textContent = `· ${Math.round(doneCount() / 9 * 100)}%`;
+  }
+
+  function renderStepper() {
+    $('#hx-steps').innerHTML = STAGES.map((st, i) => {
+      const gate = isGate(i), done = i < state.current, cur = i === state.current;
+      const spin = cur && !gate && state.running;
+      const status = done ? (gate ? 'Approved' : 'Done') : cur ? (gate ? 'Awaiting you' : state.running ? 'Agent running' : 'Paused') : (gate ? 'Human gate' : 'Agent');
+      const statusColor = done ? 'var(--hx-pass)' : (gate ? 'var(--hx-warn)' : cur ? 'var(--hx-accent)' : 'var(--hx-muted)');
+      const node = done ? I.check({ s: 14, c: '#fff', w: 3 }) : spin ? '<span class="hx-spin on-fill"></span>' : gate ? I.person({ s: 15, w: 2.2 }) : i + 1;
+      const left = i === 0 ? 'none' : i <= state.current ? 'done' : '';
+      const right = i === 8 ? 'none' : i < state.current ? 'done' : '';
+      return `<li><button type="button" class="hx-step${state.sel === i ? ' is-selected' : ''}${cur ? ' is-current' : ''}" data-action="pick" data-i="${i}" ${i > state.current ? 'disabled' : ''} ${cur ? 'aria-current="step"' : ''} aria-label="Stage ${i + 1}: ${st.name} (${status})">
+        <span class="hx-step-track"><span class="hx-step-line ${left}"></span><span class="hx-node${gate ? ' gate' : ''}${done ? ' done' : cur ? ' current' : ''}">${node}</span><span class="hx-step-line ${right}"></span></span>
+        <span class="hx-step-label">${st.short}</span>
+        <span class="hx-step-status" style="color:${statusColor}">${status}</span>
+      </button></li>`;
+    }).join('');
+  }
+
+  const gateBanner = (i, title, right) => {
+    const passed = gatePassed(i);
+    return `<div class="hx-banner ${passed ? 'passed' : 'awaiting'}">
+      <div class="hx-banner-left">${I.person({ s: 20 })}<div><div class="hx-kicker">Human gate ${GATES[i]} of 3 · ${passed ? 'Approved' : 'Awaiting you'}</div><div class="hx-banner-title">${title}</div></div></div>
+      <div class="hx-banner-right">${right}</div>
+    </div>`;
+  };
+
+  function viewUpload() {
+    const locked = state.current > 0;
+    const status = locked ? ['Frozen', 't-pass'] : ['Uploaded', 't-muted'];
+    return `<div class="stack">
+      ${gateBanner(0, 'Upload and authorize study inputs', 'The agent cannot start until the study owner authorizes the inputs.')}
+      <div class="g-upload">
+        <section class="hx-card stack" aria-labelledby="hx-up-h">
+          <div><h1 id="hx-up-h">Study inputs</h1><p class="hx-sub">Protocol, template, source data and the approved report pattern. HELIX hashes and freezes each file.</p></div>
+          ${locked ? '' : `<div class="hx-drop" id="hx-drop">${I.upload({ c: 'var(--hx-accent)' })}<strong style="font-size:15px">Drag files here</strong><span class="hx-sub" style="margin:0">PDF, DOCX, CSV or XLSX</span><label class="hx-btn" style="display:inline-flex;align-items:center">Browse files<input type="file" multiple class="hx-sr"></label></div>`}
+          <div class="hx-table" role="table" aria-label="Study inputs">
+            <div class="hx-trow head" role="row"><span role="columnheader">File</span><span role="columnheader">Type</span><span role="columnheader">Role</span><span role="columnheader">Status</span></div>
+            ${FILES.map(f => `<div class="hx-trow" role="row"><span role="cell" style="display:flex;align-items:center;gap:10px;min-width:0;color:var(--hx-muted)">${I.file()}<span class="hx-ellipsis" style="color:var(--hx-ink)">${f[0]}</span></span><span role="cell" class="hx-mono">${f[1]}</span><span role="cell" style="color:var(--hx-ink-2)">${f[2]}</span><span role="cell"><span class="hx-chip ${status[1]}">${status[0]}</span></span></div>`).join('')}
+          </div>
+        </section>
+        <aside class="hx-card stack" aria-labelledby="hx-auth-h">
+          <div><div class="hx-kicker">Authorization</div><h2 id="hx-auth-h" style="margin-top:4px">Freeze the manifest</h2></div>
+          <div>${['10 of 10 required inputs present', 'Authority tiers assigned', 'No unapproved sources'].map(t => `<div class="hx-list-row"><span style="color:var(--hx-pass)">${I.check()}</span>${t}</div>`).join('')}</div>
+          <label class="hx-consent"><input type="checkbox" data-action="toggleAuth" ${state.authChecked ? 'checked' : ''} ${locked ? 'disabled' : ''}><span>I authorize these 10 inputs for STUDY-HLX-028. The agent may use only these frozen versions.</span></label>
+          <button type="button" class="hx-btn primary" data-action="authorize" ${locked || !state.authChecked ? 'disabled' : ''}>${locked ? 'Manifest frozen · MANIFEST-HLX-028' : 'Authorize and start agent'}</button>
+          <p class="hx-sub" style="margin:0;font-size:12px">After authorization the agent runs stages 2–7 by itself and stops at the next human gate.</p>
+        </aside>
+      </div>
+    </div>`;
+  }
+
+  function viewAgent() {
+    const sv = state.sel, st = STAGES[sv], past = sv < state.current, isCur = sv === state.current;
+    const cs = STAGES[state.current];
+    let banner;
+    if (state.running) {
+      const a = cs.acts[Math.min(state.tick, cs.acts.length - 1)];
+      banner = `<div class="hx-banner running"><div class="hx-banner-left"><span class="hx-spin" style="width:18px;height:18px"></span><div><div class="hx-kicker">Agent working · Stage ${state.current + 1} of 9</div><div class="hx-banner-title">${cs.name} — ${a[0]}</div></div></div><div class="hx-banner-right">Next human gate: Traceability review<button type="button" class="hx-btn sm" data-action="pause">Pause</button></div></div>`;
+    } else if (state.current <= 6) {
+      banner = `<div class="hx-banner paused"><div class="hx-banner-left"><span class="hx-dot" style="color:var(--hx-muted)"></span><div><div class="hx-kicker">Agent paused · Stage ${state.current + 1} of 9</div><div class="hx-banner-title">${cs.name}</div></div></div><div class="hx-banner-right">Next human gate: Traceability review<button type="button" class="hx-btn primary sm" data-action="resume">Resume agent</button></div></div>`;
+    } else {
+      banner = `<div class="hx-banner passed"><div class="hx-banner-left"><span class="hx-dot" style="color:var(--hx-pass)"></span><div><div class="hx-kicker">Agent run complete</div><div class="hx-banner-title">Stages 2–7 finished.${state.current <= 8 ? ' Waiting at human gate: ' + STAGES[Math.min(state.current, 8)].name : ''}</div></div></div></div>`;
+    }
+    const acts = st.acts.map((a, j) => {
+      const d = past || (isCur && j < state.tick), active = isCur && state.running && j === state.tick, warn = d && a[1];
+      const cls = active ? 'active' : d ? '' : 'queued';
+      const ic = warn ? `<span style="color:var(--hx-block)">${I.warn()}</span>` : d ? `<span style="color:var(--hx-pass)">${I.check()}</span>` : active ? '<span class="hx-spin"></span>' : '<span class="hx-hollow"></span>';
+      const tag = warn ? `<span class="tag" style="color:var(--hx-block)">${a[1]}</span>` : active ? '<span class="tag" style="color:var(--hx-accent)">Working…</span>' : '';
+      return `<li class="hx-act ${cls}"><span class="ic">${ic}</span><span class="txt">${a[0]}</span>${tag}</li>`;
+    }).join('');
+    const doneActs = past ? st.acts.length : isCur ? Math.min(state.tick, st.acts.length) : 0;
+    const chip = past ? ['Completed', 't-pass'] : state.running ? ['Running', 't-accent'] : ['Paused', 't-muted'];
+    return `<div class="stack">
+      ${banner}
+      <div class="g-agent">
+        <section class="hx-card stack" aria-labelledby="hx-ag-h">
+          <div style="display:flex;justify-content:space-between;gap:16px;align-items:flex-start"><div><div class="hx-kicker">Stage ${sv + 1} of 9 · Agent step</div><h1 id="hx-ag-h" style="margin-top:4px">${st.name}</h1></div><span class="hx-chip ${chip[1]}" style="padding:5px 12px">${chip[0]}</span></div>
+          <p style="margin:0;font-size:15px;color:var(--hx-ink-2)">${st.summary}</p>
+          <div class="hx-io"><div><div class="hx-kicker" style="font-size:11px">Input</div><div style="font-weight:600;margin-top:4px">${st.input[0]}</div><div class="hx-mono">${st.input[1]}</div></div><div class="arrow">${I.arrow()}</div><div class="out"><div class="hx-kicker" style="font-size:11px">Output</div><div style="font-weight:600;margin-top:4px">${st.output[0]}</div><div class="hx-mono">${st.output[1]}</div></div></div>
+          <div class="hx-boundary"><span style="color:var(--hx-warn);flex-shrink:0">${I.shield()}</span><div><strong>Control boundary. </strong>${st.boundary}</div></div>
+        </section>
+        <section class="hx-card" aria-labelledby="hx-act-h">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px"><h3 id="hx-act-h">Agent activity</h3><span class="hx-sub" style="margin:0;font-size:12px">${doneActs} of ${st.acts.length} actions</span></div>
+          <ol style="list-style:none;margin:0;padding:0" aria-live="polite">${acts}</ol>
+        </section>
+      </div>
+    </div>`;
+  }
+
+  function viewTrace() {
+    const open = state.current === 7;
+    const hint = open ? (state.disposed ? 'All blockers have a disposition.' : 'Record a disposition for the blocked rule to continue.') : 'Reviewed and approved.';
+    const right = `${hint}${open ? `<button type="button" class="hx-btn primary sm" data-action="passTrace" ${state.disposed ? '' : 'disabled'}>Approve and continue to review</button>` : ''}`;
+    const rows = RULES.map((r, i) => {
+      const isOpen = state.openRule === i, disp = !r.pass && state.disposed;
+      const tone = r.pass ? 'pass' : disp ? 'warn' : 'block';
+      const badge = r.pass ? ['Pass', 't-pass'] : disp ? ['Disposition', 't-warn'] : ['Blocked', 't-block-solid'];
+      const label = r.pass ? 'Checked:' : disp ? 'Disposition:' : 'Blocker:';
+      const panelId = `hx-rule-${i}`;
+      return `<div class="hx-acc-item${isOpen ? ' is-open' : ''}">
+        <button type="button" class="hx-acc-btn hx-acc-cols" data-action="toggleRule" data-i="${i}" aria-expanded="${isOpen}" aria-controls="${panelId}">
+          <span class="hx-chev">${I.chev()}</span><strong>${r.rule}</strong><span class="ev" style="color:var(--hx-ink-2)">${r.evidence}</span><span><span class="hx-chip ${badge[1]}">${badge[0]}</span></span>
+        </button>
+        ${isOpen ? `<div class="hx-acc-panel" id="${panelId}">
+          <ol class="hx-flow" aria-label="Traceability flow">${TRACE.map((t, j) => `<li class="${r.focus.includes(j) ? 'f-' + tone : ''}"><div class="hx-kicker" style="font-size:11px${r.focus.includes(j) ? ';color:var(--hx-' + tone + ')' : ''}">${t[0]}</div><div class="val">${t[1]}</div><div class="hx-mono" style="font-size:11px">${t[2]}</div></li>`).join('')}</ol>
+          <div class="hx-note t-${tone}" style="color:var(--hx-ink-2)"><span><strong style="color:var(--hx-${tone})">${label} </strong>${disp ? r.disposition : r.note}</span>${!r.pass && !state.disposed && open ? '<button type="button" class="hx-btn sm" data-action="dispose">Record disposition</button>' : ''}</div>
+        </div>` : ''}
+      </div>`;
+    }).join('');
+    return `<div class="stack">
+      ${gateBanner(7, "Review the traceability of the agent's work", right)}
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:24px;flex-wrap:wrap">
+        <div><div class="hx-kicker">Claim C-BW-HIGH · Terminal body weight, high-dose group</div><h1 style="margin-top:4px">Validation and traceability</h1><p class="hx-sub">Open a rule to see how the value flows from the frozen source to the report.</p></div>
+        <div style="display:flex;gap:8px"><span class="hx-chip t-pass" style="padding:5px 12px">3 passed</span><span class="hx-chip ${state.disposed ? 't-warn' : 't-block'}" style="padding:5px 12px">${state.disposed ? '1 disposition' : '1 blocked'}</span></div>
+      </div>
+      <div class="hx-acc"><div class="hx-acc-head hx-acc-cols"><span></span><span>Validation rule</span><span class="ev">Evidence</span><span>Result</span></div>${rows}</div>
+    </div>`;
+  }
+
+  function viewReview() {
+    const active = state.current === 8;
+    const hint = state.exported ? 'Export recorded. Journey complete.' : active ? 'Record sign-offs, then export.' : 'Opens after the traceability gate.';
+    const signed = (label) => `<div class="hx-list-row"><span style="color:var(${state.approved ? '--hx-pass' : '--hx-warn'})">${state.approved ? I.check() : I.clock()}</span><span style="flex-grow:1">${label}</span><span style="font-size:12px;color:var(${state.approved ? '--hx-pass' : '--hx-warn'})">${state.approved ? 'Signed' : 'Pending'}</span></div>`;
+    return `<div class="stack">
+      ${gateBanner(8, 'Review sections, sign and export', hint)}
+      <div class="g-review">
+        <nav class="hx-card" style="padding:8px" aria-label="Report sections"><div class="hx-kicker" style="padding:8px 10px 6px;text-transform:none;letter-spacing:0">Sponsor template v5</div>
+          ${SECTIONS.map((s, i) => `<div class="hx-sec${i === 6 ? ' is-active' : ''}"><span>${s[0]}</span><span class="hx-chip ${s[2]}" style="font-size:11px;padding:2px 8px">${s[1]}</span></div>`).join('')}
+        </nav>
+        <article class="hx-card hx-doc" style="padding:32px 40px">
+          <div class="hx-kicker">Draft · Section 7 · Anatomic pathology</div>
+          <h2 style="font-size:22px;margin:6px 0 16px">Microscopic findings</h2>
+          <p>Minimal hepatocellular hypertrophy was recorded in four high-dose animals. The incidence was derived from the locked MI dataset and mapped to the selected controlled terminology.</p>
+          <div class="hx-flag"><strong>Needs review · </strong>The draft pattern describes the severity as moderate. Source records state minimal.</div>
+          <p>Every quantitative statement retains a source-record link and deterministic transform ID.</p>
+          <div style="display:flex;align-items:center;gap:12px;padding-top:16px;border-top:1px solid var(--hx-line-soft)"><button type="button" class="hx-btn" data-action="lineage">Inspect 4 provenance edges</button><span class="hx-mono" aria-live="polite">${state.lineage}</span></div>
+        </article>
+        <aside class="hx-card stack" aria-labelledby="hx-so-h">
+          <div><div class="hx-kicker">Release controls</div><h2 id="hx-so-h" style="margin-top:4px">Sign-offs</h2></div>
+          <div>
+            <div class="hx-list-row"><span style="color:var(--hx-pass)">${I.check()}</span><span style="flex-grow:1">Traceability gate passed</span><span style="font-size:12px;color:var(--hx-pass)">Approved</span></div>
+            ${signed('Pathologist peer review')}${signed('QAU statement')}${signed('Study director approval')}
+          </div>
+          ${active && !state.approved ? '<button type="button" class="hx-btn" data-action="approve">Record demo approvals</button>' : ''}
+          <button type="button" class="hx-btn primary" data-action="exportPkg" ${active && state.approved && !state.exported ? '' : 'disabled'}>${state.exported ? 'Package exported' : 'Export final package'}</button>
+          <p class="hx-sub" style="margin:0;font-size:12px">Export is a separate action after approval. A prepared package is not FDA acceptance.</p>
+        </aside>
+      </div>
+    </div>`;
+  }
+
+  function render() {
+    renderHeader();
+    renderStepper();
+    const sv = state.sel;
+    $('#hx-panel').innerHTML = sv === 0 ? viewUpload() : sv === 7 ? viewTrace() : sv === 8 ? viewReview() : viewAgent();
+    const drop = $('#hx-drop');
+    if (drop) {
+      drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('is-over'); });
+      drop.addEventListener('dragleave', () => drop.classList.remove('is-over'));
+      drop.addEventListener('drop', (e) => { e.preventDefault(); drop.classList.remove('is-over'); announce('Files received (demo: the file list is fixed).'); });
+    }
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>
