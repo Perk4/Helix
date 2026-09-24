@@ -4,7 +4,13 @@ prompts:
   - file://prompt.txt
 
 providers:
-  - "{{ env.HELIX_PROMPTFOO_PROVIDER }}"
+  # gpt-5.5 is a reasoning model. The default token budget is spent on reasoning
+  # before any visible content, which returns an empty string with
+  # finish_reason `length` and fails every assertion for the wrong reason.
+  - id: "{{ env.HELIX_PROMPTFOO_PROVIDER }}"
+    config:
+      max_completion_tokens: 16000
+      reasoning_effort: low
 
 tests:
   - description: Uses the allowed body-weight claim
