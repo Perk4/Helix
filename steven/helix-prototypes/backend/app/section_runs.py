@@ -6,13 +6,25 @@ from pathlib import Path
 from uuid import uuid4
 
 from jsonschema import Draft202012Validator
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from .agents.codex_section_agent import SectionAgent
 from .approved_report_retrieval import add_report, get_all_examples
+from .drafting_cycles import (
+    DRAFTING_CYCLE_ID,
+    RejectAttempt,
+    admit_attempt,
+    cycle_fingerprint,
+    load_recorded_attempts,
+)
 from .repository import StudyPackageRepository
+from .review_scaffolds import persist
 from .schemas import (
     ClaimStatus,
+    CodexAgentReceipt,
+    DraftingCycle,
+    PinnedRun,
     SectionDraftCandidate,
     SectionRunCommand,
     SectionRunEligibility,
@@ -21,20 +33,13 @@ from .schemas import (
     WorkflowEvent,
 )
 from .section_executor import run_section
+from .skill_integrity import SECTION_AGENT_ROOT, SkillIntegrity, skill_integrity
+from .template_contracts import evaluate_template_contract, impact_set_for
 
 SECTION_PACKAGE_ID = "section.5_2_3_body_weight"
 SECTION_ID = "5_2_3_body_weight"
 CLAIM_ID = "C-BW-HIGH"
 SKILL_NAME = "helix-section-agent"
-GOVERNED_VERSIONS = {
-    "schema": "1.0.0",
-    "ontology": "1.0.0",
-    "rule_bundle": "helix-rules-1.0.0",
-    "template": "1.0.0",
-    "section_agent_skill": "0.1.0",
-    "promptfoo_qualification_suite": "helix-section-agent-qualification@0.1.0",
-    "promptfoo_study_output_suite": "helix-section-study-output@0.1.0",
-}
 
 
 class SectionRunConflictError(RuntimeError):
@@ -62,12 +67,12 @@ def manifest_fingerprint(package: StudyEvidencePackage) -> str:
     return canonical_hash([item.model_dump(mode="json") for item in package.manifest])
 
 
-def governed_versions_fingerprint() -> str:
-    return canonical_hash(GOVERNED_VERSIONS)
+def governed_versions_fingerprint(pinned_run: PinnedRun) -> str:
+    return canonical_hash(pinned_run.run_plan.governed_versions)
 
 
 class SectionRunService:
-    def __init__(self, session: Session, agent: SectionAgent, repository_root: Path):
+    def __init__(self, session: Session, agent: SectionAgent | None, repository_root: Path):
         self.session = session
         self.agent = agent
         self.repository_root = repository_root
@@ -83,11 +88,52 @@ class SectionRunService:
             / "package.json"
         )
         self.template_path = repository_root / "backend" / "app" / "data" / "report-template.json"
-        self.skill_path = repository_root / ".agents" / "skills" / SKILL_NAME / "SKILL.md"
+
+    def eligibilities(self, package: StudyEvidencePackage) -> list[SectionRunEligibility]:
+        definitions = self._section_package_definitions()
+        return [self._eligibility_for(package, definition, definitions) for definition in definitions]
 
     def eligibility(self, package: StudyEvidencePackage) -> SectionRunEligibility:
+        return self.eligibility_for(package, SECTION_PACKAGE_ID)
+
+    def eligibility_for(
+        self, package: StudyEvidencePackage, section_package_id: str
+    ) -> SectionRunEligibility:
+        match = next(
+            (
+                item
+                for item in self.eligibilities(package)
+                if item.section_package_id == section_package_id
+            ),
+            None,
+        )
+        if match is None:
+            raise UnknownSectionPackageError(f"Unknown Section Package {section_package_id}")
+        return match
+
+    def persist_contract_revision(
+        self,
+        package: StudyEvidencePackage,
+        *,
+        event_id: str,
+    ) -> StudyEvidencePackage:
+        return persist(
+            self.repository,
+            package,
+            event_id=event_id,
+            contracts=self.contracts,
+            eligibilities=self.eligibilities(package),
+            repository_root=self.repository_root,
+        )
+
+    def _eligibility_for(
+        self,
+        package: StudyEvidencePackage,
+        package_definition: dict[str, object],
+        all_definitions: list[dict[str, object]],
+    ) -> SectionRunEligibility:
         reasons: list[str] = []
-        package_definition = self._load_json(self.package_path)
+        package_id = str(package_definition["package_id"])
         required_claim = next(
             (
                 item
@@ -111,79 +157,60 @@ class SectionRunService:
             reasons.append("C-BW-HIGH has no provenance")
         if not package.manifest or any(not item.locked for item in package.manifest):
             reasons.append("The source manifest is not frozen")
-        pinned_run = self.repository.latest_event(package.study.study_id, "validation_run")
+        pinned_run = package.pinned_run
         if pinned_run is None:
-            reasons.append("Run hybrid validation first")
+            reasons.append("Freeze the authorized manifest first")
         else:
-            if pinned_run.payload.get("manifest_hash") != manifest_fingerprint(package):
+            if pinned_run.manifest_hash != manifest_fingerprint(package):
                 reasons.append("The Pinned Run manifest fingerprint does not match the current manifest")
-            if pinned_run.payload.get("governed_versions_hash") != governed_versions_fingerprint():
-                reasons.append("The Pinned Run governed-version fingerprint does not match")
-        reasons.extend(self._template_contract_gate_failures(package_definition))
+            if pinned_run.status != "planned":
+                reasons.append("The Pinned Run requires study-type review")
+            resolution = pinned_run.study_type_resolution
+            if resolution.status == "resolved" and resolution.study_type_id not in package_definition.get(
+                "study_type_ids", []
+            ):
+                reasons.append("The Section Package does not apply to the resolved study type")
+            if not any(
+                node.node_id == package_id and node.package_id == package_id
+                for node in pinned_run.run_plan.nodes
+            ):
+                reasons.append("The Section Package is not part of the Pinned Run")
+            if any(
+                not (self.repository_root / item.path).is_file()
+                or self._file_hash(self.repository_root / item.path) != item.content_hash
+                for item in pinned_run.governed_inputs
+            ):
+                reasons.append("The Pinned Run governed-input fingerprint does not match")
+        if self.repository.latest_event(package.study.study_id, "validation_run") is None:
+            reasons.append("Run hybrid validation first")
+        gate_results = evaluate_template_contract(package_definition, self._load_json(self.template_path))
+        reasons.extend(item.message for item in gate_results if item.status == "blocked")
         if package_definition.get("maturity") != "vertical_slice":
             reasons.append("The Section Package is not the vertical slice")
         if package_definition.get("promotion_allowed") is not False:
             reasons.append("The Section Package must prohibit promotion")
         return SectionRunEligibility(
-            section_package_id=SECTION_PACKAGE_ID,
+            section_package_id=package_id,
             eligible=not reasons,
             reasons=reasons,
+            gate_results=gate_results,
+            impact_set=impact_set_for(package_id, all_definitions),
         )
 
-    def _template_contract_gate_failures(self, package_definition: dict[str, object]) -> list[str]:
-        required_gates = {
-            "body-weight-template-fields",
-            "body-weight-table-shape",
-            "body-weight-style-policy",
-        }
-        declared_gates = set(package_definition.get("template_contract_gate_ids", []))
-        failures = []
-        if declared_gates != required_gates:
-            failures.append("The body-weight Template Contract Gates are incomplete")
-
-        template = self._load_json(self.template_path)
-        section = next(
-            (item for item in template.get("sections", []) if item.get("section_id") == "S5"),
-            None,
+    def _section_package_definitions(self) -> list[dict[str, object]]:
+        directory = (
+            self.repository_root / "skills" / "helix-evidence-pipeline" / "packages" / "sections"
         )
-        field = (
-            next(
-                (item for item in section.get("fields", []) if item.get("field_id") == "body-weight"),
-                None,
-            )
-            if section
-            else None
-        )
-        required_claim = next(
-            (
-                item
-                for item in package_definition.get("required_claims", [])
-                if item.get("claim_selector") == CLAIM_ID and item.get("required") is True
-            ),
-            None,
-        )
-        checks = {
-            "body-weight-template-fields": field is not None and field.get("required") is True,
-            "body-weight-table-shape": field is not None
-            and required_claim is not None
-            and field.get("expected_grain") == "dose_group_x_sex"
-            and required_claim.get("output_grain") == field.get("expected_grain"),
-            "body-weight-style-policy": field is not None
-            and bool(section.get("purpose"))
-            and bool(field.get("label"))
-            and bool(field.get("source_expectation"))
-            and bool(field.get("regulatory_reference_ids")),
-        }
-        failures.extend(
-            f"Template Contract Gate {gate_id} failed"
-            for gate_id, passed in checks.items()
-            if gate_id in declared_gates and not passed
-        )
-        return failures
+        return [self._load_json(path) for path in sorted(directory.glob("*/package.json"))]
 
     def run(self, study_id: str, command: SectionRunCommand) -> SectionRunReceipt:
+        snapshot = self.repository.get(study_id)
         request_hash = canonical_hash(
-            {"study_id": study_id, "section_package_id": command.section_package_id}
+            {
+                "study_id": study_id,
+                "section_package_id": command.section_package_id,
+                "pinned_run_id": snapshot.pinned_run.run_id if snapshot.pinned_run is not None else "",
+            }
         )
         prior_receipt = self._replay(study_id, command.idempotency_key, request_hash)
         if prior_receipt is not None:
@@ -192,36 +219,90 @@ class SectionRunService:
             raise UnknownSectionPackageError(f"Unknown Section Package {command.section_package_id}")
 
         package = self.repository.get(study_id, for_update=True)
+        request_hash = canonical_hash(
+            {
+                "study_id": study_id,
+                "section_package_id": command.section_package_id,
+                "pinned_run_id": package.pinned_run.run_id if package.pinned_run is not None else "",
+            }
+        )
         prior_receipt = self._replay(study_id, command.idempotency_key, request_hash)
         if prior_receipt is not None:
             return prior_receipt
-        eligibility = self.eligibility(package)
+        eligibility = self.eligibility_for(package, command.section_package_id)
         if not eligibility.eligible:
+            if any(item.status == "blocked" for item in eligibility.gate_results):
+                event_id = f"EV-{uuid4().hex[:12].upper()}"
+                updated = self.persist_contract_revision(
+                    package,
+                    event_id=event_id,
+                )
+                if updated.review_scaffold_revisions != package.review_scaffold_revisions:
+                    self.repository.save(updated)
+                    self.session.commit()
             raise SectionRunConflictError("; ".join(eligibility.reasons))
-        pinned_run = self.repository.latest_event(study_id, "validation_run")
+        pinned_run = package.pinned_run
         if pinned_run is None:
-            raise SectionRunConflictError("Run hybrid validation first")
+            raise SectionRunConflictError("Freeze the authorized manifest first")
+        if self.agent is None:
+            raise SectionRunUnavailableError("The Codex SDK section run failed")
 
         run_id = f"SRUN-{uuid4().hex[:12].upper()}"
-        envelope = self._build_envelope(package, run_id, str(pinned_run.payload["run_id"]))
-        envelope_hash = canonical_hash(envelope)
-        row = self.repository.add_section_run(
-            run_id=run_id,
-            study_id=study_id,
-            section_package_id=SECTION_PACKAGE_ID,
-            idempotency_key=command.idempotency_key,
-            request_hash=request_hash,
-            envelope=envelope,
+        envelope = self._build_envelope(package, run_id, pinned_run)
+        cycle = self._ensure_implicit_cycle(package, command.section_package_id, pinned_run)
+        recorded = load_recorded_attempts(
+            self.repository.list_section_runs(study_id),
+            self.repository.list_candidate_evaluations(study_id),
+            command.section_package_id,
+            cycle.cycle_id,
         )
+        admission = admit_attempt(recorded, cycle_fingerprint(envelope), cycle.cycle_id)
+        if isinstance(admission, RejectAttempt):
+            raise SectionRunConflictError(admission.message)
+        if admission.retry_failures:
+            envelope = {
+                **envelope,
+                "structured_failures": [
+                    *list(envelope["structured_failures"]),
+                    *admission.retry_failures,
+                ],
+            }
+            schema = self._load_json(self.contracts / "section-execution-envelope.schema.json")
+            errors = list(Draft202012Validator(schema).iter_errors(envelope))
+            if errors:
+                raise CandidateValidationError(errors[0].message)
+        envelope_hash = canonical_hash(envelope)
+        integrity = skill_integrity(self.repository_root / SECTION_AGENT_ROOT)
+        try:
+            row = self.repository.add_section_run(
+                run_id=run_id,
+                study_id=study_id,
+                section_package_id=SECTION_PACKAGE_ID,
+                drafting_cycle_id=admission.drafting_cycle_id,
+                attempt=admission.attempt,
+                idempotency_key=command.idempotency_key,
+                request_hash=request_hash,
+                envelope=envelope,
+            )
+        except IntegrityError as error:
+            self.session.rollback()
+            prior_receipt = self._replay(study_id, command.idempotency_key, request_hash)
+            if prior_receipt is not None:
+                return prior_receipt
+            raise SectionRunConflictError(
+                "A Candidate Attempt is already recorded for this cycle slot"
+            ) from error
         candidate_schema = self._load_json(self.contracts / "section-draft-candidate.schema.json")
-        skill_hash = self._file_hash(self.skill_path)
         candidate_id = f"SDC-{uuid4().hex[:12].upper()}"
         prompt = self._prompt(
             envelope=envelope,
             candidate_id=candidate_id,
+            drafting_cycle_id=admission.drafting_cycle_id,
+            attempt=admission.attempt,
             thread_receipt_instruction=(
                 "Set agent_receipt.thread_id to {{CODEX_THREAD_ID}}. "
-                f"Set skill_name to {SKILL_NAME} and skill_hash to {skill_hash}."
+                f"Set skill_name to {SKILL_NAME}, skill_hash to {integrity.skill_hash}, "
+                f"and skill_references_hash to {integrity.skill_references_hash}."
             ),
         )
         try:
@@ -239,15 +320,23 @@ class SectionRunService:
                 schema=candidate_schema,
                 run_id=run_id,
                 candidate_id=candidate_id,
+                drafting_cycle_id=admission.drafting_cycle_id,
+                attempt=admission.attempt,
                 thread_id=result.thread_id,
-                skill_hash=skill_hash,
+                integrity=integrity,
                 executor_receipt_ids=[
                     str(receipt["artifact_id"]) for receipt in envelope["executor_receipts"]
                 ],
             )
             now = datetime.now(UTC).isoformat().replace("+00:00", "Z")
             event_id = f"EV-{uuid4().hex[:12].upper()}"
-            revision = self._review_scaffold(package, candidate, run_id, event_id, now)
+            row.candidate = candidate.model_dump(mode="json")
+            self.session.flush()
+            package = self.persist_contract_revision(
+                package,
+                event_id=event_id,
+            )
+            revision = package.review_scaffold_revisions[-1]
             receipt = SectionRunReceipt(
                 run_id=run_id,
                 section_id=SECTION_ID,
@@ -259,10 +348,10 @@ class SectionRunService:
                 agent_runtime="codex_sdk",
                 codex_thread_id=result.thread_id,
                 skill_name=SKILL_NAME,
-                skill_hash=skill_hash,
+                skill_hash=integrity.skill_hash,
+                skill_references_hash=integrity.skill_references_hash,
                 review_scaffold_revision=int(revision["sequence"]),
             )
-            row.candidate = candidate.model_dump(mode="json")
             row.receipt = receipt.model_dump(mode="json")
             row.review_scaffold = revision
             event = WorkflowEvent(
@@ -293,6 +382,55 @@ class SectionRunService:
         except Exception:
             self.session.rollback()
             raise
+
+    def _ensure_implicit_cycle(
+        self,
+        package: StudyEvidencePackage,
+        section_package_id: str,
+        pinned_run: PinnedRun,
+    ) -> DraftingCycle:
+        existing = self.repository.latest_drafting_cycle(package.study.study_id, section_package_id)
+        if existing is not None:
+            return existing
+        now = datetime.now(UTC).isoformat().replace("+00:00", "Z")
+        cycle_id = DRAFTING_CYCLE_ID
+        prior_ids = {
+            item.cycle_id
+            for item in self.repository.list_drafting_cycles(
+                package.study.study_id, include_predecessor=True
+            )
+        }
+        if cycle_id in prior_ids:
+            cycle_id = f"CYCLE-{uuid4().hex[:12].upper()}"
+        cycle = DraftingCycle(
+            schema_version="helix.drafting-cycle/v1",
+            cycle_id=cycle_id,
+            run_id=pinned_run.run_id,
+            section_package_id=section_package_id,
+            predecessor_cycle_id=None,
+            max_attempts=3,
+            impact_set=impact_set_for(section_package_id, self._section_package_definitions()),
+            opened_at=now,
+            opened_by="HELIX Codex section runtime",
+            triggering_event_id=f"EV-{uuid4().hex[:12].upper()}",
+        )
+        self.repository.add_drafting_cycle(
+            study_id=package.study.study_id,
+            cycle=cycle,
+            idempotency_key=f"implicit:{package.study.study_id}:{section_package_id}:{cycle_id}:{pinned_run.run_id}",
+            request_hash=canonical_hash(
+                {
+                    "study_id": package.study.study_id,
+                    "section_package_id": section_package_id,
+                    "run_id": pinned_run.run_id,
+                    "cycle_id": cycle_id,
+                }
+            ),
+            stale_disposition_ids=[],
+            stale_approval_ids=[],
+            review_scaffold_revision=0,
+        )
+        return cycle
 
     def _replay(
         self,
@@ -381,7 +519,7 @@ class SectionRunService:
         self,
         package: StudyEvidencePackage,
         run_id: str,
-        pinned_run_id: str,
+        pinned_run: PinnedRun,
     ) -> dict[str, object]:
         claim = next(item for item in package.claims if item.claim_id == CLAIM_ID)
         package_definition = self._load_json(self.package_path)
@@ -390,10 +528,8 @@ class SectionRunService:
             "schema_version": "helix.section-execution-envelope/v1",
             "envelope_id": f"ENV-{uuid4().hex[:12].upper()}",
             "run_id": run_id,
-            "pinned_run_id": pinned_run_id,
-            "run_plan_hash": canonical_hash(
-                {"study_id": package.study.study_id, "section_package_id": SECTION_PACKAGE_ID}
-            ),
+            "pinned_run_id": pinned_run.run_id,
+            "run_plan_hash": pinned_run.run_plan.fingerprint,
             "manifest_hash": manifest_fingerprint(package),
             "section_package": {
                 "package_id": SECTION_PACKAGE_ID,
@@ -440,7 +576,7 @@ class SectionRunService:
             ],
             "executor_receipts": [self._executor_receipt(package)],
             "reference_drafts": self._reference_drafts(),
-            "governed_versions": GOVERNED_VERSIONS,
+            "governed_versions": pinned_run.run_plan.governed_versions,
         }
         schema = self._load_json(self.contracts / "section-execution-envelope.schema.json")
         errors = list(Draft202012Validator(schema).iter_errors(envelope))
@@ -455,8 +591,10 @@ class SectionRunService:
         schema: dict[str, object],
         run_id: str,
         candidate_id: str,
+        drafting_cycle_id: str,
+        attempt: int,
         thread_id: str,
-        skill_hash: str,
+        integrity: SkillIntegrity,
         executor_receipt_ids: list[str],
     ) -> SectionDraftCandidate:
         try:
@@ -473,6 +611,8 @@ class SectionRunService:
             "section_id": SECTION_ID,
             "section_package_id": SECTION_PACKAGE_ID,
             "section_package_version": "0.1.0",
+            "drafting_cycle_id": drafting_cycle_id,
+            "attempt": attempt,
         }
         for field, value in expected.items():
             if getattr(candidate, field) != value:
@@ -480,11 +620,7 @@ class SectionRunService:
         if candidate.validated_claim_ids != [CLAIM_ID]:
             raise CandidateValidationError("Codex candidate cited an unapproved claim")
         for claim_ids in self._nested_claim_id_lists(candidate.content_blocks):
-            if (
-                not isinstance(claim_ids, list)
-                or len(claim_ids) != 1
-                or set(claim_ids) != {CLAIM_ID}
-            ):
+            if not isinstance(claim_ids, list) or len(claim_ids) != 1 or set(claim_ids) != {CLAIM_ID}:
                 raise CandidateValidationError("Codex candidate content cited an unapproved claim")
         for block in candidate.content_blocks:
             content_fragments = self._content_fragments(block)
@@ -495,91 +631,30 @@ class SectionRunService:
                 else []
             )
             if Counter(content_fragments) != Counter(span_fragments):
-                raise CandidateValidationError(
-                    "Codex candidate factual spans do not cover the block content"
-                )
+                raise CandidateValidationError("Codex candidate factual spans do not cover the block content")
         if len(candidate.executor_receipt_ids) != len(executor_receipt_ids) or set(
             candidate.executor_receipt_ids
         ) != set(executor_receipt_ids):
             raise CandidateValidationError("Codex candidate returned invalid executor receipts")
-        receipt = candidate.agent_receipt
-        if receipt != {
-            "runtime": "codex_sdk",
-            "thread_id": thread_id,
-            "skill_name": SKILL_NAME,
-            "skill_hash": skill_hash,
-        }:
+        if candidate.agent_receipt != CodexAgentReceipt(
+            runtime="codex_sdk",
+            thread_id=thread_id,
+            skill_name=SKILL_NAME,
+            skill_hash=integrity.skill_hash,
+            skill_references_hash=integrity.skill_references_hash,
+        ):
             raise CandidateValidationError("Codex candidate omitted or changed its runtime receipt")
         if "286.2 g" not in json.dumps(candidate.content_blocks, ensure_ascii=False):
             raise CandidateValidationError("Codex candidate did not preserve the validated value 286.2 g")
         return candidate
-
-    def _review_scaffold(
-        self,
-        package: StudyEvidencePackage,
-        candidate: SectionDraftCandidate,
-        run_id: str,
-        event_id: str,
-        now: str,
-    ) -> dict[str, object]:
-        completed_runs = self.repository.list_section_runs(package.study.study_id)
-        sequence = len(completed_runs) + 2
-        predecessor_id = completed_runs[-1].review_scaffold.get("revision_id") if completed_runs else None
-        sections = []
-        for section in package.report_sections:
-            if section.section_id == "S5":
-                sections.append(
-                    {
-                        "section_id": SECTION_ID,
-                        "heading": section.title,
-                        "render_state": "needs_review",
-                        "artifact_ids": [candidate.candidate_id],
-                        "validated_claim_ids": [CLAIM_ID],
-                        "blocker_result_ids": [
-                            "VR-004",
-                            f"PROMOTION-DISABLED-{SECTION_PACKAGE_ID}",
-                        ],
-                        "placeholder": "[NEEDS REVIEW]",
-                    }
-                )
-            else:
-                sections.append(
-                    {
-                        "section_id": section.section_id,
-                        "heading": section.title,
-                        "render_state": "needs_review",
-                        "artifact_ids": [],
-                        "validated_claim_ids": [],
-                        "blocker_result_ids": [f"PENDING-{section.section_id}"],
-                        "placeholder": "[NEEDS REVIEW]",
-                    }
-                )
-        content = {
-            "schema_version": "helix.review-scaffold-revision/v1",
-            "status": "review_scaffold",
-            "revision_id": f"RSR-{uuid4().hex[:12].upper()}",
-            "run_id": run_id,
-            "study_id": package.study.study_id,
-            "sequence": sequence,
-            "created_at": now,
-            "triggering_event_id": event_id,
-            "predecessor_id": predecessor_id,
-            "overall_study_context": {"release_status": "blocked", "synthetic": True},
-            "sections": sections,
-            "export_eligible": False,
-        }
-        content["content_hash"] = canonical_hash(content)
-        schema = self._load_json(self.contracts / "review-scaffold-revision.schema.json")
-        errors = list(Draft202012Validator(schema).iter_errors(content))
-        if errors:
-            raise CandidateValidationError(errors[0].message)
-        return content
 
     def _prompt(
         self,
         *,
         envelope: dict[str, object],
         candidate_id: str,
+        drafting_cycle_id: str,
+        attempt: int,
         thread_receipt_instruction: str,
     ) -> str:
         return (
@@ -587,7 +662,7 @@ class SectionRunService:
             "Return exactly one JSON object that matches the supplied output schema. "
             f"Use candidate_id {candidate_id}, run_id {envelope['run_id']}, section_id {SECTION_ID}, "
             f"section_package_id {SECTION_PACKAGE_ID}, section_package_version 0.1.0, "
-            "drafting_cycle_id CYCLE-BW-001, and attempt 1. Cite only C-BW-HIGH. "
+            f"drafting_cycle_id {drafting_cycle_id}, and attempt {attempt}. Cite only C-BW-HIGH. "
             "Write one factual span containing the exact text '286.2 g'. "
             f"{thread_receipt_instruction} Envelope: "
             f"{json.dumps(envelope, separators=(',', ':'), sort_keys=True)}"

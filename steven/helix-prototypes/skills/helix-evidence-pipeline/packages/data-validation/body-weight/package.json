@@ -56,7 +56,9 @@
   ],
   "tests": {
     "fixture_paths": [
+      "backend/tests/fixtures/body-weight-summary.json",
       "backend/tests/test_validation.py",
+      "backend/tests/test_data_validation.py",
       "synthetic-e2e/data/study_data/body_weights.csv"
     ]
   }

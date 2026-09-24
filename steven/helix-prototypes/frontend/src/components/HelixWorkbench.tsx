@@ -4,10 +4,16 @@ import { useCallback, useEffect, useState } from "react";
 
 import {
   ApiError,
+  evaluateCandidate,
   exportPackage,
   getWorkspace,
+  promoteSectionDraft,
+  queryCrossSection,
   recordApproval,
   recordDisposition,
+  recordFinalStudyApproval,
+  reviseSection,
+  runDataValidation,
   runSectionAgent,
   runValidation,
 } from "@/lib/api";
@@ -68,17 +74,154 @@ export function HelixWorkbench({ studyId }: Props) {
     }
   }
 
+  async function executeBodyWeight() {
+    setBusy("data-validation");
+    setNotice(null);
+    setError(null);
+    try {
+      const execution = await runDataValidation(studyId);
+      await refresh();
+      setNotice(
+        `${execution.receipt.package_id} ${execution.receipt.status} with ${execution.claims.length} persisted claims.`,
+      );
+    } catch (cause) {
+      setError(messageFrom(cause));
+    } finally {
+      setBusy(null);
+    }
+  }
+
   async function draftBodyWeight() {
     setBusy("section-run");
     setNotice(null);
     setError(null);
     try {
-      const receipt = await runSectionAgent(studyId);
+      const receipt = await runSectionAgent(studyId, draftIdempotencyKey(studyId, workspace));
       await refresh();
       setNotice(
         `${receipt.candidate_id} recorded from Codex SDK in Review Scaffold Revision ${receipt.review_scaffold_revision}.`,
       );
     } catch (cause) {
+      setError(messageFrom(cause));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function reviseBodyWeight() {
+    setBusy("section-revision");
+    setNotice(null);
+    setError(null);
+    try {
+      const current = workspace?.drafting_cycles
+        ?.filter((cycle) => cycle.section_package_id === "section.5_2_3_body_weight")
+        .at(-1);
+      const receipt = await reviseSection(
+        studyId,
+        `workbench-${studyId}-revise-${current?.cycle_id ?? "CYCLE-BW-001"}`,
+      );
+      await refresh();
+      setNotice(
+        `${receipt.cycle.cycle_id} opened from ${receipt.cycle.predecessor_cycle_id ?? "no predecessor"}.`,
+      );
+    } catch (cause) {
+      setError(messageFrom(cause));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function retryBodyWeight() {
+    const latest = workspace?.section_runs.at(-1);
+    const evaluation = (workspace?.candidate_evaluations ?? []).find(
+      (item) => item.run_id === latest?.receipt.run_id,
+    );
+    if (evaluation?.next_attempt_decision.action !== "retry") {
+      return;
+    }
+    const cycleId = latest?.candidate.drafting_cycle_id ?? "CYCLE-BW-001";
+    const nextAttempt = evaluation.next_attempt_decision.attempt + 1;
+    setBusy("section-run");
+    setNotice(null);
+    setError(null);
+    try {
+      const receipt = await runSectionAgent(
+        studyId,
+        `workbench-${studyId}-body-weight-${cycleId}-attempt-${nextAttempt}`,
+      );
+      await refresh();
+      setNotice(
+        `${receipt.candidate_id} recorded from Codex SDK in Review Scaffold Revision ${receipt.review_scaffold_revision}.`,
+      );
+    } catch (cause) {
+      setError(messageFrom(cause));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function evaluateBodyWeight() {
+    if (!workspace?.section_runs.at(-1)) {
+      return;
+    }
+    const runId = workspace.section_runs.at(-1)?.receipt.run_id;
+    if (!runId) {
+      return;
+    }
+    setBusy("candidate-evaluation");
+    setNotice(null);
+    setError(null);
+    try {
+      const evaluation = await evaluateCandidate(studyId, runId);
+      await refresh();
+      setNotice(
+        `${evaluation.evaluation_id} ${evaluation.next_attempt_decision.action} for ${evaluation.candidate_id}.`,
+      );
+    } catch (cause) {
+      setError(messageFrom(cause));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function queryBodyWeightFacts() {
+    if (!workspace?.section_runs.at(-1)) {
+      return;
+    }
+    const runId = workspace.section_runs.at(-1)?.receipt.run_id;
+    if (!runId) {
+      return;
+    }
+    setBusy("cross-section-query");
+    setNotice(null);
+    setError(null);
+    try {
+      const receipt = await queryCrossSection(studyId, runId);
+      await refresh();
+      setNotice(
+        `${receipt.query_id} ${receipt.status} for ${receipt.requested_artifact_ids.length} requested artifacts.`,
+      );
+    } catch (cause) {
+      setError(messageFrom(cause));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function promoteBodyWeight() {
+    const runId = workspace?.section_runs.at(-1)?.receipt.run_id;
+    if (!runId) {
+      return;
+    }
+    setBusy("section-promotion");
+    setNotice(null);
+    setError(null);
+    try {
+      const draft = await promoteSectionDraft(studyId, runId);
+      await refresh();
+      setNotice(`${draft.draft_id} promoted from ${draft.candidate_id}.`);
+    } catch (cause) {
+      await refresh();
       setError(messageFrom(cause));
     } finally {
       setBusy(null);
@@ -113,6 +256,21 @@ export function HelixWorkbench({ studyId }: Props) {
     }
   }
 
+  async function approveFinalStudy() {
+    setBusy("final-study-approval");
+    setNotice(null);
+    setError(null);
+    try {
+      const key = `workbench-${studyId}-fsa-${workspace?.release_candidate?.content_hash?.slice(-12) ?? "pending"}`;
+      setWorkspace(await recordFinalStudyApproval(studyId, key));
+      setNotice("Final Study Approval recorded for the exact release-candidate hashes.");
+    } catch (cause) {
+      setError(messageFrom(cause));
+    } finally {
+      setBusy(null);
+    }
+  }
+
   async function performExport() {
     setBusy("export");
     setNotice(null);
@@ -121,7 +279,7 @@ export function HelixWorkbench({ studyId }: Props) {
       const receipt = await exportPackage(studyId);
       await refresh();
       setNotice(
-        `${receipt.artifacts.length} synthetic artifacts checksummed. This is not an FDA submission.`,
+        `${receipt.artifacts.length} approved artifacts exported. Status: exported. Never a regulator approval claim.`,
       );
     } catch (cause) {
       setError(messageFrom(cause));
@@ -234,10 +392,21 @@ export function HelixWorkbench({ studyId }: Props) {
             workspace={workspace}
             planner={planner}
             validationBusy={busy === "validation"}
+            dataValidationBusy={busy === "data-validation"}
             sectionRunBusy={busy === "section-run"}
+            evaluationBusy={busy === "candidate-evaluation"}
+            queryBusy={busy === "cross-section-query"}
+            promotionBusy={busy === "section-promotion"}
+            revisionBusy={busy === "section-revision"}
             onPlannerChange={setPlanner}
             onValidate={() => void validate()}
+            onExecuteBodyWeight={() => void executeBodyWeight()}
             onDraftBodyWeight={() => void draftBodyWeight()}
+            onReviseBodyWeight={() => void reviseBodyWeight()}
+            onRetryBodyWeight={() => void retryBodyWeight()}
+            onEvaluateCandidate={() => void evaluateBodyWeight()}
+            onQueryCrossSection={() => void queryBodyWeightFacts()}
+            onPromoteSectionDraft={() => void promoteBodyWeight()}
           />
         )}
         {activeView === "evidence" && (
@@ -254,6 +423,7 @@ export function HelixWorkbench({ studyId }: Props) {
             onInspectClaim={inspectClaim}
             onResolve={(resultId, message) => void resolve(resultId, message)}
             onApprove={(role) => void approve(role)}
+            onFinalStudyApproval={() => void approveFinalStudy()}
             onExport={() => void performExport()}
           />
         )}
@@ -267,6 +437,24 @@ export function HelixWorkbench({ studyId }: Props) {
       </footer>
     </main>
   );
+}
+
+function draftIdempotencyKey(studyId: string, workspace: Workspace | null): string {
+  const latest = workspace?.drafting_cycles?.at(-1);
+  if (!latest || latest.cycle_id === "CYCLE-BW-001") {
+    const attemptCount = (workspace?.section_runs ?? []).filter(
+      (item) => item.candidate.drafting_cycle_id === "CYCLE-BW-001",
+    ).length;
+    if (attemptCount === 0) {
+      const runId = workspace?.pinned_run?.run_id ?? "unpinned";
+      return `workbench-${studyId}-body-weight-${runId}-v1`;
+    }
+  }
+  const cycleId = latest?.cycle_id ?? "CYCLE-BW-001";
+  const nextAttempt =
+    (workspace?.section_runs ?? []).filter((item) => item.candidate.drafting_cycle_id === cycleId)
+      .length + 1;
+  return `workbench-${studyId}-body-weight-${cycleId}-attempt-${nextAttempt}`;
 }
 
 function formatStatus(value: string): string {

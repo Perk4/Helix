@@ -902,9 +902,10 @@ code {
   font-size: 9px;
 }
 
-.section-run-receipt strong {
-  color: var(--ink-900);
-  font-size: 11px;
+.section-run-receipt .candidate-attempt-evaluation {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #92c4df;
 }
 
 .section-run-receipt code {
@@ -917,6 +918,229 @@ code {
   color: var(--ink-500);
   font-size: 9px;
   line-height: 1.45;
+}
+
+.run-plan-card {
+  margin-top: 14px;
+  padding: 16px;
+}
+
+.run-plan-fingerprints {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.run-plan-fingerprints > div {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-sm);
+  background: var(--paper-tint);
+}
+
+.run-plan-fingerprints span,
+.run-plan-fingerprints code {
+  display: block;
+}
+
+.run-plan-fingerprints span {
+  margin-bottom: 5px;
+  color: var(--ink-500);
+  font-size: 8px;
+  font-weight: 720;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.run-plan-fingerprints code {
+  overflow: hidden;
+  color: var(--blue-700);
+  font-size: 8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.run-plan-card details {
+  margin-top: 10px;
+}
+
+.dvp-claim-block,
+.dvp-rule-list,
+.dvp-section-refs {
+  margin-top: 12px;
+}
+
+.eligibility-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 8px 0 0;
+  color: var(--ink-700);
+  font-size: 9px;
+}
+
+.contract-package + .contract-package,
+.scaffold-revision {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line-soft);
+}
+
+.scaffold-history-list {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.scaffold-history-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 4px 10px;
+  align-items: baseline;
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink-700);
+  text-align: left;
+  cursor: pointer;
+}
+
+.scaffold-history-item.selected {
+  border-color: var(--navy-800);
+  color: var(--navy-900);
+}
+
+.scaffold-history-item strong {
+  color: var(--navy-900);
+  font-size: 10px;
+}
+
+.scaffold-history-item code,
+.scaffold-history-item span,
+.scaffold-history-item small {
+  color: var(--ink-500);
+  font-size: 8px;
+}
+
+.contract-package-heading,
+.impact-set {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.contract-package-heading strong,
+.impact-set span,
+.scaffold-revision strong {
+  color: var(--navy-900);
+  font-size: 10px;
+}
+
+.impact-set {
+  margin-top: 8px;
+}
+
+.impact-set code,
+.impact-set small {
+  color: var(--ink-500);
+  font-size: 8px;
+}
+
+.dvp-claim-block {
+  display: grid;
+  gap: 4px;
+  padding: 10px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-sm);
+  background: var(--paper-tint);
+}
+
+.dvp-claim-block span,
+.dvp-claim-block small,
+.dvp-claim-block code {
+  color: var(--ink-700);
+  font-size: 9px;
+}
+
+.lineage-meta {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.lineage-meta span {
+  display: block;
+  color: var(--ink-500);
+  font-size: 8px;
+  font-weight: 720;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.lineage-meta code {
+  display: block;
+  overflow-wrap: anywhere;
+  color: var(--blue-700);
+  font-size: 8px;
+}
+
+.run-plan-card summary {
+  padding: 9px 0 0;
+  border-top: 1px solid var(--line-soft);
+  color: var(--blue-700);
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.run-plan-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.run-plan-grid > div > strong {
+  color: var(--navy-900);
+  font-size: 10px;
+}
+
+.run-plan-row {
+  display: grid;
+  grid-template-columns: auto minmax(130px, 1fr) minmax(120px, 0.7fr);
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.run-plan-row strong,
+.run-plan-row small,
+.run-plan-row code {
+  display: block;
+}
+
+.run-plan-row strong {
+  color: var(--ink-700);
+  font-size: 9px;
+}
+
+.run-plan-row small {
+  margin-top: 2px;
+  color: var(--ink-500);
+  font-size: 7px;
+}
+
+.run-plan-row code {
+  overflow: hidden;
+  color: var(--ink-500);
+  font-size: 7px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .journey-lower-grid {

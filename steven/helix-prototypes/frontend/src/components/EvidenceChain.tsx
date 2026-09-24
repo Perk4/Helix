@@ -89,7 +89,7 @@ export function EvidenceChain({ workspace, selectedClaimId, onSelectClaim }: Pro
             <ChainCard
               index="02"
               eyebrow="Normalized facts"
-              title={chain.sources.at(0)?.grain.replaceAll("_", " × ") ?? chain.claim.grain}
+              title={displayGrain(chain.sources.at(0)?.grain ?? chain.claim.grain)}
               detail={`${chain.sources.at(0)?.domain ?? "Study"} domain · ${chain.claim.unit ?? "no unit"}`}
               meta="Typed boundary"
             />
@@ -197,6 +197,30 @@ export function EvidenceChain({ workspace, selectedClaimId, onSelectClaim }: Pro
                 The backend recomputes this value from the selected source IDs. The UI only displays
                 the returned evidence.
               </p>
+              <div className="lineage-meta" data-testid="claim-lineage">
+                <div>
+                  <span>Grain</span>
+                  <strong>{displayGrain(chain.claim.grain)}</strong>
+                </div>
+                <div>
+                  <span>Transform</span>
+                  <strong>
+                    {chain.transform_id ?? "None"} {chain.transform_version ?? ""}
+                  </strong>
+                </div>
+                <div>
+                  <span>Source hashes</span>
+                  <code>{chain.source_hashes?.at(0) ?? "None"}</code>
+                </div>
+                <div>
+                  <span>Rule versions</span>
+                  <code>
+                    {Object.entries(chain.rule_versions ?? {})
+                      .map(([ruleId, version]) => `${ruleId}@${version}`)
+                      .join(" · ") || "None"}
+                  </code>
+                </div>
+              </div>
             </aside>
           </div>
 
@@ -299,6 +323,10 @@ function ChainConnector() {
       <span>→</span>
     </div>
   );
+}
+
+function displayGrain(grain: string): string {
+  return grain.replaceAll("_x_", " × ");
 }
 
 function claimLabel(value: string): string {
