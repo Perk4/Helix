@@ -53,7 +53,12 @@ const referenced = [...configSource.matchAll(/file:\/\/(\S+)/g)]
   .map(([, reference]) => resolve(evalsDir, reference))
   .flatMap((path) => (statSync(path).isDirectory() ? walk(path) : [path]));
 
-const inputPaths = [...new Set([skillPath, configPath, ...referenced, ...walk(resolve(evalsDir, "fixtures"))])].sort();
+// References only. Walking `fixtures/` wholesale looks safer but is not: the
+// tier-2 guardrails keep their fixtures in the same directory, so a blanket
+// walk would invalidate a tier-1 qualification whenever a tier-2 fixture
+// changed. A digest that moves for reasons outside the thing it certifies
+// teaches reviewers to re-record without reading why.
+const inputPaths = [...new Set([skillPath, configPath, ...referenced])].sort();
 
 const inputs = Object.fromEntries(
   inputPaths.map((path) => [relative(root, path).split("\\").join("/"), fileHash(path)]),

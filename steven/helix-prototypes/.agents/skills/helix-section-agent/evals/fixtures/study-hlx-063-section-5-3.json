@@ -1,0 +1,16 @@
+{
+  "schema_version": "helix.section-draft/v1",
+  "study_id": "STUDY-HLX-063",
+  "sections": [
+    {
+      "section_id": "5_3_3_microscopic",
+      "title": "5.3.3 Microscopic Findings",
+      "text": "Microscopic examination was performed on all animals. Thyroid follicular cell hypertrophy, grade 1, was present in Group 3 (90 mg/kg/day) in 2 of 10 animals and Group 4 (300 mg/kg/day) in 3 of 10 animals. No follicular cell hyperplasia, no necrosis, and no macroscopic thyroid correlate were observed. No other treatment-related findings were identified."
+    },
+    {
+      "section_id": "5_3_4_conclusion",
+      "title": "5.3.4 Conclusion",
+      "text": "No adverse treatment-related findings were identified at any dose level tested. The no-observed-adverse-effect level (NOAEL) for Compound HX-063 is **300 mg/kg/day**, the highest dose tested. No lowest-observed-adverse-effect level (LOAEL) was established. The thyroid follicular cell hypertrophy observed at 90 and 300 mg/kg/day is considered an adaptive response to increased hepatic thyroxine clearance and is not considered adverse based on: (1) absence of follicular cell hyperplasia or necrosis; (2) absence of a macroscopic thyroid correlate; (3) minimal severity grade and low incidence."
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+# The tier-1 qualification digest hashes these files byte for byte, so a
+# reviewer has to be able to recompute it. This machine runs core.autocrlf=true
+# and there was no .gitattributes, so a checkout rewrote LF to CRLF and the
+# digest moved without any content changing. Pin the hashed inputs to LF so the
+# certificate depends on what the files say, not on how they were checked out.
+.agents/skills/helix-section-agent/** text eol=lf
+skills/helix-evidence-pipeline/contracts/** text eol=lf
+skills/helix-evidence-pipeline/packages/** text eol=lf
+scripts/record-qualification.mjs text eol=lf
+scripts/verify-evals-config.mjs text eol=lf
