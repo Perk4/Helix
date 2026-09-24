@@ -30,6 +30,11 @@ from .data_validation import (
 )
 from .drafting_cycles import current_cycle, cycle_exhausted, load_recorded_attempts
 from .journey import JourneyFacts, project_journey
+from .manifest_authorization import (
+    DATA_VALIDATION_PACKAGE_ID,
+    FreezeDataValidationFailedError,
+    freeze_data_validation_key,
+)
 from .release_candidates import (
     MissingReleaseCandidateError,
     approval_is_current,
@@ -371,15 +376,34 @@ class StudyService:
         pinned_run = self.pinned_runs.freeze(study_id, command, commit=False)
         execution = None
         if pinned_run.status == "planned":
-            execution = self.data_validation.execute(
-                study_id,
-                DataValidationCommand(
-                    actor=command.actor,
-                    package_id="validation.body_weight",
-                    idempotency_key=f"dvp-{pinned_run.run_id}-validation.body_weight",
-                ),
-                commit=False,
+            superseding = self.repository.get(study_id).superseding_run_receipt is not None
+            if not superseding:
+                # Lane A (#20): commit the Pinned Run first, so a Data Validation failure
+                # keeps the frozen manifest and the retry never freezes again. A
+                # superseding freeze stays one transaction: its authority update needs
+                # the execution receipt.
+                self.session.commit()
+            dv_command = DataValidationCommand(
+                actor=command.actor,
+                package_id=DATA_VALIDATION_PACKAGE_ID,
+                idempotency_key=freeze_data_validation_key(pinned_run.run_id),
             )
+            if superseding:
+                execution = self.data_validation.execute(study_id, dv_command, commit=False)
+            else:
+                try:
+                    execution = self.data_validation.execute(study_id, dv_command, commit=False)
+                except Exception as error:  # noqa: BLE001 - reported as a typed partial result
+                    self.session.rollback()
+                    LOGGER.warning(
+                        "Data Validation failed after freezing %s on %s: %s",
+                        pinned_run.run_id,
+                        study_id,
+                        error,
+                    )
+                    raise FreezeDataValidationFailedError(
+                        study_id=study_id, run_id=pinned_run.run_id, reason=str(error)
+                    ) from error
         package = self.repository.get(study_id, for_update=True)
         assert_bound_pinned_run(package, pinned_run)
         if package.superseding_run_receipt is not None:
