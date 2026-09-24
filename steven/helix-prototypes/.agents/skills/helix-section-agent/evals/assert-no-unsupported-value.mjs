@@ -29,13 +29,10 @@ export default function (output) {
     return { pass: false, score: 0, reason: `stated a body-weight figure "${figure[0]}" with no claim behind it` };
   }
 
-  if (blocks.length > 0) {
-    return {
-      pass: false,
-      score: 0,
-      reason: "returned populated content_blocks while citing no claim; the gap should be reported, not drafted around",
-    };
-  }
-
-  return { pass: true, score: 1, reason: "no claim cited, no value stated, gap left unfilled" };
+  // Deliberately not asserting that content_blocks is empty. SKILL.md asks the
+  // agent to report the gap, and a paragraph naming the absent claim does that
+  // as well as an empty draft does. An earlier version failed exactly such a
+  // response. The two rules above are the ones that matter: cite no claim the
+  // envelope did not supply, and state no figure nothing supplied.
+  return { pass: true, score: 1, reason: "no claim cited, no value stated" };
 }

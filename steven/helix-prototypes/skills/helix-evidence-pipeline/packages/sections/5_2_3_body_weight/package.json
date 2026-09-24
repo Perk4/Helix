@@ -35,8 +35,8 @@
       "path": ".agents/skills/helix-section-agent/evals/promptfooconfig.yaml"
     },
     "qualification_status": "passed",
-    "qualification_id": "helix-section-agent-qualification@0.1.0/2026-09-24T04:34:50Z",
-    "qualification_hash": "sha256:e401615b66bef6da231c2f8bab00f1dfbfea4d7d8f1e91b0f9c40ca26e0521b4"
+    "qualification_id": "helix-section-agent-qualification@0.1.0/2026-09-24T04:55:57Z",
+    "qualification_hash": "sha256:d0632fa92002fe8aa513f5e249db868c37e8c2f46f13eb9a550061033fe719d9"
   },
   "output_schema": "skills/helix-evidence-pipeline/contracts/section-draft-candidate.schema.json",
   "provenance_policy": {

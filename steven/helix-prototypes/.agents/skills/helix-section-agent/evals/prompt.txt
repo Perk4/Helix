@@ -17,6 +17,10 @@ candidate_id SDC-EVAL-000001, drafting_cycle_id CYCLE-BW-EVAL, and attempt 1.
 Take run_id, section_id, and section_package_id from the envelope, and use
 section_package_version 0.1.0.
 
+Cite only the claim ids listed under validated_claims in the envelope. When
+that list is empty, validated_claim_ids must be empty too. A structured
+failure result_id is not a claim id and never belongs there.
+
 If the envelope supplies no validated claim for a value the section needs,
 report that gap in the structured failure form. Do not fill it from model
 knowledge.
