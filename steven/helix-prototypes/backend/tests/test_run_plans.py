@@ -9,7 +9,7 @@ from sqlalchemy import func, select
 from app.config import Settings
 from app.database import create_database_engine
 from app.main import create_app
-from app.models import AuditEventRow, PinnedRunRow
+from app.models import AuditEventRow, PinnedRunRow, ValidationRunRow
 from app.repository import StudyPackageRepository
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -31,7 +31,11 @@ def governed_root(tmp_path: Path) -> Path:
     return root
 
 
-def build_client(repository_root: Path = ROOT) -> tuple[TestClient, object]:
+def build_client(
+    repository_root: Path = ROOT,
+    *,
+    raise_server_exceptions: bool = True,
+) -> tuple[TestClient, object]:
     settings = Settings(
         database_url="sqlite+pysqlite:///:memory:",
         seed_path=ROOT / "synthetic-e2e" / "helix-synthetic-bundle.json",
@@ -39,7 +43,13 @@ def build_client(repository_root: Path = ROOT) -> tuple[TestClient, object]:
         auto_seed=True,
     )
     engine = create_database_engine(settings)
-    return TestClient(create_app(settings, engine)), engine
+    return (
+        TestClient(
+            create_app(settings, engine),
+            raise_server_exceptions=raise_server_exceptions,
+        ),
+        engine,
+    )
 
 
 def freeze(client: TestClient, command: dict[str, str] = COMMAND):
@@ -251,6 +261,108 @@ def test_unresolved_study_type_blocks_dependents_without_fallback(
         )
         assert resolution["status"] == "blocked"
         assert validation["status"] == "blocked"
+    engine.dispose()
+
+
+def test_validation_is_blocked_when_study_type_requires_review(tmp_path: Path) -> None:
+    root = governed_root(tmp_path)
+    mapping_path = root / "backend" / "app" / "data" / "study-type-mapping.json"
+    mapping = json.loads(mapping_path.read_text())
+    mapping["mappings"] = []
+    mapping_path.write_text(json.dumps(mapping))
+
+    client, engine = build_client(root)
+    with client:
+        response = client.post(
+            f"/api/v1/studies/{STUDY_ID}/validation-runs",
+            json={"planner": "fixture"},
+        )
+
+        assert response.status_code == 409
+        assert response.json()["detail"] == "The Pinned Run requires study-type review"
+        workspace = client.get(f"/api/v1/studies/{STUDY_ID}/workspace").json()
+        assert workspace["pinned_run"]["status"] == "needs_review"
+        with client.app.state.session_factory() as session:
+            assert session.scalar(select(func.count()).select_from(ValidationRunRow)) == 0
+    engine.dispose()
+
+
+@pytest.mark.parametrize("mutation", ["invalid_schema", "invalid_json", "missing"])
+def test_invalid_governed_schema_returns_structured_evidence(
+    tmp_path: Path,
+    mutation: str,
+) -> None:
+    root = governed_root(tmp_path)
+    schema_path = root / "skills" / "helix-evidence-pipeline" / "contracts" / "section-package.schema.json"
+    if mutation == "invalid_schema":
+        schema = json.loads(schema_path.read_text())
+        schema["properties"]["package_id"]["type"] = 123
+        schema_path.write_text(json.dumps(schema))
+    elif mutation == "invalid_json":
+        schema_path.write_text("{")
+    else:
+        schema_path.unlink()
+
+    client, engine = build_client(root, raise_server_exceptions=False)
+    with client:
+        response = freeze(client)
+
+        assert response.status_code == 422
+        assert {item["code"] for item in response.json()["detail"]} == {"invalid_governed_schema"}
+        with client.app.state.session_factory() as session:
+            assert session.scalar(select(func.count()).select_from(PinnedRunRow)) == 0
+    engine.dispose()
+
+
+@pytest.mark.parametrize(
+    "identity",
+    ["executor", "skill", "qualification_suite", "study_output_suite"],
+)
+def test_unavailable_declared_implementation_identity_rejects_run(
+    tmp_path: Path,
+    identity: str,
+) -> None:
+    root = governed_root(tmp_path)
+    validation_path = (
+        root
+        / "skills"
+        / "helix-evidence-pipeline"
+        / "packages"
+        / "data-validation"
+        / "body-weight"
+        / "package.json"
+    )
+    section_path = (
+        root
+        / "skills"
+        / "helix-evidence-pipeline"
+        / "packages"
+        / "sections"
+        / "5_2_3_body_weight"
+        / "package.json"
+    )
+    if identity == "executor":
+        definition = json.loads(validation_path.read_text())
+        definition["executors"][0] = {"id": "different-executor", "version": "9.9.9"}
+        validation_path.write_text(json.dumps(definition))
+    else:
+        definition = json.loads(section_path.read_text())
+        if identity == "skill":
+            definition["skill"]["version"] = "9.9.9"
+        elif identity == "qualification_suite":
+            definition["skill"]["promptfoo_suite"]["id"] = "different-qualification-suite"
+        else:
+            definition["study_output_eval_suite"]["id"] = "different-study-output-suite"
+        section_path.write_text(json.dumps(definition))
+
+    client, engine = build_client(root)
+    with client:
+        response = freeze(client)
+
+        assert response.status_code == 422
+        assert {item["code"] for item in response.json()["detail"]} == {"governed_implementation_unavailable"}
+        with client.app.state.session_factory() as session:
+            assert session.scalar(select(func.count()).select_from(PinnedRunRow)) == 0
     engine.dispose()
 
 
