@@ -1,10 +1,12 @@
 import hashlib
 import json
 from collections import Counter, defaultdict, deque
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
 from jsonschema import Draft202012Validator, FormatChecker
+from jsonschema.exceptions import SchemaError
 from sqlalchemy.orm import Session
 
 from .repository import StudyPackageRepository
@@ -37,6 +39,31 @@ class RunPlanRejectedError(ValueError):
     def __init__(self, evidence: list[PlanningEvidence]):
         self.evidence = evidence
         super().__init__("Run Plan rejected")
+
+
+@dataclass(frozen=True)
+class DeclaredGovernedIdentity:
+    kind: str
+    artifact_id: str
+    version: str
+    source_package_id: str
+    declared_path: str | None = None
+
+
+IMPLEMENTATION_PATHS = {
+    ("executor", "body-weight-summary", "1.0.0"): "backend/app/validation.py",
+    ("skill", "helix-section-agent", "0.1.0"): ".agents/skills/helix-section-agent/SKILL.md",
+    (
+        "suite",
+        "helix-section-agent-qualification",
+        "0.1.0",
+    ): ".agents/skills/helix-section-agent/evals/promptfooconfig.yaml",
+    (
+        "suite",
+        "helix-section-study-output",
+        "0.1.0",
+    ): ".agents/skills/helix-section-agent/evals/study-output.yaml",
+}
 
 
 class PinnedRunService:
@@ -86,6 +113,20 @@ class PinnedRunService:
             raise RunPlanRejectedError(evidence)
 
         resolution = self._resolve_study_type(package)
+        package_definitions = self._applicable_packages(package_definitions, resolution)
+        package_ids = {str(item["package_id"]) for item in package_definitions}
+        governed = [
+            item
+            for item in governed
+            if item.kind not in {"data_validation_package", "section_package"}
+            or item.artifact_id in package_ids
+        ]
+        declared_inputs, evidence = self._pin_declared_identities(package_definitions)
+        if evidence:
+            raise RunPlanRejectedError(evidence)
+        governed.extend(declared_inputs)
+        governed.sort(key=lambda item: (item.kind, item.artifact_id, item.version))
+
         run_seed = canonical_hash(
             {
                 "study_id": study_id,
@@ -238,8 +279,22 @@ class PinnedRunService:
                 self.packages_root / "sections",
             ),
         ]
+        schema_paths = set(self.contracts_root.glob("*.schema.json"))
+        schema_paths.update(schema_path for _, schema_path, _ in package_specs)
+        schema_paths.add(self.contracts_root / "run-plan.schema.json")
+        schemas: dict[Path, dict[str, object]] = {}
+        for path in sorted(schema_paths):
+            schema = self._load_governed_schema(path)
+            if isinstance(schema, PlanningEvidence):
+                evidence.append(schema)
+                continue
+            schemas[path] = schema
+            governed.append(self._artifact("schema", path.stem, "1.0.0", path))
+
         for kind, schema_path, directory in package_specs:
-            schema = self._load_json(schema_path)
+            schema = schemas.get(schema_path)
+            if schema is None:
+                continue
             for path in sorted(directory.glob("*/package.json")):
                 try:
                     definition = self._load_json(path)
@@ -263,30 +318,8 @@ class PinnedRunService:
                 governed.append(
                     self._artifact(kind, str(definition["package_id"]), str(definition["version"]), path)
                 )
-                skill = definition.get("skill") or definition.get("agentic_skill")
-                if skill is not None and skill.get("qualification_status") != "passed":
-                    evidence.append(
-                        self._evidence(
-                            "invalid_package_qualification",
-                            str(definition["package_id"]),
-                            "Agentic package qualification has not passed",
-                        )
-                    )
-                if skill is not None and skill.get("qualification_status") == "passed":
-                    suite_path = self._safe_governed_path(str(skill["promptfoo_suite"]["path"]))
-                    expected_hash = skill.get("qualification_hash")
-                    if not suite_path.is_file() or expected_hash != file_hash(suite_path):
-                        evidence.append(
-                            self._evidence(
-                                "invalid_package_qualification",
-                                str(definition["package_id"]),
-                                "Qualification receipt does not match its governed suite",
-                            )
-                        )
 
         static_inputs = [
-            ("schema", path.stem, "1.0.0", path) for path in sorted(self.contracts_root.glob("*.schema.json"))
-        ] + [
             ("ontology", "helix-ontology", "1.0.0", self.pipeline_root / "references" / "ontology.md"),
             ("ontology_schema", "helix-schema", "1.0.0", self.pipeline_root / "references" / "schema.md"),
             (
@@ -298,40 +331,6 @@ class PinnedRunService:
             (
                 "rule_bundle",
                 "helix-rules",
-                "1.0.0",
-                self.repository_root / "backend" / "app" / "validation.py",
-            ),
-            (
-                "skill",
-                "helix-section-agent",
-                "0.1.0",
-                self.repository_root / ".agents" / "skills" / "helix-section-agent" / "SKILL.md",
-            ),
-            (
-                "suite",
-                "helix-section-agent-qualification",
-                "0.1.0",
-                self.repository_root
-                / ".agents"
-                / "skills"
-                / "helix-section-agent"
-                / "evals"
-                / "promptfooconfig.yaml",
-            ),
-            (
-                "suite",
-                "helix-section-study-output",
-                "0.1.0",
-                self.repository_root
-                / ".agents"
-                / "skills"
-                / "helix-section-agent"
-                / "evals"
-                / "study-output.yaml",
-            ),
-            (
-                "executor",
-                "body-weight-summary",
                 "1.0.0",
                 self.repository_root / "backend" / "app" / "validation.py",
             ),
@@ -350,8 +349,173 @@ class PinnedRunService:
                 )
             else:
                 governed.append(self._artifact(kind, artifact_id, version, path))
-        governed.sort(key=lambda item: (item.kind, item.artifact_id))
         return governed, package_definitions, evidence
+
+    def _load_governed_schema(
+        self,
+        path: Path,
+    ) -> dict[str, object] | PlanningEvidence:
+        subject = str(path.relative_to(self.repository_root))
+        try:
+            schema = self._load_json(path)
+        except (json.JSONDecodeError, OSError) as error:
+            return self._evidence("invalid_governed_schema", subject, str(error))
+        if not isinstance(schema, dict):
+            return self._evidence(
+                "invalid_governed_schema",
+                subject,
+                "Governed schema must be a JSON object",
+            )
+        try:
+            Draft202012Validator.check_schema(schema)
+        except SchemaError as error:
+            return self._evidence("invalid_governed_schema", subject, error.message)
+        return schema
+
+    @staticmethod
+    def _applicable_packages(
+        definitions: list[dict[str, object]],
+        resolution: StudyTypeResolution,
+    ) -> list[dict[str, object]]:
+        if resolution.status != "resolved":
+            return definitions
+        return [
+            definition
+            for definition in definitions
+            if definition["schema_version"] != "helix.section-package/v1"
+            or resolution.study_type_id in definition["study_type_ids"]
+        ]
+
+    def _pin_declared_identities(
+        self,
+        definitions: list[dict[str, object]],
+    ) -> tuple[list[GovernedArtifact], list[PlanningEvidence]]:
+        identities: list[DeclaredGovernedIdentity] = []
+        qualification_receipts: list[tuple[DeclaredGovernedIdentity, object]] = []
+        evidence: list[PlanningEvidence] = []
+        for definition in definitions:
+            package_id = str(definition["package_id"])
+            for executor in definition.get("executors", []):
+                identities.append(
+                    DeclaredGovernedIdentity(
+                        kind="executor",
+                        artifact_id=str(executor["id"]),
+                        version=str(executor["version"]),
+                        source_package_id=package_id,
+                    )
+                )
+            skill = definition.get("skill") or definition.get("agentic_skill")
+            if skill is not None:
+                if skill.get("qualification_status") != "passed":
+                    evidence.append(
+                        self._evidence(
+                            "invalid_package_qualification",
+                            package_id,
+                            "Agentic package qualification has not passed",
+                        )
+                    )
+                identities.append(
+                    DeclaredGovernedIdentity(
+                        kind="skill",
+                        artifact_id=str(skill["name"]),
+                        version=str(skill["version"]),
+                        source_package_id=package_id,
+                    )
+                )
+                suite = skill["promptfoo_suite"]
+                suite_identity = DeclaredGovernedIdentity(
+                    kind="suite",
+                    artifact_id=str(suite["id"]),
+                    version=str(suite["version"]),
+                    source_package_id=package_id,
+                    declared_path=str(suite["path"]),
+                )
+                identities.append(suite_identity)
+                if skill.get("qualification_status") == "passed":
+                    qualification_receipts.append((suite_identity, skill.get("qualification_hash")))
+            study_output_suite = definition.get("study_output_eval_suite")
+            if study_output_suite is not None:
+                identities.append(
+                    DeclaredGovernedIdentity(
+                        kind="suite",
+                        artifact_id=str(study_output_suite["id"]),
+                        version=str(study_output_suite["version"]),
+                        source_package_id=package_id,
+                        declared_path=str(study_output_suite["path"]),
+                    )
+                )
+
+        selected: dict[tuple[str, str, str], DeclaredGovernedIdentity] = {}
+        for identity in identities:
+            key = (identity.kind, identity.artifact_id, identity.version)
+            prior = selected.get(key)
+            if prior is not None and prior.declared_path != identity.declared_path:
+                evidence.append(
+                    self._evidence(
+                        "governed_implementation_mismatch",
+                        identity.source_package_id,
+                        f"Conflicting paths declare {identity.artifact_id}@{identity.version}",
+                    )
+                )
+                continue
+            selected[key] = identity
+
+        governed: list[GovernedArtifact] = []
+        for key, identity in sorted(selected.items()):
+            relative_path = IMPLEMENTATION_PATHS.get(key)
+            if relative_path is None:
+                evidence.append(
+                    self._evidence(
+                        "governed_implementation_unavailable",
+                        identity.source_package_id,
+                        f"No available {identity.kind} matches {identity.artifact_id}@{identity.version}",
+                    )
+                )
+                continue
+            implementation_path = (self.repository_root / relative_path).resolve()
+            if identity.declared_path is not None:
+                declared_path = self._safe_governed_path(identity.declared_path)
+                if declared_path != implementation_path:
+                    evidence.append(
+                        self._evidence(
+                            "governed_implementation_mismatch",
+                            identity.source_package_id,
+                            f"Declared path does not match {identity.artifact_id}@{identity.version}",
+                        )
+                    )
+                    continue
+            if not implementation_path.is_file():
+                evidence.append(
+                    self._evidence(
+                        "governed_input_missing",
+                        identity.artifact_id,
+                        "Governed implementation is missing",
+                    )
+                )
+                continue
+            governed.append(
+                self._artifact(
+                    identity.kind,
+                    identity.artifact_id,
+                    identity.version,
+                    implementation_path,
+                )
+            )
+
+        for identity, expected_hash in qualification_receipts:
+            relative_path = IMPLEMENTATION_PATHS.get((identity.kind, identity.artifact_id, identity.version))
+            if relative_path is None:
+                continue
+            suite_path = (self.repository_root / relative_path).resolve()
+            if suite_path.is_file() and expected_hash != file_hash(suite_path):
+                evidence.append(
+                    self._evidence(
+                        "invalid_package_qualification",
+                        identity.source_package_id,
+                        "Qualification receipt does not match its governed suite",
+                    )
+                )
+        return governed, evidence
 
     def _resolve_study_type(self, package: StudyEvidencePackage) -> StudyTypeResolution:
         mapping = self._load_json(self.study_type_mapping_path)
@@ -558,7 +722,9 @@ class PinnedRunService:
             governed_versions=plan_payload["governed_versions"],
             nodes=nodes,
         )
-        schema = self._load_json(self.contracts_root / "run-plan.schema.json")
+        schema = self._load_governed_schema(self.contracts_root / "run-plan.schema.json")
+        if isinstance(schema, PlanningEvidence):
+            raise RunPlanRejectedError([schema])
         errors = sorted(
             Draft202012Validator(schema, format_checker=FormatChecker()).iter_errors(
                 plan.model_dump(mode="json")
