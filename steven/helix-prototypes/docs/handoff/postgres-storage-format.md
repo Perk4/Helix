@@ -1,0 +1,245 @@
+# Storage format for an ingested study
+
+Short version: **there is no new format to design.** A study is one
+`StudyEvidencePackage` serialised to JSON and stored in a single JSONB column. That is
+already how `study_packages` works, and `synthetic-e2e/helix-synthetic-bundle.json` is a
+worked example of it — that file *is* the column contents.
+
+The upload endpoint produces the same shape, so nothing downstream needs to know whether
+a study arrived as a fixture or as files.
+
+---
+
+## The table
+
+```python
+JsonDocument = JSON().with_variant(JSONB, "postgresql")   # JSONB on PG, JSON on SQLite
+
+class StudyPackageRow(Base):
+    __tablename__ = "study_packages"
+    study_id:   Mapped[str]  = mapped_column(String(80), primary_key=True)
+    package_id: Mapped[str]  = mapped_column(String(80), unique=True)
+    label:      Mapped[str]  = mapped_column(String(120))
+    version:    Mapped[int]  = mapped_column(Integer, default=1)
+    data:       Mapped[dict] = mapped_column(JsonDocument)   # ← the whole package
+    created_at / updated_at
+```
+
+Round trip, both directions, in `StudyPackageRepository`:
+
+```python
+data = package.model_dump(mode="json")          # save
+StudyEvidencePackage.model_validate(row.data)   # get  — validated on the way out
+```
+
+Four scalar columns are promoted for lookup and `version` increments on every save. The
+model is the schema: anything that does not satisfy `StudyEvidencePackage` cannot be read
+back, so a malformed document fails at the boundary rather than downstream.
+
+## The document
+
+```jsonc
+{
+  "package_id": "PKG-YZ-389",
+  "label": "SYNTHETIC / NOT FOR SUBMISSION",   // Literal — enforced by the model
+  "workflow_state": "gated",
+
+  "manifest": [                                // frozen sources, one per uploaded file
+    { "artifact_id": "A-ANIMAL-ROSTER", "kind": "source_data",
+      "name": "animal_roster.csv", "version": "uploaded", "authority_tier": 1,
+      "checksum": "sha256:4c8a9c9b…", "locked": true,
+      "authorized_by": "C. Orquera" }
+  ],
+
+  "study": {
+    "study_id": "STUDY-YZ-389",                // ^STUDY-[A-Z0-9-]+$
+    "study_type_id": "REPEAT_DOSE_28D_RODENT",
+    "species": "Sprague-Dawley (Crl:CD(SD)) Rat",
+    "route": "oral gavage",                    // declared on upload, not inferred
+    "duration_days": 28,                       // derived from the last body-weight day
+    "protocol_version": "1.0",
+    "dose_groups": [ { "group_id": "G1", "label": "Vehicle Control", "dose": 0.0,
+                       "dose_unit": "mg/kg/day", "sexes": ["F","M"],
+                       "planned_n_per_sex": 5 } ]
+  },
+
+  "records": {                                 // ← what intake fills; 7 named domains
+    "animals":              [ { "animal_id": "M101", "group_id": "G1", "sex": "M",
+                                "randomization_id": "RAND-1-M-1" } ],
+    "body_weights":         [ { "record_id": "BW-M101-1", "domain": "BW",
+                                "animal_id": "M101", "timepoint": "DAY 1",
+                                "test_code": "BW", "value": 228.3, "unit": "g",
+                                "grain": "animal_x_day",
+                                "source_pointer": "A-BW#M101:DAY1" } ],
+    "clinical_observations":[ { "record_id": "CL-M101-1-7-1", "timepoint": "DAYS 1-7",
+                                "value": "No abnormality detected",
+                                "grain": "animal_x_interval" } ],
+    "organ_weights":        [ { "record_id": "OM-M101-LIVER", "test_code": "LIVER",
+                                "value": 11.24, "unit": "g", "grain": "animal" } ],
+    "microscopic_findings": [ { "finding_id": "MI-M101-LIVER", "tissue": "Liver",
+                                "finding": "No abnormality detected",
+                                "severity": "none", "controlled_term": "NORMAL" } ],
+    "formulation":          [ … ],
+    "food_consumption":     []                 // empty = not collected, not zero
+  },
+
+  "report_sections": [ { "section_id": "S1", "template_id": "TPL-28D-RAT-FDA-OECD-V1",
+                         "status": "needs_review" } ],
+
+  "claims": [],                                // ← empty at intake, by design
+  "provenance_edges": [],
+  "validation_results": [],
+  "review_dispositions": [],
+  "approvals": [],
+  "gate_decisions": [ { "gate_id": "GATE-RELEASE", "status": "blocked" } ],
+  "export_artifacts": [],
+  "retrieval_index": [],
+  "events": []
+}
+```
+
+### Why the empty lists are the interesting part
+
+`claims` is empty because intake produces evidence, not conclusions — `section_executor`
+fills it. `food_consumption` is empty because the study did not collect it, which is not
+the same as the values being zero. `gate_decisions` says blocked because nothing has been
+checked.
+
+Every one of those is a state the codebase previously could not represent: an empty
+collection used to read as success in three places (see `7a6083e`).
+
+---
+
+## Size: measured, not guessed
+
+Against the real database, for the largest study in the drop (PCDRUG, 150 animals,
+9,338 records):
+
+| | |
+|---|---|
+| raw JSON text | 2,239 KB |
+| `pg_column_size(data)` | **204 KB** |
+| compression | **91 %** |
+| total relation size | 280 kB |
+
+TOAST compresses the document by an order of magnitude, so a 2 MB study occupies about
+200 KB and a `save()` rewrites that, not the raw figure. A 28-day study is 191 KB raw.
+
+**So do not split the schema.** I expected write amplification to be a problem and
+measured it instead of assuming; it is not one at this scale. Revisit only if a package
+with the full claim and provenance-edge set — tens of thousands of edges — turns out to
+compress badly, which the current data gives no reason to expect.
+
+---
+
+## What is loaded, and the Codex path
+
+### Three studies, with their real protocol documents
+
+| study | records | protocol (tier 2) | anomalies |
+|---|---|---|---|
+| `STUDY-YZ-389` | 937 | `study_protocol_YZ389.docx` 23 KB | 1 |
+| `STUDY-KD-115` | 913 | `study_protocol_KD115.docx` 15 KB | 3 |
+| `STUDY-PC201708` | 9,338 | `study_protocol_PC201708.docx` 16 KB | 15 |
+
+Plus the seeded `STUDY-HLX-028` fixture, left as it was.
+
+**The protocol is a Word document, not data, and is treated as one.** `.docx` classifies
+as `authority`, lands in the frozen manifest at tier 2 with a real SHA-256, and is parsed
+by nothing. Only the seven CSV tables become records. That is the same rule as for a PDF:
+a signed protocol governs the study without being machine-readable.
+
+The anomaly counts are real findings, not noise — `domain_dropped` is gross pathology
+having nowhere to go in `StudyRecords`, `inconsistent_grade_scale` is KD-115 labelling
+grade 1 as both Minimal and Mild, and PCDRUG's `graded_without_text` and
+`incomplete_body_weight` are rows the source left incomplete.
+
+> An earlier upload of YZ-389 carried a 60-byte stub PDF generated by a test script as its
+> tier-2 protocol. That row was deleted and re-uploaded against the real `.docx`. A
+> manifest that asserts a locked protocol which does not exist is worse than no manifest,
+> so it is worth checking `checksum` on any package whose provenance you are unsure of —
+> the fixture's entries still read `sha256:synthetic-...`.
+
+### Codex has no database connector
+
+It reads a working directory. So the chain needs a materialisation step between Postgres
+and the agent, and that step is where the evidence boundary gets enforced:
+
+```
+study_packages.data          JSONB in Postgres
+      │  read + model_validate
+      ▼
+section envelope on disk     body weight only — no histopathology,
+      │                      no manifest, no other section
+      ▼
+codex exec <dir>             reads the directory and nothing else
+```
+
+Proven for `STUDY-YZ-389`: the package was read out of Postgres, a 58 KB body-weight
+envelope written to a temp directory, and Codex asked for the high-dose male terminal
+mean.
+
+```
+codex: GROUP=G4 DAY=28 N=5 MEAN=287.2
+truth: GROUP=G4 DAY=28 N=5 MEAN=287.2
+```
+
+The expected value was computed independently in the harness, so the test is that Codex
+answered *correctly*, not merely that it answered.
+
+Two constraints carried over: the run needs `--sandbox danger-full-access` on a corporate
+Windows machine, and Postgres needs VPN.
+
+---
+
+## The `helix_team03` schema
+
+`titaniumdb` is shared — PostgreSQL 16.15 on Cosmos DB for PostgreSQL (Citus) — and teams
+isolate by schema. **Ours is `helix_team03`**, created and in use:
+
+```sql
+CREATE SCHEMA helix_team03;
+COMMENT ON SCHEMA helix_team03 IS 'HELIX — nonclinical evidence workbench (Team 3)';
+```
+
+Point the backend at it with a `search_path`, so `create_schema` cannot land tables in
+`public`, which already holds 18 belonging to other projects:
+
+```
+HELIX_DATABASE_URL=postgresql+psycopg://<user>:<pw>@<host>:5432/titaniumdb?sslmode=require&options=-csearch_path%3Dhelix_team03
+```
+
+Two things to know about the neighbours: **`team04` is not us**, despite the `04` in the
+repo name — it holds `borrower_profiles` and `hmda_sample`, a lending project. And the
+other schemas (`team05`, `team07`, `team8`, `team9`, `craft_team6`, `policypulse`) are
+likewise other teams'.
+
+### Verified against it
+
+```
+/health                        {"status":"ok","storage":"postgresql"}
+tables created                 audit_events, export_files, section_runs,
+                               study_packages, validation_runs
+tables leaked into public      0
+seeded STUDY-HLX-028           /workspace 200, 3 claims, manifest 10
+uploaded STUDY-YZ-389          201 — 937 records, manifest 8, claims 0
+both served after restart      auto_seed off, fresh app, both still there
+```
+
+Storage, read from the table:
+
+| study | raw | stored | compressed |
+|---|---|---|---|
+| `STUDY-HLX-028` | 427 KB | 33 KB | 92 % |
+| `STUDY-YZ-389` | 208 KB | 22 KB | 90 % |
+
+Total schema size: **304 kB** for two studies. The JSONB round-trips —
+`StudyEvidencePackage.model_validate` on the raw column returns the study, its route, its
+28 days and all 200 body weights.
+
+### The database needs VPN
+
+Port 5432 is VNet-gated: it answered while connected and timed out when the VPN dropped
+mid-session, while ordinary HTTPS kept working. Same constraint as the direct Azure
+OpenAI endpoint. Anything deployed outside the VNet, or run by a teammate off-network,
+needs to account for it.

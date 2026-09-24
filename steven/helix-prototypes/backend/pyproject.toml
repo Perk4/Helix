@@ -8,8 +8,10 @@ dependencies = [
   "httpx>=0.28,<1",
   "jsonschema>=4.25,<5",
   "openai-codex>=0.155,<1",
+  "openpyxl>=3.1.5",
   "psycopg[binary]>=3.2,<4",
   "pydantic-settings>=2.10,<3",
+  "python-multipart>=0.0.32",
   "sqlalchemy>=2.0,<3",
   "uvicorn[standard]>=0.35,<1",
 ]
