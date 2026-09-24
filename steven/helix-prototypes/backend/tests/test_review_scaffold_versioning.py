@@ -1,8 +1,11 @@
 import json
 import re
 import threading
+import time
+from pathlib import Path
 
 from jsonschema import Draft202012Validator
+from sqlalchemy.pool import QueuePool, StaticPool
 from test_candidate_evaluations import draft
 from test_section_runs import ROOT, STUDY_ID, FakeSectionAgent, build_client, validate
 
@@ -71,8 +74,15 @@ def assert_consecutive(items: list[dict[str, object]]) -> None:
     assert len(sequences) == len(set(sequences)), sequences
 
 
-def test_two_concurrent_pictures_allocate_consecutive_sequences() -> None:
-    client, engine = build_client(FakeSectionAgent())
+def test_two_concurrent_pictures_allocate_consecutive_sequences(tmp_path: Path) -> None:
+    database = tmp_path / "helix.db"
+    client, engine = build_client(
+        FakeSectionAgent(),
+        database_url=f"sqlite+pysqlite:///{database}",
+    )
+    assert engine.url.database == str(database)
+    assert isinstance(engine.pool, QueuePool)
+    assert not isinstance(engine.pool, StaticPool)
     with client:
         validate(client)
         factory = create_session_factory(engine)
@@ -93,6 +103,7 @@ def test_two_concurrent_pictures_allocate_consecutive_sequences() -> None:
         def write(result_id: str, decision: DispositionDecision, event_id: str) -> None:
             session = factory()
             try:
+                barrier.wait()
                 repository = StudyPackageRepository(session)
                 package = repository.get(STUDY_ID, for_update=True)
                 package = package.model_copy(
@@ -110,11 +121,12 @@ def test_two_concurrent_pictures_allocate_consecutive_sequences() -> None:
                         ]
                     }
                 )
-                barrier.wait()
-                SectionRunService(session, None, ROOT).persist_contract_revision(
+                updated = SectionRunService(session, None, ROOT).persist_contract_revision(
                     package,
                     event_id=event_id,
                 )
+                time.sleep(0.1)
+                repository.save(updated)
                 session.commit()
             except BaseException as error:
                 errors.append(error)
@@ -137,6 +149,11 @@ def test_two_concurrent_pictures_allocate_consecutive_sequences() -> None:
         stored = revisions(client)
         assert_consecutive(stored)
         assert [int(item["sequence"]) for item in stored] == [1, 2, 3]
+        assert {item["triggering_event_id"] for item in stored} == {
+            "EV-SAME-PICTURE-A",
+            "EV-CONCURRENT-A",
+            "EV-CONCURRENT-B",
+        }
         predecessor = None
         for revision in stored:
             assert_revision(revision, predecessor=predecessor)
