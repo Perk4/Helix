@@ -2,8 +2,10 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-DB="$(mktemp -t helix-dvp).db"
-API_LOG="$(mktemp -t helix-dvp-api).log"
+DB="$(mktemp -t helix-dvp.XXXXXX).db"
+API_LOG="$(mktemp -t helix-dvp-api.XXXXXX).log"
+FIRST="$(mktemp -t helix-dvp-first.XXXXXX.json)"
+REPLAY="$(mktemp -t helix-dvp-replay.XXXXXX.json)"
 API_PID=""
 
 cleanup() {
@@ -11,7 +13,7 @@ cleanup() {
     pkill -P "$API_PID" 2>/dev/null || true
     kill "$API_PID" 2>/dev/null || true
   fi
-  rm -f "$DB" "$API_LOG"
+  rm -f "$DB" "$API_LOG" "$FIRST" "$REPLAY"
 }
 trap cleanup EXIT
 
@@ -35,17 +37,19 @@ if [[ "$ready" != true ]]; then
   exit 1
 fi
 
-FIRST="$(curl -sf -X POST http://127.0.0.1:8011/api/v1/studies/STUDY-HLX-028/data-validation-packages \
+curl -sf -X POST http://127.0.0.1:8011/api/v1/studies/STUDY-HLX-028/data-validation-packages \
   -H 'Content-Type: application/json' \
-  -d '{"actor":"HELIX verify","package_id":"validation.body_weight","idempotency_key":"verify-body-weight-v1"}')"
-REPLAY="$(curl -sf -X POST http://127.0.0.1:8011/api/v1/studies/STUDY-HLX-028/data-validation-packages \
+  -d '{"actor":"HELIX verify","package_id":"validation.body_weight","idempotency_key":"verify-body-weight-v1"}' \
+  >"$FIRST"
+curl -sf -X POST http://127.0.0.1:8011/api/v1/studies/STUDY-HLX-028/data-validation-packages \
   -H 'Content-Type: application/json' \
-  -d '{"actor":"HELIX verify","package_id":"validation.body_weight","idempotency_key":"verify-body-weight-v1"}')"
+  -d '{"actor":"HELIX verify","package_id":"validation.body_weight","idempotency_key":"verify-body-weight-v1"}' \
+  >"$REPLAY"
 
 python3 - "$FIRST" "$REPLAY" "$ROOT/evidence/body-weight-validation-api.json" <<'PY'
 import json, sys
-first = json.loads(sys.argv[1])
-replay = json.loads(sys.argv[2])
+first = json.loads(open(sys.argv[1]).read())
+replay = json.loads(open(sys.argv[2]).read())
 target = sys.argv[3]
 receipt = first["receipt"]
 assert receipt["package_id"] == "validation.body_weight"
