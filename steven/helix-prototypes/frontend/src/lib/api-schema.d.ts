@@ -720,6 +720,8 @@ export interface components {
         };
         /** ReviewDisposition */
         ReviewDisposition: {
+            /** Artifact Id */
+            artifact_id?: string | null;
             decision: components["schemas"]["DispositionDecision"];
             /** Disposition Id */
             disposition_id: string;

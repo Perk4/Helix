@@ -17,6 +17,7 @@ from app.database import create_database_engine
 from app.main import create_app
 from app.models import AuditEventRow, DataValidationRunRow
 from app.repository import StudyPackageRepository
+from app.schemas import DispositionDecision, ReviewDisposition
 from app.seed import load_seed_package
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -428,6 +429,23 @@ def test_failing_review_required_blocks_without_claims_until_disposition() -> No
                 assert execution.receipt.status == "blocked"
                 assert execution.claims == []
                 assert not any(claim.claim_id.startswith("C-BW-MEAN-") for claim in stored.claims)
+                stale = ReviewDisposition(
+                    disposition_id="RD-STALE-RECEIPT",
+                    result_id="VR-BW-RECOMPUTE",
+                    decision=DispositionDecision.EXPLAINED_IN_NSDRG,
+                    reason="Stale disposition bound to a different DVP receipt.",
+                    reviewer="Dr. Ada Path",
+                    timestamp="2026-01-01T00:00:00Z",
+                    artifact_id="RCP-DVP-NOT-THIS-RUN",
+                )
+                StudyPackageRepository(session).save(
+                    stored.model_copy(
+                        update={"review_dispositions": [*stored.review_dispositions, stale]}
+                    )
+                )
+                session.commit()
+            stale_workspace = client.get(f"/api/v1/studies/{STUDY_ID}/workspace").json()
+            assert "VR-BW-RECOMPUTE" in stale_workspace["release_gate"]["blocking_result_ids"]
 
             waiver = client.post(
                 f"/api/v1/studies/{STUDY_ID}/validation-results/VR-BW-RECOMPUTE/dispositions",
@@ -442,7 +460,7 @@ def test_failing_review_required_blocks_without_claims_until_disposition() -> No
             assert "VR-BW-RECOMPUTE" not in reviewed["release_gate"]["blocking_result_ids"]
             recorded = next(
                 item
-                for item in reviewed["dispositions"]
+                for item in reversed(reviewed["dispositions"])
                 if item["result_id"] == "VR-BW-RECOMPUTE"
                 and item["decision"] == "explained_in_nsdrg"
             )

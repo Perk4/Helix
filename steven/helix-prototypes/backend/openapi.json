@@ -1468,6 +1468,17 @@
       "ReviewDisposition": {
         "additionalProperties": false,
         "properties": {
+          "artifact_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Artifact Id"
+          },
           "decision": {
             "$ref": "#/components/schemas/DispositionDecision"
           },

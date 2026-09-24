@@ -192,6 +192,7 @@ class ReviewDisposition(StrictModel):
     reason: str | None
     reviewer: str | None
     timestamp: str | None
+    artifact_id: str | None = None
 
 
 class ApprovalRole(StrEnum):

@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from .artifacts import GeneratedArtifact, generate_artifact
 from .config import Settings
-from .data_validation import DataValidationService, as_validation_results
+from .data_validation import DataValidationService, as_validation_results, policy_for
 from .reporting import assemble_report, claim_report_text
 from .repository import StudyPackageRepository
 from .run_plans import PinnedRunService
@@ -261,17 +261,25 @@ class StudyService:
     def disposition(self, study_id: str, result_id: str, command: DispositionCommand) -> WorkspaceResponse:
         package = self.repository.get(study_id, for_update=True)
         self._ensure_mutable(package)
-        dvp_result = next(
+        dvp_match = next(
             (
-                result
+                (execution, result)
                 for execution in package.data_validation_executions
                 for result in execution.results
                 if result.result_id == result_id
             ),
             None,
         )
-        if dvp_result is not None and dvp_result.enforcement_class == "hard_blocker":
-            raise WorkflowConflictError("hard_blocker results cannot be waived")
+        if dvp_match is not None:
+            execution, dvp_result = dvp_match
+            if dvp_result.enforcement_class == "hard_blocker":
+                raise WorkflowConflictError("hard_blocker results cannot be waived")
+            if (
+                dvp_result.status != ValidationStatus.FAIL
+                or not policy_for(dvp_result.enforcement_class).dispositionable
+            ):
+                raise WorkflowConflictError("Only blocking failures can receive a review disposition")
+            return self._record_dvp_disposition(package, study_id, execution, result_id, command)
         result = next((item for item in package.validation_results if item.result_id == result_id), None)
         if result is None:
             raise InvalidCommandError(f"Unknown validation result {result_id}")
@@ -329,6 +337,63 @@ class StudyService:
                 "report_sections": sections,
                 "claims": claims,
                 "provenance_edges": provenance_edges,
+                "events": [*package.events, event],
+            }
+        )
+        updated = self._with_derived_gate(updated, timestamp)
+        self.repository.save(updated)
+        self.repository.append_event(
+            study_id=study_id,
+            event_type=event.event,
+            actor=event.actor,
+            payload={"outcome": event.outcome, **event.details},
+            idempotency_key=f"disposition:{disposition.disposition_id}",
+            occurred_at=datetime.fromisoformat(timestamp.replace("Z", "+00:00")),
+        )
+        self.session.commit()
+        return self._workspace(updated)
+
+    def _record_dvp_disposition(
+        self,
+        package: StudyEvidencePackage,
+        study_id: str,
+        execution: DataValidationExecution,
+        result_id: str,
+        command: DispositionCommand,
+    ) -> WorkspaceResponse:
+        artifact_id = execution.receipt.receipt_id
+        prior = [item for item in package.review_dispositions if item.result_id == result_id]
+        if prior and (
+            prior[-1].decision == command.decision
+            and prior[-1].reason == command.reason
+            and prior[-1].reviewer == command.reviewer
+            and prior[-1].artifact_id == artifact_id
+        ):
+            return self._workspace(package)
+        timestamp = self._now()
+        disposition = ReviewDisposition(
+            disposition_id=f"RD-{uuid4().hex[:12].upper()}",
+            result_id=result_id,
+            decision=command.decision,
+            reason=command.reason,
+            reviewer=command.reviewer,
+            timestamp=timestamp,
+            artifact_id=artifact_id,
+        )
+        event = self._event(
+            "validation_disposition",
+            command.reviewer,
+            command.decision.value,
+            {
+                "result_id": result_id,
+                "reason": command.reason,
+                "artifact_id": artifact_id,
+            },
+            timestamp=timestamp,
+        )
+        updated = package.model_copy(
+            update={
+                "review_dispositions": [*package.review_dispositions, disposition],
                 "events": [*package.events, event],
             }
         )
@@ -741,6 +806,30 @@ class StudyService:
         return f"{claim.claim_type or claim.field_id} is {claim.value} {claim.unit} at {claim.grain}."
 
 
+def _unresolved_dvp_result_ids(
+    package: StudyEvidencePackage,
+    latest_dispositions: dict[str, ReviewDisposition],
+) -> list[str]:
+    unresolved: list[str] = []
+    for execution in package.data_validation_executions:
+        for result in execution.results:
+            if result.status != ValidationStatus.FAIL:
+                continue
+            policy = policy_for(result.enforcement_class)
+            if not policy.blocks_gate:
+                continue
+            if policy.dispositionable:
+                latest = latest_dispositions.get(result.result_id)
+                if (
+                    latest is not None
+                    and latest.decision in RESOLVED_DISPOSITIONS
+                    and latest.artifact_id == execution.receipt.receipt_id
+                ):
+                    continue
+            unresolved.append(result.result_id)
+    return unresolved
+
+
 def derive_release_gate(
     package: StudyEvidencePackage,
     candidate_blocker_ids: list[str] | None = None,
@@ -755,12 +844,7 @@ def derive_release_gate(
         if latest_dispositions.get(result.result_id) is None
         or latest_dispositions[result.result_id].decision not in RESOLVED_DISPOSITIONS
     ]
-    unresolved.extend(
-        result.result_id
-        for execution in package.data_validation_executions
-        for result in execution.results
-        if result.status == ValidationStatus.FAIL and result.enforcement_class == "hard_blocker"
-    )
+    unresolved.extend(_unresolved_dvp_result_ids(package, latest_dispositions))
     unresolved.extend(candidate_blocker_ids or [])
     unresolved = list(dict.fromkeys(unresolved))
     approval_roles = {approval.role for approval in package.approvals}

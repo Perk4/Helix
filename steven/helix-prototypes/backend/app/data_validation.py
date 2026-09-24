@@ -51,11 +51,32 @@ _RESULT_IDS = {
 }
 
 
+EnforcementClass = Literal["hard_blocker", "review_required", "warning"]
+
+
+@dataclass(frozen=True)
+class EnforcementPolicy:
+    blocks_claims: bool
+    blocks_gate: bool
+    dispositionable: bool
+
+
+ENFORCEMENT_POLICIES: dict[EnforcementClass, EnforcementPolicy] = {
+    "hard_blocker": EnforcementPolicy(blocks_claims=True, blocks_gate=True, dispositionable=False),
+    "review_required": EnforcementPolicy(blocks_claims=True, blocks_gate=True, dispositionable=True),
+    "warning": EnforcementPolicy(blocks_claims=False, blocks_gate=False, dispositionable=False),
+}
+
+
 @dataclass(frozen=True)
 class GateRule:
     rule_id: str
     rule_version: str
-    enforcement_class: Literal["hard_blocker", "review_required", "warning"]
+    enforcement_class: EnforcementClass
+
+
+def policy_for(enforcement_class: EnforcementClass) -> EnforcementPolicy:
+    return ENFORCEMENT_POLICIES[enforcement_class]
 
 
 def load_gate_rules(package_json: Path) -> list[GateRule]:
@@ -68,7 +89,7 @@ def load_gate_rules(package_json: Path) -> list[GateRule]:
         if not isinstance(item, dict):
             raise ValueError("package.json rule must be an object")
         enforcement = item["enforcement_class"]
-        if enforcement not in {"hard_blocker", "review_required", "warning"}:
+        if not isinstance(enforcement, str) or enforcement not in ENFORCEMENT_POLICIES:
             raise ValueError(f"invalid enforcement_class {enforcement}")
         loaded.append(
             GateRule(
@@ -91,7 +112,7 @@ def _gate_result(
     evidence_ids: list[str],
     message: str,
     scope_id: str,
-    enforcement_class: Literal["hard_blocker", "review_required", "warning"] | None = None,
+    enforcement_class: EnforcementClass | None = None,
 ) -> DataValidationRuleResult:
     return DataValidationRuleResult(
         result_id=_result_id(rule.rule_id),
@@ -297,7 +318,8 @@ class DataValidationService:
         fixture = load_frozen_fixture(self.repository_root)
         results = self._rule_results(computation, fixture, rules)
         blocked = any(
-            result.status == ValidationStatus.FAIL and result.enforcement_class == "hard_blocker"
+            result.status == ValidationStatus.FAIL
+            and policy_for(result.enforcement_class).blocks_claims
             for result in results
         )
         claims = [] if blocked else computation.claims
