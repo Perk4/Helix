@@ -8,7 +8,10 @@ import { dirname, resolve } from "node:path";
 
 const root = resolve(import.meta.dirname, "..");
 const evalsDir = resolve(root, ".agents/skills/helix-section-agent/evals");
-const configs = ["promptfooconfig.yaml", "study-output.yaml"].map((name) => resolve(evalsDir, name));
+// `study-output.yaml` is deliberately absent: it is a flat assert list the
+// backend parses, not a promptfoo config, so it has no placeholders or
+// `file://` references to check and the checks below would misread it.
+const configs = ["promptfooconfig.yaml", "glp-guardrails.yaml"].map((name) => resolve(evalsDir, name));
 const envExample = resolve(root, ".env.example");
 
 const problems = [];
