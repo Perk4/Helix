@@ -22,7 +22,7 @@ def governed_root(tmp_path: Path) -> Path:
     for relative in ["skills", ".agents"]:
         shutil.copytree(ROOT / relative, root / relative)
     (root / "backend" / "app" / "agents").mkdir(parents=True)
-    for filename in ["validation.py", "agents/codex_section_agent.py"]:
+    for filename in ["validation.py", "body_weight.py", "agents/codex_section_agent.py"]:
         source = ROOT / "backend" / "app" / filename
         target = root / "backend" / "app" / filename
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -97,6 +97,7 @@ def test_freeze_persists_complete_plan_and_exact_replay() -> None:
             "validation.body_weight",
             "template_contract.section.5_2_3_body_weight",
             "section.5_2_3_body_weight",
+            "section.5_3_discussion",
             "provenance.section.5_2_3_body_weight",
             "review_scaffold.materialize",
         }.issubset(node_ids)
