@@ -11,6 +11,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, wri
 import { relative, resolve } from "node:path";
 
 import { canonicalHash, fileHash } from "./lib/hash.mjs";
+import { validateObservedProviderIds } from "./lib/qualification-validation.mjs";
 
 const root = resolve(import.meta.dirname, "..");
 const evalsDir = resolve(root, ".agents/skills/helix-section-agent/evals");
@@ -120,9 +121,10 @@ const tokens = stats.tokenUsage?.total ?? 0;
 
 // Cross-check the report against what the config claimed. A mismatch means the
 // run did not use the binding being recorded.
-const observed = [...new Set((report.results?.results ?? []).map((entry) => entry.provider?.id).filter(Boolean))];
-if (observed.length > 0 && !observed.includes(drafter)) {
-  console.error(`FAIL the run used ${observed.join(", ")} but HELIX_PROMPTFOO_PROVIDER is ${drafter}.`);
+const observed = (report.results?.results ?? []).map((entry) => entry.provider?.id);
+const providerProblems = validateObservedProviderIds(observed, drafter);
+if (providerProblems.length > 0) {
+  for (const problem of providerProblems) console.error(`FAIL ${problem}`);
   process.exit(1);
 }
 

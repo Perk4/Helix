@@ -58,6 +58,10 @@ steps:
     displayName: Install pinned dependencies
     workingDirectory: $(workingDirectory)
 
+  - script: npm test
+    displayName: Test qualification validation
+    workingDirectory: $(workingDirectory)
+
   # No provider call. Catches an undocumented placeholder or a `file://` that
   # no longer resolves before the run wastes a request on a broken config.
   - script: node scripts/verify-evals-config.mjs
