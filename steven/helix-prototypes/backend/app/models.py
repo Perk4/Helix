@@ -198,3 +198,31 @@ class SectionDraftRow(Base):
     request_hash: Mapped[str] = mapped_column(String(80), nullable=False)
     draft: Mapped[dict[str, Any]] = mapped_column(JsonDocument, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+
+
+class IntakeJobRow(Base):
+    """An upload being processed, and how far it got.
+
+    Progress on an upload is not a percentage anybody could honestly compute -
+    the work is a handful of named stages with very different costs. So the
+    stages are recorded as they complete, with their timings, and a caller can
+    see which one is running rather than a number that has been made up.
+    """
+
+    __tablename__ = "intake_jobs"
+    __table_args__ = (UniqueConstraint("idempotency_key", name="uq_intake_job_key"),)
+
+    job_id: Mapped[str] = mapped_column(String(80), primary_key=True)
+    study_id: Mapped[str] = mapped_column(String(80), index=True, nullable=False)
+    idempotency_key: Mapped[str] = mapped_column(String(160), nullable=False)
+    status: Mapped[str] = mapped_column(String(20), index=True, nullable=False)
+    stage: Mapped[str] = mapped_column(String(40), nullable=False)
+    # Stage name -> {"ms": int, "detail": ...}. Append-only while the job runs.
+    stages: Mapped[dict[str, Any]] = mapped_column(JsonDocument, nullable=False, default=dict)
+    metrics: Mapped[dict[str, Any]] = mapped_column(JsonDocument, nullable=False, default=dict)
+    receipt: Mapped[dict[str, Any] | None] = mapped_column(JsonDocument, nullable=True)
+    error: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False
+    )
