@@ -9,6 +9,8 @@ exercises the journey/event contract and makes no qualification claim.
 
 import json
 import shutil
+import threading
+import time
 from pathlib import Path
 
 import pytest
@@ -72,8 +74,7 @@ def build_client(repository_root: Path = ROOT, **overrides: object) -> tuple[Tes
         seed_path=ROOT / "synthetic-e2e" / "helix-synthetic-bundle.json",
         codex_repository_root=repository_root,
         auto_seed=True,
-        run_event_stream_seconds=0,
-        **overrides,
+        **{"run_event_stream_seconds": 0, **overrides},
     )
     engine = create_database_engine(settings)
     return TestClient(create_app(settings, engine)), engine
@@ -483,3 +484,65 @@ def test_uploaded_study_projects_upload_current_with_no_run() -> None:
     freeze_action = stage(projection, "upload")["actions"][-1]
     assert freeze_action["command"] == "POST /api/v1/studies/STUDY-JOURNEY-UP/pinned-runs"
     engine.dispose()
+
+
+def test_reconnect_at_latest_cursor_emits_only_newer_events(tmp_path: Path) -> None:
+    """Regression (PR #18 review r4098493500): an empty replay must poll from Last-Event-ID, not zero."""
+    client, engine = build_client(
+        qualified_fixture_root(tmp_path), run_event_stream_seconds=1.0, run_event_poll_seconds=0.1
+    )
+    with client:
+        run_id = client.post(f"{BASE}/pinned-runs", json=FREEZE).json()["run_id"]
+        cursor = journey(client)["run"]["latest_event_id"]
+        assert int(cursor.rsplit(".E", 1)[1]) > 1
+
+        # No newer events: the whole window must stay silent (no replay of retained events).
+        assert parse_frames(stream(client, run_id, cursor).text) == []
+
+        def append_later() -> None:
+            time.sleep(0.3)
+            with Session(engine) as session:
+                RunEventStore(session).append(
+                    run_id=run_id,
+                    study_id=STUDY_ID,
+                    label=LABEL,
+                    event_type="run_paused",
+                    stage_id="validate",
+                    payload={"reason": "arrives after reconnect"},
+                )
+                session.commit()
+
+        writer = threading.Thread(target=append_later)
+        writer.start()
+        received = parse_frames(stream(client, run_id, cursor).text)
+        writer.join()
+    engine.dispose()
+    after = int(cursor.rsplit(".E", 1)[1])
+    assert [item["type"] for item in received] == ["run_paused"]
+    assert all(item["sequence"] > after for item in received)
+    assert received[0]["sequence"] == after + 1
+
+
+def test_run_conflict_and_unknown_package_record_command_failed(tmp_path: Path) -> None:
+    """PR #18 review r4098493508: API-mapped run-command failures emit command_failed."""
+    client, engine = build_client(qualified_fixture_root(tmp_path))
+    with client:
+        run_id = client.post(f"{BASE}/pinned-runs", json=FREEZE).json()["run_id"]
+        cursor = journey(client)["run"]["latest_event_id"]
+        conflict = client.post(f"{BASE}/pinned-runs", json={**FREEZE, "actor": "Someone Else"})
+        assert conflict.status_code == 409, conflict.text
+        unknown = client.post(
+            f"{BASE}/data-validation-packages",
+            json={
+                "actor": "Dr. Run Owner",
+                "package_id": "validation.does_not_exist",
+                "idempotency_key": "journey-unknown-dvp",
+            },
+        )
+        assert unknown.status_code == 404, unknown.text
+        failed = parse_frames(stream(client, run_id, cursor).text)
+    engine.dispose()
+    assert [(item["type"], item["command"], item["stage_id"]) for item in failed] == [
+        ("command_failed", "freeze_run", "upload"),
+        ("command_failed", "run_data_validation", "extract"),
+    ]

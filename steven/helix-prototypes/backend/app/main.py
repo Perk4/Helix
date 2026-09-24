@@ -33,7 +33,7 @@ from .data_validation import DataValidationConflictError, UnknownValidationPacka
 from .database import create_database_engine, create_schema, create_session_factory
 from .intake import IntakeRejected, build_package
 from .repository import StudyNotFoundError, StudyPackageRepository
-from .run_events import EventCursorExpiredError, InvalidEventCursorError, RunEventStore
+from .run_events import EventCursorExpiredError, InvalidEventCursorError, RunEventStore, parse_cursor
 from .run_plans import PinnedRunService, RunConflictError, RunPlanRejectedError
 from .schemas import (
     ApprovalCommand,
@@ -308,8 +308,12 @@ def create_app(
             invalid = InvalidEventCursor(label=label, code="invalid_event_cursor", detail=str(error))
             return JSONResponse(status_code=400, content=invalid.model_dump(mode="json"))
 
+        # Start polling from the validated cursor, not zero, so an empty replay (the client is
+        # already current) never re-emits retained events on the first poll.
+        initial_sequence = parse_cursor(run_id, cursor) if cursor else 0
+
         def frames() -> Iterator[str]:
-            last_sequence = 0
+            last_sequence = initial_sequence
             for event in replay:
                 last_sequence = int(event["sequence"])
                 yield _sse_frame(event)

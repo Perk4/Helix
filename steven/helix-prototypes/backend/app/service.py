@@ -23,6 +23,7 @@ from .config import Settings
 from .data_validation import (
     DataValidationConflictError,
     DataValidationService,
+    UnknownValidationPackageError,
     as_validation_results,
     policy_for,
 )
@@ -41,7 +42,7 @@ from .reporting import assemble_report, claim_report_text
 from .repository import StudyNotFoundError, StudyPackageRepository
 from .review_scaffolds import ExportAdmissionError, admit_export_document
 from .run_events import RUN_EVENT_ADAPTER, RunEventStore
-from .run_plans import PinnedRunService
+from .run_plans import PinnedRunService, RunConflictError
 from .schemas import (
     RESOLVED_DISPOSITIONS,
     Approval,
@@ -223,7 +224,13 @@ class StudyService:
     ) -> ResultT:
         try:
             result = operation()
-        except (WorkflowConflictError, InvalidCommandError, DataValidationConflictError) as error:
+        except (
+            WorkflowConflictError,
+            InvalidCommandError,
+            DataValidationConflictError,
+            UnknownValidationPackageError,
+            RunConflictError,
+        ) as error:
             self.session.rollback()
             try:
                 self._record_command_failure(study_id, command_name, stage_id, str(error))
