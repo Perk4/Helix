@@ -53,6 +53,41 @@ const qualificationConfig = readFileSync(configs[0], "utf8");
 qualificationConfig.includes("file://../SKILL.md") || fail("promptfooconfig.yaml does not load SKILL.md into the judged prompt");
 readFileSync(resolve(evalsDir, "prompt.txt"), "utf8").includes("{{skill}}") || fail("prompt.txt does not render {{skill}}");
 
+// Every envelope fixture must be a real Section Execution Envelope, and must
+// exercise every property the contract defines — not merely the required ones.
+//
+// Both halves earned their place. The fixtures were missing `pinned_run_id`,
+// which the contract requires, so they were never valid envelopes at all. And
+// when the executor receipt gained `facts` and `provenance`, the fixtures kept
+// the old shape: the suite handed the agent no computed numbers while
+// production handed it group means and forty provenance entries. The
+// qualification certified behaviour against an envelope that no longer existed.
+//
+// Checking optional properties too is the point. `facts` is optional in the
+// contract, so a required-only check would have passed the drift.
+const envelopeSchemaPath = resolve(root, "skills/helix-evidence-pipeline/contracts/section-execution-envelope.schema.json");
+const envelopeSchema = JSON.parse(readFileSync(envelopeSchemaPath, "utf8"));
+
+const missingProperties = (value, schema, trail = "") =>
+  Object.entries(schema.properties ?? {}).flatMap(([name, property]) => {
+    if (value?.[name] === undefined) return [`${trail}${name}`];
+    const item = Array.isArray(value[name]) ? value[name][0] : value[name];
+    const itemSchema = property.items ?? property;
+    const resolved = itemSchema.$ref
+      ? envelopeSchema.$defs?.[itemSchema.$ref.replace("#/$defs/", "")]
+      : itemSchema;
+    return resolved?.properties && item ? missingProperties(item, resolved, `${trail}${name}.`) : [];
+  });
+
+for (const fixture of ["body-weight-envelope.json", "body-weight-missing-claim.json"]) {
+  const path = resolve(evalsDir, "fixtures", fixture);
+  if (!existsSync(path)) { fail(`envelope fixture is missing: ${fixture}`); continue; }
+  const gaps = missingProperties(JSON.parse(readFileSync(path, "utf8")), envelopeSchema);
+  gaps.length === 0
+    ? console.log(`envelope ok      ${fixture} exercises every contract property`)
+    : fail(`${fixture} does not exercise ${gaps.join(", ")}. The contract moved and the fixture did not; regenerate it from a real envelope.`);
+}
+
 if (problems.length > 0) {
   for (const problem of problems) { console.error(`FAIL ${problem}`); }
   process.exit(1);

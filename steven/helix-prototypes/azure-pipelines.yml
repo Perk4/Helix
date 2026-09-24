@@ -76,6 +76,8 @@ steps:
     displayName: Run the tier-1 suite
     workingDirectory: $(workingDirectory)
     env:
+      # A transient gateway 5xx should not red the qualification gate.
+      PROMPTFOO_RETRY_5XX: "true"
       AZURE_API_KEY: $(APIM_SUBSCRIPTION_KEY)
       AZURE_OPENAI_API_BASE_URL: https://lgts1tetamapi01.azure-api.net/gpt51
       AZURE_API_VERSION: "2024-10-21"
