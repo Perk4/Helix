@@ -1,4 +1,6 @@
 import json
+from collections.abc import Iterator
+from contextlib import contextmanager
 from pathlib import Path
 
 from fastapi.testclient import TestClient
@@ -19,12 +21,47 @@ from app.seed import load_seed_package
 
 ROOT = Path(__file__).resolve().parents[2]
 STUDY_ID = "STUDY-HLX-028"
+PACKAGE_JSON = (
+    ROOT
+    / "skills"
+    / "helix-evidence-pipeline"
+    / "packages"
+    / "data-validation"
+    / "body-weight"
+    / "package.json"
+)
 COMMAND = {
     "actor": "HELIX data validation service",
     "idempotency_key": "dvp-study-hlx-028-body-weight-v1",
     "package_id": "validation.body_weight",
 }
 FIXTURE_PATH = Path(__file__).resolve().parent / "fixtures" / "body-weight-summary.json"
+
+
+@contextmanager
+def package_json_rules(
+    *,
+    patches: dict[str, dict[str, str]] | None = None,
+    extra_rules: list[dict[str, str]] | None = None,
+) -> Iterator[dict[str, object]]:
+    original = PACKAGE_JSON.read_text()
+    payload = json.loads(original)
+    rules = payload["rules"]
+    if not isinstance(rules, list):
+        raise TypeError("package.json rules must be a list")
+    for rule in rules:
+        if not isinstance(rule, dict):
+            continue
+        patch = (patches or {}).get(str(rule.get("rule_id")))
+        if patch is not None:
+            rule.update(patch)
+    if extra_rules:
+        rules.extend(extra_rules)
+    PACKAGE_JSON.write_text(json.dumps(payload, indent=2) + "\n")
+    try:
+        yield payload
+    finally:
+        PACKAGE_JSON.write_text(original)
 
 
 def build_client() -> tuple[TestClient, object]:
@@ -128,15 +165,26 @@ def test_one_validation_action_records_pinned_identity_and_exact_replay() -> Non
                 )
                 == 1
             )
-            claim_ids = [claim.claim_id for claim in stored.claims if claim.claim_id == "C-BW-HIGH"]
-            assert claim_ids == ["C-BW-HIGH"]
-            cell_claims = [claim for claim in stored.claims if claim.claim_id.startswith("C-BW-MEAN-")]
-            assert cell_claims
-            assert all(claim.status == "validated" for claim in cell_claims)
+            execution_ids = {
+                claim.claim_id for claim in stored.data_validation_executions[0].claims
+            }
+            package_ids = {claim.claim_id for claim in stored.claims}
+            assert execution_ids <= package_ids
+            assert "C-BW-HIGH" in package_ids
+            assert sum(1 for claim_id in execution_ids if claim_id.startswith("C-BW-MEAN-")) == 40
+            assert sum(1 for claim_id in execution_ids if claim_id.startswith("C-BW-SD-")) == 40
+            assert sum(1 for claim_id in execution_ids if claim_id.startswith("C-BW-PCT-")) == 40
+            assert all(
+                claim.status == "validated"
+                for claim in stored.claims
+                if claim.claim_id in execution_ids
+            )
             cell_edges = [
-                edge for edge in stored.provenance_edges if edge.claim_id.startswith("C-BW-MEAN-")
+                edge
+                for edge in stored.provenance_edges
+                if edge.claim_id.startswith(("C-BW-MEAN-", "C-BW-SD-", "C-BW-PCT-"))
             ]
-            assert cell_edges
+            assert {edge.claim_id for edge in cell_edges} == execution_ids - {"C-BW-HIGH"}
     engine.dispose()
 
 
@@ -292,6 +340,63 @@ def test_sample_sd_and_missing_day1_baseline_do_not_store_success() -> None:
     missing_baseline = compute_body_weight_summary(package.model_copy(update={"records": without_day1}))
     assert missing_baseline.claims == []
     assert any("missing-day1-baseline" in issue for issue in missing_baseline.aggregate_issues)
+
+
+def test_gate_checks_use_pinned_package_json_rules() -> None:
+    with package_json_rules(
+        patches={
+            "body-weight-required-grain": {
+                "rule_version": "9.9.9",
+                "enforcement_class": "warning",
+            }
+        }
+    ):
+        client, engine = build_client()
+        with client:
+            body = execute(client).json()
+            grain = next(
+                result
+                for result in body["results"]
+                if result["rule_id"] == "body-weight-required-grain"
+            )
+            assert grain["rule_version"] == "9.9.9"
+            assert grain["enforcement_class"] == "warning"
+            assert body["receipt"]["rule_ids"] == [
+                "body-weight-required-grain",
+                "body-weight-summary-recompute",
+                "body-weight-cell-provenance",
+            ]
+            terminal = next(claim for claim in body["claims"] if claim["claim_id"] == "C-BW-HIGH")
+            assert terminal["rule_versions"]["body-weight-required-grain"] == "9.9.9"
+        engine.dispose()
+
+
+def test_package_json_rule_without_evaluator_is_a_hard_blocker() -> None:
+    with package_json_rules(
+        extra_rules=[
+            {
+                "rule_id": "body-weight-unknown-gate",
+                "rule_version": "2.0.0",
+                "enforcement_class": "hard_blocker",
+            }
+        ]
+    ):
+        client, engine = build_client()
+        with client:
+            body = execute(client).json()
+            unknown = next(
+                result
+                for result in body["results"]
+                if result["rule_id"] == "body-weight-unknown-gate"
+            )
+            assert unknown["rule_version"] == "2.0.0"
+            assert unknown["enforcement_class"] == "hard_blocker"
+            assert unknown["status"] == "fail"
+            assert unknown["waivable"] is False
+            assert body["receipt"]["status"] == "blocked"
+            assert body["claims"] == []
+            assert "body-weight-unknown-gate" in body["receipt"]["rule_ids"]
+        engine.dispose()
 
 
 def test_unknown_package_is_not_executed() -> None:
