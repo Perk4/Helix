@@ -1,12 +1,12 @@
 {
-  "qualification_id": "helix-section-agent-qualification@0.1.0/2026-09-24T05:09:51Z",
-  "qualification_hash": "sha256:e83fb1356dfaebc27ee2c75551762e6cebd06d4f91452606516dc912932d2ede",
+  "qualification_id": "helix-section-agent-qualification@0.1.0/2026-09-24T13:53:28Z",
+  "qualification_hash": "sha256:804404e1fa598a72e231997af3008179d519a9ebdfbddad039d71afb02c1ab6b",
   "inputs": {
-    ".agents/skills/helix-section-agent/SKILL.md": "sha256:40f2a2076c14ec4efce86c6d3d3c2627c52a043866cc9abebef49f18086369f4",
-    ".agents/skills/helix-section-agent/evals/assert-candidate-schema.mjs": "sha256:77d880f261b09021e49f309c2dbdf12bb5b57d805e4e8fe601c412a7f02263b6",
+    ".agents/skills/helix-section-agent/SKILL.md": "sha256:8d2e2b8065fa7042438df3647cf7f610960637f4e865642dbd32643521f21fbd",
+    ".agents/skills/helix-section-agent/evals/assert-candidate-schema.mjs": "sha256:9fba6302c6410cbcc77ff234b3ed52c6908371b67c023698b572c34c9711275b",
     ".agents/skills/helix-section-agent/evals/assert-no-unsupported-value.mjs": "sha256:63185fb2c532a7385c14399f79229cbc500d6b9eecb2e8cd71929f644091006e",
     ".agents/skills/helix-section-agent/evals/fixtures/body-weight-envelope.json": "sha256:01d0d88a00f3eea465f984a161db9547befd7db3d8dcde3f55c3ca5011a30fcf",
-    ".agents/skills/helix-section-agent/evals/fixtures/body-weight-missing-claim.json": "sha256:22ff16e842a11d1447ba6fbbffca6277f1f65579e6ad2990f2a4f06fa07ecd41",
+    ".agents/skills/helix-section-agent/evals/fixtures/body-weight-missing-claim.json": "sha256:834397a5725d6a2c1eed0ad47087056ee7bd853c9fe58b5afd33a72d4c12f979",
     ".agents/skills/helix-section-agent/evals/prompt.txt": "sha256:caa1187090abbe74cece4a0539da70f7f72d0907033e4be0cdd4bd8175a5836f",
     ".agents/skills/helix-section-agent/evals/promptfooconfig.yaml": "sha256:ef209f08c76393cbde4bfe9d0574f7172812742aaf25a306d2ca0186ef02f0eb",
     "skills/helix-evidence-pipeline/contracts/section-draft-candidate.schema.json": "sha256:07ea5dc4a7fe952800bae4d22a1072bec32d6f17818296b34685ed1e2b10640b"
