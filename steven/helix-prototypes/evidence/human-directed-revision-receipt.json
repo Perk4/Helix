@@ -1,13 +1,13 @@
 {
   "predecessor_cycle_id": "CYCLE-BW-001",
-  "new_cycle_id": "CYCLE-686622954FA3",
+  "new_cycle_id": "CYCLE-53D22D81FD89",
   "cycle_attempts": {
     "CYCLE-BW-001": [
       1,
       2,
       3
     ],
-    "CYCLE-686622954FA3": [
+    "CYCLE-53D22D81FD89": [
       1,
       2,
       3
@@ -15,14 +15,14 @@
   },
   "revision_agent_calls": 0,
   "fourth_new_cycle_status": 409,
-  "fresh_evaluation_id": "CEV-19B7BCC152BC",
-  "prior_evaluation_id": "CEV-65CDFCBDBE71",
+  "fresh_evaluation_id": "CEV-B05D51FD243A",
+  "prior_evaluation_id": "CEV-09540EDFC2B2",
   "stale_disposition_ids": [
-    "SOE-74154B6720E1",
-    "RD-7B2493C89662"
+    "SOE-4A0348EF5977",
+    "RD-3D0D4A6F19BE"
   ],
   "stale_approval_ids": [
-    "APR-298ADA97B511"
+    "APR-C18EE2C20472"
   ],
   "discussion_impact_unchanged": true
 }
