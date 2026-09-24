@@ -163,22 +163,84 @@ real session id, expected output. Confirmed alongside it:
 
 ---
 
-## 5. Azure blob storage
+## 5. Blob storage and Codex: what was actually tested
 
-There is one storage account, `lgts1tetamstg01` (rg `lgts1tetarg`, eastus, StorageV2,
-`allowBlobPublicAccess: false`), and a connection string for it already exists in the
-team `.env`.
+Stated plainly first: **the intake in this branch does not touch blob storage.** It writes
+the package through `StudyPackageRepository` like your seed path does. Blob is a separate
+question and the answer below is research, not shipped code.
 
-Two caveats:
+### Blob round-trip works, with shared key only
 
-- Our AAD identities have **no data-plane role**. `--auth-mode login` fails on blobs;
-  only shared-key access works. Worth requesting `Storage Blob Data Contributor` rather
-  than shipping a key.
-- None of the 12 containers are ours — they belong to other teams. There is no HELIX
-  container yet.
+Tested end to end against `lgts1tetamstg01`:
 
-One thing to raise with whoever administers the subscription: the account key grants
-read access to **every** container, including another team's `search_credentials/`.
+| Step | Result |
+|---|---|
+| create container | works (shared key) |
+| upload blob | works |
+| download blob | byte-identical round trip |
+| Azure server-side MD5 vs ours | **identical** |
+
+That last row matters for the manifest story: the frozen manifest checksum can be
+cross-checked against Azure's own `Content-MD5` rather than being self-attested.
+
+The test container was deleted afterwards. Two constraints stand:
+
+- Our AAD identities have **no data-plane role**, so `--auth-mode login` fails on blobs and
+  only the account key works. Worth requesting `Storage Blob Data Contributor`.
+- The account key grants read access to **every** container in the account, including
+  another team's `search_credentials/`. Worth raising with whoever administers it.
+
+### Codex has no blob connector
+
+Codex is a local agent: it reads the working directory through a shell. There is no Azure
+connector. The only pattern that works is **download to local disk, then point Codex at the
+directory**, which is what a container with a mounted or fetched workspace already does.
+
+Proven: uploaded a CSV to blob, downloaded it, ran `codex exec` in that directory, and it
+returned `ROWS=1 LAST_WEIGHT=100.5` — correct, from the file that came out of blob storage.
+
+### The sandbox is the problem on Windows, not the model
+
+On this corporate Windows machine:
+
+| `--sandbox` | Result |
+|---|---|
+| `read-only` (your spec's mode) | **blocked** — `powershell.exe` and `cmd.exe` rejected by policy |
+| `workspace-write` | **blocked** — same |
+| `danger-full-access` | works |
+
+The model connected and reasoned fine in every case; it simply could not execute the shell
+it needs to read a file, and answered `UNAVAILABLE` rather than inventing numbers. So
+`first-vertical-slice.md` specifying a read-only thread will not run locally on a machine
+with this policy — worth knowing before someone spends an afternoon on it.
+
+### Which is an argument for running Codex in the container
+
+The backend image is already `python:3.13-slim`. The official guidance is:
+
+> Use `danger-full-access` only in a controlled environment (for example, an isolated CI
+> runner or container).
+
+In a container the container *is* the sandbox, so full access inside it is the documented
+posture rather than a workaround, and the Windows policy problem disappears. `openai-codex`
+ships the pinned CLI binary as a wheel, so it installs into the image with no extra step.
+
+Unverified, and worth checking before committing to a platform: whether Azure Container
+Apps permits the process spawning Codex needs, and whether App Service does at all. I would
+not assume App Service works.
+
+### Use APIM as the Codex `base_url`, not the direct endpoint
+
+The direct `lgts1tetamoai01.openai.azure.com` endpoint is VNet-gated. Mid-test the VPN
+dropped and Codex failed with:
+
+```
+403 A Virtual Network is configured for this resource.
+    url: https://lgts1tetamoai01.openai.azure.com/openai/responses?api-version=2025-04-01-preview
+```
+
+The APIM gateway answered 200 both on and off VPN. For anything deployed, CI, or run by a
+teammate who is not on VPN, `base_url` should be the APIM route.
 
 ---
 
