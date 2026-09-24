@@ -1,5 +1,7 @@
 import type {
   ApprovalRole,
+  ChatMessage,
+  ChatScope,
   EvidenceChainData,
   ExportReceipt,
   PlannerMode,
@@ -82,6 +84,27 @@ export async function generateSectionDraft(
     { method: "POST", body: JSON.stringify({ feedback }) },
   );
   return value as SectionDraft;
+}
+
+export async function getChat(studyId: string): Promise<ChatMessage[]> {
+  const value = await request(`/studies/${encodeURIComponent(studyId)}/chat`);
+  if (!Array.isArray(value)) {
+    throw new Error("The chat response does not match the generated API contract.");
+  }
+  return value as ChatMessage[];
+}
+
+export async function sendChat(
+  studyId: string,
+  message: string,
+  scope: ChatScope,
+  sectionId: string | null,
+): Promise<ChatMessage> {
+  const value = await request(`/studies/${encodeURIComponent(studyId)}/chat`, {
+    method: "POST",
+    body: JSON.stringify({ message, scope, section_id: sectionId }),
+  });
+  return value as ChatMessage;
 }
 
 export async function getEvidence(

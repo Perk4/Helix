@@ -11,6 +11,8 @@ import {
   getSectionDraft,
   getSections,
 } from "@/lib/api";
+
+import { ChatDock } from "./ChatDock";
 import type {
   ApprovalRole,
   SectionBlock,
@@ -356,6 +358,8 @@ export function ReportAssembly({ workspace, busy, onResolve, onApprove, onExport
           </section>
         </aside>
       </div>
+
+      <ChatDock studyId={studyId} sectionId={selectedSectionId} sectionTitle={selectedTitle} />
     </section>
   );
 }

@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from .models import (
     AuditEventRow,
+    ChatMessageRow,
     ExportFileRow,
     SectionDraftRow,
     SectionRunRow,
@@ -235,6 +236,48 @@ class StudyPackageRepository:
                 .order_by(SectionDraftRow.version)
             ).all()
         )
+
+    # -- chat -------------------------------------------------------------- #
+
+    def add_chat_message(
+        self,
+        *,
+        study_id: str,
+        role: str,
+        content: str,
+        scope: str,
+        section_id: str | None,
+        intent: str = "ask",
+    ) -> ChatMessageRow:
+        row = ChatMessageRow(
+            study_id=study_id,
+            role=role,
+            content=content,
+            scope=scope,
+            section_id=section_id,
+            intent=intent,
+        )
+        self.session.add(row)
+        self.session.flush()
+        return row
+
+    def list_chat_messages(self, study_id: str) -> list[ChatMessageRow]:
+        return list(
+            self.session.scalars(
+                select(ChatMessageRow)
+                .where(ChatMessageRow.study_id == study_id)
+                .order_by(ChatMessageRow.id)
+            ).all()
+        )
+
+    def recent_chat_messages(self, study_id: str, limit: int) -> list[ChatMessageRow]:
+        rows = self.session.scalars(
+            select(ChatMessageRow)
+            .where(ChatMessageRow.study_id == study_id)
+            .order_by(ChatMessageRow.id.desc())
+            .limit(limit)
+        ).all()
+        return list(reversed(rows))
 
     def list_section_runs(self, study_id: str) -> list[StoredSectionRun]:
         rows = self.session.scalars(

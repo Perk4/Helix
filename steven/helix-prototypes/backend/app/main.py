@@ -9,12 +9,15 @@ from sqlalchemy.orm import Session
 
 from . import llm
 from .agents.codex_section_agent import CodexSectionAgent, SectionAgent
+from .chat_service import ChatService
 from .config import Settings, get_settings
 from .database import create_database_engine, create_schema, create_session_factory
 from .draft_service import DraftService
 from .repository import StudyNotFoundError
 from .schemas import (
     ApprovalCommand,
+    ChatMessage,
+    ChatRequest,
     DispositionCommand,
     DraftRequest,
     EvidenceChain,
@@ -110,6 +113,11 @@ def create_app(
 
     DraftServiceDependency = Annotated[DraftService, Depends(draft_service)]
 
+    def chat_service(session: SessionDependency) -> ChatService:
+        return ChatService(session, render_fn=llm.chat)
+
+    ChatServiceDependency = Annotated[ChatService, Depends(chat_service)]
+
     @app.get("/health", tags=["system"])
     def health(session: SessionDependency) -> dict[str, str]:
         session.execute(text("SELECT 1"))
@@ -186,6 +194,34 @@ def create_app(
         drafts: DraftServiceDependency,
     ) -> SectionDraft:
         return _call(lambda: drafts.generate(study_id, section_id, feedback=request.feedback))
+
+    @app.get(
+        "/api/v1/studies/{study_id}/chat",
+        response_model=list[ChatMessage],
+        tags=["chat"],
+    )
+    def get_chat(study_id: str, chat: ChatServiceDependency) -> list[ChatMessage]:
+        return _call(lambda: chat.history(study_id))
+
+    @app.post(
+        "/api/v1/studies/{study_id}/chat",
+        response_model=ChatMessage,
+        status_code=status.HTTP_201_CREATED,
+        tags=["chat"],
+    )
+    def post_chat(
+        study_id: str,
+        request: ChatRequest,
+        chat: ChatServiceDependency,
+    ) -> ChatMessage:
+        return _call(
+            lambda: chat.ask(
+                study_id,
+                request.message,
+                scope=request.scope,
+                section_id=request.section_id,
+            )
+        )
 
     @app.get(
         "/api/v1/studies/{study_id}/claims/{claim_id}/evidence",

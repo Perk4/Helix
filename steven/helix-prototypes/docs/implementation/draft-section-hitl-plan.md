@@ -1,7 +1,7 @@
 # Section Drafting + Human-in-the-Loop Chat — Requirements, Design & Plan
 
 - **Branch:** `feat/draft-section-hitl`
-- **Status:** Phase 0 + A + B done → Phase C (chat) next
+- **Status:** Phase 0 + A + B + C done → Phase D (revise + 👍/👎) next
 - **Created:** 2026-09-24
 - **Approach:** B (lighter first) — build the UI + chat now on already-verified numbers; mark the rest `needs_review`; expand verified coverage over time.
 
@@ -133,13 +133,14 @@ generate(study_id, section_id, feedback_history, existing_content, apply=False)
 - [x] typecheck + production build pass
 - [~] Manual browser check: verify tables render richly and "needs review" shows (user to confirm visually)
 
-### Phase C — Bottom chat + memory (R2 Ask) · Status: not started
-- [ ] `chat_messages` table (append-only, one thread per study)
-- [ ] `backend/app/chat_service.py` — `ask(...)`: windowed history + grounding (section/study/domain) + APIM streaming + persist turns
-- [ ] Endpoints: `GET /chat`, `POST /chat` (SSE stream)
-- [ ] Frontend `ChatDock.tsx` — bottom-pinned, minimize/expand, scope toggle, streaming list + input
-- [ ] Grounding guardrails: never invent numbers; unverified → "needs review"
-- [ ] Tests: context assembly with mocked LLM
+### Phase C — Bottom chat + memory (R2 Ask) · Status: done (pending browser check)
+- [x] `chat_messages` table (append-only, one thread per study) + repository methods
+- [x] `backend/app/chat_service.py` — `ask(...)`: windowed history (last 10) + grounding (study summary + section facts + current draft) + persist turns
+- [x] Endpoints: `GET /chat`, `POST /chat` (non-streaming for v1; SSE streaming deferred)
+- [x] Frontend `ChatDock.tsx` — bottom-pinned, minimize/expand, `This section | Whole study` scope toggle, message list + input; assistant rendered as markdown
+- [x] Grounding guardrails in the system prompt: never invent numbers; unverified → "needs review"; domain answers kept separate
+- [x] Tests: `tests/test_chat.py` — section grounding, memory replay, endpoints (3 tests)
+- [~] Manual browser check: bottom bar expands, remembers turns (user to confirm visually)
 
 ### Phase D — Revise → proposed → 👍/👎 apply (R2 revise, R3) · Status: not started
 - [ ] `DraftService` revise path returns **proposed** version (anchored to existing + feedback history), not applied
@@ -169,4 +170,5 @@ generate(study_id, section_id, feedback_history, existing_content, apply=False)
 | 2026-09-24 | — | Plan captured | (local) |
 | 2026-09-24 | Phase 0 + A | Backend: `llm.py`, `section_catalog.py`, `section_drafts` table, `draft_service.py`, 3 section endpoints, schemas, 6 tests (all pass, ruff clean) | ea8be03 |
 | 2026-09-24 | Phase 0 | `llm.py`: accept OPENAI_*/LLM_*/APIM_* env names + best-effort `.env` load (key lives in repo-root `.env`, git-ignored); `openai` dep added; APIM smoke test OK (gpt-5.5 wrote grounded prose, refused to invent %) | (pending) |
-| 2026-09-24 | Phase B | Frontend: regenerated types, `api.ts`/`types.ts` section calls, `ReportAssembly` renders 14-section drafts (native tables + markdown prose + needs-review banner + generate), CSS; typecheck + build pass; 7 backend tests | (pending) |
+| 2026-09-24 | Phase B | Frontend: regenerated types, `api.ts`/`types.ts` section calls, `ReportAssembly` renders 14-section drafts (native tables + markdown prose + needs-review banner + generate), CSS; typecheck + build pass; 7 backend tests | d3db7a5 |
+| 2026-09-24 | Phase C | `chat_messages` table, `chat_service.py` (grounded ask + windowed memory), GET/POST /chat, `ChatDock` bottom-docked chat with scope toggle + CSS; regenerated types; typecheck + build pass; 27 backend tests (3 chat) | (pending) |

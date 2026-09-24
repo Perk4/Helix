@@ -550,3 +550,26 @@ class SectionListItem(StrictModel):
 
 class DraftRequest(StrictModel):
     feedback: list[str] = Field(default_factory=list)
+
+
+# --------------------------------------------------------------------------- #
+# Chat (per-study thread, grounded in verified data)
+# --------------------------------------------------------------------------- #
+
+ChatScope = Literal["section", "study"]
+
+
+class ChatMessage(StrictModel):
+    message_id: int
+    role: Literal["user", "assistant"]
+    content: str
+    scope: ChatScope
+    section_id: str | None = None
+    intent: Literal["ask", "revise"] = "ask"
+    created_at: str
+
+
+class ChatRequest(StrictModel):
+    message: str = Field(min_length=1, max_length=4000)
+    scope: ChatScope = "section"
+    section_id: str | None = None

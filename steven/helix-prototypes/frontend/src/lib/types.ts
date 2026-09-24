@@ -14,3 +14,5 @@ export type SectionRunReceipt = components["schemas"]["SectionRunReceipt"];
 export type SectionDraft = components["schemas"]["SectionDraft"];
 export type SectionListItem = components["schemas"]["SectionListItem"];
 export type SectionBlock = SectionDraft["blocks"][number];
+export type ChatMessage = components["schemas"]["ChatMessage"];
+export type ChatScope = ChatMessage["scope"];

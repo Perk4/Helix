@@ -110,3 +110,18 @@ class SectionDraftRow(Base):
     feedback: Mapped[list[str]] = mapped_column(JsonDocument, nullable=False, default=list)
     data_available: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+
+
+class ChatMessageRow(Base):
+    """One turn of the per-study chat thread. Append-only."""
+
+    __tablename__ = "chat_messages"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    study_id: Mapped[str] = mapped_column(String(80), index=True, nullable=False)
+    role: Mapped[str] = mapped_column(String(16), nullable=False)  # user | assistant
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    scope: Mapped[str] = mapped_column(String(16), nullable=False, default="section")  # section | study
+    section_id: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    intent: Mapped[str] = mapped_column(String(16), nullable=False, default="ask")  # ask | revise
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
