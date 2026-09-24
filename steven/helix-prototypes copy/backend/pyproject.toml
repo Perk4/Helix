@@ -1,0 +1,33 @@
+[project]
+name = "helix-api"
+version = "0.1.0"
+description = "Synthetic HELIX nonclinical report workflow API"
+requires-python = ">=3.12"
+dependencies = [
+  "fastapi>=0.116,<1",
+  "httpx>=0.28,<1",
+  "jsonschema>=4.25,<5",
+  "openai-codex>=0.155,<1",
+  "psycopg[binary]>=3.2,<4",
+  "pydantic-settings>=2.10,<3",
+  "sqlalchemy>=2.0,<3",
+  "uvicorn[standard]>=0.35,<1",
+]
+
+[dependency-groups]
+dev = [
+  "pytest>=8.4,<9",
+  "ruff>=0.12,<1",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM"]

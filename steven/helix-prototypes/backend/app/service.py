@@ -6,8 +6,10 @@ from sqlalchemy.orm import Session
 
 from .artifacts import GeneratedArtifact, generate_artifact
 from .config import Settings
+from .data_validation import DataValidationService, as_validation_results, policy_for
 from .reporting import assemble_report, claim_report_text
 from .repository import StudyPackageRepository
+from .run_plans import PinnedRunService
 from .schemas import (
     RESOLVED_DISPOSITIONS,
     Approval,
@@ -15,14 +17,18 @@ from .schemas import (
     ApprovalRole,
     Claim,
     ClaimStatus,
+    DataValidationCommand,
+    DataValidationExecution,
     DispositionCommand,
     DispositionDecision,
     EvidenceChain,
     ExportArtifact,
     ExportCommand,
     ExportReceipt,
+    FreezeRunCommand,
     GateDecision,
     GateStatus,
+    PinnedRun,
     PlannerCapability,
     PlannerMode,
     ProvenanceEdge,
@@ -30,14 +36,21 @@ from .schemas import (
     SectionStatus,
     SourceRecord,
     Stage,
+    StoredSectionRun,
     StudyEvidencePackage,
     StudyListItem,
     ValidationRequest,
+    ValidationResult,
     ValidationRun,
     ValidationStatus,
     WorkflowEvent,
     WorkspaceResponse,
     WorkspaceSummary,
+)
+from .section_promotion import (
+    SectionPromotionService,
+    dependency_fingerprint_for,
+    section_package_definition,
 )
 from .section_runs import (
     SectionRunService,
@@ -78,11 +91,14 @@ class StudyService:
         session: Session,
         settings: Settings,
         section_runs: SectionRunService,
+        pinned_runs: PinnedRunService,
     ):
         self.session = session
         self.settings = settings
         self.repository = StudyPackageRepository(session)
         self.section_runs = section_runs
+        self.pinned_runs = pinned_runs
+        self.data_validation = DataValidationService(session, pinned_runs, settings.codex_repository_root)
 
     def workspace(self, study_id: str) -> WorkspaceResponse:
         package = self.repository.get(study_id)
@@ -101,7 +117,40 @@ class StudyService:
             for package in self.repository.list_packages()
         ]
 
+    def freeze_run(self, study_id: str, command: FreezeRunCommand) -> PinnedRun:
+        pinned_run = self.pinned_runs.freeze(study_id, command)
+        if pinned_run.status == "planned":
+            self.data_validation.execute(
+                study_id,
+                DataValidationCommand(
+                    actor=command.actor,
+                    package_id="validation.body_weight",
+                    idempotency_key=f"dvp-{pinned_run.run_id}-validation.body_weight",
+                ),
+            )
+        return pinned_run
+
+    def run_data_validation(self, study_id: str, command: DataValidationCommand) -> DataValidationExecution:
+        return self.data_validation.execute(study_id, command)
+
     def run_validation(self, study_id: str, request: ValidationRequest) -> ValidationRun:
+        pinned_run = self.pinned_runs.freeze(
+            study_id,
+            FreezeRunCommand(
+                actor="HELIX validation service",
+                idempotency_key=f"validation-freeze-{study_id}",
+            ),
+        )
+        if pinned_run.status != "planned":
+            raise WorkflowConflictError("The Pinned Run requires study-type review")
+        execution = self.data_validation.execute(
+            study_id,
+            DataValidationCommand(
+                actor="HELIX validation service",
+                package_id="validation.body_weight",
+                idempotency_key=f"dvp-{pinned_run.run_id}-validation.body_weight",
+            ),
+        )
         package = self.repository.get(study_id, for_update=True)
         self._ensure_mutable(package)
         planner = self._planner(request.planner)
@@ -135,7 +184,12 @@ class StudyService:
             "validation_run",
             "HELIX validation service",
             "complete",
-            {"run_id": run.run_id, "planner": request.planner.value, "llm_used": planner.llm_used},
+            {
+                "run_id": run.run_id,
+                "planner": request.planner.value,
+                "llm_used": planner.llm_used,
+                "data_validation_receipt_id": execution.receipt.receipt_id,
+            },
         )
         updated = package.model_copy(
             update={
@@ -155,49 +209,96 @@ class StudyService:
                 "outcome": event.outcome,
                 **event.details,
                 "manifest_hash": manifest_fingerprint(updated),
-                "governed_versions_hash": governed_versions_fingerprint(),
+                "governed_versions_hash": governed_versions_fingerprint(pinned_run),
             },
             idempotency_key=f"validation:{run.run_id}",
             occurred_at=now,
         )
+        updated = self.section_runs.persist_contract_revision(
+            updated,
+            run_id=pinned_run.run_id,
+            event_id=event.event_id,
+        )
+        self.repository.save(updated)
         self.session.commit()
         return run
 
     def evidence(self, study_id: str, claim_id: str) -> EvidenceChain:
         package = self.repository.get(study_id)
-        claim = next((item for item in package.claims if item.claim_id == claim_id), None)
+        claim, edges = self._claim_and_edges(package, claim_id)
         if claim is None:
             raise InvalidCommandError(f"Unknown claim {claim_id}")
-        edges = [edge for edge in package.provenance_edges if edge.claim_id == claim_id]
         record_map = self._source_record_map(package)
         sources = [record_map[edge.source_record_id] for edge in edges if edge.source_record_id in record_map]
         transform_ids = {edge.transform_id for edge in edges}
         recomputed_value: float | None = None
         exact_match: bool | None = None
-        if claim.field_id.startswith("terminal-body-weight-high") and sources:
-            recomputed_value = round(sum(float(source.value) for source in sources) / len(sources), 1)
-            exact_match = recomputed_value == claim.value
+        if claim.claim_type == "body_weight.mean" or claim.field_id.startswith("terminal-body-weight-high"):
+            if sources:
+                recomputed_value = round(sum(float(source.value) for source in sources) / len(sources), 1)
+                exact_match = recomputed_value == claim.value
+        elif claim.field_id.startswith("standard-deviation-"):
+            if len(sources) > 1:
+                values = [float(source.value) for source in sources]
+                mean = sum(values) / len(values)
+                recomputed_value = round(
+                    (sum((value - mean) ** 2 for value in values) / (len(values) - 1)) ** 0.5,
+                    1,
+                )
+                exact_match = recomputed_value == claim.value
         elif claim_id == "C-MI-LIVER":
             recomputed_value = float(len(sources))
             exact_match = recomputed_value == claim.value
         validations = [
             result
-            for result in package.validation_results
-            if result.scope_id in {claim_id, claim.section_id} or claim_id in result.evidence_ids
+            for result in self._workspace_validations(package)
+            if result.scope_id in {claim_id, claim.section_id, claim.package_id or ""}
+            or claim_id in result.evidence_ids
         ]
         return EvidenceChain(
             claim=claim,
             sources=sources,
-            transform_id=next(iter(transform_ids)) if len(transform_ids) == 1 else None,
+            transform_id=next(iter(transform_ids)) if len(transform_ids) == 1 else claim.transform_id,
             recomputed_value=recomputed_value,
             exact_match=exact_match,
             validations=validations,
-            report_text=claim_report_text(package, claim_id),
+            report_text=self._claim_text(package, claim),
+            source_hashes=claim.source_hashes
+            or [edge.source_hash or "" for edge in edges if edge.source_hash],
+            transform_version=claim.transform_version,
+            rule_versions=claim.rule_versions,
+            lineage=edges,
         )
 
     def disposition(self, study_id: str, result_id: str, command: DispositionCommand) -> WorkspaceResponse:
+        if result_id.startswith(("TCR-", "PRV-", "TCF-")):
+            raise WorkflowConflictError(
+                "Template and provenance failures are non-waivable. "
+                "Correct governed input through a superseding run or a new candidate."
+            )
+        if result_id.startswith("SOE-"):
+            return self._record_soe_disposition(study_id, result_id, command)
         package = self.repository.get(study_id, for_update=True)
         self._ensure_mutable(package)
+        dvp_match = next(
+            (
+                (execution, result)
+                for execution in package.data_validation_executions
+                for result in execution.results
+                if result.result_id == result_id
+            ),
+            None,
+        )
+        if dvp_match is not None:
+            execution, dvp_result = dvp_match
+            if dvp_result.enforcement_class == "hard_blocker":
+                raise WorkflowConflictError("hard_blocker results cannot be waived")
+            if (
+                dvp_result.status != ValidationStatus.FAIL
+                or not policy_for(dvp_result.enforcement_class).dispositionable
+            ):
+                raise WorkflowConflictError("Only blocking failures can receive a review disposition")
+            return self._record_dvp_disposition(package, study_id, execution, result_id, command)
         result = next((item for item in package.validation_results if item.result_id == result_id), None)
         if result is None:
             raise InvalidCommandError(f"Unknown validation result {result_id}")
@@ -268,6 +369,160 @@ class StudyService:
             idempotency_key=f"disposition:{disposition.disposition_id}",
             occurred_at=datetime.fromisoformat(timestamp.replace("Z", "+00:00")),
         )
+        self.session.commit()
+        return self._workspace(updated)
+
+    def _record_dvp_disposition(
+        self,
+        package: StudyEvidencePackage,
+        study_id: str,
+        execution: DataValidationExecution,
+        result_id: str,
+        command: DispositionCommand,
+    ) -> WorkspaceResponse:
+        artifact_id = execution.receipt.receipt_id
+        prior = [item for item in package.review_dispositions if item.result_id == result_id]
+        if prior and (
+            prior[-1].decision == command.decision
+            and prior[-1].reason == command.reason
+            and prior[-1].reviewer == command.reviewer
+            and prior[-1].artifact_id == artifact_id
+        ):
+            return self._workspace(package)
+        timestamp = self._now()
+        disposition = ReviewDisposition(
+            disposition_id=f"RD-{uuid4().hex[:12].upper()}",
+            result_id=result_id,
+            decision=command.decision,
+            reason=command.reason,
+            reviewer=command.reviewer,
+            timestamp=timestamp,
+            artifact_id=artifact_id,
+        )
+        event = self._event(
+            "validation_disposition",
+            command.reviewer,
+            command.decision.value,
+            {
+                "result_id": result_id,
+                "reason": command.reason,
+                "artifact_id": artifact_id,
+            },
+            timestamp=timestamp,
+        )
+        updated = package.model_copy(
+            update={
+                "review_dispositions": [*package.review_dispositions, disposition],
+                "events": [*package.events, event],
+            }
+        )
+        updated = self._with_derived_gate(updated, timestamp)
+        self.repository.save(updated)
+        self.repository.append_event(
+            study_id=study_id,
+            event_type=event.event,
+            actor=event.actor,
+            payload={"outcome": event.outcome, **event.details},
+            idempotency_key=f"disposition:{disposition.disposition_id}",
+            occurred_at=datetime.fromisoformat(timestamp.replace("Z", "+00:00")),
+        )
+        self.session.commit()
+        return self._workspace(updated)
+
+    def _record_soe_disposition(
+        self,
+        study_id: str,
+        result_id: str,
+        command: DispositionCommand,
+    ) -> WorkspaceResponse:
+        package = self.repository.get(study_id, for_update=True)
+        self._ensure_mutable(package)
+        evaluation = next(
+            (
+                item
+                for item in reversed(self.repository.list_candidate_evaluations(study_id))
+                if item.study_output_evaluation_receipt.receipt_id == result_id
+            ),
+            None,
+        )
+        if evaluation is None:
+            raise InvalidCommandError(f"Unknown validation result {result_id}")
+        if evaluation.study_output_evaluation_receipt.status != "failed":
+            raise WorkflowConflictError("Only blocking failures can receive a review disposition")
+        definition = section_package_definition(
+            self.settings.codex_repository_root,
+            evaluation.section_package_id,
+        )
+        fingerprint = dependency_fingerprint_for(
+            package, [str(item) for item in definition.get("depends_on", [])]
+        )
+        prior = [item for item in package.review_dispositions if item.result_id == result_id]
+        if prior and (
+            prior[-1].decision == command.decision
+            and prior[-1].reason == command.reason
+            and prior[-1].reviewer == command.reviewer
+            and prior[-1].artifact_hash == evaluation.candidate_hash
+            and prior[-1].dependency_fingerprint == fingerprint
+        ):
+            return self._workspace(package)
+        timestamp = self._now()
+        disposition = ReviewDisposition(
+            disposition_id=f"RD-{uuid4().hex[:12].upper()}",
+            result_id=result_id,
+            decision=command.decision,
+            reason=command.reason,
+            reviewer=command.reviewer,
+            timestamp=timestamp,
+            artifact_id=evaluation.candidate_id,
+            artifact_hash=evaluation.candidate_hash,
+            dependency_fingerprint=fingerprint,
+        )
+        event = self._event(
+            "validation_disposition",
+            command.reviewer,
+            command.decision.value,
+            {
+                "result_id": result_id,
+                "reason": command.reason,
+                "artifact_id": evaluation.candidate_id,
+                "artifact_hash": evaluation.candidate_hash,
+            },
+            timestamp=timestamp,
+        )
+        updated = package.model_copy(
+            update={
+                "review_dispositions": [*package.review_dispositions, disposition],
+                "events": [*package.events, event],
+            }
+        )
+        updated = self._with_derived_gate(updated, timestamp)
+        self.repository.save(updated)
+        self.repository.append_event(
+            study_id=study_id,
+            event_type=event.event,
+            actor=event.actor,
+            payload={"outcome": event.outcome, **event.details},
+            idempotency_key=f"disposition:{disposition.disposition_id}",
+            occurred_at=datetime.fromisoformat(timestamp.replace("Z", "+00:00")),
+        )
+        run_row = self.repository.get_section_run_by_id(study_id, evaluation.run_id)
+        if run_row is not None and run_row.candidate is not None:
+            run = StoredSectionRun.model_validate(
+                {
+                    "receipt": run_row.receipt,
+                    "candidate": run_row.candidate,
+                    "envelope": run_row.envelope,
+                    "review_scaffold": run_row.review_scaffold,
+                }
+            )
+            promotions = SectionPromotionService(self.session, self.settings.codex_repository_root)
+            promotions.record_decision_for_evaluation(
+                study_id,
+                evaluation,
+                run,
+                updated,
+                idempotency_key=f"disposition-decision:{disposition.disposition_id}",
+            )
         self.session.commit()
         return self._workspace(updated)
 
@@ -428,9 +683,7 @@ class StudyService:
     def _workspace(self, package: StudyEvidencePackage) -> WorkspaceResponse:
         gate = self._release_gate(package)
         unresolved = set(gate.blocking_result_ids)
-        validation_blockers = {
-            result.result_id for result in blocking_failures(package.validation_results)
-        }
+        validation_blockers = {result.result_id for result in blocking_failures(package.validation_results)}
         resolved = len(validation_blockers - unresolved)
         return WorkspaceResponse(
             label=package.label,
@@ -447,7 +700,7 @@ class StudyService:
                 section_count=len(package.report_sections),
             ),
             claims=package.claims,
-            validations=package.validation_results,
+            validations=self._workspace_validations(package),
             dispositions=package.review_dispositions,
             approvals=package.approvals,
             release_gate=gate,
@@ -471,8 +724,15 @@ class StudyService:
                     ),
                 ),
             ],
-            section_run_eligibility=[self.section_runs.eligibility(package)],
+            pinned_run=self.pinned_runs.latest(package.study.study_id),
+            data_validation_executions=package.data_validation_executions,
+            section_run_eligibility=self.section_runs.eligibilities(package),
             section_runs=self.repository.list_section_runs(package.study.study_id),
+            candidate_evaluations=self.repository.list_candidate_evaluations(package.study.study_id),
+            promotion_decisions=self.repository.list_promotion_decisions(package.study.study_id),
+            section_drafts=self.repository.list_section_drafts(package.study.study_id),
+            cross_section_queries=self.repository.list_cross_section_queries(package.study.study_id),
+            review_scaffold_revisions=package.review_scaffold_revisions,
         )
 
     @staticmethod
@@ -636,6 +896,64 @@ class StudyService:
     def _now() -> str:
         return datetime.now(UTC).isoformat().replace("+00:00", "Z")
 
+    @staticmethod
+    def _claim_and_edges(
+        package: StudyEvidencePackage,
+        claim_id: str,
+    ) -> tuple[Claim | None, list[ProvenanceEdge]]:
+        claim = next((item for item in package.claims if item.claim_id == claim_id), None)
+        edges = [edge for edge in package.provenance_edges if edge.claim_id == claim_id]
+        if claim is not None:
+            return claim, edges
+        for execution in package.data_validation_executions:
+            claim = next((item for item in execution.claims if item.claim_id == claim_id), None)
+            if claim is not None:
+                return claim, [edge for edge in execution.provenance_edges if edge.claim_id == claim_id]
+        return None, []
+
+    @staticmethod
+    def _workspace_validations(package: StudyEvidencePackage) -> list[ValidationResult]:
+        results = list(package.validation_results)
+        seen = {item.result_id for item in results}
+        for execution in package.data_validation_executions:
+            for item in as_validation_results(execution):
+                if item.result_id not in seen:
+                    results.append(item)
+                    seen.add(item.result_id)
+        return results
+
+    @staticmethod
+    def _claim_text(package: StudyEvidencePackage, claim: Claim) -> str:
+        if any(item.claim_id == claim.claim_id for item in package.claims):
+            return claim_report_text(package, claim.claim_id)
+        if claim.value is None:
+            return "Needs review"
+        return f"{claim.claim_type or claim.field_id} is {claim.value} {claim.unit} at {claim.grain}."
+
+
+def _unresolved_dvp_result_ids(
+    package: StudyEvidencePackage,
+    latest_dispositions: dict[str, ReviewDisposition],
+) -> list[str]:
+    unresolved: list[str] = []
+    for execution in package.data_validation_executions:
+        for result in execution.results:
+            if result.status != ValidationStatus.FAIL:
+                continue
+            policy = policy_for(result.enforcement_class)
+            if not policy.blocks_gate:
+                continue
+            if policy.dispositionable:
+                latest = latest_dispositions.get(result.result_id)
+                if (
+                    latest is not None
+                    and latest.decision in RESOLVED_DISPOSITIONS
+                    and latest.artifact_id == execution.receipt.receipt_id
+                ):
+                    continue
+            unresolved.append(result.result_id)
+    return unresolved
+
 
 def derive_release_gate(
     package: StudyEvidencePackage,
@@ -651,7 +969,9 @@ def derive_release_gate(
         if latest_dispositions.get(result.result_id) is None
         or latest_dispositions[result.result_id].decision not in RESOLVED_DISPOSITIONS
     ]
+    unresolved.extend(_unresolved_dvp_result_ids(package, latest_dispositions))
     unresolved.extend(candidate_blocker_ids or [])
+    unresolved = list(dict.fromkeys(unresolved))
     approval_roles = {approval.role for approval in package.approvals}
     has_unreviewed_sections = any(
         section.status == SectionStatus.NEEDS_REVIEW for section in package.report_sections
