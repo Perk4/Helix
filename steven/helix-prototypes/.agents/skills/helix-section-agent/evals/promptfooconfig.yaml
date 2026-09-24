@@ -53,6 +53,18 @@ tests:
       - type: is-json
       - type: javascript
         value: file://assert-candidate-schema.mjs
+      # SKILL.md rule 8. Every other assertion passes a draft that cites an
+      # executor receipt the envelope never supplied.
+      - type: javascript
+        value: file://assert-provenance-untouched.mjs
+      # The section is draftable from this envelope, so returning a structured
+      # failure is a wrong answer, not a cautious one. Without this the suite
+      # only tests one direction and would certify a model that refuses
+      # everything. It currently fails about half of runs — that is the claims
+      # gap in docs/roadmap/eval-roadmap.md §0, held as a failing test rather
+      # than a paragraph so it goes green when the gap closes.
+      - type: javascript
+        value: file://assert-drafts-when-able.mjs
       - type: contains
         value: C-BW-HIGH
       - type: contains
@@ -76,6 +88,8 @@ tests:
       - type: is-json
       - type: javascript
         value: file://assert-candidate-schema.mjs
+      - type: javascript
+        value: file://assert-provenance-untouched.mjs
       - type: not-contains
         value: treatment related
       - type: not-contains
