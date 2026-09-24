@@ -6,6 +6,7 @@ rather than importing `app.*` directly. That keeps the import order irrelevant:
 sorting these lines any way at all still works.
 """
 
+from app.approved_report_retrieval import add_report, get_all_examples
 from app.schemas import StudyEvidencePackage
 from app.section_executor import (
     REGISTRY,
@@ -16,6 +17,8 @@ from app.section_executor import (
 
 __all__ = [
     "REGISTRY",
+    "add_report",
+    "get_all_examples",
     "SectionNotDraftable",
     "SectionResult",
     "StudyEvidencePackage",

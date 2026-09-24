@@ -9,6 +9,7 @@ from jsonschema import Draft202012Validator
 from sqlalchemy.orm import Session
 
 from .agents.codex_section_agent import SectionAgent
+from .approved_report_retrieval import add_report, get_all_examples
 from .repository import StudyPackageRepository
 from .schemas import (
     ClaimStatus,
@@ -308,6 +309,40 @@ class SectionRunService:
             raise SectionRunConflictError("The prior section run did not complete")
         return SectionRunReceipt.model_validate(prior.receipt)
 
+    def _reference_drafts(self) -> list[dict[str, object]]:
+        """Approved sections from earlier studies, as style exemplars.
+
+        The standalone pipeline already fed these to a model by pasting them
+        onto the user turn. They are useful — a drafter with no example of an
+        approved section guesses at house style — and they are dangerous for
+        the same reason the rest of this envelope exists. The corpus is a
+        different study: approved_report_1 is TOX-2024-0412, Compound XR-247,
+        with body weights of 291.5 g and 338.7 g against this study's 286.2 g
+        claim. A value lifted from an exemplar is a plausible number with no
+        claim behind it, which is the failure the provenance rules exist to
+        prevent.
+
+        Carrying them here puts them under the envelope hash, and the schema
+        states what they are for: structure and wording, never values.
+        """
+        corpus = self.repository_root / "synthetic-e2e" / "data" / "misc" / "approved_report_1.md"
+        if not corpus.exists():
+            return []
+        knowledge_base = add_report(str(corpus), kb_path=str(self.repository_root / ".knowledge-base.json"))
+        try:
+            examples = get_all_examples(knowledge_base, "TOX", "5.2.3")
+        except KeyError:
+            return []
+        return [
+            {
+                "report_id": example["report_id"],
+                "section_title": example["section_title"],
+                "hash": canonical_hash(example["content"]),
+                "content": example["content"],
+            }
+            for example in examples
+        ]
+
     @staticmethod
     def _executor_receipt(package: StudyEvidencePackage) -> dict[str, object]:
         """Run the deterministic executor and carry its output into the envelope.
@@ -404,6 +439,7 @@ class SectionRunService:
                 if result.result_id == "VR-004" and result.status == "fail"
             ],
             "executor_receipts": [self._executor_receipt(package)],
+            "reference_drafts": self._reference_drafts(),
             "governed_versions": GOVERNED_VERSIONS,
         }
         schema = self._load_json(self.contracts / "section-execution-envelope.schema.json")
