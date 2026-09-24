@@ -2125,3 +2125,80 @@ code {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* --- Section draft rendering (Phase B) --------------------------------- */
+.report-paper-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.review-banner {
+  border: 1px solid #e6c14a;
+  background: #fff8e6;
+  color: #7a5a00;
+  border-radius: var(--radius-sm);
+  padding: 0.6rem 0.85rem;
+  font-size: 0.85rem;
+  margin-bottom: 1rem;
+}
+.notice.inline {
+  margin-bottom: 0.85rem;
+}
+.draft-prose {
+  color: var(--ink-900);
+  line-height: 1.6;
+}
+.draft-prose h1,
+.draft-prose h2,
+.draft-prose h3 {
+  font-size: 1rem;
+  margin: 0.25rem 0 0.5rem;
+  color: var(--ink-900);
+}
+.draft-prose p {
+  margin: 0 0 0.75rem;
+}
+.draft-note {
+  background: var(--paper-tint);
+  border-left: 3px solid var(--ink-300);
+  border-radius: var(--radius-sm);
+  padding: 0.55rem 0.8rem;
+}
+.draft-table-wrap {
+  margin: 0.5rem 0 1.1rem;
+  overflow-x: auto;
+}
+.draft-table-wrap figcaption {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--ink-700);
+  margin-bottom: 0.4rem;
+}
+.draft-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.85rem;
+}
+.draft-table th,
+.draft-table td {
+  border: 1px solid var(--line);
+  padding: 0.4rem 0.6rem;
+  text-align: right;
+}
+.draft-table th:first-child,
+.draft-table td:first-child {
+  text-align: left;
+}
+.draft-table thead th {
+  background: var(--paper-tint);
+  color: var(--ink-700);
+  font-weight: 600;
+}
+.draft-provenance {
+  margin-top: 0.75rem;
+  font-size: 0.78rem;
+  color: var(--ink-500);
+}
+.section-state.needs_review {
+  color: #7a5a00;
+}

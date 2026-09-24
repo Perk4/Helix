@@ -114,7 +114,15 @@ def test_sections_endpoint_lists_fourteen() -> None:
     assert items[0]["status"] == "empty"
 
 
-def test_draft_endpoint_degrades_without_a_model() -> None:
+def test_draft_endpoint_degrades_without_a_model(monkeypatch) -> None:
+    # Simulate the model being unavailable — verified tables must still render.
+    from app import llm
+
+    def _boom(*_args, **_kwargs):
+        raise RuntimeError("model unavailable")
+
+    monkeypatch.setattr(llm, "chat", _boom)
+
     client = build_client()
     with client:
         created = client.post(
@@ -128,9 +136,25 @@ def test_draft_endpoint_degrades_without_a_model() -> None:
         )
 
     assert created.status_code == 201
-    body = created.json()
-    # No APIM configured -> prose degrades to a note, but verified tables remain.
-    assert [b["kind"] for b in body["blocks"]] == ["note", "table", "table"]
+    assert [b["kind"] for b in created.json()["blocks"]] == ["note", "table", "table"]
     assert fetched.status_code == 200
     assert fetched.json()["version"] == 1
     assert unknown.status_code == 404
+
+
+def test_draft_endpoint_renders_prose_when_model_available(monkeypatch) -> None:
+    from app import llm
+
+    monkeypatch.setattr(llm, "chat", lambda *_a, **_k: "Body weight was comparable across groups.")
+
+    client = build_client()
+    with client:
+        created = client.post(
+            f"/api/v1/studies/{STUDY_ID}/sections/5_2_3_body_weight/draft",
+            json={"feedback": []},
+        )
+
+    assert created.status_code == 201
+    blocks = created.json()["blocks"]
+    assert [b["kind"] for b in blocks] == ["prose", "table", "table"]
+    assert "comparable" in blocks[0]["markdown"]

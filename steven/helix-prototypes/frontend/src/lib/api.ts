@@ -3,6 +3,8 @@ import type {
   EvidenceChainData,
   ExportReceipt,
   PlannerMode,
+  SectionDraft,
+  SectionListItem,
   SectionRunReceipt,
   ValidationRun,
   Workspace,
@@ -50,6 +52,36 @@ export async function runSectionAgent(studyId: string): Promise<SectionRunReceip
   });
   assertSectionRunReceipt(value);
   return value;
+}
+
+export async function getSections(studyId: string): Promise<SectionListItem[]> {
+  const value = await request(`/studies/${encodeURIComponent(studyId)}/sections`);
+  if (!Array.isArray(value)) {
+    throw new Error("The sections response does not match the generated API contract.");
+  }
+  return value as SectionListItem[];
+}
+
+export async function getSectionDraft(
+  studyId: string,
+  sectionId: string,
+): Promise<SectionDraft | null> {
+  const value = await request(
+    `/studies/${encodeURIComponent(studyId)}/sections/${encodeURIComponent(sectionId)}/draft`,
+  );
+  return (value ?? null) as SectionDraft | null;
+}
+
+export async function generateSectionDraft(
+  studyId: string,
+  sectionId: string,
+  feedback: string[] = [],
+): Promise<SectionDraft> {
+  const value = await request(
+    `/studies/${encodeURIComponent(studyId)}/sections/${encodeURIComponent(sectionId)}/draft`,
+    { method: "POST", body: JSON.stringify({ feedback }) },
+  );
+  return value as SectionDraft;
 }
 
 export async function getEvidence(

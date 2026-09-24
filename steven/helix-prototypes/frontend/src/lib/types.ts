@@ -11,3 +11,6 @@ export type ApprovalRole = components["schemas"]["ApprovalRole"];
 export type ExportReceipt = components["schemas"]["ExportReceipt"];
 export type PlannerMode = components["schemas"]["PlannerMode"];
 export type SectionRunReceipt = components["schemas"]["SectionRunReceipt"];
+export type SectionDraft = components["schemas"]["SectionDraft"];
+export type SectionListItem = components["schemas"]["SectionListItem"];
+export type SectionBlock = SectionDraft["blocks"][number];

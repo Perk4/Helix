@@ -1,7 +1,7 @@
 # Section Drafting + Human-in-the-Loop Chat — Requirements, Design & Plan
 
 - **Branch:** `feat/draft-section-hitl`
-- **Status:** Phase 0 + A done (backend) → Phase B (UI) next
+- **Status:** Phase 0 + A + B done → Phase C (chat) next
 - **Created:** 2026-09-24
 - **Approach:** B (lighter first) — build the UI + chat now on already-verified numbers; mark the rest `needs_review`; expand verified coverage over time.
 
@@ -124,12 +124,14 @@ generate(study_id, section_id, feedback_history, existing_content, apply=False)
 - [x] Schemas: `SectionDraft`, `SectionBlock (prose|table|note)`, `SectionListItem`, `DraftRequest`
 - [x] Tests: `tests/test_section_drafts.py` — deterministic tables/provenance, feedback-anchoring, no-data note, endpoints (6 tests)
 
-### Phase B — Show section content richly (R1 frontend) · Status: not started
-- [ ] `lib/api.ts` + `lib/types.ts` — `getSections`, `getSectionDraft`, `generateSectionDraft` + types
-- [ ] `ReportAssembly.tsx` — navigator uses 14 sections + status chips
-- [ ] Center paper renders current draft: **table blocks as real tables**, **prose via `react-markdown` + `remark-gfm`**; version badge; needs-review banner; provenance inspector
-- [ ] Add deps `react-markdown`, `remark-gfm`
-- [ ] Manual UI check: sections render; unverified clearly show "needs review"
+### Phase B — Show section content richly (R1 frontend) · Status: done (pending browser check)
+- [x] Regenerated OpenAPI + TS types (`api-schema.d.ts`) for the new endpoints
+- [x] `lib/api.ts` + `lib/types.ts` — `getSections`, `getSectionDraft`, `generateSectionDraft` + types
+- [x] `ReportAssembly.tsx` — navigator uses 14 sections + status chips
+- [x] Center paper renders current draft: **table blocks as real tables**, **prose via `react-markdown` + `remark-gfm`**; version badge; needs-review banner; Generate/Regenerate; provenance count
+- [x] Add deps `react-markdown`, `remark-gfm`; styles in `globals.css`
+- [x] typecheck + production build pass
+- [~] Manual browser check: verify tables render richly and "needs review" shows (user to confirm visually)
 
 ### Phase C — Bottom chat + memory (R2 Ask) · Status: not started
 - [ ] `chat_messages` table (append-only, one thread per study)
@@ -165,4 +167,6 @@ generate(study_id, section_id, feedback_history, existing_content, apply=False)
 | Date | Phase / task | Change | Commit |
 |---|---|---|---|
 | 2026-09-24 | — | Plan captured | (local) |
-| 2026-09-24 | Phase 0 + A | Backend: `llm.py`, `section_catalog.py`, `section_drafts` table, `draft_service.py`, 3 section endpoints, schemas, 6 tests (all pass, ruff clean) | (pending) |
+| 2026-09-24 | Phase 0 + A | Backend: `llm.py`, `section_catalog.py`, `section_drafts` table, `draft_service.py`, 3 section endpoints, schemas, 6 tests (all pass, ruff clean) | ea8be03 |
+| 2026-09-24 | Phase 0 | `llm.py`: accept OPENAI_*/LLM_*/APIM_* env names + best-effort `.env` load (key lives in repo-root `.env`, git-ignored); `openai` dep added; APIM smoke test OK (gpt-5.5 wrote grounded prose, refused to invent %) | (pending) |
+| 2026-09-24 | Phase B | Frontend: regenerated types, `api.ts`/`types.ts` section calls, `ReportAssembly` renders 14-section drafts (native tables + markdown prose + needs-review banner + generate), CSS; typecheck + build pass; 7 backend tests | (pending) |

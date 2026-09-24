@@ -106,6 +106,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/studies/{study_id}/sections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Sections */
+        get: operations["list_sections_api_v1_studies__study_id__sections_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/studies/{study_id}/sections/{section_id}/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Section Draft */
+        get: operations["get_section_draft_api_v1_studies__study_id__sections__section_id__draft_get"];
+        put?: never;
+        /** Generate Section Draft */
+        post: operations["generate_section_draft_api_v1_studies__study_id__sections__section_id__draft_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/studies/{study_id}/validation-results/{result_id}/dispositions": {
         parameters: {
             query?: never;
@@ -272,6 +307,11 @@ export interface components {
             /** Study Id */
             study_id: string;
         };
+        /** DraftRequest */
+        DraftRequest: {
+            /** Feedback */
+            feedback?: string[];
+        };
         /** EvidenceChain */
         EvidenceChain: {
             claim: components["schemas"]["Claim"];
@@ -371,6 +411,16 @@ export interface components {
             /** Version */
             version: string;
         };
+        /** NoteBlock */
+        NoteBlock: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "note";
+            /** Text */
+            text: string;
+        };
         /** PlannerCapability */
         PlannerCapability: {
             /** Available */
@@ -386,6 +436,16 @@ export interface components {
          * @enum {string}
          */
         PlannerMode: "fixture" | "openai_compatible";
+        /** ProseBlock */
+        ProseBlock: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "prose";
+            /** Markdown */
+            markdown: string;
+        };
         /** RegulatoryReference */
         RegulatoryReference: {
             /**
@@ -490,6 +550,39 @@ export interface components {
             /** Timestamp */
             timestamp: string | null;
         };
+        /** SectionDraft */
+        SectionDraft: {
+            /** Blocks */
+            blocks: (components["schemas"]["ProseBlock"] | components["schemas"]["TableBlock"] | components["schemas"]["NoteBlock"])[];
+            /** Created At */
+            created_at: string;
+            /** Data Available */
+            data_available: boolean;
+            /** Feedback */
+            feedback?: string[];
+            /** Model */
+            model?: string | null;
+            /** Narrative Md */
+            narrative_md?: string | null;
+            /** Note */
+            note?: string | null;
+            /**
+             * Provenance Count
+             * @default 0
+             */
+            provenance_count: number;
+            /** Section Id */
+            section_id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "needs_review" | "proposed" | "verified" | "discarded" | "empty";
+            /** Title */
+            title: string;
+            /** Version */
+            version: number;
+        };
         /** SectionDraftCandidate */
         SectionDraftCandidate: {
             /** Agent Receipt */
@@ -528,6 +621,28 @@ export interface components {
             status: "section_draft_candidate";
             /** Validated Claim Ids */
             validated_claim_ids: string[];
+        };
+        /** SectionListItem */
+        SectionListItem: {
+            /** Data Available */
+            data_available?: boolean | null;
+            /** Has Verified Claims */
+            has_verified_claims: boolean;
+            /** Order */
+            order: number;
+            /** Section Id */
+            section_id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "needs_review" | "proposed" | "verified" | "discarded" | "empty";
+            /** Template Section */
+            template_section: string | null;
+            /** Title */
+            title: string;
+            /** Version */
+            version?: number | null;
         };
         /** SectionRunCommand */
         SectionRunCommand: {
@@ -686,6 +801,20 @@ export interface components {
             title: string;
             /** Workflow State */
             workflow_state: string;
+        };
+        /** TableBlock */
+        TableBlock: {
+            /** Columns */
+            columns: string[];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "table";
+            /** Rows */
+            rows: string[][];
+            /** Title */
+            title: string;
         };
         /** ValidationError */
         ValidationError: {
@@ -1009,6 +1138,105 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SectionRunReceipt"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_sections_api_v1_studies__study_id__sections_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SectionListItem"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_section_draft_api_v1_studies__study_id__sections__section_id__draft_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+                section_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SectionDraft"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generate_section_draft_api_v1_studies__study_id__sections__section_id__draft_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+                section_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DraftRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SectionDraft"];
                 };
             };
             /** @description Validation Error */

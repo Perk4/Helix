@@ -272,6 +272,20 @@
         "title": "DoseGroup",
         "type": "object"
       },
+      "DraftRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "feedback": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Feedback",
+            "type": "array"
+          }
+        },
+        "title": "DraftRequest",
+        "type": "object"
+      },
       "EvidenceChain": {
         "additionalProperties": false,
         "properties": {
@@ -563,6 +577,26 @@
         "title": "ManifestEntry",
         "type": "object"
       },
+      "NoteBlock": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "note",
+            "default": "note",
+            "title": "Kind",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "title": "NoteBlock",
+        "type": "object"
+      },
       "PlannerCapability": {
         "additionalProperties": false,
         "properties": {
@@ -598,6 +632,26 @@
         ],
         "title": "PlannerMode",
         "type": "string"
+      },
+      "ProseBlock": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "prose",
+            "default": "prose",
+            "title": "Kind",
+            "type": "string"
+          },
+          "markdown": {
+            "title": "Markdown",
+            "type": "string"
+          }
+        },
+        "required": [
+          "markdown"
+        ],
+        "title": "ProseBlock",
+        "type": "object"
       },
       "RegulatoryReference": {
         "additionalProperties": false,
@@ -903,6 +957,123 @@
         "title": "ReviewDisposition",
         "type": "object"
       },
+      "SectionDraft": {
+        "additionalProperties": false,
+        "properties": {
+          "blocks": {
+            "items": {
+              "discriminator": {
+                "mapping": {
+                  "note": "#/components/schemas/NoteBlock",
+                  "prose": "#/components/schemas/ProseBlock",
+                  "table": "#/components/schemas/TableBlock"
+                },
+                "propertyName": "kind"
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/ProseBlock"
+                },
+                {
+                  "$ref": "#/components/schemas/TableBlock"
+                },
+                {
+                  "$ref": "#/components/schemas/NoteBlock"
+                }
+              ]
+            },
+            "title": "Blocks",
+            "type": "array"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "data_available": {
+            "title": "Data Available",
+            "type": "boolean"
+          },
+          "feedback": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Feedback",
+            "type": "array"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "narrative_md": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Narrative Md"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "provenance_count": {
+            "default": 0,
+            "title": "Provenance Count",
+            "type": "integer"
+          },
+          "section_id": {
+            "title": "Section Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "needs_review",
+              "proposed",
+              "verified",
+              "discarded",
+              "empty"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "section_id",
+          "title",
+          "version",
+          "status",
+          "data_available",
+          "blocks",
+          "created_at"
+        ],
+        "title": "SectionDraft",
+        "type": "object"
+      },
       "SectionDraftCandidate": {
         "additionalProperties": false,
         "properties": {
@@ -995,6 +1166,81 @@
           "agent_receipt"
         ],
         "title": "SectionDraftCandidate",
+        "type": "object"
+      },
+      "SectionListItem": {
+        "additionalProperties": false,
+        "properties": {
+          "data_available": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Available"
+          },
+          "has_verified_claims": {
+            "title": "Has Verified Claims",
+            "type": "boolean"
+          },
+          "order": {
+            "title": "Order",
+            "type": "integer"
+          },
+          "section_id": {
+            "title": "Section Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "needs_review",
+              "proposed",
+              "verified",
+              "discarded",
+              "empty"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "template_section": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Section"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version"
+          }
+        },
+        "required": [
+          "section_id",
+          "title",
+          "order",
+          "template_section",
+          "has_verified_claims",
+          "status"
+        ],
+        "title": "SectionListItem",
         "type": "object"
       },
       "SectionRunCommand": {
@@ -1404,6 +1650,45 @@
           "label"
         ],
         "title": "StudyListItem",
+        "type": "object"
+      },
+      "TableBlock": {
+        "additionalProperties": false,
+        "properties": {
+          "columns": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Columns",
+            "type": "array"
+          },
+          "kind": {
+            "const": "table",
+            "default": "table",
+            "title": "Kind",
+            "type": "string"
+          },
+          "rows": {
+            "items": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "columns",
+          "rows"
+        ],
+        "title": "TableBlock",
         "type": "object"
       },
       "ValidationError": {
@@ -2100,6 +2385,170 @@
         "summary": "Run Section",
         "tags": [
           "section-runs"
+        ]
+      }
+    },
+    "/api/v1/studies/{study_id}/sections": {
+      "get": {
+        "operationId": "list_sections_api_v1_studies__study_id__sections_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "study_id",
+            "required": true,
+            "schema": {
+              "title": "Study Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SectionListItem"
+                  },
+                  "title": "Response List Sections Api V1 Studies  Study Id  Sections Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Sections",
+        "tags": [
+          "sections"
+        ]
+      }
+    },
+    "/api/v1/studies/{study_id}/sections/{section_id}/draft": {
+      "get": {
+        "operationId": "get_section_draft_api_v1_studies__study_id__sections__section_id__draft_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "study_id",
+            "required": true,
+            "schema": {
+              "title": "Study Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "section_id",
+            "required": true,
+            "schema": {
+              "title": "Section Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/SectionDraft"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Get Section Draft Api V1 Studies  Study Id  Sections  Section Id  Draft Get"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Section Draft",
+        "tags": [
+          "sections"
+        ]
+      },
+      "post": {
+        "operationId": "generate_section_draft_api_v1_studies__study_id__sections__section_id__draft_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "study_id",
+            "required": true,
+            "schema": {
+              "title": "Study Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "section_id",
+            "required": true,
+            "schema": {
+              "title": "Section Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DraftRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SectionDraft"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Generate Section Draft",
+        "tags": [
+          "sections"
         ]
       }
     },
