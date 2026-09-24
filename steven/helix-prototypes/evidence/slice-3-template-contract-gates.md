@@ -1,9 +1,11 @@
 # SLICE 3 prove evidence
 
+Commands were run from `steven/helix-prototypes` on `cursor/slice-3-template-contract-gates-1689`.
+
 ## make test
 
 ```text
-cd steven/helix-prototypes && make test
+make test
 ```
 
 Outcome: green.
@@ -16,7 +18,7 @@ Outcome: green.
 ## verify-template-contract-gates.sh
 
 ```text
-cd steven/helix-prototypes && ./scripts/verify-template-contract-gates.sh
+./scripts/verify-template-contract-gates.sh
 ```
 
 Outcome: green. Wrote `evidence/template-contract-gates.json`.
@@ -26,9 +28,18 @@ Outcome: green. Wrote `evidence/template-contract-gates.json`.
 - Every Template Contract Gate result is `hard_blocker` and `waivable: false`
 - Independent discussion package is not in the body-weight Section Impact Set
 - `POST .../validation-results/TCR-BW-FIELDS/dispositions` returns 409 with a non-waivable detail
-- A template fix on the same Pinned Run is rejected; a named superseding freeze is required
 - Review Scaffold Revision sequence 1 records empty `section_impact_sets` when both packaged sections are eligible
 
 ## verify-live.sh
 
-Not required to prove Template Contract Gates; Playwright workbench coverage is in `frontend/tests/workbench.spec.ts` and runs under `verify-live` when that environment is available. This slice's backend-owned eligibility, gate results, impact sets, and non-waivable TCR dispositions are proven by `make test` and `verify-template-contract-gates.sh`.
+```text
+./scripts/verify-live.sh
+```
+
+Outcome: green.
+
+- Playwright `workbench.spec.ts`: 3 passed
+- `codex-section-run.spec.ts`: skipped without `HELIX_CODEX_LIVE=1`
+- Draft stays disabled when the intercepted workspace reports `eligible: false` even if claims look validated
+- Draft enables from backend `eligible: true` even if claims are empty
+- No `/section-runs` POST fires from those intercepts
