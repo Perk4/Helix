@@ -12,15 +12,26 @@
 #      (defaults 8020 / 3020), runs the kit, and tears everything down.
 #
 # Other env: HELIX_PARITY_ONLY=id1,id2   HELIX_PARITY_INCLUDE_PENDING=1
-#            HELIX_PARITY_OUT=<dir relative to frontend> (default ../evidence/parity)
+#            HELIX_PARITY_OUT=<dir relative to frontend> (default parity-out, gitignored)
+#            HELIX_PARITY_SENSITIVITY=1 runs the sensitivity self-test instead
+#            (scripts/verify-parity-sensitivity.sh; tests/parity/sensitivity.mjs).
 # Exit code is non-zero when an "enforced" screen exceeds its diff threshold.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
+run_kit() {
+  if [[ "${HELIX_PARITY_SENSITIVITY:-}" == "1" ]]; then
+    node tests/parity/sensitivity.mjs
+  else
+    npm run test:parity
+  fi
+}
+
 if [[ -n "${HELIX_PARITY_BASE_URL:-}" ]]; then
   cd "$ROOT/frontend"
-  exec npm run test:parity
+  run_kit
+  exit $?
 fi
 
 API_PORT="${HELIX_PARITY_API_PORT:-8020}"
@@ -87,4 +98,5 @@ if [[ "$ready" != true ]]; then
   exit 1
 fi
 
-HELIX_PARITY_BASE_URL="http://127.0.0.1:$WEB_PORT" npm run test:parity
+export HELIX_PARITY_BASE_URL="http://127.0.0.1:$WEB_PORT"
+run_kit

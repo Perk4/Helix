@@ -29,7 +29,6 @@ export type StageRailProps = {
   /** Overrides the "N of M stages complete" summary. */
   summary?: ReactNode;
   hint?: ReactNode;
-  label?: string;
   "data-testid"?: string;
 };
 
@@ -39,16 +38,17 @@ export function StageRail({
   onSelect,
   summary,
   hint = "Select a completed stage to review it",
-  label = "Journey progress",
   ...rest
 }: StageRailProps) {
   const done = stages.filter((stage) => stage.state === "done").length;
   const pct = stages.length ? Math.round((done / stages.length) * 100) : 0;
   return (
-    <nav className="hx-stepper" aria-label={label} data-testid={rest["data-testid"]}>
+    // The accessible name is fixed: tests/shell.spec.ts requires exactly one
+    // navigation named "Journey progress" (shell contract), so it is not a prop.
+    <nav className="hx-stepper" aria-label="Journey progress" data-testid={rest["data-testid"]}>
       <div className="hx-stepper-head">
         <div className="hx-progress">
-          <Kicker>{label}</Kicker>
+          <Kicker>Journey progress</Kicker>
           {summary ?? (
             <>
               {/* One text node, as in the reference (split nodes shape differently). */}

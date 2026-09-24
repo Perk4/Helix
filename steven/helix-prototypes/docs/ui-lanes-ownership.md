@@ -35,7 +35,8 @@ In practice, B, C, and D can build their view components against fixtures in par
 5. **No local authority.** Every lane follows the governance rules in the issues. The frontend never passes a gate, derives release readiness, or advances progress locally.
 6. **Synthetic-only.** Keep `Synthetic data · Not for submission` visible. Never claim FDA approval, FDA compliance, or submission readiness.
 7. **Parity.** Each lane turns on its screens in its own `frontend/tests/parity/screens/lane-*.ts`. Each lane PR attaches its `verify-parity.sh` result. Do not raise a threshold to get green (see `frontend/tests/parity/README.md`).
-8. **Serialize Playwright per worktree.** Use your own ports (section 6). Before a run on the Mac, check `lsof -nP -iTCP:<port> -sTCP:LISTEN`. Run only one Playwright job in a worktree at a time, because the dist dirs and `next-env.d.ts` are per worktree.
+8. **Parity evidence.** Runs write to `frontend/parity-out/` (gitignored), so parallel runs never conflict. A lane commits only its **own** screens' folders, `evidence/parity/<screen-id>/{side-by-side.png,result.json}`, where the screen's `lane` is that lane. Every step-0 screen folder (and `design-tokens-*`) belongs to step 0. `summary.json`/`summary.md` are not committed; paste the summary table into the PR body instead.
+9. **Serialize Playwright per worktree.** Use your own ports (section 6). Before a run on the Mac, check `lsof -nP -iTCP:<port> -sTCP:LISTEN`. Run only one Playwright job in a worktree at a time, because the dist dirs and `next-env.d.ts` are per worktree.
 
 ## 3. Ownership map
 
@@ -57,7 +58,7 @@ Frontend (`frontend/`):
 | `src/lib/types.ts`, `src/lib/journey-contract.typecheck.ts` | Type re-exports and the #25 contract checks. |
 | `src/lib/api-schema.d.ts` | **Generated.** See section 5. |
 | `playwright.config.ts`, `playwright.parity.config.ts`, `package.json`, `package-lock.json`, `tsconfig.json`, `next.config.ts` | Build and test config. A new dependency means escalating. |
-| `tests/parity/{parity.spec.ts,image.ts,parity.config.ts,types.ts,global-setup.ts,screens/index.ts,screens/step0.ts,README.md}` | The parity kit. |
+| `tests/parity/{parity.spec.ts,image.ts,parity.config.ts,types.ts,global-setup.ts,sensitivity.mjs,screens/index.ts,screens/step0.ts,README.md}`, `evidence/parity/.gitignore` | The parity kit. |
 | `tests/shell.spec.ts` | Shell contract (header, tokens, fonts, and the rule that the only navigation is Journey progress). |
 
 Backend (`backend/`) and repo:
@@ -71,7 +72,7 @@ Backend (`backend/`) and repo:
 | `app/service.py`: `StudyService.__init__`, `workspace`, `list_studies`, `_journey_command` and the run-event sync, `build_stages`, and every private helper not listed in section 3.2 | Workspace assembly and the command transaction wrapper. |
 | `app/run_plans.py`: `PinnedRunService.freeze` (orchestration), `_build_plan`, `_load_governed_inputs`, `_load_governed_schema`, `_applicable_packages`, `_resolve_study_type`, hashing helpers | Pinned Run orchestration. Lanes change it only through the extraction in section 7. |
 | `backend/openapi.json` | **Generated.** See section 5. |
-| `scripts/verify-live.sh`, `scripts/verify-parity.sh`, `Makefile`, `compose.yaml`, `azure-pipelines.yml` | Shared runners and CI. |
+| `scripts/verify-live.sh`, `scripts/verify-parity.sh`, `scripts/verify-parity-sensitivity.sh`, `Makefile`, `compose.yaml`, `azure-pipelines.yml` | Shared runners and CI. |
 | `synthetic-e2e/**`, `skills/**`, `research/**`, `docs/adr/**`, `docs/specifications/**` | Seed data, governed packages, and reference docs. |
 
 ### 3.2 Lane-owned paths
@@ -115,7 +116,7 @@ B does **not** own the qualification check that `section_runs.py` calls. Lane D 
 |---|---|
 | Frontend | `src/components/review/**` *(new)*: `ReviewStageView.tsx`, `SectionList.tsx`, `DraftCanvas.tsx`, `SignOffs.tsx`, `ExportPanel.tsx`, `Downloads.tsx`. `src/components/DemoLabel.tsx`, from the `cursor/demo-unqualified-flag` branch. `src/styles/views/review.css`. Legacy `src/components/ReportAssembly.tsx`, which D replaces and then deletes. `tests/review-export.spec.ts` *(new)*. |
 | `api.ts` functions | `recordApproval`, `recordFinalStudyApproval`, `exportPackage`, `artifactDownloadUrl`. New wrappers go in `src/lib/api/release.ts` *(new)*. |
-| Backend | `app/approved_exports.py`, `release_candidates.py`, `artifacts.py`, `reporting.py`, `template_contracts.py`, `tests/test_export_approved_artifacts.py`, `test_final_study_approval.py`, `test_demo_unqualified_flag.py`. Proposed *(new)*: `app/qualification.py`, the single home for the demo-unqualified flag at the freeze/run and export gates. Function-level: `service.approve`, `record_final_study_approval`, `export`, `artifact`, `derive_release_gate`, and `run_plans.PinnedRunService._pin_declared_identities` (the qualification branch, about lines 490 to 620) until it is extracted. |
+| Backend | `app/approved_exports.py`, `release_candidates.py`, `artifacts.py`, `reporting.py`, `template_contracts.py`, `tests/test_export_approved_artifacts.py`, `test_final_study_approval.py`, `test_demo_unqualified_flag.py`. Proposed *(new)*: `app/qualification.py`, the single home for the demo-unqualified flag at the freeze/run and export gates. Function-level: `service.approve`, `record_final_study_approval`, `export`, `artifact`, `derive_release_gate`, and `run_plans.PinnedRunService._pin_declared_identities` (the qualification branch, about lines 495 to 620) until it is extracted. |
 | Parity | `tests/parity/screens/lane-d.ts` |
 
 ### 3.3 Shared test file: `frontend/tests/workbench.spec.ts`
@@ -134,7 +135,8 @@ When a lane deletes the legacy component a block drives, it moves the block to i
 |---|---|---|
 | A (#19) | `src/components/HelixWorkbench.tsx` | A one-time edit of **two regions**: (1) replace the reserved `progress-region` section with `<ProgressBar>`, keeping `data-testid="progress-region"`; (2) replace the body of the `stage-view` section with a switch on the selected stage that renders `UploadGate`, `AgentStageView`, `TraceabilityStageView`, or `ReviewStageView` from the paths in section 3.2. Until those lanes merge, the legacy panels stay as the fallback for their views. After this merge, the file returns to step 0. |
 | A (#26) | `src/components/HelixWorkbench.tsx` | Mount `IntakeUploadForm` in the upload view slot. No other change is needed, because study selection already comes from `useStudySelection()`. |
-| C (#22) | `src/components/HelixWorkbench.tsx`, `src/components/ReportAssembly.tsx` | The `recordDisposition` signature migration only: the `resolve()` handler and the call site that passes the typed command, as #22 requires ("update every caller in the same pull request"). Tell Lane D in its PR. |
+| C (#22) | `src/components/HelixWorkbench.tsx` | The `recordDisposition` signature migration only: the `resolve()` handler that passes the typed command, as #22 requires ("update every caller in the same pull request"). |
+| C (#22) | `src/components/ReportAssembly.tsx` (Lane D's file) | **One expression only:** the `recordDisposition(...)` call, updated to the new signature. This is the only cross-lane edit in the program and it is sequenced: C lands it; D never edits that call and rebases over it. If D has already deleted `ReportAssembly.tsx`, the exception lapses and D's replacement must use the new signature. C names the hunk in its PR body. |
 | Any lane | `src/app/globals.css` | **Deletions only**, of legacy selectors used only by a legacy component the lane deletes in the same PR. Never add rules here. |
 | Any lane | `frontend/tests/parity/screens/index.ts` | None. It already imports all four lane files. |
 
@@ -212,7 +214,8 @@ After the extraction, `service.py` and `run_plans.py` keep only orchestration (t
 
 Pending work to rebase onto: the `cursor/demo-unqualified-flag` branch (Lane D's input) already touches `run_plans.py`, `service.py`, `section_runs.py`, `release_candidates.py`, `schemas.py`, `openapi.json`, `globals.css`, `HelixWorkbench.tsx`, `ReportAssembly.tsx`, and `StudyJourney.tsx`. Lane D rebases it onto this step 0:
 - Its `globals.css` additions move to `src/styles/views/review.css`, or to `DemoLabel` styles in a lane file.
-- Its `HelixWorkbench.tsx` and `StudyJourney.tsx` hunks go through the exceptions above, or through escalation.
+- Its `HelixWorkbench.tsx` hunks go through the exceptions above, or through escalation.
+- Its `StudyJourney.tsx` hunks are **not** covered by any exception (that file is Lane B's). D moves that UI into its own `DemoLabel.tsx` rendered from D's views. If a hunk cannot move, D stops and escalates to Lane B and the Chief of Staff before editing.
 
 ## 8. Study-selection seam (landed in step 0)
 

@@ -21,3 +21,4 @@ promptfoo-output/
 .knowledge-base.json
 knowledge_base.json
 frontend/.next-parity/
+frontend/parity-out/

@@ -3,8 +3,9 @@
 The kit renders one of our screens and the v1 reference build
 (`research/helix-e2e-workbench-v1.html`) at the same viewport. It diffs the two
 captures with [pixelmatch](https://github.com/mapbox/pixelmatch) and writes the
-results under `evidence/parity/<screen>/`. The run **fails** when an `enforced`
-screen differs by more than its threshold.
+results under `frontend/parity-out/<screen>/` (gitignored). The run **fails** when
+an `enforced` screen differs by more than its threshold, or when any reference
+`--hx-*` design token differs on our side (`design-tokens-light`/`-dark`).
 
 Owner: UI step 0. Lanes edit only their own `screens/lane-*.ts` file
 (`docs/ui-lanes-ownership.md`).
@@ -20,6 +21,9 @@ Owner: UI step 0. Lanes edit only their own `screens/lane-*.ts` file
 # The web server needs HELIX_PARITY_FIXTURES=1 for the /parity component fixtures.
 HELIX_PARITY_BASE_URL=http://127.0.0.1:3031 ./scripts/verify-parity.sh
 # or: cd frontend && HELIX_PARITY_BASE_URL=http://127.0.0.1:3031 npm run test:parity
+
+# Sensitivity self-test: proves the kit catches known token breaks (same env).
+./scripts/verify-parity-sensitivity.sh
 ```
 
 | Env var | Default | Meaning |
@@ -28,7 +32,8 @@ HELIX_PARITY_BASE_URL=http://127.0.0.1:3031 ./scripts/verify-parity.sh
 | `HELIX_PARITY_API_PORT` / `HELIX_PARITY_WEB_PORT` | `8020` / `3020` | Ports for the self-started servers. The script refuses to start if a port is busy. |
 | `HELIX_PARITY_ONLY` | all | Comma-separated screen IDs. |
 | `HELIX_PARITY_INCLUDE_PENDING` | off | `1` also captures `pending` screens. They are reported but never fail. |
-| `HELIX_PARITY_OUT` | `../evidence/parity` | Output directory, relative to `frontend/`. |
+| `HELIX_PARITY_OUT` | `parity-out` (gitignored) | Output directory, relative to `frontend/`. |
+| `HELIX_PARITY_MUTATE_CSS` | empty | Sensitivity self-test only: CSS injected into our side. Never set it in a normal run. |
 | `HELIX_PARITY_FIXTURES` | off | Web-server flag. `1` enables `/parity`. Without it, `/parity` returns 404. |
 
 Outputs for each screen:
@@ -51,7 +56,9 @@ For the whole run, `summary.md` and `summary.json` are written.
 
 | Setting | Value | Why |
 |---|---|---|
-| pixelmatch `threshold` (per-pixel YIQ distance) | **0.1** | This is the pixelmatch default. It ignores color noise below what a person can see. Any real token change still counts, even one as small as `--hx-line` to `--hx-line-soft`. |
+| pixelmatch `threshold` (per-pixel YIQ distance) | **0.02** | The pixelmatch default (0.1) is too loose for this palette: at 0.1, swapping `--hx-surface` white for cream, changing `--hx-bg`, or setting `--hx-line` to `--hx-line-soft` all measured 0.000 %. At 0.02 each of those fails 8 or 9 of the 9 enforced screens, and identical markup still measures 0.000 %. `scripts/verify-parity-sensitivity.sh` re-proves this on every run. |
+| Header budget | **0.1 %** | The brand mark is under 1 % of the 1440x60 header, so a full logo recolor measured 0.600 % and passed the default budget. |
+| Design tokens | **0 mismatches** | All `--hx-*` tokens in the reference `<style>`: color tokens must resolve to the same color in each theme; others must have the same declared value (quotes and whitespace normalized). |
 | `includeAA` | **false** | Anti-aliased edge pixels are detected and not counted. |
 | Max diff ratio (fail above) | **1.0 %** of compared pixels | See the measurements below. |
 
@@ -87,6 +94,6 @@ To turn a lane screen on:
 2. Point `ours.selector` at your view's root element.
 3. Add masks for documented deviations, for example Pause/Resume, which is hidden until #26.
 4. Change `status` to `"enforced"`.
-5. Run `HELIX_PARITY_ONLY=<id> ./scripts/verify-parity.sh` and commit `side-by-side.png`, `result.json`, and the updated summary.
+5. Run `HELIX_PARITY_ONLY=<id> ./scripts/verify-parity.sh`. Copy **only your own** screen folders' `side-by-side.png` and `result.json` from `frontend/parity-out/<id>/` to `evidence/parity/<id>/` and commit them. Do not commit `summary.*` or other lanes' folders; paste the summary table into the PR body.
 
 The fixture route `/parity?fixture=upload&stage=N` (`src/app/parity`) renders the shared components with the reference copy from `src/app/parity/fixtures.ts`. That data is for tests only; production code must never import it.

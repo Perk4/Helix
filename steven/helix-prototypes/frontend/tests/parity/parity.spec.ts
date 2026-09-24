@@ -11,6 +11,7 @@ import {
   DEFAULT_PIXEL_THRESHOLD,
   DEFAULT_REFERENCE_FILE,
   INCLUDE_PENDING,
+  MUTATE_CSS,
   ONLY,
   OUT_DIR,
   VIEWPORT,
@@ -114,7 +115,7 @@ async function capture(
     }
     await page.goto(url, { waitUntil: "load" });
     await page.locator(spec.waitFor ?? (spec.selector === "viewport" ? "body" : spec.selector)).first().waitFor();
-    await page.addStyleTag({ content: FREEZE_CSS + (spec.css ?? "") });
+    await page.addStyleTag({ content: FREEZE_CSS + (spec.css ?? "") + (isReference ? "" : MUTATE_CSS) });
     for (const { selector, text } of spec.replaceText ?? []) {
       await page.locator(selector).evaluateAll((elements, value) => {
         for (const element of elements) element.textContent = value;
@@ -231,11 +232,101 @@ for (const screen of selected) {
   });
 }
 
+// Design tokens: every --hx-* custom property declared in the reference
+// <style> block must have the same declared value on our side, and every color
+// token must resolve to the same color in both themes. This catches token
+// drift that covers too little area to move a screen's pixel ratio (for
+// example the brand mark, which is under 1% of the header).
+const TOKEN_OURS_PATH = "/parity?fixture=upload&stage=0";
+const TOKEN_SCOPE = "#helix-e2e";
+
+async function readTokens(page: Page, names: string[]) {
+  return page.evaluate(
+    ({ names, scope }) => {
+      const root = document.querySelector(scope) ?? document.documentElement;
+      const style = getComputedStyle(root);
+      const probe = document.createElement("span");
+      root.appendChild(probe);
+      const out: Record<string, { declared: string; resolved: string | null }> = {};
+      for (const name of names) {
+        // Normalize whitespace, case and quote style (the build rewrites ' to ").
+        const declared = style.getPropertyValue(name).trim().replace(/\s+/g, " ").replace(/'/g, '"').toLowerCase();
+        probe.style.color = "rgb(1, 2, 3)";
+        probe.style.color = `var(${name})`;
+        const resolved = getComputedStyle(probe).color;
+        const isColor = /^(#|rgb|hsl|light-dark|color-mix)/.test(declared);
+        out[name] = { declared, resolved: isColor ? resolved : null };
+      }
+      probe.remove();
+      return out;
+    },
+    { names, scope: TOKEN_SCOPE },
+  );
+}
+
+function referenceTokenNames(): string[] {
+  const html = readFileSync(path.resolve(PROTOTYPES, DEFAULT_REFERENCE_FILE), "utf8");
+  const style = html.match(/<style[^>]*>([\s\S]*?)<\/style>/i)?.[1] ?? "";
+  return [...new Set([...style.matchAll(/(--hx-[a-z0-9-]+)\s*:/g)].map((m) => m[1]))].sort();
+}
+
+if (ONLY.length === 0 || ONLY.includes("design-tokens")) {
+  for (const colorScheme of ["light", "dark"] as const) {
+    test(`design-tokens-${colorScheme} [enforced] lane step0`, async ({ browser }) => {
+      const names = referenceTokenNames();
+      expect(names.length, "no --hx-* tokens found in the reference").toBeGreaterThan(0);
+      const read = async (url: string, isReference: boolean) => {
+        const context = await browser.newContext({ viewport: VIEWPORT, deviceScaleFactor: 1, colorScheme });
+        const page = await context.newPage();
+        try {
+          if (isReference) await routeReferenceFonts(page);
+          await page.goto(url, { waitUntil: "load" });
+          await page.locator(TOKEN_SCOPE).first().waitFor();
+          if (!isReference && MUTATE_CSS) await page.addStyleTag({ content: MUTATE_CSS });
+          return await readTokens(page, names);
+        } finally {
+          await context.close();
+        }
+      };
+      const ours = await read(BASE_URL + TOKEN_OURS_PATH, false);
+      const ref = await read(pathToFileURL(path.resolve(PROTOTYPES, DEFAULT_REFERENCE_FILE)).href + "?stage=0", true);
+      // Color tokens compare by resolved color in this theme: the Next build
+      // lowers light-dark() to a per-theme value, so declared text differs
+      // while the color is identical. Other tokens compare by declared value.
+      const mismatches = names.filter((name) =>
+        ref[name].resolved !== null
+          ? ours[name].resolved !== ref[name].resolved
+          : ours[name].declared !== ref[name].declared,
+      );
+      const dir = path.join(OUT, `design-tokens-${colorScheme}`);
+      mkdirSync(dir, { recursive: true });
+      writeFileSync(
+        path.join(dir, "result.json"),
+        JSON.stringify({ colorScheme, tokens: names.length, mismatches: mismatches.map((name) => ({ name, ours: ours[name], reference: ref[name] })) }, null, 2) + "\n",
+      );
+      pushRow({
+        id: `design-tokens-${colorScheme}`,
+        lane: "step0",
+        status: "enforced",
+        colorScheme,
+        ratio: mismatches.length / names.length,
+        maxDiffRatio: 0,
+        pass: mismatches.length === 0,
+        size: `${names.length} tokens`,
+        note: mismatches.length ? `mismatched: ${mismatches.join(", ")}` : "",
+      });
+      expect(mismatches, `tokens differ from the reference (${colorScheme}); see ${path.relative(PROTOTYPES, dir)}/result.json`).toEqual([]);
+    });
+  }
+}
+
 test.afterAll(() => {
   const rows = readRows();
   if (rows.length === 0) return;
   mkdirSync(OUT, { recursive: true });
-  const order = new Map(selected.map((screen, index) => [screen.id, index]));
+  const order = new Map(
+    [...selected.map((screen) => screen.id), "design-tokens-light", "design-tokens-dark"].map((id, index) => [id, index]),
+  );
   rows.sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
   writeFileSync(path.join(OUT, "summary.json"), JSON.stringify({ viewport: VIEWPORT, rows }, null, 2) + "\n");
   const lines = [

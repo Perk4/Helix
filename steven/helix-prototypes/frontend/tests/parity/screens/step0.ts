@@ -17,8 +17,12 @@ const header = (colorScheme: "light" | "dark"): ParityScreen => ({
     waitFor: '[data-testid="release-status"]',
     mask: ['[data-testid="study-descriptor"]', '[data-testid="demo-avatar"]'],
   },
+  // The header is 1440x60 and the brand mark is well under 1% of it, so the
+  // default 1% budget let a full logo recolor pass (0.6%). Identical markup
+  // measures 0.000%, so hold the header to 0.1%.
+  maxDiffRatio: 0.001,
   notes:
-    "Masks: the study descriptor is server data (the reference copy is static), and the avatar is the documented #27 deviation (synthetic identity icon instead of initials). The release pill must read 'Release blocked' on both sides (fresh seed).",
+    "Strict 0.1% budget (brand mark is under 1% of the header area). Masks: the study descriptor is server data (the reference copy is static), and the avatar is the documented #27 deviation (synthetic identity icon instead of initials). The release pill must read 'Release blocked' on both sides (fresh seed).",
 });
 
 const rail = (stage: number, colorScheme: "light" | "dark"): ParityScreen => ({
