@@ -19,6 +19,7 @@ from .schemas import (
     StudyEvidencePackage,
     WorkflowEvent,
 )
+from .section_executor import run_section
 
 SECTION_PACKAGE_ID = "section.5_2_3_body_weight"
 SECTION_ID = "5_2_3_body_weight"
@@ -307,6 +308,40 @@ class SectionRunService:
             raise SectionRunConflictError("The prior section run did not complete")
         return SectionRunReceipt.model_validate(prior.receipt)
 
+    @staticmethod
+    def _executor_receipt(package: StudyEvidencePackage) -> dict[str, object]:
+        """Run the deterministic executor and carry its output into the envelope.
+
+        ADR-0013 puts provenance before drafting: the agent may render values the
+        executor computed and must not calculate its own. Passing only a hash
+        satisfied the contract but left the agent nothing to render, so it had to
+        derive the numbers itself. Carry the facts and their provenance.
+        """
+        result = run_section(SECTION_ID, package)
+        provenance = [
+            {
+                "section_id": item.section_id,
+                "claim": item.claim,
+                "source_record_ids": list(item.source_record_ids),
+                "agg": item.agg,
+            }
+            for item in result.provenance
+        ]
+        # Normalise through JSON before hashing. `facts` keys timepoints by int,
+        # which serialises to a string, and `sort_keys` orders ints numerically
+        # but strings lexically — so days 1,7,14 store as "1","14","7". Hashing
+        # the Python form would produce a digest the stored envelope can never
+        # reproduce, which is a certificate no reviewer can check.
+        payload: dict[str, object] = json.loads(
+            json.dumps({"facts": result.facts, "provenance": provenance})
+        )
+        return {
+            "artifact_id": "EXEC-BW-SUMMARY-001",
+            # The hash binds the payload it travels with.
+            "hash": canonical_hash(payload),
+            **payload,
+        }
+
     def _build_envelope(
         self,
         package: StudyEvidencePackage,
@@ -368,18 +403,7 @@ class SectionRunService:
                 for result in package.validation_results
                 if result.result_id == "VR-004" and result.status == "fail"
             ],
-            "executor_receipts": [
-                {
-                    "artifact_id": "EXEC-BW-SUMMARY-001",
-                    "hash": canonical_hash(
-                        [
-                            edge.model_dump(mode="json")
-                            for edge in package.provenance_edges
-                            if edge.claim_id == CLAIM_ID
-                        ]
-                    ),
-                }
-            ],
+            "executor_receipts": [self._executor_receipt(package)],
             "governed_versions": GOVERNED_VERSIONS,
         }
         schema = self._load_json(self.contracts / "section-execution-envelope.schema.json")
