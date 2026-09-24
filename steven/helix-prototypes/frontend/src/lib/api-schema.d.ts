@@ -33,6 +33,52 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/studies/jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Submit Study Upload
+         * @description Accept an upload and process it in the background.
+         *
+         *     The synchronous `POST /api/v1/studies` is unchanged and remains the
+         *     simpler choice for a small study. This exists because a 150-animal
+         *     study takes long enough that a caller needs to see what is happening.
+         *
+         *     Returns 202 with a job id. Poll `GET /api/v1/studies/jobs/{job_id}`.
+         */
+        post: operations["submit_study_upload_api_v1_studies_jobs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/studies/jobs/{job_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Study Upload Job
+         * @description Stage-by-stage progress and timings for an upload job.
+         */
+        get: operations["get_study_upload_job_api_v1_studies_jobs__job_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/studies/{study_id}/approvals": {
         parameters: {
             query?: never;
@@ -513,6 +559,31 @@ export interface components {
             authorized_by: string;
             /** Files */
             files: string[];
+            /** Protocol Version */
+            protocol_version: string;
+            /** Route */
+            route: string;
+            /** Study Id */
+            study_id: string;
+            /**
+             * Study Start
+             * @default
+             */
+            study_start: string;
+            /**
+             * Study Type Id
+             * @default REPEAT_DOSE_28D_RODENT
+             */
+            study_type_id: string;
+        };
+        /** Body_submit_study_upload_api_v1_studies_jobs_post */
+        Body_submit_study_upload_api_v1_studies_jobs_post: {
+            /** Authorized By */
+            authorized_by: string;
+            /** Files */
+            files: string[];
+            /** Idempotency Key */
+            idempotency_key: string;
             /** Protocol Version */
             protocol_version: string;
             /** Route */
@@ -2478,6 +2549,74 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    submit_study_upload_api_v1_studies_jobs_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_submit_study_upload_api_v1_studies_jobs_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_study_upload_job_api_v1_studies_jobs__job_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
