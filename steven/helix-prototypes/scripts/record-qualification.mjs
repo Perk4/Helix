@@ -66,6 +66,41 @@ const runSuite = () => {
   return report;
 };
 
+// Warn when a feature branch already changes something this digest covers.
+//
+// A qualification certifies the tree it was taken from, so one taken the day
+// before an upstream branch lands is stale on arrival. That has happened three
+// times: a section-skills move, a SKILL.md edit, and a retry cap — each found
+// only after the work was done. Checking here means it surfaces at the one
+// moment it matters, when you are about to certify.
+//
+// Informational. It does not block: the branch may never merge, and a warning
+// a reviewer can weigh beats a gate that cries wolf.
+const warnOnUpstreamChanges = () => {
+  const ref = process.env.HELIX_UPSTREAM_REF ?? "origin/feat/steven-workspace";
+  let changed;
+  try {
+    // The package is not a hashed input, but it is where the qualification is
+    // written. An upstream branch editing it is the collision we actually hit:
+    // a hand-written status and hash landing on top of a recorded one.
+    changed = execFileSync("git", ["diff", "--name-only", `origin/main...${ref}`, "--", ...inputPaths, packagePath], {
+      cwd: root,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    })
+      .split("\n")
+      .filter(Boolean);
+  } catch {
+    return; // ref not fetched, or not a git checkout; nothing to say
+  }
+  if (changed.length === 0) return;
+  console.warn(`\nWARNING ${ref} already changes ${changed.length} file(s) this digest covers:`);
+  for (const path of changed) console.warn(`  ${path}`);
+  console.warn("Recording now certifies a tree that branch will replace. Consider waiting for it to land.\n");
+};
+
+warnOnUpstreamChanges();
+
 const report = runSuite();
 const stats = report.results?.stats ?? {};
 const cases = (report.results?.results ?? []).map((entry) => ({
