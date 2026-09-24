@@ -9,8 +9,10 @@ dependencies = [
   "jsonschema>=4.25,<5",
   "openai>=1.40,<2",
   "openai-codex>=0.155,<1",
+  "openpyxl>=3.1.5",
   "psycopg[binary]>=3.2,<4",
   "pydantic-settings>=2.10,<3",
+  "python-multipart>=0.0.32",
   "sqlalchemy>=2.0,<3",
   "uvicorn[standard]>=0.35,<1",
 ]
