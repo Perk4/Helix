@@ -2,8 +2,9 @@
 
 Design (deliberately simple, single file):
 
-    section_skills/skill_<id>.md   the presentation contract (referenced, never executed)
-    compute_<id>(package)          the deterministic calculation (this file)
+    .agents/skills/helix-section-agent/references/section_skills/skill_<id>.md
+                                  the presentation contract (referenced, never executed)
+    compute_<id>(package)         the deterministic calculation (this file)
 
 The executor NEVER calls an LLM. Each compute function reads the frozen study
 records, computes the numbers a section needs, and returns a `SectionResult`
@@ -24,7 +25,14 @@ from statistics import mean
 
 from .schemas import Animal, StudyEvidencePackage
 
-SKILLS_DIR = Path(__file__).parent / "section_skills"
+SKILLS_DIR = (
+    Path(__file__).resolve().parents[2]
+    / ".agents"
+    / "skills"
+    / "helix-section-agent"
+    / "references"
+    / "section_skills"
+)
 
 
 # --------------------------------------------------------------------------- #
@@ -139,7 +147,6 @@ def compute_body_weight(package: StudyEvidencePackage) -> SectionResult:
         "recording_days": days,
         "duration_days": package.study.duration_days,
         "unit": "g",
-        "statistical_test": "Dunnett's test vs control (G1)",
         "groups": [{"group_id": gid, **groups[gid]} for gid in _ordered_group_ids(package)],
         "male_means": male,
         "female_means": female,
@@ -502,12 +509,29 @@ def run_all(package: StudyEvidencePackage) -> list[SectionResult]:
 # Glue to the LLM render step (optional; no LLM call here)
 # --------------------------------------------------------------------------- #
 
+class SectionNotDraftable(RuntimeError):
+    """Raised when a section has no computed data for the LLM to render."""
+
+
 def build_draft_messages(result: SectionResult) -> list[dict]:
     """Pair the section skill (system) with the computed facts (user).
 
     Hand this to any chat-completions client to produce the narrative. The LLM
     only renders/prose-wraps the numbers here — it never calculates them.
+
+    Refuses when `data_available` is False. A skill states what a section must
+    contain, so pairing one with empty facts asks for a value no computation
+    produced — `skill_5_3_4_conclusion.md` requires a NOAEL "as a number with
+    units" while `compute_conclusion` supplies `{"noael_claim": None}`, and the
+    skill carries worked examples with real doses. Callers route a refused
+    section to the `[NEEDS REVIEW]` placeholder of ADR-0004 instead.
     """
+    if not result.data_available:
+        raise SectionNotDraftable(
+            f"{result.section_id}: no computed data to render "
+            f"({result.note or 'no note'}). Route to [NEEDS REVIEW]."
+        )
+
     skill = load_skill(result.section_id)
     meta = load_meta_prompt()
     style_layer = f"\n\n# GLOBAL NARRATIVE STYLE (applies to every section)\n\n{meta}" if meta else ""

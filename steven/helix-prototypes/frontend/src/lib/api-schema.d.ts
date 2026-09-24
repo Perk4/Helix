@@ -89,6 +89,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/studies/{study_id}/section-runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Run Section */
+        post: operations["run_section_api_v1_studies__study_id__section_runs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/studies/{study_id}/validation-results/{result_id}/dispositions": {
         parameters: {
             query?: never;
@@ -473,6 +490,102 @@ export interface components {
             /** Timestamp */
             timestamp: string | null;
         };
+        /** SectionDraftCandidate */
+        SectionDraftCandidate: {
+            /** Agent Receipt */
+            agent_receipt: {
+                [key: string]: string;
+            };
+            /** Attempt */
+            attempt: number;
+            /** Candidate Id */
+            candidate_id: string;
+            /** Content Blocks */
+            content_blocks: {
+                [key: string]: unknown;
+            }[];
+            /** Drafting Cycle Id */
+            drafting_cycle_id: string;
+            /** Executor Receipt Ids */
+            executor_receipt_ids: string[];
+            /** Run Id */
+            run_id: string;
+            /**
+             * Schema Version
+             * @constant
+             */
+            schema_version: "helix.section-draft-candidate/v1";
+            /** Section Id */
+            section_id: string;
+            /** Section Package Id */
+            section_package_id: string;
+            /** Section Package Version */
+            section_package_version: string;
+            /**
+             * Status
+             * @constant
+             */
+            status: "section_draft_candidate";
+            /** Validated Claim Ids */
+            validated_claim_ids: string[];
+        };
+        /** SectionRunCommand */
+        SectionRunCommand: {
+            /** Idempotency Key */
+            idempotency_key: string;
+            /** Section Package Id */
+            section_package_id: string;
+        };
+        /** SectionRunEligibility */
+        SectionRunEligibility: {
+            /** Eligible */
+            eligible: boolean;
+            /** Reasons */
+            reasons: string[];
+            /** Section Package Id */
+            section_package_id: string;
+        };
+        /** SectionRunReceipt */
+        SectionRunReceipt: {
+            /**
+             * Agent Runtime
+             * @constant
+             */
+            agent_runtime: "codex_sdk";
+            /** Candidate Hash */
+            candidate_hash: string;
+            /** Candidate Id */
+            candidate_id: string;
+            /** Codex Thread Id */
+            codex_thread_id: string;
+            /** Envelope Hash */
+            envelope_hash: string;
+            /**
+             * Idempotent Replay
+             * @default false
+             */
+            idempotent_replay: boolean;
+            /** Review Scaffold Revision */
+            review_scaffold_revision: number;
+            /** Run Id */
+            run_id: string;
+            /** Section Id */
+            section_id: string;
+            /** Section Package Id */
+            section_package_id: string;
+            /** Skill Hash */
+            skill_hash: string;
+            /**
+             * Skill Name
+             * @constant
+             */
+            skill_name: "helix-section-agent";
+            /**
+             * Status
+             * @constant
+             */
+            status: "candidate_recorded";
+        };
         /**
          * SectionStatus
          * @enum {string}
@@ -527,6 +640,19 @@ export interface components {
             status: "complete" | "current" | "blocked" | "pending";
             /** Summary */
             summary: string;
+        };
+        /** StoredSectionRun */
+        StoredSectionRun: {
+            candidate: components["schemas"]["SectionDraftCandidate"];
+            /** Envelope */
+            envelope: {
+                [key: string]: unknown;
+            };
+            receipt: components["schemas"]["SectionRunReceipt"];
+            /** Review Scaffold */
+            review_scaffold: {
+                [key: string]: unknown;
+            };
         };
         /** Study */
         Study: {
@@ -672,6 +798,10 @@ export interface components {
             planner_capabilities: components["schemas"]["PlannerCapability"][];
             release_gate: components["schemas"]["GateDecision"];
             report: components["schemas"]["ReportAssembly"];
+            /** Section Run Eligibility */
+            section_run_eligibility: components["schemas"]["SectionRunEligibility"][];
+            /** Section Runs */
+            section_runs: components["schemas"]["StoredSectionRun"][];
             /** Stages */
             stages: components["schemas"]["Stage"][];
             study: components["schemas"]["Study"];
@@ -845,6 +975,41 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    run_section_api_v1_studies__study_id__section_runs_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SectionRunCommand"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SectionRunReceipt"];
+                };
             };
             /** @description Validation Error */
             422: {

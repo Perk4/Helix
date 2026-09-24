@@ -1,11 +1,11 @@
 """HELIX draft pipeline — standalone section-by-section report drafting.
 
 Flow per section:
-  1. COMPUTE  : pipeline.section_executor.compute_<section>(package)
+  1. COMPUTE  : app.section_executor.compute_<section>(package)
                 → SectionResult  (deterministic, no LLM, fully traced)
   2. RETRIEVE : pipeline.approved_report_retrieval.get_all_examples()
                 → few-shot examples from the approved-report knowledge base
-  3. BUILD    : section_executor.build_draft_messages(result)
+  3. BUILD    : app.section_executor.build_draft_messages(result)
                 → [system: skill.md + meta_prompt, user: computed facts JSON]
                    + few-shot injected into the user turn
   4. RENDER   : LLM (gpt-5.5 via APIM) writes the narrative prose
@@ -26,8 +26,12 @@ from pathlib import Path
 from openai import OpenAI
 
 from pipeline.approved_report_retrieval import add_report, get_all_examples
-from pipeline.schemas import StudyEvidencePackage
-from pipeline.section_executor import REGISTRY, SectionResult, build_draft_messages
+from pipeline.backend_api import (
+    REGISTRY,
+    SectionResult,
+    StudyEvidencePackage,
+    build_draft_messages,
+)
 
 # ── paths ─────────────────────────────────────────────────────────────────────
 HERE        = Path(__file__).parent

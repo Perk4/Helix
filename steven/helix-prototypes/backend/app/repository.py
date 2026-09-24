@@ -4,8 +4,8 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from .models import AuditEventRow, ExportFileRow, StudyPackageRow, ValidationRunRow
-from .schemas import StudyEvidencePackage, ValidationRun
+from .models import AuditEventRow, ExportFileRow, SectionRunRow, StudyPackageRow, ValidationRunRow
+from .schemas import StoredSectionRun, StudyEvidencePackage, ValidationRun
 
 
 class StudyNotFoundError(LookupError):
@@ -84,6 +84,17 @@ class StudyPackageRepository:
             )
         )
 
+    def latest_event(self, study_id: str, event_type: str) -> AuditEventRow | None:
+        return self.session.scalar(
+            select(AuditEventRow)
+            .where(
+                AuditEventRow.study_id == study_id,
+                AuditEventRow.event_type == event_type,
+            )
+            .order_by(AuditEventRow.occurred_at.desc(), AuditEventRow.id.desc())
+            .limit(1)
+        )
+
     def save_export_file(
         self,
         *,
@@ -136,3 +147,51 @@ class StudyPackageRepository:
             )
         )
         self.session.flush()
+
+    def get_section_run(self, study_id: str, idempotency_key: str) -> SectionRunRow | None:
+        return self.session.scalar(
+            select(SectionRunRow).where(
+                SectionRunRow.study_id == study_id,
+                SectionRunRow.idempotency_key == idempotency_key,
+            )
+        )
+
+    def add_section_run(
+        self,
+        *,
+        run_id: str,
+        study_id: str,
+        section_package_id: str,
+        idempotency_key: str,
+        request_hash: str,
+        envelope: dict[str, Any],
+    ) -> SectionRunRow:
+        row = SectionRunRow(
+            run_id=run_id,
+            study_id=study_id,
+            section_package_id=section_package_id,
+            idempotency_key=idempotency_key,
+            request_hash=request_hash,
+            envelope=envelope,
+        )
+        self.session.add(row)
+        self.session.flush()
+        return row
+
+    def list_section_runs(self, study_id: str) -> list[StoredSectionRun]:
+        rows = self.session.scalars(
+            select(SectionRunRow)
+            .where(SectionRunRow.study_id == study_id, SectionRunRow.receipt.is_not(None))
+            .order_by(SectionRunRow.created_at, SectionRunRow.run_id)
+        ).all()
+        return [
+            StoredSectionRun.model_validate(
+                {
+                    "receipt": row.receipt,
+                    "candidate": row.candidate,
+                    "envelope": row.envelope,
+                    "review_scaffold": row.review_scaffold,
+                }
+            )
+            for row in rows
+        ]
