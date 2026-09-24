@@ -174,6 +174,20 @@ def test_section_run_records_candidate_receipt_scaffold_and_exact_replay() -> No
         assert stored["envelope"]["pinned_run_id"].startswith("RUN-")
         assert stored["envelope"]["manifest_hash"].startswith("sha256:")
 
+        # Style exemplars travel inside the envelope so they are hashed with it.
+        # They come from another study, so their values must never reach a
+        # draft: the corpus carries 291.5 g against this study's 286.2 g claim.
+        exemplars = stored["envelope"]["reference_drafts"]
+        assert exemplars, "the drafter needs an example of an approved section"
+        for exemplar in exemplars:
+            assert exemplar["report_id"] != stored["envelope"]["study_context"]["study_id"]
+            assert exemplar["hash"].startswith("sha256:")
+        assert stored["envelope"]["validated_claims"][0]["claim_id"] == "C-BW-HIGH"
+        exemplar_text = json.dumps(exemplars)
+        assert "291.5" in exemplar_text, "corpus changed; the contamination guard below is now vacuous"
+        assert "291.5" not in json.dumps(stored["candidate"])
+
+
         # The agent renders values the executor computed. A receipt carrying only
         # a hash leaves it nothing to render, so it has to derive them itself.
         receipt = stored["envelope"]["executor_receipts"][0]

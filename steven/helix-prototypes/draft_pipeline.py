@@ -25,9 +25,10 @@ from pathlib import Path
 
 from openai import OpenAI
 
-from pipeline.approved_report_retrieval import add_report, get_all_examples
 from pipeline.backend_api import (
     REGISTRY,
+    add_report,
+    get_all_examples,
     SectionResult,
     StudyEvidencePackage,
     build_draft_messages,

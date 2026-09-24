@@ -16,3 +16,7 @@ frontend/playwright-report/
 node_modules/
 .promptfoo/
 promptfoo-output/
+
+# Built at runtime from the approved-report corpus.
+.knowledge-base.json
+knowledge_base.json
