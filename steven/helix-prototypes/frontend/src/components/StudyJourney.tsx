@@ -353,7 +353,7 @@ export function StudyJourney({
                   {terminalClaim.claim_id} · {terminalClaim.value} {terminalClaim.unit}
                 </strong>
                 <span>
-                  Grain {terminalClaim.grain.replaceAll("_", " × ")} · transform {terminalClaim.transform_id}{" "}
+                  Grain {displayGrain(terminalClaim.grain)} · transform {terminalClaim.transform_id}{" "}
                   {terminalClaim.transform_version}
                 </span>
                 <code>{terminalClaim.source_hashes?.at(0)}</code>
@@ -496,6 +496,10 @@ function ownerLabel(owner: "agent" | "human" | "hybrid"): string {
 
 function humanize(value: string): string {
   return value.replaceAll("_", " ");
+}
+
+function displayGrain(grain: string): string {
+  return grain.replaceAll("_x_", " × ");
 }
 
 function formatTime(value: string): string {

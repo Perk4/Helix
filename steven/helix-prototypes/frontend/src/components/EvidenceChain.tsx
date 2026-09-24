@@ -89,7 +89,7 @@ export function EvidenceChain({ workspace, selectedClaimId, onSelectClaim }: Pro
             <ChainCard
               index="02"
               eyebrow="Normalized facts"
-              title={chain.sources.at(0)?.grain.replaceAll("_", " × ") ?? chain.claim.grain}
+              title={displayGrain(chain.sources.at(0)?.grain ?? chain.claim.grain)}
               detail={`${chain.sources.at(0)?.domain ?? "Study"} domain · ${chain.claim.unit ?? "no unit"}`}
               meta="Typed boundary"
             />
@@ -200,7 +200,7 @@ export function EvidenceChain({ workspace, selectedClaimId, onSelectClaim }: Pro
               <div className="lineage-meta" data-testid="claim-lineage">
                 <div>
                   <span>Grain</span>
-                  <strong>{chain.claim.grain.replaceAll("_", " × ")}</strong>
+                  <strong>{displayGrain(chain.claim.grain)}</strong>
                 </div>
                 <div>
                   <span>Transform</span>
@@ -323,6 +323,10 @@ function ChainConnector() {
       <span>→</span>
     </div>
   );
+}
+
+function displayGrain(grain: string): string {
+  return grain.replaceAll("_x_", " × ");
 }
 
 function claimLabel(value: string): string {

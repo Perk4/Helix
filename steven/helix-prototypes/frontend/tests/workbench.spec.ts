@@ -69,7 +69,7 @@ test("runs the synthetic study from validation through explicit export", async (
   await expect(page.getByText("286.2 g", { exact: true }).first()).toBeVisible();
   await expect(page.getByText("10 exact records", { exact: true })).toBeVisible();
   await expect(page.getByText("Exact reconciliation passed", { exact: true })).toBeVisible();
-  await expect(page.getByTestId("claim-lineage").getByText("dose × group")).toBeVisible();
+  await expect(page.getByTestId("claim-lineage").getByText("dose_group", { exact: true })).toBeVisible();
   await expect(page.getByTestId("claim-lineage").getByText(/sha256:/)).toBeVisible();
   await expect(page.getByTestId("claim-lineage").getByText(/body-weight-summary-recompute@1.0.0/)).toBeVisible();
   const lineageResponse = await request.get(`${apiRoot}/studies/STUDY-HLX-028/claims/C-BW-HIGH/evidence`);
