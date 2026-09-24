@@ -427,6 +427,25 @@ export interface components {
          * @enum {string}
          */
         ClaimStatus: "pending" | "validated" | "needs_review" | "approved";
+        /** CodexAgentReceipt */
+        CodexAgentReceipt: {
+            /**
+             * Runtime
+             * @constant
+             */
+            runtime: "codex_sdk";
+            /** Skill Hash */
+            skill_hash: string;
+            /**
+             * Skill Name
+             * @constant
+             */
+            skill_name: "helix-section-agent";
+            /** Skill References Hash */
+            skill_references_hash: string;
+            /** Thread Id */
+            thread_id: string;
+        };
         /** ConditionDecision */
         ConditionDecision: {
             /**
@@ -1211,10 +1230,7 @@ export interface components {
         };
         /** SectionDraftCandidate */
         SectionDraftCandidate: {
-            /** Agent Receipt */
-            agent_receipt: {
-                [key: string]: string;
-            };
+            agent_receipt: components["schemas"]["CodexAgentReceipt"];
             /** Attempt */
             attempt: number;
             /** Candidate Id */
@@ -1311,6 +1327,8 @@ export interface components {
              * @constant
              */
             skill_name: "helix-section-agent";
+            /** Skill References Hash */
+            skill_references_hash: string;
             /**
              * Status
              * @constant
