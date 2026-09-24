@@ -37,9 +37,10 @@ def test_section_scope_grounds_on_the_section_facts() -> None:
         return "The high-dose terminal mean is 310.7 g in males."
 
     chat = ChatService(session, render_fn=render)
-    reply = chat.ask(STUDY_ID, "why is high-dose lower?", scope="section", section_id="5_2_3_body_weight")
+    turn = chat.ask(STUDY_ID, "why is high-dose lower?", scope="section", section_id="5_2_3_body_weight")
 
-    assert reply.role == "assistant"
+    assert turn.message.role == "assistant"
+    assert turn.proposed is None  # a question does not propose a rewrite
     system = captured["messages"][0]["content"]
     assert "STUDY CONTEXT" in system
     assert "CURRENT SECTION" in system
@@ -65,6 +66,23 @@ def test_chat_remembers_prior_turns() -> None:
     assert len(chat.history(STUDY_ID)) == 4  # 2 user + 2 assistant
 
 
+def test_edit_intent_produces_a_proposed_rewrite() -> None:
+    from app.draft_service import DraftService
+
+    session = _seeded_session()
+    DraftService(session, render_fn=lambda _m: "Base narrative.").generate(
+        STUDY_ID, "5_2_3_body_weight"
+    )
+    chat = ChatService(
+        session, render_fn=lambda _m: '{"intent": "edit", "reply": "Proposed a change."}'
+    )
+    turn = chat.ask(STUDY_ID, "make it shorter", scope="section", section_id="5_2_3_body_weight")
+
+    assert turn.proposed is not None
+    assert turn.proposed.status == "proposed"
+    assert turn.message.content  # an acknowledgement is recorded
+
+
 def test_chat_endpoints(monkeypatch) -> None:
     from app import llm
 
@@ -80,7 +98,8 @@ def test_chat_endpoints(monkeypatch) -> None:
         history = client.get(f"/api/v1/studies/{STUDY_ID}/chat")
 
     assert posted.status_code == 201
-    assert posted.json()["role"] == "assistant"
-    assert "verified" in posted.json()["content"]
+    assert posted.json()["message"]["role"] == "assistant"
+    assert "verified" in posted.json()["message"]["content"]
+    assert posted.json()["proposed"] is None
     assert history.status_code == 200
     assert [m["role"] for m in history.json()] == ["user", "assistant"]

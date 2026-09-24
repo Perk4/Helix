@@ -16,6 +16,7 @@ export type SectionListItem = components["schemas"]["SectionListItem"];
 export type SectionBlock = SectionContentDraft["blocks"][number];
 export type ChatMessage = components["schemas"]["ChatMessage"];
 export type ChatScope = ChatMessage["scope"];
+export type ChatTurn = components["schemas"]["ChatTurn"];
 export type DataValidationExecution = components["schemas"]["DataValidationExecution"];
 export type CandidateEvaluation = components["schemas"]["CandidateEvaluation"];
 export type CrossSectionQueryReceipt = components["schemas"]["CrossSectionQueryReceipt"];

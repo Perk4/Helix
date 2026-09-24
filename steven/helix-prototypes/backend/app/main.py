@@ -27,6 +27,7 @@ from .schemas import (
     CandidateEvaluationCommand,
     ChatMessage,
     ChatRequest,
+    ChatTurn,
     CrossSectionQueryCommand,
     CrossSectionQueryReceipt,
     DataValidationCommand,
@@ -387,7 +388,7 @@ def create_app(
 
     @app.post(
         "/api/v1/studies/{study_id}/chat",
-        response_model=ChatMessage,
+        response_model=ChatTurn,
         status_code=status.HTTP_201_CREATED,
         tags=["chat"],
     )
@@ -395,7 +396,7 @@ def create_app(
         study_id: str,
         request: ChatRequest,
         chat: ChatServiceDependency,
-    ) -> ChatMessage:
+    ) -> ChatTurn:
         return _call(
             lambda: chat.ask(
                 study_id,

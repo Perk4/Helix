@@ -560,6 +560,30 @@
         "title": "ChatRequest",
         "type": "object"
       },
+      "ChatTurn": {
+        "additionalProperties": false,
+        "description": "One assistant turn: the reply, plus a proposed rewrite when the model\nread the message as an edit request (approved via \ud83d\udc4d/\ud83d\udc4e).",
+        "properties": {
+          "message": {
+            "$ref": "#/components/schemas/ChatMessage"
+          },
+          "proposed": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SectionContentDraft"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "title": "ChatTurn",
+        "type": "object"
+      },
       "Claim": {
         "additionalProperties": false,
         "properties": {
@@ -5852,7 +5876,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ChatMessage"
+                  "$ref": "#/components/schemas/ChatTurn"
                 }
               }
             },

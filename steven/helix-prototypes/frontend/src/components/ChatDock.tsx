@@ -4,14 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-import {
-  ApiError,
-  applySection,
-  discardSection,
-  getChat,
-  reviseSectionDraft,
-  sendChat,
-} from "@/lib/api";
+import { ApiError, applySection, discardSection, getChat, sendChat } from "@/lib/api";
 import type { ChatMessage, SectionContentDraft } from "@/lib/types";
 
 type Props = {
@@ -26,7 +19,7 @@ export function ChatDock({ studyId, sectionId, sectionTitle, onApplied }: Props)
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [proposed, setProposed] = useState<SectionContentDraft | null>(null);
   const [input, setInput] = useState("");
-  const [busy, setBusy] = useState<null | "ask" | "revise" | "apply">(null);
+  const [busy, setBusy] = useState<null | "send" | "apply">(null);
   const [error, setError] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -46,62 +39,46 @@ export function ChatDock({ studyId, sectionId, sectionTitle, onApplied }: Props)
     }
   }, [messages, proposed, open]);
 
-  function pushLocal(role: "user" | "assistant", content: string) {
+  function note(content: string) {
     setMessages((prev) => [
       ...prev,
       {
         message_id: -Date.now() - Math.random(),
-        role,
+        role: "assistant",
         content,
         scope: "section",
         section_id: sectionId,
-        intent: "revise",
+        intent: "ask",
         created_at: new Date().toISOString(),
       },
     ]);
   }
 
-  async function ask() {
+  async function send() {
     const text = input.trim();
     if (!text || busy) return;
-    setBusy("ask");
+    setBusy("send");
     setError(null);
     setOpen(true);
     setInput("");
-    const optimistic: ChatMessage = {
-      message_id: -Date.now(),
-      role: "user",
-      content: text,
-      scope: "section",
-      section_id: sectionId,
-      intent: "ask",
-      created_at: new Date().toISOString(),
-    };
-    setMessages((prev) => [...prev, optimistic]);
+    setMessages((prev) => [
+      ...prev,
+      {
+        message_id: -Date.now(),
+        role: "user",
+        content: text,
+        scope: "section",
+        section_id: sectionId,
+        intent: "ask",
+        created_at: new Date().toISOString(),
+      },
+    ]);
     try {
-      // The backend grounds every answer in the study summary + this section,
-      // so one Ask handles study-wide or section questions.
-      await sendChat(studyId, text, "section", sectionId);
+      const turn = await sendChat(studyId, text, "section", sectionId);
       setMessages(await getChat(studyId));
-    } catch (cause) {
-      setError(toMessage(cause));
-    } finally {
-      setBusy(null);
-    }
-  }
-
-  async function revise() {
-    const text = input.trim();
-    if (!text || busy) return;
-    setBusy("revise");
-    setError(null);
-    setOpen(true);
-    setInput("");
-    pushLocal("user", `Revise: ${text}`);
-    try {
-      const draft = await reviseSectionDraft(studyId, sectionId, text);
-      setProposed(draft);
-      pushLocal("assistant", `Proposed v${draft.version} — review and approve or discard below.`);
+      if (turn.proposed) {
+        setProposed(turn.proposed);
+      }
     } catch (cause) {
       setError(toMessage(cause));
     } finally {
@@ -115,7 +92,7 @@ export function ChatDock({ studyId, sectionId, sectionTitle, onApplied }: Props)
     setError(null);
     try {
       await applySection(studyId, sectionId, proposed.version);
-      pushLocal("assistant", `Applied v${proposed.version} to “${sectionTitle}”.`);
+      note(`Applied v${proposed.version} to “${sectionTitle}”.`);
       setProposed(null);
       onApplied?.();
     } catch (cause) {
@@ -131,7 +108,7 @@ export function ChatDock({ studyId, sectionId, sectionTitle, onApplied }: Props)
     setError(null);
     try {
       await discardSection(studyId, sectionId, proposed.version);
-      pushLocal("assistant", `Discarded v${proposed.version}. Describe another change to try again.`);
+      note(`Discarded v${proposed.version}. Describe the change differently to try again.`);
       setProposed(null);
     } catch (cause) {
       setError(toMessage(cause));
@@ -172,8 +149,9 @@ export function ChatDock({ studyId, sectionId, sectionTitle, onApplied }: Props)
           <div className="chat-messages" ref={listRef}>
             {messages.length === 0 && !proposed && (
               <p className="chat-empty">
-                <strong>Ask</strong> a question about the study or this section, or describe a change
-                and click <strong>Revise</strong> to rewrite it — you approve with 👍 / 👎.
+                Ask about the study or this section, or describe a change to “{sectionTitle}”. I
+                answer questions, and when you ask for a change I propose a rewrite you approve with
+                👍 / 👎.
               </p>
             )}
             {messages.map((message) => (
@@ -187,9 +165,9 @@ export function ChatDock({ studyId, sectionId, sectionTitle, onApplied }: Props)
                 </div>
               </div>
             ))}
-            {busy && busy !== "apply" && (
+            {busy === "send" && (
               <div className="chat-msg assistant">
-                <div className="chat-bubble typing">{busy === "revise" ? "Rewriting…" : "Thinking…"}</div>
+                <div className="chat-bubble typing">Thinking…</div>
               </div>
             )}
             {proposed && (
@@ -234,7 +212,7 @@ export function ChatDock({ studyId, sectionId, sectionTitle, onApplied }: Props)
         className="chat-input-row"
         onSubmit={(event) => {
           event.preventDefault();
-          void ask();
+          void send();
         }}
       >
         <input
@@ -245,17 +223,8 @@ export function ChatDock({ studyId, sectionId, sectionTitle, onApplied }: Props)
           onFocus={() => setOpen(true)}
           data-testid="chat-input"
         />
-        <button className="button secondary small" type="submit" disabled={busy !== null || !input.trim()}>
-          {busy === "ask" ? "…" : "Ask"}
-        </button>
-        <button
-          className="button primary small"
-          type="button"
-          onClick={() => void revise()}
-          disabled={busy !== null || !input.trim()}
-          title="Rewrite this section with your feedback"
-        >
-          {busy === "revise" ? "…" : "Revise"}
+        <button className="button primary small" type="submit" disabled={busy !== null || !input.trim()}>
+          {busy === "send" ? "…" : "Send"}
         </button>
       </form>
     </div>

@@ -15,8 +15,9 @@ from typing import Any
 from sqlalchemy.orm import Session
 
 from . import section_catalog
+from .draft_service import DraftCycleError, DraftService
 from .repository import StudyPackageRepository
-from .schemas import ChatMessage
+from .schemas import ChatMessage, ChatTurn
 from .section_executor import REGISTRY, run_section
 
 RenderFn = Callable[[list[dict]], str]
@@ -95,20 +96,36 @@ class ChatService:
         *,
         scope: str = "section",
         section_id: str | None = None,
-    ) -> ChatMessage:
+    ) -> ChatTurn:
+        """One turn. The model decides answer-vs-edit; an edit yields a proposed
+        rewrite (gated by the reviewer's 👍/👎). Nothing is applied here."""
         package = self.repository.get(study_id)
         prior = self.repository.recent_chat_messages(study_id, HISTORY_WINDOW)
         messages = self._build_messages(package, message, scope, section_id, prior)
+        intent, reply = self._parse(self._render(messages))
 
-        reply = self._render(messages)
+        proposed = None
+        if intent == "edit" and section_id and section_id in REGISTRY:
+            try:
+                proposed = DraftService(self.session, self.render_fn).revise(
+                    study_id, section_id, message
+                )
+                reply = reply or (
+                    f"Proposed a rewrite (v{proposed.version}) — approve or discard below."
+                )
+            except DraftCycleError as error:
+                reply = str(error)
+            except Exception:
+                reply = reply or "I could not draft that change just now. Please try again."
 
+        recorded_intent = "revise" if proposed is not None else "ask"
         self.repository.add_chat_message(
             study_id=study_id,
             role="user",
             content=message,
             scope=scope,
             section_id=section_id,
-            intent="ask",
+            intent=recorded_intent,
         )
         assistant = self.repository.add_chat_message(
             study_id=study_id,
@@ -116,10 +133,31 @@ class ChatService:
             content=reply,
             scope=scope,
             section_id=section_id,
-            intent="ask",
+            intent=recorded_intent,
         )
         self.session.commit()
-        return _to_schema(assistant)
+        return ChatTurn(message=_to_schema(assistant), proposed=proposed)
+
+    @staticmethod
+    def _parse(raw: str) -> tuple[str, str]:
+        """Extract {intent, reply} from the model output; default to answer."""
+        text = raw.strip()
+        if text.startswith("```"):
+            text = text.strip("`")
+            text = text[text.find("{") :] if "{" in text else text
+        start, end = text.find("{"), text.rfind("}")
+        if start != -1 and end != -1:
+            try:
+                data = json.loads(text[start : end + 1])
+                intent = data.get("intent", "answer")
+                reply = str(data.get("reply", "")).strip()
+                if intent == "edit":
+                    return "edit", reply
+                if reply:
+                    return "answer", reply
+            except (json.JSONDecodeError, TypeError, AttributeError):
+                pass
+        return "answer", raw.strip()
 
     def _build_messages(
         self,
@@ -136,6 +174,14 @@ class ChatService:
             context = _section_context(package, section_id, current.narrative_md if current else None)
             if context:
                 grounding += "\n\n" + context
+        grounding += (
+            "\n\nRESPONSE FORMAT: reply with a single JSON object and nothing else — "
+            '{"intent": "answer" | "edit", "reply": "<text>"}. '
+            'Use "edit" ONLY when the user is asking to change, rewrite, shorten, or add '
+            "to THIS section's drafted content; then put a one-sentence acknowledgement in "
+            '"reply" (the rewrite is produced separately). For any question or discussion, '
+            'use "answer" and put your grounded answer in "reply".'
+        )
         messages: list[dict] = [{"role": "system", "content": grounding}]
         for row in prior:
             messages.append({"role": row.role, "content": row.content})

@@ -613,6 +613,15 @@ export interface components {
             /** Section Id */
             section_id?: string | null;
         };
+        /**
+         * ChatTurn
+         * @description One assistant turn: the reply, plus a proposed rewrite when the model
+         *     read the message as an edit request (approved via 👍/👎).
+         */
+        ChatTurn: {
+            message: components["schemas"]["ChatMessage"];
+            proposed?: components["schemas"]["SectionContentDraft"] | null;
+        };
         /** Claim */
         Claim: {
             /** Claim Id */
@@ -2506,7 +2515,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ChatMessage"];
+                    "application/json": components["schemas"]["ChatTurn"];
                 };
             };
             /** @description Validation Error */

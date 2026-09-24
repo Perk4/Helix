@@ -1186,6 +1186,14 @@ class ChatRequest(StrictModel):
     section_id: str | None = None
 
 
+class ChatTurn(StrictModel):
+    """One assistant turn: the reply, plus a proposed rewrite when the model
+    read the message as an edit request (approved via 👍/👎)."""
+
+    message: ChatMessage
+    proposed: SectionContentDraft | None = None
+
+
 FrozenRunInputs.model_rebuild()
 CarriedForwardArtifact.model_rebuild()
 PredecessorSnapshot.model_rebuild()

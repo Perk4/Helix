@@ -3,6 +3,7 @@ import type {
   CandidateEvaluation,
   ChatMessage,
   ChatScope,
+  ChatTurn,
   CrossSectionQueryReceipt,
   DataValidationExecution,
   EvidenceChainData,
@@ -180,12 +181,12 @@ export async function sendChat(
   message: string,
   scope: ChatScope,
   sectionId: string | null,
-): Promise<ChatMessage> {
+): Promise<ChatTurn> {
   const value = await request(`/studies/${encodeURIComponent(studyId)}/chat`, {
     method: "POST",
     body: JSON.stringify({ message, scope, section_id: sectionId }),
   });
-  return value as ChatMessage;
+  return value as ChatTurn;
 }
 
 export async function evaluateCandidate(
