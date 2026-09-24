@@ -318,7 +318,7 @@ def test_stored_cycle_impact_set_includes_injected_dependent(monkeypatch) -> Non
 
 
 def test_hold_allows_revision_and_new_cycle_attempt() -> None:
-    agent = FakeSectionAgent()
+    agent = FakeSectionAgent("conforming")
     client, engine = build_client(agent)
     with client:
         validate(client)
