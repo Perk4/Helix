@@ -29,6 +29,10 @@ from .section_executor import (
 
 RenderFn = Callable[[list[dict]], str]
 
+
+class DraftCycleError(RuntimeError):
+    """Raised on an invalid revise/apply/discard transition."""
+
 _PROSE_ONLY_INSTRUCTION = (
     "\n\nIMPORTANT: Write the narrative PROSE only. Do NOT output any tables — "
     "the numeric tables are rendered separately from verified data. Do not repeat "
@@ -200,15 +204,17 @@ class DraftService:
         *,
         feedback: list[str] | None = None,
         status: str = "needs_review",
+        anchor: str | None = None,
     ) -> SectionDraft:
         self._require_section(section_id)
         feedback = feedback or []
         package = self.repository.get(study_id)
         result = run_section(section_id, package)
 
-        current = self.repository.current_section_draft(study_id, section_id)
-        existing_narrative = current.narrative_md if current else None
-        narrative_md = self._render(result, feedback, existing_narrative)
+        if anchor is None:
+            current = self.repository.current_section_draft(study_id, section_id)
+            anchor = current.narrative_md if current else None
+        narrative_md = self._render(result, feedback, anchor)
 
         version = self.repository.next_section_draft_version(study_id, section_id)
         row = self.repository.add_section_draft(
@@ -230,6 +236,77 @@ class DraftService:
         )
         self.session.commit()
         return _to_schema(row)
+
+    MAX_OPEN_ATTEMPTS = 3
+
+    def revise(self, study_id: str, section_id: str, feedback: str) -> SectionDraft:
+        """A feedback-driven rerun -> a new *proposed* version (not applied).
+
+        Anchored to the latest active draft so it refines rather than reinvents.
+        """
+        self._require_section(section_id)
+        versions = self.repository.list_section_drafts(study_id, section_id)
+        open_proposals = [row for row in versions if row.status == "proposed"]
+        if len(open_proposals) >= self.MAX_OPEN_ATTEMPTS:
+            raise DraftCycleError(
+                f"{self.MAX_OPEN_ATTEMPTS} open attempts already exist. Apply or discard one first."
+            )
+        active = self.repository.latest_active_section_draft(study_id, section_id)
+        prior_feedback = list(active.feedback) if active else []
+        anchor = active.narrative_md if active else None
+        return self.generate(
+            study_id,
+            section_id,
+            feedback=[*prior_feedback, feedback],
+            status="proposed",
+            anchor=anchor,
+        )
+
+    def apply(self, study_id: str, section_id: str, version: int) -> SectionDraft:
+        row = self._require_draft(study_id, section_id, version)
+        if row.status != "proposed":
+            raise DraftCycleError("Only a proposed version can be applied.")
+        for other in self.repository.list_section_drafts(study_id, section_id):
+            if other.status == "proposed" and other.version != version:
+                other.status = "discarded"
+        row.status = "needs_review"
+        self._event(study_id, "section_draft_applied", section_id, version)
+        self.session.commit()
+        return _to_schema(row)
+
+    def discard(self, study_id: str, section_id: str, version: int) -> SectionDraft:
+        row = self._require_draft(study_id, section_id, version)
+        if row.status != "proposed":
+            raise DraftCycleError("Only a proposed version can be discarded.")
+        row.status = "discarded"
+        self._event(study_id, "section_draft_discarded", section_id, version)
+        self.session.commit()
+        return _to_schema(row)
+
+    def verify(self, study_id: str, section_id: str) -> SectionDraft:
+        self._require_section(section_id)
+        row = self.repository.current_section_draft(study_id, section_id)
+        if row is None:
+            raise KeyError(f"No draft to verify for section '{section_id}'")
+        row.status = "verified"
+        self._event(study_id, "section_draft_verified", section_id, row.version)
+        self.session.commit()
+        return _to_schema(row)
+
+    def _require_draft(self, study_id: str, section_id: str, version: int):
+        self._require_section(section_id)
+        row = self.repository.get_section_draft(study_id, section_id, version)
+        if row is None:
+            raise KeyError(f"Unknown draft version {version} for section '{section_id}'")
+        return row
+
+    def _event(self, study_id: str, event_type: str, section_id: str, version: int) -> None:
+        self.repository.append_event(
+            study_id=study_id,
+            event_type=event_type,
+            actor="research scientist",
+            payload={"section_id": section_id, "version": version},
+        )
 
     def _render(
         self,

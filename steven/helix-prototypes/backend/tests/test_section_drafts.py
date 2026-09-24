@@ -158,3 +158,50 @@ def test_draft_endpoint_renders_prose_when_model_available(monkeypatch) -> None:
     blocks = created.json()["blocks"]
     assert [b["kind"] for b in blocks] == ["prose", "table", "table"]
     assert "comparable" in blocks[0]["markdown"]
+
+
+def test_revise_apply_verify_flow(monkeypatch) -> None:
+    from app import llm
+
+    monkeypatch.setattr(llm, "chat", lambda *_a, **_k: "Revised narrative.")
+    sec = "5_2_3_body_weight"
+    client = build_client()
+    with client:
+        client.post(f"/api/v1/studies/{STUDY_ID}/sections/{sec}/draft", json={"feedback": []})
+        proposed = client.post(
+            f"/api/v1/studies/{STUDY_ID}/sections/{sec}/revise",
+            json={"feedback": "mention % vs control"},
+        )
+        version = proposed.json()["version"]
+        applied = client.post(
+            f"/api/v1/studies/{STUDY_ID}/sections/{sec}/apply",
+            json={"version": version},
+        )
+        verified = client.post(f"/api/v1/studies/{STUDY_ID}/sections/{sec}/verify", json={})
+        current = client.get(f"/api/v1/studies/{STUDY_ID}/sections/{sec}/draft")
+
+    assert proposed.status_code == 201
+    assert proposed.json()["status"] == "proposed"
+    assert applied.status_code == 200
+    assert applied.json()["status"] == "needs_review"
+    assert verified.json()["status"] == "verified"
+    assert current.json()["version"] == version
+
+
+def test_revise_attempt_bound(monkeypatch) -> None:
+    from app import llm
+
+    monkeypatch.setattr(llm, "chat", lambda *_a, **_k: "x")
+    sec = "5_2_3_body_weight"
+    client = build_client()
+    with client:
+        client.post(f"/api/v1/studies/{STUDY_ID}/sections/{sec}/draft", json={"feedback": []})
+        codes = [
+            client.post(
+                f"/api/v1/studies/{STUDY_ID}/sections/{sec}/revise",
+                json={"feedback": f"attempt {i}"},
+            ).status_code
+            for i in range(4)
+        ]
+    assert codes[:3] == [201, 201, 201]
+    assert codes[3] == 409  # fourth open attempt is blocked

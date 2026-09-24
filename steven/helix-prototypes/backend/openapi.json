@@ -1055,6 +1055,22 @@
         "title": "ReviewDisposition",
         "type": "object"
       },
+      "ReviseRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "feedback": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Feedback",
+            "type": "string"
+          }
+        },
+        "required": [
+          "feedback"
+        ],
+        "title": "ReviseRequest",
+        "type": "object"
+      },
       "SectionDraft": {
         "additionalProperties": false,
         "properties": {
@@ -1476,6 +1492,21 @@
         ],
         "title": "SectionStatus",
         "type": "string"
+      },
+      "SectionVersionRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "version": {
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version"
+        ],
+        "title": "SectionVersionRequest",
+        "type": "object"
       },
       "SourceRecord": {
         "additionalProperties": false,
@@ -2628,6 +2659,128 @@
         ]
       }
     },
+    "/api/v1/studies/{study_id}/sections/{section_id}/apply": {
+      "post": {
+        "operationId": "apply_section_draft_api_v1_studies__study_id__sections__section_id__apply_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "study_id",
+            "required": true,
+            "schema": {
+              "title": "Study Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "section_id",
+            "required": true,
+            "schema": {
+              "title": "Section Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SectionVersionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SectionDraft"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Apply Section Draft",
+        "tags": [
+          "sections"
+        ]
+      }
+    },
+    "/api/v1/studies/{study_id}/sections/{section_id}/discard": {
+      "post": {
+        "operationId": "discard_section_draft_api_v1_studies__study_id__sections__section_id__discard_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "study_id",
+            "required": true,
+            "schema": {
+              "title": "Study Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "section_id",
+            "required": true,
+            "schema": {
+              "title": "Section Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SectionVersionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SectionDraft"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Discard Section Draft",
+        "tags": [
+          "sections"
+        ]
+      }
+    },
     "/api/v1/studies/{study_id}/sections/{section_id}/draft": {
       "get": {
         "operationId": "get_section_draft_api_v1_studies__study_id__sections__section_id__draft_get",
@@ -2741,6 +2894,118 @@
           }
         },
         "summary": "Generate Section Draft",
+        "tags": [
+          "sections"
+        ]
+      }
+    },
+    "/api/v1/studies/{study_id}/sections/{section_id}/revise": {
+      "post": {
+        "operationId": "revise_section_draft_api_v1_studies__study_id__sections__section_id__revise_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "study_id",
+            "required": true,
+            "schema": {
+              "title": "Study Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "section_id",
+            "required": true,
+            "schema": {
+              "title": "Section Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviseRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SectionDraft"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Revise Section Draft",
+        "tags": [
+          "sections"
+        ]
+      }
+    },
+    "/api/v1/studies/{study_id}/sections/{section_id}/verify": {
+      "post": {
+        "operationId": "verify_section_draft_api_v1_studies__study_id__sections__section_id__verify_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "study_id",
+            "required": true,
+            "schema": {
+              "title": "Study Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "section_id",
+            "required": true,
+            "schema": {
+              "title": "Section Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SectionDraft"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Verify Section Draft",
         "tags": [
           "sections"
         ]

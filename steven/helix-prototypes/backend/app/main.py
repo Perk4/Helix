@@ -12,7 +12,7 @@ from .agents.codex_section_agent import CodexSectionAgent, SectionAgent
 from .chat_service import ChatService
 from .config import Settings, get_settings
 from .database import create_database_engine, create_schema, create_session_factory
-from .draft_service import DraftService
+from .draft_service import DraftCycleError, DraftService
 from .repository import StudyNotFoundError
 from .schemas import (
     ApprovalCommand,
@@ -23,10 +23,12 @@ from .schemas import (
     EvidenceChain,
     ExportCommand,
     ExportReceipt,
+    ReviseRequest,
     SectionDraft,
     SectionListItem,
     SectionRunCommand,
     SectionRunReceipt,
+    SectionVersionRequest,
     StudyListItem,
     ValidationRequest,
     ValidationRun,
@@ -195,6 +197,58 @@ def create_app(
     ) -> SectionDraft:
         return _call(lambda: drafts.generate(study_id, section_id, feedback=request.feedback))
 
+    @app.post(
+        "/api/v1/studies/{study_id}/sections/{section_id}/revise",
+        response_model=SectionDraft,
+        status_code=status.HTTP_201_CREATED,
+        tags=["sections"],
+    )
+    def revise_section_draft(
+        study_id: str,
+        section_id: str,
+        request: ReviseRequest,
+        drafts: DraftServiceDependency,
+    ) -> SectionDraft:
+        return _call(lambda: drafts.revise(study_id, section_id, request.feedback))
+
+    @app.post(
+        "/api/v1/studies/{study_id}/sections/{section_id}/apply",
+        response_model=SectionDraft,
+        tags=["sections"],
+    )
+    def apply_section_draft(
+        study_id: str,
+        section_id: str,
+        request: SectionVersionRequest,
+        drafts: DraftServiceDependency,
+    ) -> SectionDraft:
+        return _call(lambda: drafts.apply(study_id, section_id, request.version))
+
+    @app.post(
+        "/api/v1/studies/{study_id}/sections/{section_id}/discard",
+        response_model=SectionDraft,
+        tags=["sections"],
+    )
+    def discard_section_draft(
+        study_id: str,
+        section_id: str,
+        request: SectionVersionRequest,
+        drafts: DraftServiceDependency,
+    ) -> SectionDraft:
+        return _call(lambda: drafts.discard(study_id, section_id, request.version))
+
+    @app.post(
+        "/api/v1/studies/{study_id}/sections/{section_id}/verify",
+        response_model=SectionDraft,
+        tags=["sections"],
+    )
+    def verify_section_draft(
+        study_id: str,
+        section_id: str,
+        drafts: DraftServiceDependency,
+    ) -> SectionDraft:
+        return _call(lambda: drafts.verify(study_id, section_id))
+
     @app.get(
         "/api/v1/studies/{study_id}/chat",
         response_model=list[ChatMessage],
@@ -299,7 +353,7 @@ def _call[ResponseT](operation: Callable[[], ResponseT]) -> ResponseT:
         raise HTTPException(status_code=404, detail=f"Unknown study {error.args[0]}") from error
     except (InvalidCommandError, UnknownSectionPackageError, KeyError) as error:
         raise HTTPException(status_code=404, detail=str(error)) from error
-    except (WorkflowConflictError, SectionRunConflictError) as error:
+    except (WorkflowConflictError, SectionRunConflictError, DraftCycleError) as error:
         raise HTTPException(status_code=409, detail=str(error)) from error
     except CandidateValidationError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error

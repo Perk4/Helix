@@ -552,6 +552,14 @@ class DraftRequest(StrictModel):
     feedback: list[str] = Field(default_factory=list)
 
 
+class ReviseRequest(StrictModel):
+    feedback: str = Field(min_length=1, max_length=2000)
+
+
+class SectionVersionRequest(StrictModel):
+    version: int = Field(ge=1)
+
+
 # --------------------------------------------------------------------------- #
 # Chat (per-study thread, grounded in verified data)
 # --------------------------------------------------------------------------- #

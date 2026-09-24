@@ -2348,3 +2348,35 @@ code {
   font: inherit;
   font-size: 0.87rem;
 }
+
+/* --- Revise proposal card (Phase D) ----------------------------------- */
+.chat-controls {
+  display: inline-flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+.proposed-card {
+  border: 1px solid #2f7d5b;
+  background: #f2fbf6;
+  border-radius: var(--radius);
+  padding: 0.75rem 0.9rem;
+  align-self: flex-start;
+  max-width: 78ch;
+}
+.proposed-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.8rem;
+  color: var(--ink-700);
+  margin-bottom: 0.5rem;
+}
+.proposed-body {
+  font-size: 0.87rem;
+  line-height: 1.5;
+  margin-bottom: 0.6rem;
+}
+.proposed-actions {
+  display: flex;
+  gap: 0.5rem;
+}

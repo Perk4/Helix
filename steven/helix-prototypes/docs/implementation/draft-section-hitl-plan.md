@@ -1,7 +1,7 @@
 # Section Drafting + Human-in-the-Loop Chat — Requirements, Design & Plan
 
 - **Branch:** `feat/draft-section-hitl`
-- **Status:** Phase 0 + A + B + C done → Phase D (revise + 👍/👎) next
+- **Status:** All phases (0/A/B/C/D) done → pending browser verification
 - **Created:** 2026-09-24
 - **Approach:** B (lighter first) — build the UI + chat now on already-verified numbers; mark the rest `needs_review`; expand verified coverage over time.
 
@@ -142,13 +142,14 @@ generate(study_id, section_id, feedback_history, existing_content, apply=False)
 - [x] Tests: `tests/test_chat.py` — section grounding, memory replay, endpoints (3 tests)
 - [~] Manual browser check: bottom bar expands, remembers turns (user to confirm visually)
 
-### Phase D — Revise → proposed → 👍/👎 apply (R2 revise, R3) · Status: not started
-- [ ] `DraftService` revise path returns **proposed** version (anchored to existing + feedback history), not applied
-- [ ] Endpoints: `POST /sections/{sid}/revise`, `/apply`, `/discard`, `/verify`
-- [ ] Record revise/apply/discard/verify as events (audit + agent action memory)
-- [ ] Bound to ≤3 attempts per cycle
-- [ ] Frontend: "Revise this section" (section-locked) → proposed rewrite card with 👍 / 👎; 👍 updates section above; 👎 refine; "Mark verified" action
-- [ ] Manual UI check: feedback → consistent proposed rewrite → 👍 applies → 👎 discards
+### Phase D — Revise → proposed → 👍/👎 apply (R2 revise, R3) · Status: done (pending browser check)
+- [x] `DraftService.revise` returns a **proposed** version, anchored to the latest active draft + accumulated feedback (consistent rerun)
+- [x] Endpoints: `POST /sections/{sid}/revise`, `/apply`, `/discard`, `/verify`
+- [x] `apply`/`discard`/`verify` recorded as append-only audit events; apply discards other open proposals
+- [x] Bound to ≤3 open attempts per cycle (409 beyond)
+- [x] Frontend: chat `Ask | Revise` toggle (Revise section-locked) → proposed rewrite card with 👍 Apply / 👎 Discard; 👍 refreshes the section above; "Mark verified" on the draft header
+- [x] Tests: revise→apply→verify flow + attempt bound (endpoint tests)
+- [~] Manual browser check: feedback → proposed rewrite → 👍 applies / 👎 discards (user to confirm)
 
 ---
 
@@ -171,4 +172,5 @@ generate(study_id, section_id, feedback_history, existing_content, apply=False)
 | 2026-09-24 | Phase 0 + A | Backend: `llm.py`, `section_catalog.py`, `section_drafts` table, `draft_service.py`, 3 section endpoints, schemas, 6 tests (all pass, ruff clean) | ea8be03 |
 | 2026-09-24 | Phase 0 | `llm.py`: accept OPENAI_*/LLM_*/APIM_* env names + best-effort `.env` load (key lives in repo-root `.env`, git-ignored); `openai` dep added; APIM smoke test OK (gpt-5.5 wrote grounded prose, refused to invent %) | (pending) |
 | 2026-09-24 | Phase B | Frontend: regenerated types, `api.ts`/`types.ts` section calls, `ReportAssembly` renders 14-section drafts (native tables + markdown prose + needs-review banner + generate), CSS; typecheck + build pass; 7 backend tests | d3db7a5 |
-| 2026-09-24 | Phase C | `chat_messages` table, `chat_service.py` (grounded ask + windowed memory), GET/POST /chat, `ChatDock` bottom-docked chat with scope toggle + CSS; regenerated types; typecheck + build pass; 27 backend tests (3 chat) | (pending) |
+| 2026-09-24 | Phase C | `chat_messages` table, `chat_service.py` (grounded ask + windowed memory), GET/POST /chat, `ChatDock` bottom-docked chat with scope toggle + CSS; regenerated types; typecheck + build pass; 27 backend tests (3 chat) | d550125 |
+| 2026-09-24 | Phase D | `DraftService.revise/apply/discard/verify` + audit events + ≤3 attempt bound; 4 endpoints; `ChatDock` Ask/Revise toggle + 👍/👎 proposed card; "Mark verified"; regenerated types; typecheck + build pass; 29 backend tests | (pending) |

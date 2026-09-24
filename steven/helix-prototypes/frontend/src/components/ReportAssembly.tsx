@@ -10,6 +10,7 @@ import {
   generateSectionDraft,
   getSectionDraft,
   getSections,
+  verifySection,
 } from "@/lib/api";
 
 import { ChatDock } from "./ChatDock";
@@ -72,6 +73,28 @@ export function ReportAssembly({ workspace, busy, onResolve, onApprove, onExport
     setDraftError(null);
     try {
       setDraft(await generateSectionDraft(studyId, selectedSectionId));
+      await refreshSections();
+    } catch (cause) {
+      setDraftError(messageFrom(cause));
+    } finally {
+      setDraftBusy(false);
+    }
+  }
+
+  const reloadDraft = useCallback(async () => {
+    try {
+      setDraft(await getSectionDraft(studyId, selectedSectionId));
+      setSections(await getSections(studyId));
+    } catch {
+      /* non-fatal */
+    }
+  }, [studyId, selectedSectionId]);
+
+  async function markVerified() {
+    setDraftBusy(true);
+    setDraftError(null);
+    try {
+      setDraft(await verifySection(studyId, selectedSectionId));
       await refreshSections();
     } catch (cause) {
       setDraftError(messageFrom(cause));
@@ -161,6 +184,17 @@ export function ReportAssembly({ workspace, busy, onResolve, onApprove, onExport
                   <span className={`document-status ${statusClass(draft.status)}`}>
                     {statusLabel(draft.status)} · v{draft.version}
                   </span>
+                )}
+                {draft && draft.status === "needs_review" && (
+                  <button
+                    className="button secondary small"
+                    type="button"
+                    onClick={() => void markVerified()}
+                    disabled={draftBusy}
+                    data-testid="verify-draft"
+                  >
+                    Mark verified
+                  </button>
                 )}
                 <button
                   className="button secondary small"
@@ -359,7 +393,12 @@ export function ReportAssembly({ workspace, busy, onResolve, onApprove, onExport
         </aside>
       </div>
 
-      <ChatDock studyId={studyId} sectionId={selectedSectionId} sectionTitle={selectedTitle} />
+      <ChatDock
+        studyId={studyId}
+        sectionId={selectedSectionId}
+        sectionTitle={selectedTitle}
+        onApplied={() => void reloadDraft()}
+      />
     </section>
   );
 }

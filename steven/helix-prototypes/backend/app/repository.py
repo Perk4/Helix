@@ -216,6 +216,20 @@ class StudyPackageRepository:
             .limit(1)
         )
 
+    def latest_active_section_draft(self, study_id: str, section_id: str) -> SectionDraftRow | None:
+        """Highest version that is not discarded (includes proposed) — the
+        anchor a rerun builds on."""
+        return self.session.scalar(
+            select(SectionDraftRow)
+            .where(
+                SectionDraftRow.study_id == study_id,
+                SectionDraftRow.section_id == section_id,
+                SectionDraftRow.status != "discarded",
+            )
+            .order_by(SectionDraftRow.version.desc())
+            .limit(1)
+        )
+
     def get_section_draft(self, study_id: str, section_id: str, version: int) -> SectionDraftRow | None:
         return self.session.scalar(
             select(SectionDraftRow).where(

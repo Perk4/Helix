@@ -86,6 +86,50 @@ export async function generateSectionDraft(
   return value as SectionDraft;
 }
 
+export async function reviseSection(
+  studyId: string,
+  sectionId: string,
+  feedback: string,
+): Promise<SectionDraft> {
+  const value = await request(
+    `/studies/${encodeURIComponent(studyId)}/sections/${encodeURIComponent(sectionId)}/revise`,
+    { method: "POST", body: JSON.stringify({ feedback }) },
+  );
+  return value as SectionDraft;
+}
+
+export async function applySection(
+  studyId: string,
+  sectionId: string,
+  version: number,
+): Promise<SectionDraft> {
+  const value = await request(
+    `/studies/${encodeURIComponent(studyId)}/sections/${encodeURIComponent(sectionId)}/apply`,
+    { method: "POST", body: JSON.stringify({ version }) },
+  );
+  return value as SectionDraft;
+}
+
+export async function discardSection(
+  studyId: string,
+  sectionId: string,
+  version: number,
+): Promise<SectionDraft> {
+  const value = await request(
+    `/studies/${encodeURIComponent(studyId)}/sections/${encodeURIComponent(sectionId)}/discard`,
+    { method: "POST", body: JSON.stringify({ version }) },
+  );
+  return value as SectionDraft;
+}
+
+export async function verifySection(studyId: string, sectionId: string): Promise<SectionDraft> {
+  const value = await request(
+    `/studies/${encodeURIComponent(studyId)}/sections/${encodeURIComponent(sectionId)}/verify`,
+    { method: "POST", body: JSON.stringify({}) },
+  );
+  return value as SectionDraft;
+}
+
 export async function getChat(studyId: string): Promise<ChatMessage[]> {
   const value = await request(`/studies/${encodeURIComponent(studyId)}/chat`);
   if (!Array.isArray(value)) {
