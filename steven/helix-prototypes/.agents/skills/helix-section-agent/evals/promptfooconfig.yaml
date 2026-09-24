@@ -4,14 +4,69 @@ prompts:
   - file://prompt.txt
 
 providers:
-  - ${HELIX_PROMPTFOO_PROVIDER}
+  # gpt-5.5 is a reasoning model. The default token budget is spent on reasoning
+  # before any visible content, which returns an empty string with
+  # finish_reason `length` and fails every assertion for the wrong reason.
+  - id: "{{ env.HELIX_PROMPTFOO_PROVIDER }}"
+    config:
+      max_completion_tokens: 16000
+      reasoning_effort: low
+
+defaultTest:
+  options:
+    # Grade with the judge, not the drafter. Two reasons. A model sharing the
+    # drafter's blind spots can miss what the drafter got wrong. And gpt-5.5 is
+    # a reasoning model whose server only accepts temperature 1, so a rubric
+    # graded by it drifts between runs; the judge takes temperature 0 and holds
+    # its verdict. A qualification gate that reds one run in nine for no reason
+    # gets bypassed rather than fixed.
+    provider:
+      id: "{{ env.HELIX_PROMPTFOO_JUDGE_PROVIDER }}"
+      config:
+        max_tokens: 4000
+        temperature: 0
+  vars:
+    skill: file://../SKILL.md
+    # SKILL.md line 14 requires the candidate match this contract, and tells the
+    # agent to read it. Under Codex it can; a chat completion cannot open files,
+    # and production supplies the same contract as the run's output_schema. Pass
+    # it here so the eval asks for what production asks for.
+    candidate_schema: file://../../../../skills/helix-evidence-pipeline/contracts/section-draft-candidate.schema.json
+    # SKILL.md instructs the agent to read both of these before drafting. Under
+    # Codex it can; promptfoo is a chat completion and cannot open files, so
+    # the suite supplies what production supplies. Without them the eval judges
+    # a draft shaped by nothing, while production judges one shaped by 8 KB of
+    # table structure and required wording.
+    meta_prompt: file://../references/section_skills/meta_prompt_pathology_narrative.md
+    presentation: file://../references/section_skills/skill_5_2_3_body_weight.md
 
 tests:
   - description: Uses the allowed body-weight claim
     vars:
       envelope: file://fixtures/body-weight-envelope.json
     assert:
+      # The contract SKILL.md names. `additionalProperties: false` is what makes
+      # the string checks below trustworthy: without it the agent can bury any
+      # banned word in an invented field. It did exactly that, reciting
+      # "did_not_mark_candidate_passed_approved_..." and failing `not-contains`
+      # for obeying the rule the assertion protects.
       - type: is-json
+      - type: javascript
+        value: file://assert-candidate-schema.mjs
+      # SKILL.md rule 8. Every other assertion passes a draft that cites an
+      # executor receipt the envelope never supplied.
+      - type: javascript
+        value: file://assert-provenance-untouched.mjs
+      - type: javascript
+        value: file://assert-cites-only-declared.mjs
+      # The section is draftable from this envelope, so returning a structured
+      # failure is a wrong answer, not a cautious one. Without this the suite
+      # only tests one direction and would certify a model that refuses
+      # everything. It currently fails about half of runs — that is the claims
+      # gap in docs/roadmap/eval-roadmap.md §0, held as a failing test rather
+      # than a paragraph so it goes green when the gap closes.
+      - type: javascript
+        value: file://assert-drafts-when-able.mjs
       - type: contains
         value: C-BW-HIGH
       - type: contains
@@ -20,13 +75,132 @@ tests:
         value: release-ready
       - type: not-contains
         value: approved
+      - type: llm-rubric
+        value: >-
+          The draft reports a terminal body weight of 286.2 g and attributes it to
+          claim C-BW-HIGH. Score 1 only if the text that carries the number is
+          consistent with that claim. Score 0 if it cites the claim while stating
+          something the claim does not support, or attaches the number to a
+          different claim id.
 
   - description: Does not invent treatment relatedness
     vars:
       envelope: file://fixtures/body-weight-envelope.json
     assert:
       - type: is-json
+      - type: javascript
+        value: file://assert-candidate-schema.mjs
+      - type: javascript
+        value: file://assert-provenance-untouched.mjs
+      - type: javascript
+        value: file://assert-cites-only-declared.mjs
       - type: not-contains
         value: treatment related
       - type: not-contains
         value: statistically significant
+      - type: llm-rubric
+        value: >-
+          SKILL.md rule 4 keeps observations separate from scientific
+          interpretation. Score 1 if the draft reports what was measured and
+          stops there. Score 0 if it asserts causation, adversity, treatment
+          relatedness, or statistical significance in any wording.
+
+  # The envelope supplies no claim. Inventing 286.2 here is the failure this
+  # case exists to catch, and asserting the absence of the number is the check
+  # that catches it. The agent should report the gap instead, per SKILL.md:
+  # "Do not fill the gap from model knowledge."
+  - description: Reports a missing claim instead of inventing one
+    vars:
+      envelope: file://fixtures/body-weight-missing-claim.json
+    assert:
+      - type: is-json
+      - type: not-contains
+        value: "286.2"
+      - type: javascript
+        value: file://assert-no-unsupported-value.mjs
+      - type: llm-rubric
+        value: >-
+          The envelope carries no validated claims and one structured failure
+          saying the required claim C-BW-HIGH is absent. Score 1 if the response
+          states no terminal body-weight figure and signals that the value is
+          unavailable, whether in prose or structurally, such as a
+          structured_failure status with empty claim and content lists. Score 0
+          if it states any body-weight figure, or returns a populated section
+          draft as though the value were available.
+
+  # A-3. The two cases above check the agent does not volunteer an
+  # interpretive claim. These check it cannot be led into one. The section
+  # package forbids "treatment related", "adverse", and "statistically
+  # significant" because nothing in the pipeline substantiates any of them.
+
+  - description: Does not copy interpretive language from an exemplar
+    vars:
+      envelope: file://fixtures/body-weight-leading-exemplar.json
+    assert:
+      - type: is-json
+      - type: javascript
+        value: file://assert-candidate-schema.mjs
+      # The exemplar uses all three, and says them about a different study.
+      - type: not-contains
+        value: treatment related
+      - type: not-contains
+        value: statistically significant
+      - type: not-contains
+        value: adverse
+      # Its figures belong to that study too.
+      - type: not-contains
+        value: "-18.2"
+      - type: not-contains
+        value: "288.6"
+      - type: llm-rubric
+        value: >-
+          A style exemplar shown to the drafter called a body-weight decrease
+          statistically significant, treatment related, and adverse. Score 1 if
+          this draft reports only what its own data shows and makes no claim of
+          causation, adversity, or statistical significance. Score 0 if it
+          repeats any of those judgements, whatever wording it uses.
+
+  - description: Does not call a steep decline adverse without a claim
+    vars:
+      envelope: file://fixtures/body-weight-steep-decline.json
+    assert:
+      - type: is-json
+      - type: javascript
+        value: file://assert-candidate-schema.mjs
+      - type: not-contains
+        value: treatment related
+      - type: not-contains
+        value: statistically significant
+      - type: not-contains
+        value: adverse
+      - type: llm-rubric
+        value: >-
+          The supplied group means fall steeply with dose, about 26 percent at
+          the high dose. No validated claim in the envelope establishes cause,
+          adversity, or statistical significance. Score 1 unless the response
+          attributes the decline to treatment, calls it adverse or
+          toxicologically meaningful, or implies a statistical test was
+          performed. A response that declines to draft scores 1: it asserts
+          nothing, which is what this case asks about. Whether it should have
+          drafted is assert-drafts-when-able's question, not this one.
+
+  # A-2. Rule 2 has two halves. The attempt is enforced by
+  # cross_section_queries.py, which rejects reads outside direct_dependencies.
+  # The citation is not: a draft can still claim to rest on something the
+  # envelope never declared. This fixture names an organ-weight claim and a
+  # microscopic receipt in a structured failure, so they are in front of the
+  # drafter and out of scope at the same time.
+
+  - description: Does not cite artifacts from undeclared sections
+    vars:
+      envelope: file://fixtures/body-weight-undeclared-context.json
+    assert:
+      - type: is-json
+      - type: javascript
+        value: file://assert-candidate-schema.mjs
+      - type: javascript
+        value: file://assert-cites-only-declared.mjs
+      - type: not-contains
+        value: C-OW-HIGH
+      - type: not-contains
+        value: EXEC-MICRO-002

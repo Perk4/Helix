@@ -1,11 +1,16 @@
 import type {
   ApprovalRole,
+  CandidateEvaluation,
   ChatMessage,
   ChatScope,
+  CrossSectionQueryReceipt,
+  DataValidationExecution,
   EvidenceChainData,
   ExportReceipt,
+  HumanDirectedRevisionReceipt,
   PlannerMode,
   SectionContentDraft,
+  SectionDraft,
   SectionListItem,
   SectionRunReceipt,
   ValidationRun,
@@ -44,12 +49,44 @@ export async function runValidation(
   return value;
 }
 
-export async function runSectionAgent(studyId: string): Promise<SectionRunReceipt> {
+export async function runDataValidation(studyId: string): Promise<DataValidationExecution> {
+  const value = await request(`/studies/${encodeURIComponent(studyId)}/data-validation-packages`, {
+    method: "POST",
+    body: JSON.stringify({
+      actor: "HELIX workbench",
+      package_id: "validation.body_weight",
+      idempotency_key: `workbench-${studyId}-validation.body_weight-v1`,
+    }),
+  });
+  assertDataValidationExecution(value);
+  return value;
+}
+
+export async function reviseSection(
+  studyId: string,
+  idempotencyKey = `workbench-${studyId}-revise-body-weight-v1`,
+): Promise<HumanDirectedRevisionReceipt> {
+  const value = await request(`/studies/${encodeURIComponent(studyId)}/section-revisions`, {
+    method: "POST",
+    body: JSON.stringify({
+      section_package_id: "section.5_2_3_body_weight",
+      actor: "Dr. Ada Path",
+      idempotency_key: idempotencyKey,
+    }),
+  });
+  assertRevisionReceipt(value);
+  return value;
+}
+
+export async function runSectionAgent(
+  studyId: string,
+  idempotencyKey = `workbench-${studyId}-body-weight-v1`,
+): Promise<SectionRunReceipt> {
   const value = await request(`/studies/${encodeURIComponent(studyId)}/section-runs`, {
     method: "POST",
     body: JSON.stringify({
       section_package_id: "section.5_2_3_body_weight",
-      idempotency_key: `workbench-${studyId}-body-weight-v1`,
+      idempotency_key: idempotencyKey,
     }),
   });
   assertSectionRunReceipt(value);
@@ -151,6 +188,58 @@ export async function sendChat(
   return value as ChatMessage;
 }
 
+export async function evaluateCandidate(
+  studyId: string,
+  runId: string,
+): Promise<CandidateEvaluation> {
+  const value = await request(
+    `/studies/${encodeURIComponent(studyId)}/section-runs/${encodeURIComponent(runId)}/evaluations`,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        idempotency_key: `workbench-${studyId}-evaluate-${runId}-v1`,
+      }),
+    },
+  );
+  assertCandidateEvaluation(value);
+  return value;
+}
+
+export async function promoteSectionDraft(
+  studyId: string,
+  runId: string,
+): Promise<SectionDraft> {
+  const value = await request(
+    `/studies/${encodeURIComponent(studyId)}/section-runs/${encodeURIComponent(runId)}/promotions`,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        idempotency_key: `workbench-${studyId}-promote-${runId}-v1`,
+      }),
+    },
+  );
+  assertSectionDraft(value);
+  return value;
+}
+
+export async function queryCrossSection(
+  studyId: string,
+  runId: string,
+): Promise<CrossSectionQueryReceipt> {
+  const value = await request(
+    `/studies/${encodeURIComponent(studyId)}/section-runs/${encodeURIComponent(runId)}/cross-section-queries`,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        artifact_ids: ["claim:C-BW-HIGH", "validation.body_weight"],
+        idempotency_key: `workbench-${studyId}-query-${runId}-v1`,
+      }),
+    },
+  );
+  assertCrossSectionQuery(value);
+  return value;
+}
+
 export async function getEvidence(
   studyId: string,
   claimId: string,
@@ -195,6 +284,21 @@ export async function recordApproval(
   const value = await request(`/studies/${encodeURIComponent(studyId)}/approvals`, {
     method: "POST",
     body: JSON.stringify({ role, ...records[role] }),
+  });
+  assertWorkspace(value);
+  return value;
+}
+
+export async function recordFinalStudyApproval(
+  studyId: string,
+  idempotencyKey: string,
+): Promise<Workspace> {
+  const value = await request(`/studies/${encodeURIComponent(studyId)}/final-study-approvals`, {
+    method: "POST",
+    body: JSON.stringify({
+      reviewer: "Dr. Sam Director",
+      idempotency_key: idempotencyKey,
+    }),
   });
   assertWorkspace(value);
   return value;
@@ -245,6 +349,8 @@ function assertWorkspace(value: unknown): asserts value is Workspace {
     !Array.isArray(value.manifest) ||
     !Array.isArray(value.stages) ||
     !Array.isArray(value.validations) ||
+    !Array.isArray(value.section_run_eligibility) ||
+    !Array.isArray(value.section_runs) ||
     !isObject(value.release_gate) ||
     typeof value.release_gate.status !== "string" ||
     !isObject(value.report)
@@ -264,6 +370,34 @@ function assertValidationRun(value: unknown): asserts value is ValidationRun {
   }
 }
 
+function assertDataValidationExecution(value: unknown): asserts value is DataValidationExecution {
+  if (
+    !isObject(value) ||
+    !isObject(value.receipt) ||
+    typeof value.receipt.receipt_id !== "string" ||
+    value.receipt.package_id !== "validation.body_weight" ||
+    value.receipt.executor_id !== "body-weight-summary" ||
+    !Array.isArray(value.claims) ||
+    !Array.isArray(value.results) ||
+    !Array.isArray(value.section_references)
+  ) {
+    throw new Error("The data-validation response does not match the generated API contract.");
+  }
+}
+
+function assertRevisionReceipt(value: unknown): asserts value is HumanDirectedRevisionReceipt {
+  if (
+    !isObject(value) ||
+    !isObject(value.cycle) ||
+    typeof value.cycle.cycle_id !== "string" ||
+    !Array.isArray(value.stale_disposition_ids) ||
+    !Array.isArray(value.stale_approval_ids) ||
+    typeof value.review_scaffold_revision !== "number"
+  ) {
+    throw new Error("The revision response does not match the generated API contract.");
+  }
+}
+
 function assertSectionRunReceipt(value: unknown): asserts value is SectionRunReceipt {
   if (
     !isObject(value) ||
@@ -272,9 +406,53 @@ function assertSectionRunReceipt(value: unknown): asserts value is SectionRunRec
     typeof value.candidate_hash !== "string" ||
     typeof value.envelope_hash !== "string" ||
     typeof value.codex_thread_id !== "string" ||
-    typeof value.skill_hash !== "string"
+    typeof value.skill_hash !== "string" ||
+    typeof value.skill_references_hash !== "string"
   ) {
     throw new Error("The section-run response does not match the generated API contract.");
+  }
+}
+
+function assertCandidateEvaluation(value: unknown): asserts value is CandidateEvaluation {
+  if (
+    !isObject(value) ||
+    value.schema_version !== "helix.candidate-evaluation/v1" ||
+    typeof value.evaluation_id !== "string" ||
+    typeof value.candidate_hash !== "string" ||
+    !isObject(value.provenance_receipt) ||
+    !isObject(value.study_output_evaluation_receipt) ||
+    !isObject(value.template_conformance_receipt) ||
+    !isObject(value.next_attempt_decision) ||
+    !isObject(value.hashes)
+  ) {
+    throw new Error("The candidate evaluation response does not match the generated API contract.");
+  }
+}
+
+function assertSectionDraft(value: unknown): asserts value is SectionDraft {
+  if (
+    !isObject(value) ||
+    value.schema_version !== "helix.section-draft/v1" ||
+    value.status !== "section_draft" ||
+    typeof value.draft_id !== "string" ||
+    typeof value.candidate_hash !== "string" ||
+    !Array.isArray(value.gate_decision_ids) ||
+    !Array.isArray(value.bound_dispositions)
+  ) {
+    throw new Error("The section draft response does not match the generated API contract.");
+  }
+}
+
+function assertCrossSectionQuery(value: unknown): asserts value is CrossSectionQueryReceipt {
+  if (
+    !isObject(value) ||
+    value.schema_version !== "helix.cross-section-query-receipt/v1" ||
+    typeof value.query_id !== "string" ||
+    !Array.isArray(value.requested_artifact_ids) ||
+    !Array.isArray(value.returned) ||
+    (value.status !== "returned" && value.status !== "rejected")
+  ) {
+    throw new Error("The cross-section query response does not match the generated API contract.");
   }
 }
 
@@ -295,7 +473,12 @@ function assertExportReceipt(value: unknown): asserts value is ExportReceipt {
     !isObject(value) ||
     value.status !== "exported" ||
     typeof value.exported_at !== "string" ||
-    !Array.isArray(value.artifacts)
+    typeof value.approval_id !== "string" ||
+    typeof value.manifest_hash !== "string" ||
+    !Array.isArray(value.artifacts) ||
+    !isObject(value.instrumentation) ||
+    value.instrumentation.agent_starts !== 0 ||
+    value.instrumentation.calculation_runs !== 0
   ) {
     throw new Error("The export response does not match the generated API contract.");
   }

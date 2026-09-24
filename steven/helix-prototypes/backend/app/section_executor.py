@@ -154,7 +154,7 @@ def compute_body_weight(package: StudyEvidencePackage) -> SectionResult:
     return SectionResult(
         section_id="5_2_3_body_weight",
         title="5.2.3 Body Weight",
-        skill_file=f"skill_5_2_3_body_weight.md",
+        skill_file="skill_5_2_3_body_weight.md",
         data_available=bool(male or female),
         facts=facts,
         provenance=male_prov + female_prov,

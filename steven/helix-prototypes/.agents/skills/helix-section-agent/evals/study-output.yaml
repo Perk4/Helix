@@ -1,5 +1,15 @@
 description: HELIX study-output checks for a Section Draft Candidate
 
+# Applied per run by `backend/app/study_output_evaluation.py`, which parses this
+# file line by line as a flat `assert:` list. Keep that shape: a nested
+# promptfoo config with providers and tests is not what the loader reads, and
+# changing the shape silently disables the checks rather than failing loudly.
+#
+# The GLP guardrails G-1 and G-2 live in `glp-guardrails.yaml`. They are a
+# different thing with a different lifecycle: a promptfoo suite that qualifies
+# the judges offline against fixtures, rather than assertions applied to a
+# candidate during a run.
+
 assert:
   - type: is-json
   - type: contains

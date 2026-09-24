@@ -73,6 +73,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/studies/{study_id}/data-validation-packages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Run Data Validation */
+        post: operations["run_data_validation_api_v1_studies__study_id__data_validation_packages_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/studies/{study_id}/exports": {
         parameters: {
             query?: never;
@@ -107,6 +124,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/studies/{study_id}/final-study-approvals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record Final Study Approval */
+        post: operations["record_final_study_approval_api_v1_studies__study_id__final_study_approvals_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/studies/{study_id}/pinned-runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Freeze Run */
+        post: operations["freeze_run_api_v1_studies__study_id__pinned_runs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/studies/{study_id}/section-revisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Revise Section */
+        post: operations["revise_section_api_v1_studies__study_id__section_revisions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/studies/{study_id}/section-runs": {
         parameters: {
             query?: never;
@@ -118,6 +186,57 @@ export interface paths {
         put?: never;
         /** Run Section */
         post: operations["run_section_api_v1_studies__study_id__section_runs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/studies/{study_id}/section-runs/{run_id}/cross-section-queries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Query Cross Section */
+        post: operations["query_cross_section_api_v1_studies__study_id__section_runs__run_id__cross_section_queries_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/studies/{study_id}/section-runs/{run_id}/evaluations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Evaluate Candidate */
+        post: operations["evaluate_candidate_api_v1_studies__study_id__section_runs__run_id__evaluations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/studies/{study_id}/section-runs/{run_id}/promotions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Promote Section Draft */
+        post: operations["promote_section_draft_api_v1_studies__study_id__section_runs__run_id__promotions_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -299,10 +418,30 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** Animal */
+        Animal: {
+            /** Animal Id */
+            animal_id: string;
+            /** Group Id */
+            group_id: string;
+            /** Randomization Id */
+            randomization_id: string;
+            /**
+             * Sex
+             * @enum {string}
+             */
+            sex: "M" | "F";
+            /** Study Id */
+            study_id: string;
+        };
         /** Approval */
         Approval: {
             /** Approval Id */
             approval_id: string;
+            /** Artifact Hash */
+            artifact_hash?: string | null;
+            /** Dependency Fingerprint */
+            dependency_fingerprint?: string | null;
             /** Meaning */
             meaning: string;
             /** Reviewer */
@@ -324,6 +463,24 @@ export interface components {
          * @enum {string}
          */
         ApprovalRole: "pathologist" | "peer_reviewer" | "qau" | "study_director";
+        /** ApprovedArtifactHash */
+        ApprovedArtifactHash: {
+            /** Artifact Id */
+            artifact_id: string;
+            /** Content Hash */
+            content_hash: string;
+        };
+        /** ArtifactLineage */
+        ArtifactLineage: {
+            /** Predecessor Artifact Id */
+            predecessor_artifact_id: string;
+            /** Predecessor Content Hash */
+            predecessor_content_hash: string;
+            /** Predecessor Dependency Fingerprint */
+            predecessor_dependency_fingerprint: string;
+            /** Predecessor Run Id */
+            predecessor_run_id: string;
+        };
         /** AssembledSection */
         AssembledSection: {
             /** Blocks */
@@ -337,6 +494,84 @@ export interface components {
             status: components["schemas"]["SectionStatus"];
             /** Title */
             title: string;
+        };
+        /** BoundDisposition */
+        BoundDisposition: {
+            /** Artifact Hash */
+            artifact_hash: string;
+            /** Decision */
+            decision: string;
+            /** Dependency Fingerprint */
+            dependency_fingerprint: string;
+            /** Disposition Id */
+            disposition_id: string;
+            /** Result Id */
+            result_id: string;
+        };
+        /** CandidateEvaluation */
+        CandidateEvaluation: {
+            /** Candidate Hash */
+            candidate_hash: string;
+            /** Candidate Id */
+            candidate_id: string;
+            /** Evaluation Id */
+            evaluation_id: string;
+            hashes: components["schemas"]["CandidateEvaluationHashes"];
+            /**
+             * Idempotent Replay
+             * @default false
+             */
+            idempotent_replay: boolean;
+            next_attempt_decision: components["schemas"]["NextAttemptDecision"];
+            provenance_receipt: components["schemas"]["ProvenanceReceipt"];
+            /** Run Id */
+            run_id: string;
+            /**
+             * Schema Version
+             * @constant
+             */
+            schema_version: "helix.candidate-evaluation/v1";
+            /** Section Package Id */
+            section_package_id: string;
+            study_output_evaluation_receipt: components["schemas"]["StudyOutputEvaluationReceipt"];
+            template_conformance_receipt: components["schemas"]["TemplateConformanceReceipt"];
+        };
+        /** CandidateEvaluationCommand */
+        CandidateEvaluationCommand: {
+            /** Idempotency Key */
+            idempotency_key: string;
+        };
+        /** CandidateEvaluationHashes */
+        CandidateEvaluationHashes: {
+            /** Candidate */
+            candidate: string;
+            /** Evaluation */
+            evaluation: string;
+            /** Provenance */
+            provenance: string;
+            /** Study Output Evaluation */
+            study_output_evaluation: string;
+            /** Template Conformance */
+            template_conformance: string;
+        };
+        /** CarriedForwardArtifact */
+        CarriedForwardArtifact: {
+            /** Artifact Id */
+            artifact_id: string;
+            /** Content Hash */
+            content_hash: string;
+            /** Dependency Fingerprint */
+            dependency_fingerprint: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "section_draft_candidate" | "section_draft";
+            lineage: components["schemas"]["ArtifactLineage"];
+            section_draft?: components["schemas"]["SectionDraft"] | null;
+            /** Section Package Id */
+            section_package_id: string;
+            stored_run?: components["schemas"]["StoredSectionRun"] | null;
         };
         /** ChatMessage */
         ChatMessage: {
@@ -382,13 +617,37 @@ export interface components {
         Claim: {
             /** Claim Id */
             claim_id: string;
+            /** Claim Type */
+            claim_type?: string | null;
+            /** Executor Id */
+            executor_id?: string | null;
+            /** Executor Version */
+            executor_version?: string | null;
             /** Field Id */
             field_id: string;
             /** Grain */
             grain: string;
+            /** Grain Key */
+            grain_key?: {
+                [key: string]: string;
+            };
+            /** Package Id */
+            package_id?: string | null;
+            /** Package Version */
+            package_version?: string | null;
+            /** Rule Versions */
+            rule_versions?: {
+                [key: string]: string;
+            };
             /** Section Id */
             section_id: string;
+            /** Source Hashes */
+            source_hashes?: string[];
             status: components["schemas"]["ClaimStatus"];
+            /** Transform Id */
+            transform_id?: string | null;
+            /** Transform Version */
+            transform_version?: string | null;
             /** Unit */
             unit: string;
             /** Value */
@@ -399,6 +658,188 @@ export interface components {
          * @enum {string}
          */
         ClaimStatus: "pending" | "validated" | "needs_review" | "approved";
+        /** CodexAgentReceipt */
+        CodexAgentReceipt: {
+            /**
+             * Runtime
+             * @constant
+             */
+            runtime: "codex_sdk";
+            /** Skill Hash */
+            skill_hash: string;
+            /**
+             * Skill Name
+             * @constant
+             */
+            skill_name: "helix-section-agent";
+            /** Skill References Hash */
+            skill_references_hash: string;
+            /** Thread Id */
+            thread_id: string;
+        };
+        /** ConditionDecision */
+        ConditionDecision: {
+            /**
+             * Condition Id
+             * @enum {string}
+             */
+            condition_id: "package_permission" | "no_hard_blocker" | "provenance_passed" | "conformance_passed" | "review_required_current";
+            /** Evidence Ids */
+            evidence_ids: string[];
+            /** Passed */
+            passed: boolean;
+            /** Reason */
+            reason?: string | null;
+        };
+        /** CrossSectionQueryCommand */
+        CrossSectionQueryCommand: {
+            /** Artifact Ids */
+            artifact_ids: string[];
+            /** Idempotency Key */
+            idempotency_key: string;
+        };
+        /** CrossSectionQueryReceipt */
+        CrossSectionQueryReceipt: {
+            /** Message */
+            message?: string | null;
+            /** Query Id */
+            query_id: string;
+            /** Rejected Artifact Ids */
+            rejected_artifact_ids: string[];
+            /** Requested Artifact Ids */
+            requested_artifact_ids: string[];
+            /** Returned */
+            returned: components["schemas"]["CrossSectionReturnedArtifact"][];
+            /** Run Id */
+            run_id: string;
+            /**
+             * Schema Version
+             * @constant
+             */
+            schema_version: "helix.cross-section-query-receipt/v1";
+            /** Section Package Id */
+            section_package_id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "returned" | "rejected";
+        };
+        /** CrossSectionReturnedArtifact */
+        CrossSectionReturnedArtifact: {
+            /** Artifact Id */
+            artifact_id: string;
+            /** Hash */
+            hash: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "fact" | "claim" | "section_draft";
+        };
+        /** DataValidationCommand */
+        DataValidationCommand: {
+            /** Actor */
+            actor: string;
+            /** Idempotency Key */
+            idempotency_key: string;
+            /**
+             * Package Id
+             * @default validation.body_weight
+             */
+            package_id: string;
+        };
+        /** DataValidationExecution */
+        DataValidationExecution: {
+            /** Claims */
+            claims: components["schemas"]["Claim"][];
+            event: components["schemas"]["WorkflowEvent"];
+            /** Provenance Edges */
+            provenance_edges: components["schemas"]["ProvenanceEdge"][];
+            receipt: components["schemas"]["DataValidationReceipt"];
+            /** Results */
+            results: components["schemas"]["DataValidationRuleResult"][];
+            /** Section References */
+            section_references: components["schemas"]["SectionClaimReference"][];
+        };
+        /** DataValidationReceipt */
+        DataValidationReceipt: {
+            /** Claim Ids */
+            claim_ids: string[];
+            /** Event Id */
+            event_id: string;
+            /** Executor Hash */
+            executor_hash: string;
+            /** Executor Id */
+            executor_id: string;
+            /** Executor Version */
+            executor_version: string;
+            /** Governed Versions */
+            governed_versions: {
+                [key: string]: string;
+            };
+            /**
+             * Idempotent Replay
+             * @default false
+             */
+            idempotent_replay: boolean;
+            /** Input Fingerprint */
+            input_fingerprint: string;
+            /** Node Id */
+            node_id: string;
+            /** Package Hash */
+            package_hash: string;
+            /** Package Id */
+            package_id: string;
+            /** Package Version */
+            package_version: string;
+            /** Receipt Id */
+            receipt_id: string;
+            /** Result Ids */
+            result_ids: string[];
+            /** Rule Bundle Id */
+            rule_bundle_id: string;
+            /** Rule Ids */
+            rule_ids: string[];
+            /** Run Id */
+            run_id: string;
+            /** Source Artifact Id */
+            source_artifact_id: string;
+            /** Source Hash */
+            source_hash: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "passed" | "blocked";
+        };
+        /** DataValidationRuleResult */
+        DataValidationRuleResult: {
+            /**
+             * Enforcement Class
+             * @enum {string}
+             */
+            enforcement_class: "hard_blocker" | "review_required" | "warning";
+            /** Evidence Ids */
+            evidence_ids: string[];
+            /** Executor Id */
+            executor_id: string;
+            /** Message */
+            message: string;
+            /** Package Id */
+            package_id: string;
+            /** Result Id */
+            result_id: string;
+            /** Rule Id */
+            rule_id: string;
+            /** Rule Version */
+            rule_version: string;
+            /** Scope Id */
+            scope_id: string;
+            status: components["schemas"]["ValidationStatus"];
+            /** Waivable */
+            waivable: boolean;
+        };
         /** DispositionCommand */
         DispositionCommand: {
             /**
@@ -438,19 +879,64 @@ export interface components {
             /** Feedback */
             feedback?: string[];
         };
+        /** DraftingCycle */
+        DraftingCycle: {
+            /** Cycle Id */
+            cycle_id: string;
+            impact_set: components["schemas"]["SectionImpactSet"];
+            /**
+             * Max Attempts
+             * @constant
+             */
+            max_attempts: 3;
+            /** Opened At */
+            opened_at: string;
+            /** Opened By */
+            opened_by: string;
+            /** Predecessor Cycle Id */
+            predecessor_cycle_id: string | null;
+            /** Run Id */
+            run_id: string;
+            /**
+             * Schema Version
+             * @constant
+             */
+            schema_version: "helix.drafting-cycle/v1";
+            /** Section Package Id */
+            section_package_id: string;
+            /** Triggering Event Id */
+            triggering_event_id: string;
+        };
+        /** DraftingCycleRef */
+        DraftingCycleRef: {
+            /** Cycle Id */
+            cycle_id: string;
+            /** Section Package Id */
+            section_package_id: string;
+        };
         /** EvidenceChain */
         EvidenceChain: {
             claim: components["schemas"]["Claim"];
             /** Exact Match */
             exact_match: boolean | null;
+            /** Lineage */
+            lineage?: components["schemas"]["ProvenanceEdge"][];
             /** Recomputed Value */
             recomputed_value: number | null;
             /** Report Text */
             report_text: string;
+            /** Rule Versions */
+            rule_versions?: {
+                [key: string]: string;
+            };
+            /** Source Hashes */
+            source_hashes?: string[];
             /** Sources */
             sources: components["schemas"]["SourceRecord"][];
             /** Transform Id */
             transform_id: string | null;
+            /** Transform Version */
+            transform_version?: string | null;
             /** Validations */
             validations: components["schemas"]["ValidationResult"][];
         };
@@ -477,14 +963,26 @@ export interface components {
             /** Idempotency Key */
             idempotency_key: string;
         };
+        /** ExportInstrumentation */
+        ExportInstrumentation: {
+            /** Agent Starts */
+            agent_starts: number;
+            /** Calculation Runs */
+            calculation_runs: number;
+        };
         /** ExportReceipt */
         ExportReceipt: {
+            /** Approval Id */
+            approval_id: string;
             /** Artifacts */
             artifacts: components["schemas"]["ExportArtifact"][];
             /** Exported At */
             exported_at: string;
             /** Idempotent Replay */
             idempotent_replay: boolean;
+            instrumentation: components["schemas"]["ExportInstrumentation"];
+            /** Manifest Hash */
+            manifest_hash: string;
             /**
              * Status
              * @constant
@@ -492,6 +990,73 @@ export interface components {
             status: "exported";
             /** Study Id */
             study_id: string;
+        };
+        /** FinalStudyApproval */
+        FinalStudyApproval: {
+            /** Approval Id */
+            approval_id: string;
+            /** Idempotency Key */
+            idempotency_key: string;
+            /** Included Artifact Hashes */
+            included_artifact_hashes: components["schemas"]["ApprovedArtifactHash"][];
+            /** Manifest Hash */
+            manifest_hash: string;
+            /** Recorded At */
+            recorded_at: string;
+            /** Reviewer */
+            reviewer: string;
+            /** Run Id */
+            run_id: string;
+            /**
+             * Schema Version
+             * @constant
+             */
+            schema_version: "helix.final-study-approval/v1";
+            /** Study Id */
+            study_id: string;
+        };
+        /** FinalStudyApprovalCommand */
+        FinalStudyApprovalCommand: {
+            /** Idempotency Key */
+            idempotency_key: string;
+            /** Reviewer */
+            reviewer: string;
+        };
+        /** FreezeRunCommand */
+        FreezeRunCommand: {
+            /** Actor */
+            actor: string;
+            /** Idempotency Key */
+            idempotency_key: string;
+            supersession?: components["schemas"]["SupersessionRef"] | null;
+        };
+        /** FrozenRunInputs */
+        FrozenRunInputs: {
+            /** Executor Hash */
+            executor_hash: string;
+            /** Manifest */
+            manifest: components["schemas"]["ManifestEntry"][];
+            records: components["schemas"]["StudyRecords"];
+            /** Section Packages */
+            section_packages: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            };
+            /** Skill Hash */
+            skill_hash: string;
+            /** Suite Hash */
+            suite_hash: string;
+            /** Template */
+            template: {
+                [key: string]: unknown;
+            };
+            /** Validation Package */
+            validation_package: {
+                [key: string]: unknown;
+            };
+            /** Validation Package Hash */
+            validation_package_hash: string;
         };
         /** GateDecision */
         GateDecision: {
@@ -513,10 +1078,59 @@ export interface components {
          * @enum {string}
          */
         GateStatus: "blocked" | "ready_for_review" | "ready_for_signature" | "ready_for_export" | "exported";
+        /** GovernedArtifact */
+        GovernedArtifact: {
+            /** Artifact Id */
+            artifact_id: string;
+            /** Content Hash */
+            content_hash: string;
+            /** Kind */
+            kind: string;
+            /** Path */
+            path: string;
+            /** Version */
+            version: string;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** HumanDirectedRevisionCommand */
+        HumanDirectedRevisionCommand: {
+            /** Actor */
+            actor: string;
+            /** Idempotency Key */
+            idempotency_key: string;
+            /** Section Package Id */
+            section_package_id: string;
+        };
+        /** HumanDirectedRevisionReceipt */
+        HumanDirectedRevisionReceipt: {
+            cycle: components["schemas"]["DraftingCycle"];
+            /**
+             * Idempotent Replay
+             * @default false
+             */
+            idempotent_replay: boolean;
+            /** Review Scaffold Revision */
+            review_scaffold_revision: number;
+            /** Stale Approval Ids */
+            stale_approval_ids: string[];
+            /** Stale Disposition Ids */
+            stale_disposition_ids: string[];
+        };
+        /** IncludedArtifact */
+        IncludedArtifact: {
+            /** Artifact Id */
+            artifact_id: string;
+            /** Content Hash */
+            content_hash: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "pinned_run" | "section_draft_candidate" | "section_draft" | "data_validation_receipt";
         };
         /** ManifestEntry */
         ManifestEntry: {
@@ -537,6 +1151,70 @@ export interface components {
             /** Version */
             version: string;
         };
+        /** Measurement */
+        Measurement: {
+            /** Animal Id */
+            animal_id?: string | null;
+            /** Domain */
+            domain: string;
+            /** Grain */
+            grain: string;
+            /** Group Id */
+            group_id?: string | null;
+            /** Record Id */
+            record_id: string;
+            /** Source Pointer */
+            source_pointer: string;
+            /** Test Code */
+            test_code: string;
+            /** Timepoint */
+            timepoint: string;
+            /** Unit */
+            unit: string | null;
+            /** Value */
+            value: number | string;
+        };
+        /** MicroscopicFinding */
+        MicroscopicFinding: {
+            /** Animal Id */
+            animal_id: string;
+            /** Controlled Term */
+            controlled_term: string;
+            /**
+             * Domain
+             * @constant
+             */
+            domain: "MI";
+            /** Finding */
+            finding: string;
+            /** Finding Id */
+            finding_id: string;
+            /** Severity */
+            severity: string;
+            /** Source Pointer */
+            source_pointer: string;
+            /** Tissue */
+            tissue: string;
+        };
+        /** NextAttemptDecision */
+        NextAttemptDecision: {
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "retry" | "stop_for_review" | "hold";
+            /** Attempt */
+            attempt: number;
+            /** Blocking Receipt Ids */
+            blocking_receipt_ids: string[];
+            /**
+             * Max Attempts
+             * @constant
+             */
+            max_attempts: 3;
+            /** Reasons */
+            reasons: string[];
+        };
         /** NoteBlock */
         NoteBlock: {
             /**
@@ -546,6 +1224,42 @@ export interface components {
             kind: "note";
             /** Text */
             text: string;
+        };
+        /** ParseReuse */
+        ParseReuse: {
+            /** Content Hash */
+            content_hash: string;
+            /** Node Id */
+            node_id: string;
+            /** Reused */
+            reused: boolean;
+        };
+        /** PinnedRun */
+        PinnedRun: {
+            /** Created At */
+            created_at: string;
+            /** Event History */
+            event_history: components["schemas"]["WorkflowEvent"][];
+            /** Governed Inputs */
+            governed_inputs: components["schemas"]["GovernedArtifact"][];
+            /** Manifest Hash */
+            manifest_hash: string;
+            /** Predecessor Run Id */
+            predecessor_run_id?: string | null;
+            receipt: components["schemas"]["RunReceipt"];
+            /** Run Id */
+            run_id: string;
+            run_plan: components["schemas"]["RunPlan"];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "planned" | "needs_review";
+            /** Study Id */
+            study_id: string;
+            study_type_resolution: components["schemas"]["StudyTypeResolution"];
+            /** Supersession Reason */
+            supersession_reason?: string | null;
         };
         /** PlannerCapability */
         PlannerCapability: {
@@ -562,6 +1276,92 @@ export interface components {
          * @enum {string}
          */
         PlannerMode: "fixture" | "openai_compatible";
+        /** PlanningEvidence */
+        PlanningEvidence: {
+            /** Code */
+            code: string;
+            /** Message */
+            message: string;
+            /** Subject */
+            subject: string;
+        };
+        /** PredecessorSnapshot */
+        PredecessorSnapshot: {
+            /** Approvals */
+            approvals: components["schemas"]["Approval"][];
+            /** Candidate Evaluations */
+            candidate_evaluations: components["schemas"]["CandidateEvaluation"][];
+            /** Claims */
+            claims: components["schemas"]["Claim"][];
+            /** Data Validation Executions */
+            data_validation_executions: components["schemas"]["DataValidationExecution"][];
+            /** Drafting Cycles */
+            drafting_cycles: components["schemas"]["DraftingCycle"][];
+            /** Events */
+            events: components["schemas"]["WorkflowEvent"][];
+            /** Export Artifacts */
+            export_artifacts: components["schemas"]["ExportArtifact"][];
+            final_study_approval?: components["schemas"]["FinalStudyApproval"] | null;
+            frozen_inputs: components["schemas"]["FrozenRunInputs"];
+            /** Gate Decisions */
+            gate_decisions: components["schemas"]["GateDecision"][];
+            pinned_run: components["schemas"]["PinnedRun"];
+            /** Provenance Edges */
+            provenance_edges: components["schemas"]["ProvenanceEdge"][];
+            release_candidate?: components["schemas"]["ReleaseCandidate"] | null;
+            /** Review Dispositions */
+            review_dispositions: components["schemas"]["ReviewDisposition"][];
+            /** Review Scaffold Revisions */
+            review_scaffold_revisions: {
+                [key: string]: unknown;
+            }[];
+            /**
+             * Schema Version
+             * @constant
+             */
+            schema_version: "helix.predecessor-snapshot/v1";
+            /** Section Drafts */
+            section_drafts: components["schemas"]["SectionDraft"][];
+            /** Section Runs */
+            section_runs: components["schemas"]["StoredSectionRun"][];
+            /** Snapshot Hash */
+            snapshot_hash: string;
+            /** Validation Results */
+            validation_results: components["schemas"]["ValidationResult"][];
+            /** Workflow State */
+            workflow_state: string;
+        };
+        /** PromotionCommand */
+        PromotionCommand: {
+            /** Idempotency Key */
+            idempotency_key: string;
+        };
+        /** PromotionDecision */
+        PromotionDecision: {
+            /** Candidate Hash */
+            candidate_hash: string;
+            /** Candidate Id */
+            candidate_id: string;
+            /** Conditions */
+            conditions: components["schemas"]["ConditionDecision"][];
+            /** Current Disposition Ids */
+            current_disposition_ids: string[];
+            /** Eligible */
+            eligible: boolean;
+            /** Failed Condition Ids */
+            failed_condition_ids: ("package_permission" | "no_hard_blocker" | "provenance_passed" | "conformance_passed" | "review_required_current")[];
+            /** Gate Decision Ids */
+            gate_decision_ids: string[];
+            /** Run Id */
+            run_id: string;
+            /**
+             * Schema Version
+             * @constant
+             */
+            schema_version: "helix.section-promotion-decision/v1";
+            /** Warnings */
+            warnings: string[];
+        };
         /** ProseBlock */
         ProseBlock: {
             /**
@@ -571,6 +1371,82 @@ export interface components {
             kind: "prose";
             /** Markdown */
             markdown: string;
+        };
+        /** ProvenanceBinding */
+        ProvenanceBinding: {
+            /** Artifact Hash */
+            artifact_hash: string;
+            /** Claim Hash */
+            claim_hash: string;
+            /** Claim Id */
+            claim_id: string;
+            /** Location */
+            location: string;
+            /** Text */
+            text: string;
+        };
+        /** ProvenanceBlocker */
+        ProvenanceBlocker: {
+            /** Code */
+            code: string;
+            /** Location */
+            location: string;
+            /** Message */
+            message: string;
+            /** Text */
+            text: string;
+        };
+        /** ProvenanceEdge */
+        ProvenanceEdge: {
+            /** Authority Tier */
+            authority_tier: number;
+            /** Claim Id */
+            claim_id: string;
+            /** Edge Id */
+            edge_id: string;
+            /** Source Hash */
+            source_hash?: string | null;
+            /** Source Pointer */
+            source_pointer: string;
+            /** Source Record Id */
+            source_record_id: string;
+            /** Transform Id */
+            transform_id: string;
+            /** Transform Version */
+            transform_version?: string | null;
+        };
+        /** ProvenanceReceipt */
+        ProvenanceReceipt: {
+            /** Bindings */
+            bindings: components["schemas"]["ProvenanceBinding"][];
+            /** Blockers */
+            blockers: components["schemas"]["ProvenanceBlocker"][];
+            /** Candidate Hash */
+            candidate_hash: string;
+            /** Candidate Id */
+            candidate_id: string;
+            /**
+             * Enforcement Class
+             * @constant
+             */
+            enforcement_class: "hard_blocker";
+            /** Receipt Id */
+            receipt_id: string;
+            /**
+             * Schema Version
+             * @constant
+             */
+            schema_version: "helix.provenance-receipt/v1";
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "passed" | "blocked";
+            /**
+             * Waivable
+             * @constant
+             */
+            waivable: false;
         };
         /** RegulatoryReference */
         RegulatoryReference: {
@@ -589,6 +1465,34 @@ export interface components {
             title: string;
             /** Url */
             url: string;
+        };
+        /** ReleaseCandidate */
+        ReleaseCandidate: {
+            /** Content Hash */
+            content_hash: string;
+            /** Current Drafting Cycles */
+            current_drafting_cycles: components["schemas"]["DraftingCycleRef"][];
+            /**
+             * Export Eligible
+             * @constant
+             */
+            export_eligible: true;
+            /** Included Artifacts */
+            included_artifacts: components["schemas"]["IncludedArtifact"][];
+            /** Run Id */
+            run_id: string;
+            /**
+             * Schema Version
+             * @constant
+             */
+            schema_version: "helix.release-candidate/v1";
+            /**
+             * Status
+             * @constant
+             */
+            status: "release_candidate";
+            /** Study Id */
+            study_id: string;
         };
         /** ReportAssembly */
         ReportAssembly: {
@@ -625,12 +1529,18 @@ export interface components {
             human_judgment: boolean;
             /** Label */
             label: string;
+            /** Location */
+            location?: string | null;
             /** Regulatory Reference Ids */
             regulatory_reference_ids: string[];
             /** Required */
             required: boolean;
             /** Source Expectation */
             source_expectation: string;
+            style_constraints?: components["schemas"]["TemplateStyleConstraints"] | null;
+            table_shape?: components["schemas"]["TemplateTableShape"] | null;
+            /** Unit */
+            unit?: string | null;
         };
         /** ReportSectionTemplate */
         ReportSectionTemplate: {
@@ -664,7 +1574,13 @@ export interface components {
         };
         /** ReviewDisposition */
         ReviewDisposition: {
+            /** Artifact Hash */
+            artifact_hash?: string | null;
+            /** Artifact Id */
+            artifact_id?: string | null;
             decision: components["schemas"]["DispositionDecision"];
+            /** Dependency Fingerprint */
+            dependency_fingerprint?: string | null;
             /** Disposition Id */
             disposition_id: string;
             /** Reason */
@@ -680,6 +1596,85 @@ export interface components {
         ReviseRequest: {
             /** Feedback */
             feedback: string;
+        };
+        /** RunPlan */
+        RunPlan: {
+            /** Created At */
+            created_at: string;
+            /** Fingerprint */
+            fingerprint: string;
+            /** Governed Versions */
+            governed_versions: {
+                [key: string]: string;
+            };
+            /** Manifest Hash */
+            manifest_hash: string;
+            /** Nodes */
+            nodes: components["schemas"]["RunPlanNode"][];
+            /** Run Id */
+            run_id: string;
+            /** Run Plan Id */
+            run_plan_id: string;
+            /**
+             * Schema Version
+             * @constant
+             */
+            schema_version: "helix.run-plan/v1";
+            /** Version */
+            version: number;
+        };
+        /** RunPlanNode */
+        RunPlanNode: {
+            /** Depends On */
+            depends_on: string[];
+            /** Evidence */
+            evidence: components["schemas"]["PlanningEvidence"][];
+            /** Input Fingerprint */
+            input_fingerprint: string;
+            /** Node Id */
+            node_id: string;
+            /**
+             * Node Type
+             * @enum {string}
+             */
+            node_type: "parse" | "study_type_resolution" | "data_validation" | "template_contract" | "section_agent" | "provenance" | "study_output_evaluation" | "template_conformance" | "section_promotion" | "review_scaffold";
+            /** Package Id */
+            package_id?: string | null;
+            /** Package Version */
+            package_version?: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "blocked";
+        };
+        /** RunReceipt */
+        RunReceipt: {
+            /** Event Id */
+            event_id: string;
+            /** Governed Inputs Fingerprint */
+            governed_inputs_fingerprint: string;
+            /** Manifest Hash */
+            manifest_hash: string;
+            /** Receipt Id */
+            receipt_id: string;
+            /** Run Id */
+            run_id: string;
+            /** Run Plan Fingerprint */
+            run_plan_fingerprint: string;
+        };
+        /** SectionClaimReference */
+        SectionClaimReference: {
+            /** Claim Id */
+            claim_id: string;
+            /** Executor Receipt Id */
+            executor_receipt_id: string;
+            /** Section Id */
+            section_id: string;
+            /** Section Package Id */
+            section_package_id: string;
+            /** Title */
+            title: string;
         };
         /** SectionContentDraft */
         SectionContentDraft: {
@@ -714,12 +1709,40 @@ export interface components {
             /** Version */
             version: number;
         };
+        /** SectionDraft */
+        SectionDraft: {
+            /** Bound Dispositions */
+            bound_dispositions: components["schemas"]["BoundDisposition"][];
+            /** Candidate Hash */
+            candidate_hash: string;
+            /** Candidate Id */
+            candidate_id: string;
+            /** Content Hash */
+            content_hash: string;
+            /** Draft Id */
+            draft_id: string;
+            /** Gate Decision Ids */
+            gate_decision_ids: string[];
+            /** Promoted At */
+            promoted_at: string;
+            /** Run Id */
+            run_id: string;
+            /**
+             * Schema Version
+             * @constant
+             */
+            schema_version: "helix.section-draft/v1";
+            /** Section Id */
+            section_id: string;
+            /**
+             * Status
+             * @constant
+             */
+            status: "section_draft";
+        };
         /** SectionDraftCandidate */
         SectionDraftCandidate: {
-            /** Agent Receipt */
-            agent_receipt: {
-                [key: string]: string;
-            };
+            agent_receipt: components["schemas"]["CodexAgentReceipt"];
             /** Attempt */
             attempt: number;
             /** Candidate Id */
@@ -752,6 +1775,15 @@ export interface components {
             status: "section_draft_candidate";
             /** Validated Claim Ids */
             validated_claim_ids: string[];
+        };
+        /** SectionImpactSet */
+        SectionImpactSet: {
+            /** Direct */
+            direct: string[];
+            /** Origin Section Package Id */
+            origin_section_package_id: string;
+            /** Transitive */
+            transitive: string[];
         };
         /** SectionListItem */
         SectionListItem: {
@@ -786,6 +1818,9 @@ export interface components {
         SectionRunEligibility: {
             /** Eligible */
             eligible: boolean;
+            /** Gate Results */
+            gate_results: components["schemas"]["TemplateContractGateResult"][];
+            impact_set: components["schemas"]["SectionImpactSet"];
             /** Reasons */
             reasons: string[];
             /** Section Package Id */
@@ -826,6 +1861,8 @@ export interface components {
              * @constant
              */
             skill_name: "helix-section-agent";
+            /** Skill References Hash */
+            skill_references_hash: string;
             /**
              * Status
              * @constant
@@ -938,6 +1975,125 @@ export interface components {
             /** Workflow State */
             workflow_state: string;
         };
+        /** StudyOutputAssertionResult */
+        StudyOutputAssertionResult: {
+            /** Assertion */
+            assertion: string;
+            /** Message */
+            message: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "passed" | "failed";
+        };
+        /** StudyOutputEvaluationReceipt */
+        StudyOutputEvaluationReceipt: {
+            /** Candidate Hash */
+            candidate_hash: string;
+            /** Candidate Id */
+            candidate_id: string;
+            /**
+             * Enforcement Class
+             * @constant
+             */
+            enforcement_class: "review_required";
+            /** Receipt Id */
+            receipt_id: string;
+            /** Results */
+            results: components["schemas"]["StudyOutputAssertionResult"][];
+            /**
+             * Schema Version
+             * @constant
+             */
+            schema_version: "helix.study-output-evaluation-receipt/v1";
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "passed" | "failed";
+            /** Suite Hash */
+            suite_hash: string;
+            /** Suite Id */
+            suite_id: string;
+            /** Suite Version */
+            suite_version: string;
+            /** Waivable */
+            waivable: boolean;
+        };
+        /** StudyRecords */
+        StudyRecords: {
+            /** Animals */
+            animals: components["schemas"]["Animal"][];
+            /** Body Weights */
+            body_weights: components["schemas"]["Measurement"][];
+            /** Clinical Observations */
+            clinical_observations: components["schemas"]["Measurement"][];
+            /** Food Consumption */
+            food_consumption: components["schemas"]["Measurement"][];
+            /** Formulation */
+            formulation: components["schemas"]["Measurement"][];
+            /** Microscopic Findings */
+            microscopic_findings: components["schemas"]["MicroscopicFinding"][];
+            /** Organ Weights */
+            organ_weights: components["schemas"]["Measurement"][];
+        };
+        /** StudyTypeResolution */
+        StudyTypeResolution: {
+            /** Evidence */
+            evidence: components["schemas"]["PlanningEvidence"][];
+            /** Mapping Hash */
+            mapping_hash: string;
+            /** Mapping Version */
+            mapping_version: string;
+            /** Protocol Fields */
+            protocol_fields: {
+                [key: string]: string | number;
+            };
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "resolved" | "needs_review";
+            /** Study Type Id */
+            study_type_id: string | null;
+        };
+        /** SupersedingRunReceipt */
+        SupersedingRunReceipt: {
+            /** Carried Forward */
+            carried_forward: components["schemas"]["CarriedForwardArtifact"][];
+            /** Fresh Gate Ids */
+            fresh_gate_ids: string[];
+            /** Fresh Scaffold Revision */
+            fresh_scaffold_revision: number;
+            /** Fresh Validation Receipt Ids */
+            fresh_validation_receipt_ids: string[];
+            impact_set: components["schemas"]["SectionImpactSet"];
+            /** Parse Reuse */
+            parse_reuse: components["schemas"]["ParseReuse"][];
+            /** Predecessor Run Id */
+            predecessor_run_id: string;
+            /** Predecessor Snapshot Hash */
+            predecessor_snapshot_hash: string;
+            /** Reason */
+            reason: string;
+            /** Rerun Node Ids */
+            rerun_node_ids: string[];
+            /** Run Id */
+            run_id: string;
+            /**
+             * Schema Version
+             * @constant
+             */
+            schema_version: "helix.superseding-run/v1";
+        };
+        /** SupersessionRef */
+        SupersessionRef: {
+            /** Predecessor Run Id */
+            predecessor_run_id: string;
+            /** Reason */
+            reason: string;
+        };
         /** TableBlock */
         TableBlock: {
             /** Columns */
@@ -951,6 +2107,109 @@ export interface components {
             rows: string[][];
             /** Title */
             title: string;
+        };
+        /** TemplateConformanceReceipt */
+        TemplateConformanceReceipt: {
+            /** Candidate Hash */
+            candidate_hash: string;
+            /** Candidate Id */
+            candidate_id: string;
+            /** Receipt Id */
+            receipt_id: string;
+            /** Results */
+            results: components["schemas"]["TemplateConformanceResult"][];
+            /**
+             * Schema Version
+             * @constant
+             */
+            schema_version: "helix.template-conformance-receipt/v1";
+            /** Section Package Id */
+            section_package_id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "passed" | "blocked";
+        };
+        /** TemplateConformanceResult */
+        TemplateConformanceResult: {
+            /**
+             * Check Kind
+             * @enum {string}
+             */
+            check_kind: "completeness" | "table_coverage" | "terminology" | "units" | "rounding" | "approved_language";
+            /**
+             * Enforcement Class
+             * @constant
+             */
+            enforcement_class: "hard_blocker";
+            /** Gate Id */
+            gate_id: string;
+            /** Message */
+            message: string;
+            /** Rule Id */
+            rule_id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "passed" | "blocked";
+            /**
+             * Waivable
+             * @constant
+             */
+            waivable: false;
+        };
+        /** TemplateContractGateResult */
+        TemplateContractGateResult: {
+            /**
+             * Check Kind
+             * @enum {string}
+             */
+            check_kind: "fields" | "locations" | "table_shapes" | "labels" | "units" | "style_constraints";
+            /**
+             * Enforcement Class
+             * @constant
+             */
+            enforcement_class: "hard_blocker";
+            /** Gate Id */
+            gate_id: string;
+            /** Message */
+            message: string;
+            /** Result Id */
+            result_id: string;
+            /** Section Package Id */
+            section_package_id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "passed" | "blocked";
+            /**
+             * Waivable
+             * @constant
+             */
+            waivable: false;
+        };
+        /** TemplateStyleConstraints */
+        TemplateStyleConstraints: {
+            /** Decimal Places */
+            decimal_places: number;
+            /** Forbidden Terms */
+            forbidden_terms?: string[];
+            /** Unit Display */
+            unit_display: string;
+        };
+        /** TemplateTableShape */
+        TemplateTableShape: {
+            /** Column Axis */
+            column_axis: string;
+            /** Grain */
+            grain: string;
+            /** Row Axis */
+            row_axis: string;
+            /** Value Columns */
+            value_columns: string[];
         };
         /** ValidationError */
         ValidationError: {
@@ -977,12 +2236,18 @@ export interface components {
         };
         /** ValidationResult */
         ValidationResult: {
+            /** Enforcement Class */
+            enforcement_class?: ("hard_blocker" | "review_required" | "warning") | null;
             /** Evidence Ids */
             evidence_ids: string[];
+            /** Executor Id */
+            executor_id?: string | null;
             /** @default deterministic */
             kind: components["schemas"]["ValidationKind"];
             /** Message */
             message: string;
+            /** Package Id */
+            package_id?: string | null;
             /** Result Id */
             result_id: string;
             /** Rule Id */
@@ -999,6 +2264,8 @@ export interface components {
             status: components["schemas"]["ValidationStatus"];
             /** Tool Name */
             tool_name?: string | null;
+            /** Waivable */
+            waivable?: boolean | null;
         };
         /** ValidationRun */
         ValidationRun: {
@@ -1045,24 +2312,55 @@ export interface components {
         };
         /** WorkspaceResponse */
         WorkspaceResponse: {
+            /**
+             * Approval Current
+             * @default false
+             */
+            approval_current: boolean;
             /** Approvals */
             approvals: components["schemas"]["Approval"][];
+            /**
+             * Can Open Revision
+             * @default false
+             */
+            can_open_revision: boolean;
+            /** Candidate Evaluations */
+            candidate_evaluations?: components["schemas"]["CandidateEvaluation"][];
             /** Claims */
             claims: components["schemas"]["Claim"][];
+            /** Cross Section Queries */
+            cross_section_queries?: components["schemas"]["CrossSectionQueryReceipt"][];
+            /** Data Validation Executions */
+            data_validation_executions: components["schemas"]["DataValidationExecution"][];
             /** Dispositions */
             dispositions: components["schemas"]["ReviewDisposition"][];
+            /** Drafting Cycles */
+            drafting_cycles?: components["schemas"]["DraftingCycle"][];
             /** Events */
             events: components["schemas"]["WorkflowEvent"][];
             /** Export Artifacts */
             export_artifacts: components["schemas"]["ExportArtifact"][];
+            final_study_approval?: components["schemas"]["FinalStudyApproval"] | null;
             /** Label */
             label: string;
             /** Manifest */
             manifest: components["schemas"]["ManifestEntry"][];
+            pinned_run: components["schemas"]["PinnedRun"] | null;
             /** Planner Capabilities */
             planner_capabilities: components["schemas"]["PlannerCapability"][];
+            /** Predecessor Snapshots */
+            predecessor_snapshots?: components["schemas"]["PredecessorSnapshot"][];
+            /** Promotion Decisions */
+            promotion_decisions?: components["schemas"]["PromotionDecision"][];
+            release_candidate?: components["schemas"]["ReleaseCandidate"] | null;
             release_gate: components["schemas"]["GateDecision"];
             report: components["schemas"]["ReportAssembly"];
+            /** Review Scaffold Revisions */
+            review_scaffold_revisions?: {
+                [key: string]: unknown;
+            }[];
+            /** Section Drafts */
+            section_drafts?: components["schemas"]["SectionDraft"][];
             /** Section Run Eligibility */
             section_run_eligibility: components["schemas"]["SectionRunEligibility"][];
             /** Section Runs */
@@ -1071,6 +2369,7 @@ export interface components {
             stages: components["schemas"]["Stage"][];
             study: components["schemas"]["Study"];
             summary: components["schemas"]["WorkspaceSummary"];
+            superseding_run_receipt?: components["schemas"]["SupersedingRunReceipt"] | null;
             /** Validations */
             validations: components["schemas"]["ValidationResult"][];
             /** Workflow State */
@@ -1253,6 +2552,41 @@ export interface operations {
             };
         };
     };
+    run_data_validation_api_v1_studies__study_id__data_validation_packages_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DataValidationCommand"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DataValidationExecution"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     export_package_api_v1_studies__study_id__exports_post: {
         parameters: {
             query?: never;
@@ -1318,6 +2652,111 @@ export interface operations {
             };
         };
     };
+    record_final_study_approval_api_v1_studies__study_id__final_study_approvals_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FinalStudyApprovalCommand"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    freeze_run_api_v1_studies__study_id__pinned_runs_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FreezeRunCommand"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PinnedRun"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    revise_section_api_v1_studies__study_id__section_revisions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HumanDirectedRevisionCommand"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HumanDirectedRevisionReceipt"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     run_section_api_v1_studies__study_id__section_runs_post: {
         parameters: {
             query?: never;
@@ -1340,6 +2779,114 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SectionRunReceipt"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    query_cross_section_api_v1_studies__study_id__section_runs__run_id__cross_section_queries_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CrossSectionQueryCommand"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CrossSectionQueryReceipt"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    evaluate_candidate_api_v1_studies__study_id__section_runs__run_id__evaluations_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CandidateEvaluationCommand"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CandidateEvaluation"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    promote_section_draft_api_v1_studies__study_id__section_runs__run_id__promotions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PromotionCommand"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SectionDraft"];
                 };
             };
             /** @description Validation Error */

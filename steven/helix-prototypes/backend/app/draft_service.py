@@ -217,7 +217,7 @@ class DraftService:
         narrative_md = self._render(result, feedback, anchor)
 
         version = self.repository.next_section_draft_version(study_id, section_id)
-        row = self.repository.add_section_draft(
+        row = self.repository.add_content_draft(
             study_id=study_id,
             section_id=section_id,
             version=version,
@@ -245,7 +245,7 @@ class DraftService:
         Anchored to the latest active draft so it refines rather than reinvents.
         """
         self._require_section(section_id)
-        versions = self.repository.list_section_drafts(study_id, section_id)
+        versions = self.repository.list_content_drafts(study_id, section_id)
         open_proposals = [row for row in versions if row.status == "proposed"]
         if len(open_proposals) >= self.MAX_OPEN_ATTEMPTS:
             raise DraftCycleError(
@@ -266,7 +266,7 @@ class DraftService:
         row = self._require_draft(study_id, section_id, version)
         if row.status != "proposed":
             raise DraftCycleError("Only a proposed version can be applied.")
-        for other in self.repository.list_section_drafts(study_id, section_id):
+        for other in self.repository.list_content_drafts(study_id, section_id):
             if other.status == "proposed" and other.version != version:
                 other.status = "discarded"
         row.status = "needs_review"
@@ -295,7 +295,7 @@ class DraftService:
 
     def _require_draft(self, study_id: str, section_id: str, version: int):
         self._require_section(section_id)
-        row = self.repository.get_section_draft(study_id, section_id, version)
+        row = self.repository.get_content_draft(study_id, section_id, version)
         if row is None:
             raise KeyError(f"Unknown draft version {version} for section '{section_id}'")
         return row

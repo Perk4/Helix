@@ -9,22 +9,42 @@ from sqlalchemy.orm import Session
 
 from . import llm
 from .agents.codex_section_agent import CodexSectionAgent, SectionAgent
+from .candidate_evaluations import (
+    CandidateEvaluationConflictError,
+    CandidateEvaluationService,
+    UnknownSectionRunError,
+)
 from .chat_service import ChatService
 from .config import Settings, get_settings
+from .data_validation import DataValidationConflictError, UnknownValidationPackageError
 from .database import create_database_engine, create_schema, create_session_factory
 from .draft_service import DraftCycleError, DraftService
 from .repository import StudyNotFoundError
+from .run_plans import PinnedRunService, RunConflictError, RunPlanRejectedError
 from .schemas import (
     ApprovalCommand,
+    CandidateEvaluation,
+    CandidateEvaluationCommand,
     ChatMessage,
     ChatRequest,
+    CrossSectionQueryCommand,
+    CrossSectionQueryReceipt,
+    DataValidationCommand,
+    DataValidationExecution,
     DispositionCommand,
     DraftRequest,
     EvidenceChain,
     ExportCommand,
     ExportReceipt,
+    FinalStudyApprovalCommand,
+    FreezeRunCommand,
+    HumanDirectedRevisionCommand,
+    HumanDirectedRevisionReceipt,
+    PinnedRun,
+    PromotionCommand,
     ReviseRequest,
     SectionContentDraft,
+    SectionDraft,
     SectionListItem,
     SectionRunCommand,
     SectionRunReceipt,
@@ -34,6 +54,13 @@ from .schemas import (
     ValidationRun,
     WorkspaceResponse,
 )
+from .section_promotion import (
+    PromotionConflictError,
+    PromotionRejectedError,
+    SectionPromotionService,
+    UnknownPromotionTargetError,
+)
+from .section_revisions import RevisionConflictError, SectionRevisionService
 from .section_runs import (
     CandidateValidationError,
     SectionRunConflictError,
@@ -97,7 +124,8 @@ def create_app(
             active_section_agent,
             active_settings.codex_repository_root,
         )
-        return StudyService(session, active_settings, section_runs)
+        pinned_runs = PinnedRunService(session, active_settings.codex_repository_root)
+        return StudyService(session, active_settings, section_runs, pinned_runs)
 
     ServiceDependency = Annotated[StudyService, Depends(service)]
 
@@ -120,6 +148,13 @@ def create_app(
 
     ChatServiceDependency = Annotated[ChatService, Depends(chat_service)]
 
+    def candidate_evaluation_service(session: SessionDependency) -> CandidateEvaluationService:
+        return CandidateEvaluationService(session, active_settings.codex_repository_root)
+
+    CandidateEvaluationServiceDependency = Annotated[
+        CandidateEvaluationService, Depends(candidate_evaluation_service)
+    ]
+
     @app.get("/health", tags=["system"])
     def health(session: SessionDependency) -> dict[str, str]:
         session.execute(text("SELECT 1"))
@@ -136,6 +171,32 @@ def create_app(
     )
     def get_workspace(study_id: str, study_service: ServiceDependency) -> WorkspaceResponse:
         return _call(lambda: study_service.workspace(study_id))
+
+    @app.post(
+        "/api/v1/studies/{study_id}/pinned-runs",
+        response_model=PinnedRun,
+        status_code=status.HTTP_201_CREATED,
+        tags=["run-plans"],
+    )
+    def freeze_run(
+        study_id: str,
+        command: FreezeRunCommand,
+        study_service: ServiceDependency,
+    ) -> PinnedRun:
+        return _call(lambda: study_service.freeze_run(study_id, command))
+
+    @app.post(
+        "/api/v1/studies/{study_id}/data-validation-packages",
+        response_model=DataValidationExecution,
+        status_code=status.HTTP_201_CREATED,
+        tags=["data-validation"],
+    )
+    def run_data_validation(
+        study_id: str,
+        command: DataValidationCommand,
+        study_service: ServiceDependency,
+    ) -> DataValidationExecution:
+        return _call(lambda: study_service.run_data_validation(study_id, command))
 
     @app.post(
         "/api/v1/studies/{study_id}/validation-runs",
@@ -162,6 +223,73 @@ def create_app(
         section_service: SectionRunServiceDependency,
     ) -> SectionRunReceipt:
         return _call(lambda: section_service.run(study_id, command))
+
+    def section_revision_service(session: SessionDependency) -> SectionRevisionService:
+        return SectionRevisionService(session, section_run_service(session))
+
+    SectionRevisionServiceDependency = Annotated[
+        SectionRevisionService, Depends(section_revision_service)
+    ]
+
+    @app.post(
+        "/api/v1/studies/{study_id}/section-revisions",
+        response_model=HumanDirectedRevisionReceipt,
+        status_code=status.HTTP_201_CREATED,
+        tags=["section-revisions"],
+    )
+    def revise_section(
+        study_id: str,
+        command: HumanDirectedRevisionCommand,
+        revisions: SectionRevisionServiceDependency,
+    ) -> HumanDirectedRevisionReceipt:
+        return _call(lambda: revisions.revise(study_id, command))
+
+    @app.post(
+        "/api/v1/studies/{study_id}/section-runs/{run_id}/evaluations",
+        response_model=CandidateEvaluation,
+        status_code=status.HTTP_201_CREATED,
+        tags=["candidate-evaluations"],
+    )
+    def evaluate_candidate(
+        study_id: str,
+        run_id: str,
+        command: CandidateEvaluationCommand,
+        evaluation_service: CandidateEvaluationServiceDependency,
+    ) -> CandidateEvaluation:
+        return _call(lambda: evaluation_service.evaluate(study_id, run_id, command))
+
+    @app.post(
+        "/api/v1/studies/{study_id}/section-runs/{run_id}/cross-section-queries",
+        response_model=CrossSectionQueryReceipt,
+        status_code=status.HTTP_201_CREATED,
+        tags=["cross-section-queries"],
+    )
+    def query_cross_section(
+        study_id: str,
+        run_id: str,
+        command: CrossSectionQueryCommand,
+        evaluation_service: CandidateEvaluationServiceDependency,
+    ) -> CrossSectionQueryReceipt:
+        return _call(lambda: evaluation_service.query(study_id, run_id, command))
+
+    def promotion_service(session: SessionDependency) -> SectionPromotionService:
+        return SectionPromotionService(session, active_settings.codex_repository_root)
+
+    PromotionServiceDependency = Annotated[SectionPromotionService, Depends(promotion_service)]
+
+    @app.post(
+        "/api/v1/studies/{study_id}/section-runs/{run_id}/promotions",
+        response_model=SectionDraft,
+        status_code=status.HTTP_201_CREATED,
+        tags=["section-promotion"],
+    )
+    def promote_section_draft(
+        study_id: str,
+        run_id: str,
+        command: PromotionCommand,
+        promotions: PromotionServiceDependency,
+    ) -> SectionDraft:
+        return _call(lambda: promotions.promote(study_id, run_id, command))
 
     @app.get(
         "/api/v1/studies/{study_id}/sections",
@@ -314,6 +442,18 @@ def create_app(
     ) -> WorkspaceResponse:
         return _call(lambda: study_service.approve(study_id, command))
 
+    @app.post(
+        "/api/v1/studies/{study_id}/final-study-approvals",
+        response_model=WorkspaceResponse,
+        tags=["review"],
+    )
+    def record_final_study_approval(
+        study_id: str,
+        command: FinalStudyApprovalCommand,
+        study_service: ServiceDependency,
+    ) -> WorkspaceResponse:
+        return _call(lambda: study_service.record_final_study_approval(study_id, command))
+
     @app.get(
         "/api/v1/studies/{study_id}/exports/{artifact_id}",
         response_class=Response,
@@ -351,10 +491,32 @@ def _call[ResponseT](operation: Callable[[], ResponseT]) -> ResponseT:
         return operation()
     except StudyNotFoundError as error:
         raise HTTPException(status_code=404, detail=f"Unknown study {error.args[0]}") from error
-    except (InvalidCommandError, UnknownSectionPackageError, KeyError) as error:
+    except (
+        InvalidCommandError,
+        UnknownSectionPackageError,
+        UnknownValidationPackageError,
+        UnknownSectionRunError,
+        UnknownPromotionTargetError,
+        KeyError,
+    ) as error:
         raise HTTPException(status_code=404, detail=str(error)) from error
-    except (WorkflowConflictError, SectionRunConflictError, DraftCycleError) as error:
+    except (
+        WorkflowConflictError,
+        SectionRunConflictError,
+        RevisionConflictError,
+        RunConflictError,
+        CandidateEvaluationConflictError,
+        DataValidationConflictError,
+        PromotionConflictError,
+        PromotionRejectedError,
+        DraftCycleError,
+    ) as error:
         raise HTTPException(status_code=409, detail=str(error)) from error
+    except RunPlanRejectedError as error:
+        raise HTTPException(
+            status_code=422,
+            detail=[item.model_dump(mode="json") for item in error.evidence],
+        ) from error
     except CandidateValidationError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
     except (PlannerUnavailableError, SectionRunUnavailableError) as error:

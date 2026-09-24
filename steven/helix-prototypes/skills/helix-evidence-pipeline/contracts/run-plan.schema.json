@@ -11,6 +11,7 @@
     "version",
     "fingerprint",
     "created_at",
+    "manifest_hash",
     "governed_versions",
     "nodes"
   ],
@@ -51,7 +52,14 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["node_id", "node_type", "depends_on", "input_fingerprint"],
+        "required": [
+          "node_id",
+          "node_type",
+          "depends_on",
+          "input_fingerprint",
+          "status",
+          "evidence"
+        ],
         "properties": {
           "node_id": {
             "type": "string",
@@ -72,10 +80,16 @@
             ]
           },
           "package_id": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "package_version": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
           },
           "depends_on": {
@@ -88,9 +102,44 @@
           },
           "input_fingerprint": {
             "$ref": "#/$defs/sha256"
+          },
+          "status": {
+            "enum": [
+              "pending",
+              "blocked"
+            ]
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "code",
+                "subject",
+                "message"
+              ],
+              "properties": {
+                "code": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "subject": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "message": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
           }
         }
       }
+    },
+    "manifest_hash": {
+      "$ref": "#/$defs/sha256"
     }
   },
   "$defs": {

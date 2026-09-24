@@ -155,6 +155,37 @@
         "type": "string",
         "minLength": 1
       }
+    },
+    "reference_drafts": {
+      "type": "array",
+      "description": "Approved sections from earlier studies, supplied as style exemplars. They carry no claim authority: they come from a different study, and every value in them belongs to that study. The agent may follow their structure and wording and must take no number from them. Only validated_claims and executor_receipts supply values.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "report_id",
+          "section_title",
+          "hash",
+          "content"
+        ],
+        "properties": {
+          "report_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "section_title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "hash": {
+            "$ref": "#/$defs/sha256"
+          },
+          "content": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
     }
   },
   "$defs": {

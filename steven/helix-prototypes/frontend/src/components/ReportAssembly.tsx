@@ -28,12 +28,20 @@ type Props = {
   onInspectClaim: (claimId: string) => void;
   onResolve: (resultId: string, message: string) => void;
   onApprove: (role: ApprovalRole) => void;
+  onFinalStudyApproval: () => void;
   onExport: () => void;
 };
 
 const approvalOrder: ApprovalRole[] = ["pathologist", "peer_reviewer", "qau", "study_director"];
 
-export function ReportAssembly({ workspace, busy, onResolve, onApprove, onExport }: Props) {
+export function ReportAssembly({
+  workspace,
+  busy,
+  onResolve,
+  onApprove,
+  onFinalStudyApproval,
+  onExport,
+}: Props) {
   const studyId = workspace.study.study_id;
   const [sections, setSections] = useState<SectionListItem[]>([]);
   const [selectedSectionId, setSelectedSectionId] = useState("5_2_3_body_weight");
@@ -357,6 +365,25 @@ export function ReportAssembly({ workspace, busy, onResolve, onApprove, onExport
                 );
               })}
             </div>
+            {workspace.approval_current ? (
+              <span className="approval-check">✓ Final Study Approval recorded</span>
+            ) : (
+              <button
+                type="button"
+                className="text-button"
+                data-testid="record-final-study-approval"
+                disabled={
+                  !priorHumanApprovalsComplete ||
+                  !approvalRoles.has("study_director") ||
+                  openBlockers.length > 0 ||
+                  busy !== null ||
+                  workspace.release_candidate == null
+                }
+                onClick={onFinalStudyApproval}
+              >
+                {busy === "final-study-approval" ? "Recording…" : "Record Final Study Approval"}
+              </button>
+            )}
           </section>
 
           <section className="panel export-card">

@@ -1,5 +1,6 @@
 import json
 import re
+import shutil
 import sys
 from pathlib import Path
 from types import SimpleNamespace
@@ -9,6 +10,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import func, select
 
 from app.agents.codex_section_agent import AgentResult, CodexSectionAgent
+from app.approved_exports import note_agent_start
 from app.config import Settings
 from app.database import create_database_engine
 from app.main import create_app
@@ -16,6 +18,8 @@ from app.models import AuditEventRow, SectionRunRow
 from app.repository import StudyPackageRepository
 from app.schemas import SectionRunCommand
 from app.section_runs import SectionRunService, canonical_hash
+from app.skill_integrity import SECTION_AGENT_ROOT, skill_integrity
+from app.template_contracts import evaluate_template_contract
 
 ROOT = Path(__file__).resolve().parents[2]
 STUDY_ID = "STUDY-HLX-028"
@@ -25,12 +29,36 @@ COMMAND = {
 }
 
 
+def by_package(workspace: dict[str, object], package_id: str) -> dict[str, object]:
+    return next(
+        item
+        for item in workspace["section_run_eligibility"]
+        if item["section_package_id"] == package_id
+    )
+
+
+def assert_ready(eligibility: dict[str, object], package_id: str) -> None:
+    assert eligibility["section_package_id"] == package_id
+    assert eligibility["eligible"] is True
+    assert eligibility["reasons"] == []
+    assert eligibility["gate_results"]
+    assert all(item["status"] == "passed" for item in eligibility["gate_results"])
+    assert all(item["waivable"] is False for item in eligibility["gate_results"])
+    assert all(item["enforcement_class"] == "hard_blocker" for item in eligibility["gate_results"])
+    assert eligibility["impact_set"] == {
+        "origin_section_package_id": package_id,
+        "direct": [package_id],
+        "transitive": [],
+    }
+
+
 class FakeSectionAgent:
     def __init__(self, mode: str = "valid"):
         self.mode = mode
         self.calls = 0
 
     def run(self, *, envelope_id: str, prompt: str, output_schema: dict[str, object]) -> AgentResult:
+        note_agent_start()
         self.calls += 1
         if self.mode == "failure":
             raise RuntimeError("SDK unavailable")
@@ -39,11 +67,24 @@ class FakeSectionAgent:
         candidate_id = re.search(r"candidate_id (SDC-[A-Z0-9-]+)", prompt).group(1)
         run_id = re.search(r"run_id (SRUN-[A-Z0-9-]+)", prompt).group(1)
         skill_hash = re.search(r"skill_hash to (sha256:[a-f0-9]{64})", prompt).group(1)
+        skill_references_hash = re.search(
+            r"skill_references_hash to (sha256:[a-f0-9]{64})", prompt
+        ).group(1)
+        cycle_match = re.search(r"drafting_cycle_id ([A-Z0-9-]+)", prompt)
+        attempt_match = re.search(r"and attempt (\d+)", prompt)
+        drafting_cycle_id = cycle_match.group(1) if cycle_match else "CYCLE-BW-001"
+        attempt = int(attempt_match.group(1)) if attempt_match else 1
         claim_ids = ["C-NOT-ALLOWED"] if self.mode == "unapproved" else ["C-BW-HIGH"]
         span_claim_ids = claim_ids
         content: object = "Terminal high-dose body weight was 286.2 g."
         if self.mode == "uncovered_content":
             content = "Terminal high-dose body weight was 286.2 g. Unsupported factual assertion."
+        if self.mode == "unsupported_value":
+            content = "Terminal high-dose body weight was 286.2 g and 99.9 kg."
+        if self.mode == "advisory_fail":
+            content = "Terminal high-dose body weight was 286.2 g and is approved."
+        if self.mode == "forbidden_language":
+            content = "Terminal high-dose body weight was 286.2 g and treatment related."
         if self.mode == "nested_unapproved":
             content = {
                 "rows": [
@@ -59,6 +100,7 @@ class FakeSectionAgent:
             "thread_id": "thread-test-001",
             "skill_name": "helix-section-agent",
             "skill_hash": skill_hash,
+            "skill_references_hash": skill_references_hash,
         }
         if self.mode == "missing_receipt":
             receipt.pop("thread_id")
@@ -70,30 +112,10 @@ class FakeSectionAgent:
             "section_id": "5_2_3_body_weight",
             "section_package_id": "section.5_2_3_body_weight",
             "section_package_version": "0.1.0",
-            "drafting_cycle_id": "CYCLE-BW-001",
-            "attempt": 1,
+            "drafting_cycle_id": drafting_cycle_id,
+            "attempt": attempt,
             "validated_claim_ids": claim_ids,
-            "content_blocks": [
-                {
-                    "block_id": "BW-P1",
-                    "kind": "paragraph",
-                    "content": content,
-                    "factual_spans": (
-                        []
-                        if self.mode == "empty_factual_spans"
-                        else [
-                            {
-                                "text": (
-                                    "286.2 g"
-                                    if isinstance(content, dict) or self.mode == "uncovered_content"
-                                    else content
-                                ),
-                                "claim_ids": span_claim_ids,
-                            }
-                        ]
-                    ),
-                }
-            ],
+            "content_blocks": body_weight_blocks(self.mode, content, span_claim_ids),
             "executor_receipt_ids": (
                 ["EXEC-NOT-ALLOWED"]
                 if self.mode == "unapproved_executor_receipt"
@@ -101,14 +123,91 @@ class FakeSectionAgent:
             ),
             "agent_receipt": receipt,
         }
+        if self.mode == "agent_promoted":
+            candidate["status"] = "section_draft"
+            candidate["promoted"] = True
+        if self.mode == "codex_promoted":
+            candidate["promotion_status"] = "promoted"
         return AgentResult(thread_id="thread-test-001", final_response=json.dumps(candidate))
 
 
-def build_client(agent: FakeSectionAgent, *, raise_server_exceptions: bool = True):
+def body_weight_blocks(mode: str, content: object, claim_ids: list[str]) -> list[dict[str, object]]:
+    if mode in {"conforming", "conforming_advisory_fail"}:
+        cells = [
+            {"text": "high-dose", "claim_ids": claim_ids},
+            {"text": "M", "claim_ids": claim_ids},
+            {"text": "mean", "claim_ids": claim_ids},
+            {"text": "sd", "claim_ids": claim_ids},
+            {"text": "n", "claim_ids": claim_ids},
+            {"text": "286.2 g", "claim_ids": claim_ids},
+        ]
+        paragraph = (
+            "Terminal high-dose body weight was 286.2 g and is approved."
+            if mode == "conforming_advisory_fail"
+            else "Terminal high-dose body weight was 286.2 g."
+        )
+        return [
+            {
+                "block_id": "BW-P1",
+                "kind": "paragraph",
+                "content": paragraph,
+                "factual_spans": [{"text": paragraph, "claim_ids": claim_ids}],
+            },
+            {
+                "block_id": "BW-T1",
+                "kind": "table",
+                "content": {"rows": [{"cells": cells}]},
+                "factual_spans": [{"text": cell["text"], "claim_ids": claim_ids} for cell in cells],
+            },
+        ]
+    return [
+        {
+            "block_id": "BW-P1",
+            "kind": "paragraph",
+            "content": content,
+            "factual_spans": (
+                []
+                if mode == "empty_factual_spans"
+                else [
+                    {
+                        "text": (
+                            "286.2 g"
+                            if isinstance(content, dict) or mode == "uncovered_content"
+                            else content
+                        ),
+                        "claim_ids": claim_ids,
+                    }
+                ]
+            ),
+        }
+    ]
+
+
+def governed_root(tmp_path: Path) -> Path:
+    root = tmp_path / "helix"
+    for relative in ["skills", ".agents"]:
+        shutil.copytree(ROOT / relative, root / relative)
+    (root / "backend" / "app" / "agents").mkdir(parents=True)
+    for filename in ["validation.py", "body_weight.py", "agents/codex_section_agent.py"]:
+        source = ROOT / "backend" / "app" / filename
+        target = root / "backend" / "app" / filename
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, target)
+    shutil.copytree(ROOT / "backend" / "app" / "data", root / "backend" / "app" / "data")
+    return root
+
+
+def build_client(
+    agent: FakeSectionAgent,
+    *,
+    repository_root: Path = ROOT,
+    raise_server_exceptions: bool = True,
+    database_url: str = "sqlite+pysqlite:///:memory:",
+):
     settings = Settings(
-        database_url="sqlite+pysqlite:///:memory:",
+        database_url=database_url,
         seed_path=ROOT / "synthetic-e2e" / "helix-synthetic-bundle.json",
-        codex_repository_root=ROOT,
+        codex_repository_root=repository_root,
         auto_seed=True,
     )
     engine = create_database_engine(settings)
@@ -129,14 +228,19 @@ def test_section_run_records_candidate_receipt_scaffold_and_exact_replay() -> No
     client, engine = build_client(agent)
     with client:
         before = client.get(f"/api/v1/studies/{STUDY_ID}/workspace").json()
-        assert before["section_run_eligibility"][0]["eligible"] is False
+        assert by_package(before, "section.5_2_3_body_weight")["eligible"] is False
         validate(client)
         eligible = client.get(f"/api/v1/studies/{STUDY_ID}/workspace").json()
-        assert eligible["section_run_eligibility"][0] == {
-            "section_package_id": "section.5_2_3_body_weight",
-            "eligible": True,
-            "reasons": [],
-        }
+        body_weight = by_package(eligible, "section.5_2_3_body_weight")
+        discussion = by_package(eligible, "section.5_3_discussion")
+        assert_ready(body_weight, "section.5_2_3_body_weight")
+        assert_ready(discussion, "section.5_3_discussion")
+        assert [item["section_package_id"] for item in eligible["section_run_eligibility"]] == [
+            "section.5_2_3_body_weight",
+            "section.5_3_discussion",
+        ]
+        assert eligible["review_scaffold_revisions"][0]["sequence"] == 1
+        assert eligible["review_scaffold_revisions"][0]["section_impact_sets"] == []
 
         first = client.post(f"/api/v1/studies/{STUDY_ID}/section-runs", json=COMMAND)
         replay = client.post(f"/api/v1/studies/{STUDY_ID}/section-runs", json=COMMAND)
@@ -152,6 +256,10 @@ def test_section_run_records_candidate_receipt_scaffold_and_exact_replay() -> No
         assert receipt["candidate_hash"].startswith("sha256:")
         assert receipt["envelope_hash"].startswith("sha256:")
         assert receipt["skill_hash"].startswith("sha256:")
+        assert (
+            receipt["skill_references_hash"]
+            == skill_integrity(ROOT / SECTION_AGENT_ROOT).skill_references_hash
+        )
         assert receipt["review_scaffold_revision"] == 2
         assert len(workspace["section_runs"]) == 1
         stored = workspace["section_runs"][0]
@@ -159,6 +267,8 @@ def test_section_run_records_candidate_receipt_scaffold_and_exact_replay() -> No
         assert stored["candidate"]["validated_claim_ids"] == ["C-BW-HIGH"]
         assert "286.2 g" in json.dumps(stored["candidate"])
         assert stored["review_scaffold"]["export_eligible"] is False
+        assert "section_impact_sets" in stored["review_scaffold"]
+        assert by_package(workspace, "section.5_3_discussion")["eligible"] is True
         body_weight_section = next(
             section
             for section in stored["review_scaffold"]["sections"]
@@ -171,8 +281,25 @@ def test_section_run_records_candidate_receipt_scaffold_and_exact_replay() -> No
             "PROMOTION-DISABLED-section.5_2_3_body_weight",
         ]
         assert stored["envelope"]["validated_claims"][0]["grain"] == "dose_group"
+        assert "run_plan" not in stored["envelope"]
+        assert "study_evidence_package" not in stored["envelope"]
+        assert "records" not in stored["envelope"]
         assert stored["envelope"]["pinned_run_id"].startswith("RUN-")
         assert stored["envelope"]["manifest_hash"].startswith("sha256:")
+
+        # Style exemplars travel inside the envelope so they are hashed with it.
+        # They come from another study, so their values must never reach a
+        # draft: the corpus carries 291.5 g against this study's 286.2 g claim.
+        exemplars = stored["envelope"]["reference_drafts"]
+        assert exemplars, "the drafter needs an example of an approved section"
+        for exemplar in exemplars:
+            assert exemplar["report_id"] != stored["envelope"]["study_context"]["study_id"]
+            assert exemplar["hash"].startswith("sha256:")
+        assert stored["envelope"]["validated_claims"][0]["claim_id"] == "C-BW-HIGH"
+        exemplar_text = json.dumps(exemplars)
+        assert "291.5" in exemplar_text, "corpus changed; the contamination guard below is now vacuous"
+        assert "291.5" not in json.dumps(stored["candidate"])
+
 
         # The agent renders values the executor computed. A receipt carrying only
         # a hash leaves it nothing to render, so it has to derive them itself.
@@ -333,10 +460,9 @@ def test_pinned_run_rejects_manifest_and_governed_version_drift() -> None:
         with client.app.state.session_factory() as session:
             repository = StudyPackageRepository(session)
             package = repository.get(STUDY_ID)
+            original_checksum = package.manifest[0].checksum
             changed_manifest = [*package.manifest]
-            changed_manifest[0] = changed_manifest[0].model_copy(
-                update={"checksum": "sha256:" + "0" * 64}
-            )
+            changed_manifest[0] = changed_manifest[0].model_copy(update={"checksum": "sha256:" + "0" * 64})
             repository.save(package.model_copy(update={"manifest": changed_manifest}))
             session.commit()
 
@@ -348,20 +474,25 @@ def test_pinned_run_rejects_manifest_and_governed_version_drift() -> None:
             repository = StudyPackageRepository(session)
             package = repository.get(STUDY_ID)
             original_manifest = [*package.manifest]
-            original_manifest[0] = original_manifest[0].model_copy(
-                update={"checksum": "sha256:" + "a" * 64}
-            )
+            original_manifest[0] = original_manifest[0].model_copy(update={"checksum": original_checksum})
             repository.save(package.model_copy(update={"manifest": original_manifest}))
             session.commit()
         validate(client)
 
-        with patch("app.section_runs.GOVERNED_VERSIONS", {"schema": "2.0.0"}):
+        original_file_hash = SectionRunService._file_hash
+
+        def drifted_file_hash(path: Path) -> str:
+            if path.name == "ontology.md":
+                return "sha256:" + "0" * 64
+            return original_file_hash(path)
+
+        with patch.object(SectionRunService, "_file_hash", side_effect=drifted_file_hash):
             governed_drift = client.post(
                 f"/api/v1/studies/{STUDY_ID}/section-runs",
                 json={**COMMAND, "idempotency_key": "governed-version-drift"},
             )
         assert governed_drift.status_code == 409
-        assert "governed-version fingerprint" in governed_drift.json()["detail"]
+        assert "governed-input fingerprint" in governed_drift.json()["detail"]
         assert agent.calls == 0
     engine.dispose()
 
@@ -385,9 +516,7 @@ def test_unpromoted_candidate_blocks_release_and_export() -> None:
             disposition = client.post(
                 f"/api/v1/studies/{STUDY_ID}/validation-results/{result['result_id']}/dispositions",
                 json={
-                    "decision": (
-                        "approved_exception" if result["result_id"] == "VR-006" else "corrected"
-                    ),
+                    "decision": ("approved_exception" if result["result_id"] == "VR-006" else "corrected"),
                     "reason": f"Synthetic disposition recorded for {result['rule_id']}.",
                     "reviewer": "Dr. Ada Path",
                 },
@@ -416,6 +545,44 @@ def test_unpromoted_candidate_blocks_release_and_export() -> None:
             "PROMOTION-DISABLED-section.5_2_3_body_weight"
         ]
         assert export.status_code == 409
+    engine.dispose()
+
+
+def test_inapplicable_section_package_is_excluded_and_cannot_execute(tmp_path: Path) -> None:
+    root = governed_root(tmp_path)
+    package_path = (
+        root
+        / "skills"
+        / "helix-evidence-pipeline"
+        / "packages"
+        / "sections"
+        / "5_2_3_body_weight"
+        / "package.json"
+    )
+    definition = json.loads(package_path.read_text())
+    definition["study_type_ids"] = ["INAPPLICABLE_STUDY_TYPE"]
+    package_path.write_text(json.dumps(definition))
+    agent = FakeSectionAgent()
+    client, engine = build_client(agent, repository_root=root)
+
+    with client:
+        pinned = client.post(
+            f"/api/v1/studies/{STUDY_ID}/pinned-runs",
+            json={"actor": "Dr. Run Owner", "idempotency_key": "inapplicable-section"},
+        )
+        assert pinned.status_code == 201
+        assert all(
+            node["package_id"] != "section.5_2_3_body_weight" for node in pinned.json()["run_plan"]["nodes"]
+        )
+        validate(client)
+        workspace = client.get(f"/api/v1/studies/{STUDY_ID}/workspace").json()
+        eligibility = by_package(workspace, "section.5_2_3_body_weight")
+        assert eligibility["eligible"] is False
+        assert "The Section Package does not apply to the resolved study type" in eligibility["reasons"]
+
+        response = client.post(f"/api/v1/studies/{STUDY_ID}/section-runs", json=COMMAND)
+        assert response.status_code == 409
+        assert agent.calls == 0
     engine.dispose()
 
 
@@ -449,28 +616,31 @@ def test_eligibility_distinguishes_input_claim_grain_from_required_output_grain(
     engine.dispose()
 
 
-def test_template_contract_gates_inspect_the_pinned_template(tmp_path: Path) -> None:
+def test_template_contract_gates_inspect_the_pinned_template() -> None:
     template = json.loads((ROOT / "backend/app/data/report-template.json").read_text())
     section = next(item for item in template["sections"] if item["section_id"] == "S5")
     field = next(item for item in section["fields"] if item["field_id"] == "body-weight")
     field["expected_grain"] = "dose_group"
-    template_path = tmp_path / "report-template.json"
-    template_path.write_text(json.dumps(template))
     package_definition = json.loads(
         (ROOT / "skills/helix-evidence-pipeline/packages/sections/5_2_3_body_weight/package.json").read_text()
     )
-    service = object.__new__(SectionRunService)
-    service.template_path = template_path
 
-    failures = service._template_contract_gate_failures(package_definition)
+    failures = [
+        item.message
+        for item in evaluate_template_contract(package_definition, template)
+        if item.status == "blocked"
+    ]
 
     assert failures == ["Template Contract Gate body-weight-table-shape failed"]
 
     field["expected_grain"] = "dose_group_x_sex"
-    template_path.write_text(json.dumps(template))
     package_definition["required_claims"][0]["output_grain"] = "dose_group"
 
-    failures = service._template_contract_gate_failures(package_definition)
+    failures = [
+        item.message
+        for item in evaluate_template_contract(package_definition, template)
+        if item.status == "blocked"
+    ]
 
     assert failures == ["Template Contract Gate body-weight-table-shape failed"]
 
