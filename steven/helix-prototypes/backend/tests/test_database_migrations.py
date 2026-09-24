@@ -1,3 +1,4 @@
+import logging
 from collections.abc import Iterator
 from pathlib import Path
 
@@ -29,6 +30,20 @@ def test_an_unversioned_baseline_schema_is_adopted_before_upgrading():
     assert "intake_jobs" in inspect(engine).get_table_names()
     with engine.connect() as connection:
         assert connection.scalar(text("SELECT version_num FROM alembic_version")) == HEAD_REVISION
+
+
+def test_running_migrations_in_process_keeps_the_server_loggers_enabled():
+    """`create_schema` runs Alembic inside the service at startup on PostgreSQL.
+
+    Alembic's env.py loads logging from alembic.ini; with fileConfig's default it
+    disabled uvicorn's loggers, so the service stopped logging requests and errors.
+    """
+    loggers = [logging.getLogger(name) for name in ("uvicorn.error", "uvicorn.access", "app")]
+    engine = create_engine("sqlite+pysqlite:///:memory:", poolclass=StaticPool)
+
+    upgrade_to_head(engine)
+
+    assert [logger.disabled for logger in loggers] == [False, False, False]
 
 
 def test_a_partial_unversioned_schema_is_not_falsely_stamped():

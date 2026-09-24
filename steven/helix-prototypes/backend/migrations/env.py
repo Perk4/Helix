@@ -18,7 +18,10 @@ from app.models import Base
 config = context.config
 
 if config.config_file_name is not None:
-    fileConfig(config.config_file_name)
+    # The service runs this in-process at startup (`create_schema` on PostgreSQL).
+    # fileConfig's default disables every logger that already exists, which
+    # silenced uvicorn's error and access logs for the life of the process.
+    fileConfig(config.config_file_name, disable_existing_loggers=False)
 
 target_metadata = Base.metadata
 
