@@ -123,6 +123,39 @@
             "title": "Claim Id",
             "type": "string"
           },
+          "claim_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Claim Type"
+          },
+          "executor_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Executor Id"
+          },
+          "executor_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Executor Version"
+          },
           "field_id": {
             "title": "Field Id",
             "type": "string"
@@ -131,12 +164,77 @@
             "title": "Grain",
             "type": "string"
           },
+          "grain_key": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Grain Key",
+            "type": "object"
+          },
+          "package_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Package Id"
+          },
+          "package_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Package Version"
+          },
+          "rule_versions": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Rule Versions",
+            "type": "object"
+          },
           "section_id": {
             "title": "Section Id",
             "type": "string"
           },
+          "source_hashes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Source Hashes",
+            "type": "array"
+          },
           "status": {
             "$ref": "#/components/schemas/ClaimStatus"
+          },
+          "transform_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transform Id"
+          },
+          "transform_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transform Version"
           },
           "unit": {
             "title": "Unit",
@@ -175,6 +273,285 @@
         ],
         "title": "ClaimStatus",
         "type": "string"
+      },
+      "DataValidationCommand": {
+        "additionalProperties": false,
+        "properties": {
+          "actor": {
+            "maxLength": 120,
+            "minLength": 2,
+            "title": "Actor",
+            "type": "string"
+          },
+          "idempotency_key": {
+            "maxLength": 160,
+            "minLength": 8,
+            "title": "Idempotency Key",
+            "type": "string"
+          },
+          "package_id": {
+            "default": "validation.body_weight",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Package Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "actor",
+          "idempotency_key"
+        ],
+        "title": "DataValidationCommand",
+        "type": "object"
+      },
+      "DataValidationExecution": {
+        "additionalProperties": false,
+        "properties": {
+          "claims": {
+            "items": {
+              "$ref": "#/components/schemas/Claim"
+            },
+            "title": "Claims",
+            "type": "array"
+          },
+          "event": {
+            "$ref": "#/components/schemas/WorkflowEvent"
+          },
+          "provenance_edges": {
+            "items": {
+              "$ref": "#/components/schemas/ProvenanceEdge"
+            },
+            "title": "Provenance Edges",
+            "type": "array"
+          },
+          "receipt": {
+            "$ref": "#/components/schemas/DataValidationReceipt"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/DataValidationRuleResult"
+            },
+            "title": "Results",
+            "type": "array"
+          },
+          "section_references": {
+            "items": {
+              "$ref": "#/components/schemas/SectionClaimReference"
+            },
+            "title": "Section References",
+            "type": "array"
+          }
+        },
+        "required": [
+          "receipt",
+          "claims",
+          "results",
+          "provenance_edges",
+          "section_references",
+          "event"
+        ],
+        "title": "DataValidationExecution",
+        "type": "object"
+      },
+      "DataValidationReceipt": {
+        "additionalProperties": false,
+        "properties": {
+          "claim_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Claim Ids",
+            "type": "array"
+          },
+          "event_id": {
+            "title": "Event Id",
+            "type": "string"
+          },
+          "executor_hash": {
+            "pattern": "^sha256:[a-f0-9]{64}$",
+            "title": "Executor Hash",
+            "type": "string"
+          },
+          "executor_id": {
+            "title": "Executor Id",
+            "type": "string"
+          },
+          "executor_version": {
+            "title": "Executor Version",
+            "type": "string"
+          },
+          "governed_versions": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Governed Versions",
+            "type": "object"
+          },
+          "idempotent_replay": {
+            "default": false,
+            "title": "Idempotent Replay",
+            "type": "boolean"
+          },
+          "input_fingerprint": {
+            "pattern": "^sha256:[a-f0-9]{64}$",
+            "title": "Input Fingerprint",
+            "type": "string"
+          },
+          "node_id": {
+            "title": "Node Id",
+            "type": "string"
+          },
+          "package_hash": {
+            "pattern": "^sha256:[a-f0-9]{64}$",
+            "title": "Package Hash",
+            "type": "string"
+          },
+          "package_id": {
+            "title": "Package Id",
+            "type": "string"
+          },
+          "package_version": {
+            "title": "Package Version",
+            "type": "string"
+          },
+          "receipt_id": {
+            "title": "Receipt Id",
+            "type": "string"
+          },
+          "result_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Result Ids",
+            "type": "array"
+          },
+          "rule_bundle_id": {
+            "title": "Rule Bundle Id",
+            "type": "string"
+          },
+          "rule_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Rule Ids",
+            "type": "array"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "source_artifact_id": {
+            "title": "Source Artifact Id",
+            "type": "string"
+          },
+          "source_hash": {
+            "title": "Source Hash",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "passed",
+              "blocked"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "receipt_id",
+          "run_id",
+          "package_id",
+          "package_version",
+          "package_hash",
+          "node_id",
+          "executor_id",
+          "executor_version",
+          "executor_hash",
+          "rule_bundle_id",
+          "rule_ids",
+          "source_artifact_id",
+          "source_hash",
+          "governed_versions",
+          "input_fingerprint",
+          "claim_ids",
+          "result_ids",
+          "event_id",
+          "status"
+        ],
+        "title": "DataValidationReceipt",
+        "type": "object"
+      },
+      "DataValidationRuleResult": {
+        "additionalProperties": false,
+        "properties": {
+          "enforcement_class": {
+            "enum": [
+              "hard_blocker",
+              "review_required",
+              "warning"
+            ],
+            "title": "Enforcement Class",
+            "type": "string"
+          },
+          "evidence_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Evidence Ids",
+            "type": "array"
+          },
+          "executor_id": {
+            "title": "Executor Id",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "package_id": {
+            "title": "Package Id",
+            "type": "string"
+          },
+          "result_id": {
+            "pattern": "^VR-[A-Z0-9-]+$",
+            "title": "Result Id",
+            "type": "string"
+          },
+          "rule_id": {
+            "title": "Rule Id",
+            "type": "string"
+          },
+          "rule_version": {
+            "title": "Rule Version",
+            "type": "string"
+          },
+          "scope_id": {
+            "title": "Scope Id",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ValidationStatus"
+          },
+          "waivable": {
+            "title": "Waivable",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "result_id",
+          "rule_id",
+          "rule_version",
+          "enforcement_class",
+          "status",
+          "scope_id",
+          "evidence_ids",
+          "message",
+          "waivable",
+          "package_id",
+          "executor_id"
+        ],
+        "title": "DataValidationRuleResult",
+        "type": "object"
       },
       "DispositionCommand": {
         "additionalProperties": false,
@@ -289,6 +666,13 @@
             ],
             "title": "Exact Match"
           },
+          "lineage": {
+            "items": {
+              "$ref": "#/components/schemas/ProvenanceEdge"
+            },
+            "title": "Lineage",
+            "type": "array"
+          },
           "recomputed_value": {
             "anyOf": [
               {
@@ -303,6 +687,20 @@
           "report_text": {
             "title": "Report Text",
             "type": "string"
+          },
+          "rule_versions": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Rule Versions",
+            "type": "object"
+          },
+          "source_hashes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Source Hashes",
+            "type": "array"
           },
           "sources": {
             "items": {
@@ -321,6 +719,17 @@
               }
             ],
             "title": "Transform Id"
+          },
+          "transform_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transform Version"
           },
           "validations": {
             "items": {
@@ -748,6 +1157,69 @@
         "title": "PlanningEvidence",
         "type": "object"
       },
+      "ProvenanceEdge": {
+        "additionalProperties": false,
+        "properties": {
+          "authority_tier": {
+            "maximum": 6.0,
+            "minimum": 1.0,
+            "title": "Authority Tier",
+            "type": "integer"
+          },
+          "claim_id": {
+            "title": "Claim Id",
+            "type": "string"
+          },
+          "edge_id": {
+            "title": "Edge Id",
+            "type": "string"
+          },
+          "source_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Hash"
+          },
+          "source_pointer": {
+            "title": "Source Pointer",
+            "type": "string"
+          },
+          "source_record_id": {
+            "title": "Source Record Id",
+            "type": "string"
+          },
+          "transform_id": {
+            "title": "Transform Id",
+            "type": "string"
+          },
+          "transform_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transform Version"
+          }
+        },
+        "required": [
+          "edge_id",
+          "claim_id",
+          "source_record_id",
+          "transform_id",
+          "source_pointer",
+          "authority_tier"
+        ],
+        "title": "ProvenanceEdge",
+        "type": "object"
+      },
       "RegulatoryReference": {
         "additionalProperties": false,
         "properties": {
@@ -996,6 +1468,17 @@
       "ReviewDisposition": {
         "additionalProperties": false,
         "properties": {
+          "artifact_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Artifact Id"
+          },
           "decision": {
             "$ref": "#/components/schemas/DispositionDecision"
           },
@@ -1240,6 +1723,41 @@
           "event_id"
         ],
         "title": "RunReceipt",
+        "type": "object"
+      },
+      "SectionClaimReference": {
+        "additionalProperties": false,
+        "properties": {
+          "claim_id": {
+            "pattern": "^C-[A-Z0-9-]+$",
+            "title": "Claim Id",
+            "type": "string"
+          },
+          "executor_receipt_id": {
+            "title": "Executor Receipt Id",
+            "type": "string"
+          },
+          "section_id": {
+            "title": "Section Id",
+            "type": "string"
+          },
+          "section_package_id": {
+            "title": "Section Package Id",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "section_id",
+          "section_package_id",
+          "title",
+          "claim_id",
+          "executor_receipt_id"
+        ],
+        "title": "SectionClaimReference",
         "type": "object"
       },
       "SectionDraftCandidate": {
@@ -1871,12 +2389,39 @@
       "ValidationResult": {
         "additionalProperties": false,
         "properties": {
+          "enforcement_class": {
+            "anyOf": [
+              {
+                "enum": [
+                  "hard_blocker",
+                  "review_required",
+                  "warning"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enforcement Class"
+          },
           "evidence_ids": {
             "items": {
               "type": "string"
             },
             "title": "Evidence Ids",
             "type": "array"
+          },
+          "executor_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Executor Id"
           },
           "kind": {
             "$ref": "#/components/schemas/ValidationKind",
@@ -1885,6 +2430,17 @@
           "message": {
             "title": "Message",
             "type": "string"
+          },
+          "package_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Package Id"
           },
           "result_id": {
             "pattern": "^VR-[A-Z0-9-]+$",
@@ -1925,6 +2481,17 @@
               }
             ],
             "title": "Tool Name"
+          },
+          "waivable": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Waivable"
           }
         },
         "required": [
@@ -2076,6 +2643,13 @@
             "title": "Claims",
             "type": "array"
           },
+          "data_validation_executions": {
+            "items": {
+              "$ref": "#/components/schemas/DataValidationExecution"
+            },
+            "title": "Data Validation Executions",
+            "type": "array"
+          },
           "dispositions": {
             "items": {
               "$ref": "#/components/schemas/ReviewDisposition"
@@ -2187,6 +2761,7 @@
           "events",
           "planner_capabilities",
           "pinned_run",
+          "data_validation_executions",
           "section_run_eligibility",
           "section_runs"
         ],
@@ -2366,6 +2941,58 @@
         "summary": "Get Evidence",
         "tags": [
           "evidence"
+        ]
+      }
+    },
+    "/api/v1/studies/{study_id}/data-validation-packages": {
+      "post": {
+        "operationId": "run_data_validation_api_v1_studies__study_id__data_validation_packages_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "study_id",
+            "required": true,
+            "schema": {
+              "title": "Study Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DataValidationCommand"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataValidationExecution"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Run Data Validation",
+        "tags": [
+          "data-validation"
         ]
       }
     },

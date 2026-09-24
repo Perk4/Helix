@@ -55,6 +55,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/studies/{study_id}/data-validation-packages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Run Data Validation */
+        post: operations["run_data_validation_api_v1_studies__study_id__data_validation_packages_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/studies/{study_id}/exports": {
         parameters: {
             query?: never;
@@ -238,13 +255,37 @@ export interface components {
         Claim: {
             /** Claim Id */
             claim_id: string;
+            /** Claim Type */
+            claim_type?: string | null;
+            /** Executor Id */
+            executor_id?: string | null;
+            /** Executor Version */
+            executor_version?: string | null;
             /** Field Id */
             field_id: string;
             /** Grain */
             grain: string;
+            /** Grain Key */
+            grain_key?: {
+                [key: string]: string;
+            };
+            /** Package Id */
+            package_id?: string | null;
+            /** Package Version */
+            package_version?: string | null;
+            /** Rule Versions */
+            rule_versions?: {
+                [key: string]: string;
+            };
             /** Section Id */
             section_id: string;
+            /** Source Hashes */
+            source_hashes?: string[];
             status: components["schemas"]["ClaimStatus"];
+            /** Transform Id */
+            transform_id?: string | null;
+            /** Transform Version */
+            transform_version?: string | null;
             /** Unit */
             unit: string;
             /** Value */
@@ -255,6 +296,109 @@ export interface components {
          * @enum {string}
          */
         ClaimStatus: "pending" | "validated" | "needs_review" | "approved";
+        /** DataValidationCommand */
+        DataValidationCommand: {
+            /** Actor */
+            actor: string;
+            /** Idempotency Key */
+            idempotency_key: string;
+            /**
+             * Package Id
+             * @default validation.body_weight
+             */
+            package_id: string;
+        };
+        /** DataValidationExecution */
+        DataValidationExecution: {
+            /** Claims */
+            claims: components["schemas"]["Claim"][];
+            event: components["schemas"]["WorkflowEvent"];
+            /** Provenance Edges */
+            provenance_edges: components["schemas"]["ProvenanceEdge"][];
+            receipt: components["schemas"]["DataValidationReceipt"];
+            /** Results */
+            results: components["schemas"]["DataValidationRuleResult"][];
+            /** Section References */
+            section_references: components["schemas"]["SectionClaimReference"][];
+        };
+        /** DataValidationReceipt */
+        DataValidationReceipt: {
+            /** Claim Ids */
+            claim_ids: string[];
+            /** Event Id */
+            event_id: string;
+            /** Executor Hash */
+            executor_hash: string;
+            /** Executor Id */
+            executor_id: string;
+            /** Executor Version */
+            executor_version: string;
+            /** Governed Versions */
+            governed_versions: {
+                [key: string]: string;
+            };
+            /**
+             * Idempotent Replay
+             * @default false
+             */
+            idempotent_replay: boolean;
+            /** Input Fingerprint */
+            input_fingerprint: string;
+            /** Node Id */
+            node_id: string;
+            /** Package Hash */
+            package_hash: string;
+            /** Package Id */
+            package_id: string;
+            /** Package Version */
+            package_version: string;
+            /** Receipt Id */
+            receipt_id: string;
+            /** Result Ids */
+            result_ids: string[];
+            /** Rule Bundle Id */
+            rule_bundle_id: string;
+            /** Rule Ids */
+            rule_ids: string[];
+            /** Run Id */
+            run_id: string;
+            /** Source Artifact Id */
+            source_artifact_id: string;
+            /** Source Hash */
+            source_hash: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "passed" | "blocked";
+        };
+        /** DataValidationRuleResult */
+        DataValidationRuleResult: {
+            /**
+             * Enforcement Class
+             * @enum {string}
+             */
+            enforcement_class: "hard_blocker" | "review_required" | "warning";
+            /** Evidence Ids */
+            evidence_ids: string[];
+            /** Executor Id */
+            executor_id: string;
+            /** Message */
+            message: string;
+            /** Package Id */
+            package_id: string;
+            /** Result Id */
+            result_id: string;
+            /** Rule Id */
+            rule_id: string;
+            /** Rule Version */
+            rule_version: string;
+            /** Scope Id */
+            scope_id: string;
+            status: components["schemas"]["ValidationStatus"];
+            /** Waivable */
+            waivable: boolean;
+        };
         /** DispositionCommand */
         DispositionCommand: {
             /**
@@ -294,14 +438,24 @@ export interface components {
             claim: components["schemas"]["Claim"];
             /** Exact Match */
             exact_match: boolean | null;
+            /** Lineage */
+            lineage?: components["schemas"]["ProvenanceEdge"][];
             /** Recomputed Value */
             recomputed_value: number | null;
             /** Report Text */
             report_text: string;
+            /** Rule Versions */
+            rule_versions?: {
+                [key: string]: string;
+            };
+            /** Source Hashes */
+            source_hashes?: string[];
             /** Sources */
             sources: components["schemas"]["SourceRecord"][];
             /** Transform Id */
             transform_id: string | null;
+            /** Transform Version */
+            transform_version?: string | null;
             /** Validations */
             validations: components["schemas"]["ValidationResult"][];
         };
@@ -455,6 +609,25 @@ export interface components {
             /** Subject */
             subject: string;
         };
+        /** ProvenanceEdge */
+        ProvenanceEdge: {
+            /** Authority Tier */
+            authority_tier: number;
+            /** Claim Id */
+            claim_id: string;
+            /** Edge Id */
+            edge_id: string;
+            /** Source Hash */
+            source_hash?: string | null;
+            /** Source Pointer */
+            source_pointer: string;
+            /** Source Record Id */
+            source_record_id: string;
+            /** Transform Id */
+            transform_id: string;
+            /** Transform Version */
+            transform_version?: string | null;
+        };
         /** RegulatoryReference */
         RegulatoryReference: {
             /**
@@ -547,6 +720,8 @@ export interface components {
         };
         /** ReviewDisposition */
         ReviewDisposition: {
+            /** Artifact Id */
+            artifact_id?: string | null;
             decision: components["schemas"]["DispositionDecision"];
             /** Disposition Id */
             disposition_id: string;
@@ -624,6 +799,19 @@ export interface components {
             run_id: string;
             /** Run Plan Fingerprint */
             run_plan_fingerprint: string;
+        };
+        /** SectionClaimReference */
+        SectionClaimReference: {
+            /** Claim Id */
+            claim_id: string;
+            /** Executor Receipt Id */
+            executor_receipt_id: string;
+            /** Section Id */
+            section_id: string;
+            /** Section Package Id */
+            section_package_id: string;
+            /** Title */
+            title: string;
         };
         /** SectionDraftCandidate */
         SectionDraftCandidate: {
@@ -867,12 +1055,18 @@ export interface components {
         };
         /** ValidationResult */
         ValidationResult: {
+            /** Enforcement Class */
+            enforcement_class?: ("hard_blocker" | "review_required" | "warning") | null;
             /** Evidence Ids */
             evidence_ids: string[];
+            /** Executor Id */
+            executor_id?: string | null;
             /** @default deterministic */
             kind: components["schemas"]["ValidationKind"];
             /** Message */
             message: string;
+            /** Package Id */
+            package_id?: string | null;
             /** Result Id */
             result_id: string;
             /** Rule Id */
@@ -889,6 +1083,8 @@ export interface components {
             status: components["schemas"]["ValidationStatus"];
             /** Tool Name */
             tool_name?: string | null;
+            /** Waivable */
+            waivable?: boolean | null;
         };
         /** ValidationRun */
         ValidationRun: {
@@ -939,6 +1135,8 @@ export interface components {
             approvals: components["schemas"]["Approval"][];
             /** Claims */
             claims: components["schemas"]["Claim"][];
+            /** Data Validation Executions */
+            data_validation_executions: components["schemas"]["DataValidationExecution"][];
             /** Dispositions */
             dispositions: components["schemas"]["ReviewDisposition"][];
             /** Events */
@@ -1065,6 +1263,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EvidenceChain"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    run_data_validation_api_v1_studies__study_id__data_validation_packages_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DataValidationCommand"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DataValidationExecution"];
                 };
             };
             /** @description Validation Error */

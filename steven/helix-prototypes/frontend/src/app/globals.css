@@ -964,6 +964,50 @@ code {
   margin-top: 10px;
 }
 
+.dvp-claim-block,
+.dvp-rule-list,
+.dvp-section-refs {
+  margin-top: 12px;
+}
+
+.dvp-claim-block {
+  display: grid;
+  gap: 4px;
+  padding: 10px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-sm);
+  background: var(--paper-tint);
+}
+
+.dvp-claim-block span,
+.dvp-claim-block small,
+.dvp-claim-block code {
+  color: var(--ink-700);
+  font-size: 9px;
+}
+
+.lineage-meta {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.lineage-meta span {
+  display: block;
+  color: var(--ink-500);
+  font-size: 8px;
+  font-weight: 720;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.lineage-meta code {
+  display: block;
+  overflow-wrap: anywhere;
+  color: var(--blue-700);
+  font-size: 8px;
+}
+
 .run-plan-card summary {
   padding: 9px 0 0;
   border-top: 1px solid var(--line-soft);

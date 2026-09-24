@@ -11,3 +11,4 @@ export type ApprovalRole = components["schemas"]["ApprovalRole"];
 export type ExportReceipt = components["schemas"]["ExportReceipt"];
 export type PlannerMode = components["schemas"]["PlannerMode"];
 export type SectionRunReceipt = components["schemas"]["SectionRunReceipt"];
+export type DataValidationExecution = components["schemas"]["DataValidationExecution"];
