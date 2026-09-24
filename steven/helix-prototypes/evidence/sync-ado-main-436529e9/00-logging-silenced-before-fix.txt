@@ -1,0 +1,7 @@
+# before the env.py fix: backend started on PG at 9edd082c07ae, then two requests were made:
+$ curl /api/v1/studies -> 200 ; curl /api/v1/studies/NOPE/workspace -> 404
+# backend log afterwards (no access lines, no 'Application startup complete'):
+INFO:     Started server process [33918]
+INFO:     Waiting for application startup.
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.

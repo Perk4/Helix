@@ -1,0 +1,35 @@
+$ psql -Atc "\dt"   # fresh DB
+Did not find any tables.
+(no tables)
+$ HELIX_DATABASE_URL=postgresql+psycopg://helix@127.0.0.1:55441/helix_live uv run alembic upgrade head
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> bf13e5f55c15, baseline: study packages, audit events, exports, validation runs, section runs
+INFO  [alembic.runtime.migration] Running upgrade bf13e5f55c15 -> ea600664952b, intake jobs
+INFO  [alembic.runtime.migration] Running upgrade ea600664952b -> b53f9ec18cf2, bind intake idempotency to request
+INFO  [alembic.runtime.migration] Running upgrade b53f9ec18cf2 -> 9edd082c07ae, run events and run journey states (Steven-Espaillat/Helix#25)
+$ uv run alembic current
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+9edd082c07ae (head)
+$ uv run alembic heads
+9edd082c07ae (head)
+$ psql -Atc "select version_num from alembic_version"
+9edd082c07ae
+$ psql -Atc "\dt"
+public|alembic_version|table|helix
+public|audit_events|table|helix
+public|candidate_evaluations|table|helix
+public|cross_section_queries|table|helix
+public|data_validation_runs|table|helix
+public|drafting_cycles|table|helix
+public|export_files|table|helix
+public|intake_jobs|table|helix
+public|pinned_runs|table|helix
+public|promotion_decisions|table|helix
+public|run_events|table|helix
+public|run_journey_states|table|helix
+public|section_drafts|table|helix
+public|section_runs|table|helix
+public|study_packages|table|helix
+public|validation_runs|table|helix

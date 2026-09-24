@@ -1,0 +1,6 @@
+{"detail":[{"code":"invalid_package_qualification","subject":"section.5_2_3_body_weight","message":"Agentic package qualification has not passed"},{"code":"invalid_package_qualification","subject":"section.5_3_discussion","message":"Agentic package qualification has not passed"}]}
+HTTP 422
+{"detail":[{"type":"missing","loc":["body","actor"],"msg":"Field required","input":{}},{"type":"missing","loc":["body","idempotency_key"],"msg":"Field required","input":{}}]}
+HTTP 422
+{"detail":[{"code":"invalid_package_qualification","subject":"section.5_2_3_body_weight","message":"Agentic package qualification has not passed"},{"code":"invalid_package_qualification","subject":"section.5_3_discussion","message":"Agentic package qualification has not passed"}]}
+HTTP 422

@@ -1,0 +1,165 @@
+members: ['animal_roster.csv', 'body_weights.csv', 'clinical_observations.csv', 'dosing_formulation.csv', 'gross_pathology.csv', 'histopathology.csv', 'organ_weights.csv', 'study_protocol_YZ389.docx'] zip_bytes=30307
+POST /studies/jobs -> 202
+t=+   12.3ms status=queued    stage=received stages_done=['received']
+t=+   24.8ms status=running   stage=parsed stages_done=['parsed', 'expanded', 'received', 'classified']
+t=+   32.5ms status=succeeded stage=persisted stages_done=['parsed', 'expanded', 'received', 'persisted', 'classified']
+final job record:
+{
+  "job_id": "IJ-7A502581A0AE",
+  "study_id": "STUDY-YZ389-LIVE",
+  "status": "succeeded",
+  "stage": "persisted",
+  "stages_completed": 5,
+  "stages_total": 5,
+  "stages": {
+    "parsed": {
+      "ms": 4,
+      "animals": 40,
+      "formulation": 12,
+      "body_weights": 200,
+      "organ_weights": 240,
+      "microscopic_findings": 243,
+      "clinical_observations": 202
+    },
+    "expanded": {
+      "ms": 1,
+      "files": 8
+    },
+    "received": {
+      "ms": 0,
+      "bytes": 30307,
+      "files": 1
+    },
+    "persisted": {
+      "ms": 6,
+      "claims": 0,
+      "manifest_entries": 8
+    },
+    "classified": {
+      "ms": 1,
+      "data": 7,
+      "authority": 1
+    }
+  },
+  "metrics": {
+    "stage_ms": {
+      "parsed": 4,
+      "expanded": 1,
+      "received": 0,
+      "persisted": 6,
+      "classified": 1
+    },
+    "total_ms": 13,
+    "records_total": 937,
+    "slowest_stage": "persisted",
+    "uploaded_bytes": 30307,
+    "uploaded_files": 1,
+    "records_by_domain": {
+      "animals": 40,
+      "formulation": 12,
+      "body_weights": 200,
+      "organ_weights": 240,
+      "food_consumption": 0,
+      "microscopic_findings": 243,
+      "clinical_observations": 202
+    }
+  },
+  "receipt": {
+    "accepted": [
+      {
+        "kind": "data",
+        "name": "animal_roster.csv",
+        "bytes": 6674,
+        "domain": "animals",
+        "checksum": "sha256:4c8a9c9bef459a1d3ca47b1a633395cb007d0809e0d35ad2158b01ccbfc9bc5e",
+        "readable": true,
+        "authority_tier": 1
+      },
+      {
+        "kind": "data",
+        "name": "body_weights.csv",
+        "bytes": 12870,
+        "domain": "body_weights",
+        "checksum": "sha256:2b239ef48e7fe44581741b1d7250e92b173e07d8312df420a61c34e4a30cf4c2",
+        "readable": true,
+        "authority_tier": 1
+      },
+      {
+        "kind": "data",
+        "name": "clinical_observations.csv",
+        "bytes": 18149,
+        "domain": "clinical_observations",
+        "checksum": "sha256:4c7bda8a5b6003439b68cad210ecb6adc25d1cefcea8ed33a722fcc93ef0fd64",
+        "readable": true,
+        "authority_tier": 1
+      },
+      {
+        "kind": "data",
+        "name": "dosing_formulation.csv",
+        "bytes": 1175,
+        "domain": "formulation",
+        "checksum": "sha256:49d491e0facd05dd82f72e12208327dfe275eae41c7feb2f1ca65362476b8b85",
+        "readable": true,
+        "authority_tier": 1
+      },
+      {
+        "kind": "data",
+        "name": "gross_pathology.csv",
+        "bytes": 5426,
+        "domain": "gross_pathology",
+        "checksum": "sha256:1e3ac5b04ab172d87ced78e133266338a38b595febc000d8a75aca753a84eb78",
+        "readable": true,
+        "authority_tier": 1
+      },
+      {
+        "kind": "data",
+        "name": "histopathology.csv",
+        "bytes": 22443,
+        "domain": "microscopic_findings",
+        "checksum": "sha256:d477296c3c070797cb470fbdbc25ec9ec8bc9828c758ee5d9fa5c2c0e73be151",
+        "readable": true,
+        "authority_tier": 1
+      },
+      {
+        "kind": "data",
+        "name": "organ_weights.csv",
+        "bytes": 21711,
+        "domain": "organ_weights",
+        "checksum": "sha256:34c0ce236fbfef18d0c3815dfbcad0dd808f69980819a4b5e412ed7c2a9b208e",
+        "readable": true,
+        "authority_tier": 1
+      },
+      {
+        "kind": "authority",
+        "name": "study_protocol_YZ389.docx",
+        "bytes": 23709,
+        "domain": null,
+        "checksum": "sha256:5c89d1d7af93e772c14991a773701b3c58e3dda59bcbaf89807107dd45fc2f6f",
+        "readable": false,
+        "authority_tier": 2
+      }
+    ],
+    "rejected": [],
+    "anomalies": [
+      {
+        "kind": "domain_dropped",
+        "detail": "gross_pathology has 50 rows and StudyRecords does not name it, so it is not carried into the package. It is listed in the manifest and can still be read."
+      }
+    ],
+    "data_files": 7,
+    "authority_files": 1,
+    "domains_recognised": [
+      "animals",
+      "body_weights",
+      "clinical_observations",
+      "formulation",
+      "gross_pathology",
+      "microscopic_findings",
+      "organ_weights"
+    ],
+    "missing_required_domains": []
+  },
+  "error": null,
+  "created_at": "2026-09-24T17:27:45.733566-05:00",
+  "updated_at": "2026-09-24T17:27:45.750990-05:00"
+}

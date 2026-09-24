@@ -1,0 +1,84 @@
+## hybrid validation, planner=openai_compatible (LLM; needs HELIX_LLM_API_KEY)
+{"detail":"HELIX_LLM_API_KEY is not configured"}
+HTTP 503
+
+## hybrid validation, planner=fixture (deterministic tool-contract planner)
+HTTP 201
+validation run RUN-F07EBC6586FF | planner: Fixture planner for tool-contract testing | llm_used: False | results: 13
+   VR-DET-001 pass blocker
+   VR-DET-002 pass blocker
+   VR-DET-003 pass blocker
+   VR-DET-004 pass blocker
+   VR-DET-005 pass blocker
+   VR-004 fail blocker
+   VR-005 fail blocker
+   VR-006 fail blocker
+   VR-DET-009 pass blocker
+   VR-DET-010 pass blocker
+   VR-AGENT-001 pass info
+   VR-AGENT-002 fail warning
+   VR-AGENT-003 pass info
+pinned run: RUN-EB6114A58B3200C1
+
+## data validation package validation.body_weight (deterministic executor recompute)
+HTTP 201
+{'package_id': 'validation.body_weight', 'status': 'passed', 'idempotent_replay': True, 'run_id': 'RUN-EB6114A58B3200C1'}
+  claim C-BW-MEAN-D1-G1-F 247.0 g
+  claim C-BW-SD-D1-G1-F 3.3 g
+  claim C-BW-PCT-D1-G1-F 0.0 %
+  claim C-BW-MEAN-D1-G2-F 252.1 g
+  claim C-BW-SD-D1-G2-F 3.4 g
+  claim C-BW-PCT-D1-G2-F 0.0 %
+
+## section run (Codex SDK agent) — NOT called; it would bill the Codex login on this Mac
+
+## journey projection
+1 upload Upload human_gate complete
+2 parse Parse agent_step complete []
+3 resolve Resolve agent_step complete []
+4 extract Extract agent_step complete []
+5 validate Validate agent_step complete []
+6 draft Draft agent_step complete []
+7 provenance Provenance agent_step complete []
+8 traceability Gates human_gate blocked
+9 review-export Review & export human_gate pending
+run: {'run_id': 'RUN-EB6114A58B3200C1', 'study_id': 'STUDY-HLX-028', 'run_status': 'planned', 'run_version': 'sha256:5a8baefcae69bdcbea8eb7e85450679aa1696650c5831c31e09e16738ebffa0e', 'created_at': '2026-09-24T22:33:08.525087Z', 'manifest_hash': 'sha256:476a422e743002528a55669186c1490edf7314c505a85d5373390ea72b5157af', 'run_plan_fingerprint': 'sha256:5a8baefcae69bdcbea8eb7e85450679aa1696650c5831c31e09e16738ebffa0e', 'predecessor_run_id': None, 'latest_event_id': 'RUN-EB6114A58B3200C1.E000094', 'latest_sequence': 94, 'events_url': '/api/v1/studies/STUDY-HLX-028/pinned-runs/RUN-EB6114A58B3200C1/events'}
+
+## SSE replay of RUN-EB6114A58B3200C1 (curl -N, 3 s)
+   stage_started 6
+   gate_reached 1
+   action_finished 40
+   action_started 40
+   stage_finished 7
+id: RUN-EB6114A58B3200C1.E000091	event: action_started
+id: RUN-EB6114A58B3200C1.E000092	event: action_finished
+id: RUN-EB6114A58B3200C1.E000093	event: action_started
+id: RUN-EB6114A58B3200C1.E000094	event: action_finished
+
+## DB rows
+   study_id    | validation_runs 
+---------------+-----------------
+ STUDY-HLX-028 |               1
+(1 row)
+
+   study_id    |        run_id        |       package_id       
+---------------+----------------------+------------------------
+ STUDY-HLX-028 | RUN-EB6114A58B3200C1 | validation.body_weight
+ STUDY-HLX-028 | RUN-EB6114A58B3200C1 | validation.body_weight
+(2 rows)
+
+   study_id    |        run_id        
+---------------+----------------------
+ STUDY-HLX-028 | RUN-EB6114A58B3200C1
+(1 row)
+
+        run_id        | events | min | max 
+----------------------+--------+-----+-----
+ RUN-EB6114A58B3200C1 |     94 |   1 |  94
+(1 row)
+
+   study_id    |        run_id        | last_sequence 
+---------------+----------------------+---------------
+ STUDY-HLX-028 | RUN-EB6114A58B3200C1 |            94
+(1 row)
+

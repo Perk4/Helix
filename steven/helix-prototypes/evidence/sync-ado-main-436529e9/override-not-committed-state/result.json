@@ -1,0 +1,16 @@
+{
+  "steps": [
+    "PASS 01-upload-frozen-manifest",
+    "PASS 02-parse-resolve-validate",
+    "PASS 03-extract-data-validation",
+    "PASS 04-draft-eligibility",
+    "PASS 05-provenance-evidence-chain",
+    "PASS 06-gates-dispositions",
+    "PASS 07-review-approvals",
+    "PASS 08-final-study-approval",
+    "PASS 09-export"
+  ],
+  "run_id": "RUN-EB6114A58B3200C1",
+  "completed": true,
+  "browser_errors": []
+}
