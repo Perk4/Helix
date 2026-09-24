@@ -338,7 +338,11 @@ class StudyService:
         package = self.repository.get(study_id, for_update=True)
         storage_key = f"export:{command.idempotency_key}"
         prior_event = self.repository.get_event_by_idempotency_key(study_id, storage_key)
-        already_exported = all(artifact.status == "exported" for artifact in package.export_artifacts)
+        # `all([])` is True, so a package with no export artifacts would report
+        # itself already exported and return a receipt for work never done.
+        already_exported = bool(package.export_artifacts) and all(
+            artifact.status == "exported" for artifact in package.export_artifacts
+        )
         if prior_event is not None or already_exported:
             return ExportReceipt(
                 study_id=study_id,
@@ -652,9 +656,19 @@ def derive_release_gate(
     has_unreviewed_sections = any(
         section.status == SectionStatus.NEEDS_REVIEW for section in package.report_sections
     )
-    if all(artifact.status == "exported" for artifact in package.export_artifacts):
+    # An empty export set means nothing has been exported, not everything. A
+    # freshly uploaded study has no artifacts and must not read as EXPORTED.
+    # Nothing has been checked yet. "No failing result" is not "passed", and an
+    # uploaded study reaches this function before any validation has run - so
+    # without this it would fall through to READY_FOR_SIGNATURE on an empty
+    # result set. Packages that have been validated are unaffected.
+    never_validated = not package.validation_results
+
+    if package.export_artifacts and all(
+        artifact.status == "exported" for artifact in package.export_artifacts
+    ):
         status = GateStatus.EXPORTED
-    elif unresolved:
+    elif never_validated or unresolved:
         status = GateStatus.BLOCKED
     elif not REQUIRED_APPROVALS.issubset(approval_roles):
         status = GateStatus.READY_FOR_SIGNATURE

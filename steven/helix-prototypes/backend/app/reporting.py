@@ -20,7 +20,13 @@ def load_report_template() -> ReportTemplate:
 
 
 def claim_report_text(package: StudyEvidencePackage, claim_id: str) -> str:
-    claim = next(claim for claim in package.claims if claim.claim_id == claim_id)
+    claim = next((claim for claim in package.claims if claim.claim_id == claim_id), None)
+    if claim is None:
+        # A package can legitimately hold evidence and no claims yet - an
+        # uploaded study starts that way, because computing claims is the
+        # executor's job. The section renders a review marker instead of
+        # raising, which would take down the whole workspace response.
+        return f"[NEEDS REVIEW: no validated claim {claim_id} has been computed yet.]"
     if claim_id == "C-BW-HIGH":
         return (
             f"Terminal mean body weight in the combined high-dose group was {claim.value:.1f} {claim.unit}."
@@ -137,7 +143,7 @@ def _body_weight_blocks(package: StudyEvidencePackage, claim_edges: dict[str, in
                     kind="claim",
                     text=claim_report_text(package, claim_id),
                     claim_id=claim_id,
-                    provenance_count=claim_edges[claim_id],
+                    provenance_count=claim_edges.get(claim_id, 0),
                 )
                 for claim_id in sex_claims
             ],
@@ -153,7 +159,7 @@ def _body_weight_blocks(package: StudyEvidencePackage, claim_edges: dict[str, in
             kind="claim",
             text=claim_report_text(package, "C-BW-HIGH"),
             claim_id="C-BW-HIGH",
-            provenance_count=claim_edges["C-BW-HIGH"],
+            provenance_count=claim_edges.get("C-BW-HIGH", 0),
         ),
         ReportBlock(
             block_id="S5-R1",
@@ -163,7 +169,7 @@ def _body_weight_blocks(package: StudyEvidencePackage, claim_edges: dict[str, in
                 "This draft combines ten animals.]"
             ),
             claim_id="C-BW-HIGH",
-            provenance_count=claim_edges["C-BW-HIGH"],
+            provenance_count=claim_edges.get("C-BW-HIGH", 0),
         ),
     ]
 
@@ -200,7 +206,7 @@ def _microscopic_blocks(package: StudyEvidencePackage, claim_edges: dict[str, in
             kind="claim",
             text=claim_report_text(package, "C-MI-LIVER"),
             claim_id="C-MI-LIVER",
-            provenance_count=claim_edges["C-MI-LIVER"],
+            provenance_count=claim_edges.get("C-MI-LIVER", 0),
         )
     ]
     if not _result_resolved(package, "VR-005"):
@@ -212,7 +218,7 @@ def _microscopic_blocks(package: StudyEvidencePackage, claim_edges: dict[str, in
                     "[NEEDS REVIEW: The pattern draft says moderate. The four locked MI records say minimal.]"
                 ),
                 claim_id="C-MI-LIVER",
-                provenance_count=claim_edges["C-MI-LIVER"],
+                provenance_count=claim_edges.get("C-MI-LIVER", 0),
             )
         )
     return blocks
@@ -226,7 +232,7 @@ def _conclusion_blocks(package: StudyEvidencePackage, claim_edges: dict[str, int
             kind="paragraph" if resolved else "review_marker",
             text=claim_report_text(package, "C-NOAEL"),
             claim_id="C-NOAEL",
-            provenance_count=claim_edges["C-NOAEL"],
+            provenance_count=claim_edges.get("C-NOAEL", 0),
         )
     ]
 
