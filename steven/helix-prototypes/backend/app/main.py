@@ -9,15 +9,18 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import Engine, text
 from sqlalchemy.orm import Session
 
+from . import llm
 from .agents.codex_section_agent import CodexSectionAgent, SectionAgent
 from .candidate_evaluations import (
     CandidateEvaluationConflictError,
     CandidateEvaluationService,
     UnknownSectionRunError,
 )
+from .chat_service import ChatService
 from .config import Settings, get_settings
 from .data_validation import DataValidationConflictError, UnknownValidationPackageError
 from .database import create_database_engine, create_schema, create_session_factory
+from .draft_service import DraftCycleError, DraftService
 from .intake import IntakeRejected, build_package
 from .intake_jobs import IntakeJobConflictError, IntakeJobService, as_record
 from .repository import StudyNotFoundError, StudyPackageRepository
@@ -26,11 +29,15 @@ from .schemas import (
     ApprovalCommand,
     CandidateEvaluation,
     CandidateEvaluationCommand,
+    ChatMessage,
+    ChatRequest,
+    ChatTurn,
     CrossSectionQueryCommand,
     CrossSectionQueryReceipt,
     DataValidationCommand,
     DataValidationExecution,
     DispositionCommand,
+    DraftRequest,
     EvidenceChain,
     ExportCommand,
     ExportReceipt,
@@ -40,9 +47,13 @@ from .schemas import (
     HumanDirectedRevisionReceipt,
     PinnedRun,
     PromotionCommand,
+    ReviseRequest,
+    SectionContentDraft,
     SectionDraft,
+    SectionListItem,
     SectionRunCommand,
     SectionRunReceipt,
+    SectionVersionRequest,
     StudyListItem,
     ValidationRequest,
     ValidationRun,
@@ -134,6 +145,16 @@ def create_app(
         )
 
     SectionRunServiceDependency = Annotated[SectionRunService, Depends(section_run_service)]
+
+    def draft_service(session: SessionDependency) -> DraftService:
+        return DraftService(session, render_fn=llm.chat)
+
+    DraftServiceDependency = Annotated[DraftService, Depends(draft_service)]
+
+    def chat_service(session: SessionDependency) -> ChatService:
+        return ChatService(session, render_fn=llm.chat)
+
+    ChatServiceDependency = Annotated[ChatService, Depends(chat_service)]
 
     def candidate_evaluation_service(session: SessionDependency) -> CandidateEvaluationService:
         return CandidateEvaluationService(session, active_settings.codex_repository_root)
@@ -401,6 +422,133 @@ def create_app(
         return _call(lambda: promotions.promote(study_id, run_id, command))
 
     @app.get(
+        "/api/v1/studies/{study_id}/sections",
+        response_model=list[SectionListItem],
+        tags=["sections"],
+    )
+    def list_sections(study_id: str, drafts: DraftServiceDependency) -> list[SectionListItem]:
+        return _call(lambda: drafts.list_sections(study_id))
+
+    @app.get(
+        "/api/v1/studies/{study_id}/sections/{section_id}/draft",
+        response_model=SectionContentDraft | None,
+        tags=["sections"],
+    )
+    def get_section_draft(
+        study_id: str,
+        section_id: str,
+        drafts: DraftServiceDependency,
+    ) -> SectionContentDraft | None:
+        return _call(lambda: drafts.get_current(study_id, section_id))
+
+    @app.get(
+        "/api/v1/studies/{study_id}/sections/{section_id}/drafts/{version}",
+        response_model=SectionContentDraft,
+        tags=["sections"],
+    )
+    def get_section_draft_version(
+        study_id: str,
+        section_id: str,
+        version: int,
+        drafts: DraftServiceDependency,
+    ) -> SectionContentDraft:
+        return _call(lambda: drafts.get_version(study_id, section_id, version))
+
+    @app.post(
+        "/api/v1/studies/{study_id}/sections/{section_id}/draft",
+        response_model=SectionContentDraft,
+        status_code=status.HTTP_201_CREATED,
+        tags=["sections"],
+    )
+    def generate_section_draft(
+        study_id: str,
+        section_id: str,
+        request: DraftRequest,
+        drafts: DraftServiceDependency,
+    ) -> SectionContentDraft:
+        return _call(lambda: drafts.generate(study_id, section_id, feedback=request.feedback))
+
+    @app.post(
+        "/api/v1/studies/{study_id}/sections/{section_id}/revise",
+        response_model=SectionContentDraft,
+        status_code=status.HTTP_201_CREATED,
+        tags=["sections"],
+    )
+    def revise_section_draft(
+        study_id: str,
+        section_id: str,
+        request: ReviseRequest,
+        drafts: DraftServiceDependency,
+    ) -> SectionContentDraft:
+        return _call(lambda: drafts.revise(study_id, section_id, request.feedback))
+
+    @app.post(
+        "/api/v1/studies/{study_id}/sections/{section_id}/apply",
+        response_model=SectionContentDraft,
+        tags=["sections"],
+    )
+    def apply_section_draft(
+        study_id: str,
+        section_id: str,
+        request: SectionVersionRequest,
+        drafts: DraftServiceDependency,
+    ) -> SectionContentDraft:
+        return _call(lambda: drafts.apply(study_id, section_id, request.version))
+
+    @app.post(
+        "/api/v1/studies/{study_id}/sections/{section_id}/discard",
+        response_model=SectionContentDraft,
+        tags=["sections"],
+    )
+    def discard_section_draft(
+        study_id: str,
+        section_id: str,
+        request: SectionVersionRequest,
+        drafts: DraftServiceDependency,
+    ) -> SectionContentDraft:
+        return _call(lambda: drafts.discard(study_id, section_id, request.version))
+
+    @app.post(
+        "/api/v1/studies/{study_id}/sections/{section_id}/verify",
+        response_model=SectionContentDraft,
+        tags=["sections"],
+    )
+    def verify_section_draft(
+        study_id: str,
+        section_id: str,
+        drafts: DraftServiceDependency,
+    ) -> SectionContentDraft:
+        return _call(lambda: drafts.verify(study_id, section_id))
+
+    @app.get(
+        "/api/v1/studies/{study_id}/chat",
+        response_model=list[ChatMessage],
+        tags=["chat"],
+    )
+    def get_chat(study_id: str, chat: ChatServiceDependency) -> list[ChatMessage]:
+        return _call(lambda: chat.history(study_id))
+
+    @app.post(
+        "/api/v1/studies/{study_id}/chat",
+        response_model=ChatTurn,
+        status_code=status.HTTP_201_CREATED,
+        tags=["chat"],
+    )
+    def post_chat(
+        study_id: str,
+        request: ChatRequest,
+        chat: ChatServiceDependency,
+    ) -> ChatTurn:
+        return _call(
+            lambda: chat.ask(
+                study_id,
+                request.message,
+                scope=request.scope,
+                section_id=request.section_id,
+            )
+        )
+
+    @app.get(
         "/api/v1/studies/{study_id}/claims/{claim_id}/evidence",
         response_model=EvidenceChain,
         tags=["evidence"],
@@ -492,6 +640,7 @@ def _call[ResponseT](operation: Callable[[], ResponseT]) -> ResponseT:
         UnknownValidationPackageError,
         UnknownSectionRunError,
         UnknownPromotionTargetError,
+        KeyError,
     ) as error:
         raise HTTPException(status_code=404, detail=str(error)) from error
     except (
@@ -503,6 +652,7 @@ def _call[ResponseT](operation: Callable[[], ResponseT]) -> ResponseT:
         DataValidationConflictError,
         PromotionConflictError,
         PromotionRejectedError,
+        DraftCycleError,
     ) as error:
         raise HTTPException(status_code=409, detail=str(error)) from error
     except RunPlanRejectedError as error:

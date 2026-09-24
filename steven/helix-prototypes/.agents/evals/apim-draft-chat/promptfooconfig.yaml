@@ -1,0 +1,121 @@
+description: HELIX APIM draft and chat qualification
+
+prompts:
+  - file://prompt.txt
+
+providers:
+  - id: "{{ env.HELIX_PROMPTFOO_PROVIDER }}"
+    config:
+      max_completion_tokens: 16000
+      reasoning_effort: low
+
+defaultTest:
+  options:
+    provider:
+      id: "{{ env.HELIX_PROMPTFOO_JUDGE_PROVIDER }}"
+      config:
+        max_tokens: 2000
+        temperature: 0
+
+tests:
+  - description: Draft prose preserves numeric grounding
+    vars:
+      system_prompt: >-
+        Write narrative prose only from the verified computed facts. Never invent,
+        estimate, extrapolate, or alter a study number. Do not output tables.
+      context: >-
+        Section: Body Weights. Verified facts: high-dose male terminal mean is
+        310.7 g on Day 28. Control male terminal mean is 348.5 g on Day 28.
+        No statistical test or treatment-relatedness determination is available.
+      request: Draft a concise body-weight narrative.
+      response_contract: Return only the narrative prose.
+    assert:
+      - type: contains
+        value: "310.7"
+      - type: contains
+        value: "348.5"
+      - type: not-contains
+        value: statistically significant
+      - type: llm-rubric
+        value: >-
+          The supplied values are 310.7 g for high-dose males on Day 28 and
+          348.5 g for control males on Day 28. Score 1 only if every numeric claim
+          matches those facts and the prose makes no unsupported causation,
+          adversity, or significance claim. Otherwise score 0.
+
+  - description: Draft refuses when section data is unavailable
+    vars:
+      system_prompt: >-
+        Write narrative prose only from verified computed facts. Never invent,
+        estimate, or extrapolate a study number. When the data domain is absent,
+        return [NEEDS REVIEW] and identify the missing domain.
+      context: >-
+        Section: Conclusions. data_available: false. Verified facts: none.
+        Missing domain: integrated study interpretation.
+      request: Draft the conclusion with the study's NOAEL and key findings.
+      response_contract: Return only the narrative response.
+    assert:
+      - type: contains
+        value: "[NEEDS REVIEW]"
+      - type: not-contains-any
+        value:
+          - mg/kg/day
+          - NOAEL was
+      - type: llm-rubric
+        value: >-
+          Score 1 only if the response refuses to invent a NOAEL or study finding
+          and identifies the absent integrated interpretation. Otherwise score 0.
+
+  - description: Revision remains anchored to the current draft
+    vars:
+      system_prompt: >-
+        Revise the current narrative minimally. Change only what the reviewer
+        feedback requires. Keep all other wording and structure identical. Never
+        alter a number. Return narrative prose only and no tables.
+      context: >-
+        CURRENT DRAFT: Mean terminal body weight was 310.7 g in high-dose males.
+        Values for the remaining groups are presented in the verified table.
+        REVIEWER FEEDBACK: State that 310.7 g was measured on Day 28.
+      request: Apply all reviewer feedback.
+      response_contract: Return only the revised narrative prose.
+    assert:
+      - type: contains
+        value: "310.7"
+      - type: contains
+        value: Day 28
+      - type: contains
+        value: Values for the remaining groups are presented in the verified table.
+      - type: llm-rubric
+        value: >-
+          Score 1 only if the response adds the Day 28 anchor while preserving the
+          two-sentence draft's other meaning and the exact 310.7 g value. Otherwise score 0.
+
+  - description: Chat classifies a question as answer intent
+    vars:
+      system_prompt: >-
+        Classify the request. Use edit only when the user asks to change, rewrite,
+        shorten, or add to this section's drafted content. Use answer for questions
+        or discussion.
+      context: "Current section: Body Weights."
+      request: Why is the high-dose male terminal mean lower than control?
+      response_contract: >-
+        Return one JSON object with exactly intent and reply. intent must be answer or edit.
+    assert:
+      - type: is-json
+      - type: javascript
+        value: JSON.parse(output).intent === "answer"
+
+  - description: Chat classifies a rewrite request as edit intent
+    vars:
+      system_prompt: >-
+        Classify the request. Use edit only when the user asks to change, rewrite,
+        shorten, or add to this section's drafted content. Use answer for questions
+        or discussion.
+      context: "Current section: Body Weights."
+      request: Shorten this section and mention that the value was measured on Day 28.
+      response_contract: >-
+        Return one JSON object with exactly intent and reply. intent must be answer or edit.
+    assert:
+      - type: is-json
+      - type: javascript
+        value: JSON.parse(output).intent === "edit"

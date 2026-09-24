@@ -1,9 +1,26 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
-import { artifactDownloadUrl } from "@/lib/api";
-import type { ApprovalRole, ValidationResult, Workspace } from "@/lib/types";
+import {
+  ApiError,
+  artifactDownloadUrl,
+  generateSectionDraft,
+  getSectionDraft,
+  getSections,
+  verifySection,
+} from "@/lib/api";
+
+import { ChatDock } from "./ChatDock";
+import type {
+  ApprovalRole,
+  SectionBlock,
+  SectionContentDraft,
+  SectionListItem,
+  Workspace,
+} from "@/lib/types";
 
 type Props = {
   workspace: Workspace;
@@ -15,36 +32,101 @@ type Props = {
   onExport: () => void;
 };
 
-const approvalOrder: ApprovalRole[] = [
-  "pathologist",
-  "peer_reviewer",
-  "qau",
-  "study_director",
-];
+const approvalOrder: ApprovalRole[] = ["pathologist", "peer_reviewer", "qau", "study_director"];
 
 export function ReportAssembly({
   workspace,
   busy,
-  onInspectClaim,
   onResolve,
   onApprove,
   onFinalStudyApproval,
   onExport,
 }: Props) {
-  const [selectedSectionId, setSelectedSectionId] = useState("S7");
-  const section =
-    workspace.report.sections.find((item) => item.section_id === selectedSectionId) ??
-    workspace.report.sections[0];
-  const referenceMap = useMemo(
-    () =>
-      new Map(
-        workspace.report.template.references.map((reference) => [
-          reference.reference_id,
-          reference,
-        ]),
-      ),
-    [workspace.report.template.references],
-  );
+  const studyId = workspace.study.study_id;
+  const [sections, setSections] = useState<SectionListItem[]>([]);
+  const [selectedSectionId, setSelectedSectionId] = useState("5_2_3_body_weight");
+  const [draft, setDraft] = useState<SectionContentDraft | null>(null);
+  const [draftLoading, setDraftLoading] = useState(false);
+  const [draftBusy, setDraftBusy] = useState(false);
+  const [draftError, setDraftError] = useState<string | null>(null);
+
+  const refreshSections = useCallback(async () => {
+    try {
+      setSections(await getSections(studyId));
+    } catch {
+      /* non-fatal: navigator falls back to whatever it has */
+    }
+  }, [studyId]);
+
+  useEffect(() => {
+    void refreshSections();
+  }, [refreshSections]);
+
+  useEffect(() => {
+    let active = true;
+    setDraft(null);
+    setDraftError(null);
+    setDraftLoading(true);
+    getSectionDraft(studyId, selectedSectionId)
+      .then(async (value) => {
+        if (!active) return;
+        if (value) {
+          setDraft(value);
+          return;
+        }
+        // No draft persisted yet — generate once so content is present, then
+        // it is fetched from the database on every later visit.
+        const created = await generateSectionDraft(studyId, selectedSectionId);
+        if (active) {
+          setDraft(created);
+          void refreshSections();
+        }
+      })
+      .catch((cause) => active && setDraftError(messageFrom(cause)))
+      .finally(() => active && setDraftLoading(false));
+    return () => {
+      active = false;
+    };
+  }, [studyId, selectedSectionId, refreshSections]);
+
+  async function generate() {
+    setDraftBusy(true);
+    setDraftError(null);
+    try {
+      setDraft(await generateSectionDraft(studyId, selectedSectionId));
+      await refreshSections();
+    } catch (cause) {
+      setDraftError(messageFrom(cause));
+    } finally {
+      setDraftBusy(false);
+    }
+  }
+
+  const reloadDraft = useCallback(async () => {
+    try {
+      setDraft(await getSectionDraft(studyId, selectedSectionId));
+      setSections(await getSections(studyId));
+    } catch {
+      /* non-fatal */
+    }
+  }, [studyId, selectedSectionId]);
+
+  async function markVerified() {
+    setDraftBusy(true);
+    setDraftError(null);
+    try {
+      setDraft(await verifySection(studyId, selectedSectionId));
+      await refreshSections();
+    } catch (cause) {
+      setDraftError(messageFrom(cause));
+    } finally {
+      setDraftBusy(false);
+    }
+  }
+
+  const selectedMeta = sections.find((item) => item.section_id === selectedSectionId);
+  const selectedTitle = draft?.title ?? selectedMeta?.title ?? selectedSectionId;
+
   const latestDispositions = latestDispositionMap(workspace);
   const blockingResults = workspace.validations.filter(
     (result) => result.status === "fail" && result.severity === "blocker",
@@ -53,18 +135,18 @@ export function ReportAssembly({
     (result) => !isResolved(latestDispositions.get(result.result_id)?.decision),
   );
   const approvalRoles = new Set(workspace.approvals.map((approval) => approval.role));
-  const priorApprovalRoles: ApprovalRole[] = ["pathologist", "peer_reviewer", "qau"];
-  const priorHumanApprovalsComplete = priorApprovalRoles.every((role) => approvalRoles.has(role));
+  const priorRoles: ApprovalRole[] = ["pathologist", "peer_reviewer", "qau"];
+  const priorHumanApprovalsComplete = priorRoles.every((role) => approvalRoles.has(role));
 
   return (
     <section className="view-content report-view" aria-labelledby="report-heading">
       <div className="view-intro report-intro">
         <div>
-          <p className="eyebrow">Sponsor template with regulatory anchors</p>
-          <h2 id="report-heading">Assemble the report without hiding the gaps.</h2>
+          <p className="eyebrow">Drafted from verified study data</p>
+          <h2 id="report-heading">Read each section as it will appear in the report.</h2>
           <p>
-            The template maps 37 required fields to 21 CFR 58.185 or OECD TG 407. It is a sponsor
-            working structure, not an FDA-issued document template.
+            Tables are drawn directly from the verified numbers; the narrative is written around them.
+            Sections still marked <strong>needs review</strong> await your verification.
           </p>
         </div>
         <div className="template-identity">
@@ -84,32 +166,26 @@ export function ReportAssembly({
           <div className="panel-heading compact">
             <div>
               <p className="eyebrow">Report navigator</p>
-              <h3>Eight sections</h3>
+              <h3>Fourteen sections</h3>
             </div>
           </div>
           <div className="section-list">
-            {workspace.report.sections.map((item, index) => {
-              const issueCount = openBlockers.filter(
-                (result) => scopeSection(result, workspace) === item.section_id,
-              ).length;
-              return (
-                <button
-                  key={item.section_id}
-                  type="button"
-                  className={item.section_id === section.section_id ? "section-button active" : "section-button"}
-                  onClick={() => setSelectedSectionId(item.section_id)}
-                >
-                  <span className="section-number">{String(index + 1).padStart(2, "0")}</span>
-                  <span className="section-label">
-                    <strong>{item.title}</strong>
-                    <small>{item.required_field_count} required fields</small>
-                  </span>
-                  <span className={`section-state ${issueCount ? "issue" : item.status}`}>
-                    {issueCount ? `${issueCount} issue${issueCount > 1 ? "s" : ""}` : item.status.replaceAll("_", " ")}
-                  </span>
-                </button>
-              );
-            })}
+            {(sections.length ? sections : []).map((item) => (
+              <button
+                key={item.section_id}
+                type="button"
+                className={item.section_id === selectedSectionId ? "section-button active" : "section-button"}
+                onClick={() => setSelectedSectionId(item.section_id)}
+              >
+                <span className="section-number">{String(item.order + 1).padStart(2, "0")}</span>
+                <span className="section-label">
+                  <strong>{item.title}</strong>
+                  <small>{item.has_verified_claims ? "verified data" : "narrative / review"}</small>
+                </span>
+                <span className={`section-state ${statusClass(item.status)}`}>{statusLabel(item.status)}</span>
+              </button>
+            ))}
+            {!sections.length && <div className="empty-copy">Loading sections…</div>}
           </div>
           <div className="template-note">
             <strong>Template boundary</strong>
@@ -121,85 +197,75 @@ export function ReportAssembly({
           <article className="panel report-paper">
             <header className="report-paper-header">
               <div>
-                <p className="eyebrow">Draft section {section.section_id.slice(1)}</p>
-                <h3>{section.title}</h3>
+                <p className="eyebrow">Draft section</p>
+                <h3>{selectedTitle}</h3>
               </div>
-              <span className={`document-status ${section.status}`}>{section.status.replaceAll("_", " ")}</span>
+              <div className="report-paper-actions">
+                {draft && (
+                  <span className={`document-status ${statusClass(draft.status)}`}>
+                    {statusLabel(draft.status)} · v{draft.version}
+                  </span>
+                )}
+                {draft && draft.status === "needs_review" && (
+                  <button
+                    className="button secondary small"
+                    type="button"
+                    onClick={() => void markVerified()}
+                    disabled={draftBusy}
+                    data-testid="verify-draft"
+                  >
+                    Mark verified
+                  </button>
+                )}
+                <button
+                  className="button secondary small"
+                  type="button"
+                  onClick={() => void generate()}
+                  disabled={draftBusy}
+                  data-testid="generate-draft"
+                >
+                  {draftBusy ? "Drafting…" : draft ? "Regenerate" : "Generate draft"}
+                </button>
+              </div>
             </header>
             <div className="report-rule" />
-            <p className="report-purpose">
-              {
-                workspace.report.template.sections.find(
-                  (templateSection) => templateSection.section_id === section.section_id,
-                )?.purpose
-              }
-            </p>
-            <div className="report-blocks">
-              {section.blocks.map((block) => (
-                <div className={`report-block ${block.kind}`} key={block.block_id}>
-                  {block.kind === "review_marker" && <span className="marker-label">Needs review</span>}
-                  <p>{stripMarker(block.text)}</p>
-                  {block.claim_id && (
-                    <button
-                      type="button"
-                      className="lineage-button"
-                      onClick={() => onInspectClaim(block.claim_id ?? "")}
-                    >
-                      Inspect {block.provenance_count} provenance edges
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
-            {section.blocks.length === 0 && (
-              <div className="empty-copy">No draft blocks exist for this section.</div>
+
+            {draftError && <div className="notice error inline">{draftError}</div>}
+
+            {draft && draft.status !== "verified" && (
+              <div className="review-banner" role="status">
+                <strong>Needs your review.</strong> Verify the content below and use the chat to give
+                feedback or rerun this section.
+              </div>
             )}
+
+            {draftLoading && !draft && <div className="empty-copy">Loading draft…</div>}
+
+            {!draftLoading && !draft && (
+              <div className="empty-copy">
+                No draft yet for this section. Choose <em>Generate draft</em> to create one.
+              </div>
+            )}
+
+            {draft && (
+              <div className="report-blocks">
+                {draft.blocks.map((block, index) => (
+                  <BlockView key={index} block={block} />
+                ))}
+                <p className="draft-provenance">
+                  {draft.provenance_count > 0
+                    ? `${draft.provenance_count} values traced to source records.`
+                    : "No numeric values in this section."}
+                  {!draft.model && " · narrative pending (model not configured)"}
+                </p>
+              </div>
+            )}
+
             <footer className="report-paper-footer">
               <span>{workspace.study.study_id}</span>
               <span>Protocol {workspace.study.protocol_version}</span>
               <span>Synthetic working draft</span>
             </footer>
-          </article>
-
-          <article className="panel field-matrix">
-            <div className="panel-heading">
-              <div>
-                <p className="eyebrow">Structured output contract</p>
-                <h3>Required fields and authority</h3>
-              </div>
-              <span className="count-chip">{section.fields.length}</span>
-            </div>
-            <div className="field-list">
-              {section.fields.map((field) => (
-                <div className="field-row" key={field.field_id}>
-                  <div className="field-status-icon">{field.required ? "R" : "O"}</div>
-                  <div className="field-main">
-                    <strong>{field.label}</strong>
-                    <span>{field.source_expectation}</span>
-                  </div>
-                  <div className="field-grain">
-                    <span>Expected grain</span>
-                    <code>{field.expected_grain}</code>
-                  </div>
-                  <div className="field-references">
-                    {field.regulatory_reference_ids.map((referenceId) => {
-                      const reference = referenceMap.get(referenceId);
-                      return reference ? (
-                        <a
-                          href={reference.url}
-                          target="_blank"
-                          rel="noreferrer"
-                          key={reference.reference_id}
-                        >
-                          {reference.citation}
-                        </a>
-                      ) : null;
-                    })}
-                  </div>
-                  {field.human_judgment && <span className="human-chip">Human judgment</span>}
-                </div>
-              ))}
-            </div>
           </article>
         </div>
 
@@ -274,9 +340,7 @@ export function ReportAssembly({
             </div>
             <div className="approval-list">
               {approvalOrder.map((role, index) => {
-                const approval = [...workspace.approvals]
-                  .reverse()
-                  .find((item) => item.role === role);
+                const approval = [...workspace.approvals].reverse().find((item) => item.role === role);
                 const directorBlocked = role === "study_director" && !priorHumanApprovalsComplete;
                 return (
                   <div className={approval ? "approval-row complete" : "approval-row"} key={role}>
@@ -301,64 +365,19 @@ export function ReportAssembly({
                 );
               })}
             </div>
-          </section>
-
-          <section className="panel approval-card" data-testid="final-study-approval-scope">
-            <div className="panel-heading compact">
-              <div>
-                <p className="eyebrow">Hash-bound record</p>
-                <h3>Final Study Approval</h3>
-              </div>
-              <span
-                className="count-chip"
-                data-testid="approval-current"
-              >
-                {workspace.approval_current
-                  ? "current"
-                  : workspace.final_study_approval
-                    ? "stale"
-                    : "ready for signature"}
-              </span>
-            </div>
-            <p>
-              Approval applies only to the exact release-candidate manifest and included artifact
-              hashes. Language stays at ready for signature / ready for export — never a regulator
-              approval claim.
-            </p>
-            {workspace.release_candidate && (
-              <div className="artifact-list">
-                <div>
-                  <strong>Manifest</strong>
-                  <code data-testid="approval-manifest-hash">
-                    {workspace.final_study_approval?.manifest_hash
-                      ?? workspace.release_candidate.content_hash}
-                  </code>
-                </div>
-                {(workspace.final_study_approval?.included_artifact_hashes
-                  ?? workspace.release_candidate.included_artifacts
-                ).map((item) => (
-                  <div key={item.artifact_id}>
-                    <strong>{item.artifact_id}</strong>
-                    <code data-testid={`approval-artifact-${item.artifact_id}`}>
-                      {item.content_hash}
-                    </code>
-                  </div>
-                ))}
-              </div>
-            )}
             {workspace.approval_current ? (
-              <span className="approval-check">✓</span>
+              <span className="approval-check">✓ Final Study Approval recorded</span>
             ) : (
               <button
                 type="button"
                 className="text-button"
                 data-testid="record-final-study-approval"
                 disabled={
-                  !priorHumanApprovalsComplete
-                  || !approvalRoles.has("study_director")
-                  || openBlockers.length > 0
-                  || busy !== null
-                  || workspace.release_candidate == null
+                  !priorHumanApprovalsComplete ||
+                  !approvalRoles.has("study_director") ||
+                  openBlockers.length > 0 ||
+                  busy !== null ||
+                  workspace.release_candidate == null
                 }
                 onClick={onFinalStudyApproval}
               >
@@ -369,7 +388,7 @@ export function ReportAssembly({
 
           <section className="panel export-card">
             <p className="eyebrow">Explicit action</p>
-            <h3>Approved artifact export</h3>
+            <h3>Submission-support package</h3>
             <div className="artifact-list">
               {workspace.export_artifacts.map((artifact) => (
                 <div key={artifact.artifact_id}>
@@ -384,9 +403,7 @@ export function ReportAssembly({
                         download
                       >
                         <strong>{artifactLabel(artifact.kind)}</strong>
-                        <code data-testid={`export-checksum-${artifact.artifact_id}`}>
-                          Download · {artifact.checksum}
-                        </code>
+                        <code>Download · {artifact.path}</code>
                       </a>
                     ) : (
                       <>
@@ -406,19 +423,64 @@ export function ReportAssembly({
               data-testid="export-package"
             >
               {workspace.release_gate.status === "exported"
-                ? "Approved artifacts exported"
+                ? "Synthetic package exported"
                 : busy === "export"
-                  ? "Exporting approved hashes…"
-                  : "Export approved artifacts"}
+                  ? "Checksumming artifacts…"
+                  : "Export synthetic package"}
             </button>
-            <p className="fine-print">
-              Export packages only Final Study Approval hashes. Status language stays at exported —
-              never a regulator approval claim.
-            </p>
+            <p className="fine-print">A prepared or exported prototype package is not FDA acceptance.</p>
           </section>
         </aside>
       </div>
+
+      <ChatDock
+        studyId={studyId}
+        sectionId={selectedSectionId}
+        sectionTitle={selectedTitle}
+        onApplied={() => void reloadDraft()}
+      />
     </section>
+  );
+}
+
+function BlockView({ block }: { block: SectionBlock }) {
+  if (block.kind === "prose") {
+    return (
+      <div className="report-block prose draft-prose">
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>{block.markdown}</ReactMarkdown>
+      </div>
+    );
+  }
+  if (block.kind === "note") {
+    return (
+      <div className="report-block note draft-note">
+        <span className="marker-label">Needs review</span>
+        <p>{block.text}</p>
+      </div>
+    );
+  }
+  return (
+    <figure className="draft-table-wrap">
+      <figcaption>{block.title}</figcaption>
+      <table className="draft-table">
+        <thead>
+          <tr>
+            {block.columns.map((column) => (
+              <th key={column}>{column}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {block.rows.map((row, rowIndex) => (
+            <tr key={rowIndex}>
+              {row.map((cell, cellIndex) => (
+                <td key={cellIndex}>{cell}</td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </figure>
   );
 }
 
@@ -434,19 +496,29 @@ function isResolved(decision: string | undefined): boolean {
   return ["corrected", "explained_in_nsdrg", "approved_exception"].includes(decision ?? "");
 }
 
-function scopeSection(result: ValidationResult, workspace: Workspace): string | null {
-  if (result.scope_id.startsWith("S")) {
-    return result.scope_id;
-  }
-  return workspace.claims.find((claim) => claim.claim_id === result.scope_id)?.section_id ?? null;
+function statusLabel(status: string): string {
+  return {
+    needs_review: "needs review",
+    proposed: "proposed",
+    verified: "verified",
+    discarded: "discarded",
+    empty: "not drafted",
+  }[status] ?? status.replaceAll("_", " ");
+}
+
+function statusClass(status: string): string {
+  return status === "verified" ? "reviewed" : status === "empty" ? "pending" : "needs_review";
 }
 
 function humanize(value: string): string {
   return value.replaceAll("-", " ");
 }
 
-function stripMarker(value: string): string {
-  return value.replace("[NEEDS REVIEW: ", "").replace("]", "");
+function messageFrom(cause: unknown): string {
+  if (cause instanceof ApiError || cause instanceof Error) {
+    return cause.message;
+  }
+  return "An unexpected error occurred.";
 }
 
 function approvalLabel(role: ApprovalRole): string {
@@ -468,14 +540,12 @@ function approvalDetail(role: ApprovalRole): string {
 }
 
 function artifactLabel(kind: string): string {
-  return {
-    pinned_run: "Pinned run manifest",
-    data_validation_receipt: "Data validation receipt",
-    section_draft_candidate: "Section draft candidate",
-    section_draft: "Section draft",
-    study_report_pdf: "Study report PDF",
-    send_dataset_package: "Illustrative dataset archive",
-    define_xml: "Illustrative define.xml",
-    nsdrg: "Synthetic nSDRG PDF",
-  }[kind] ?? kind;
+  return (
+    {
+      study_report_pdf: "Study report PDF",
+      send_dataset_package: "Illustrative dataset archive",
+      define_xml: "Illustrative define.xml",
+      nsdrg: "Synthetic nSDRG PDF",
+    }[kind] ?? kind
+  );
 }

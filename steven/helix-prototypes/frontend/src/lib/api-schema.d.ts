@@ -14,6 +14,64 @@ export interface paths {
         /** List Studies */
         get: operations["list_studies_api_v1_studies_get"];
         put?: never;
+        /**
+         * Create Study From Upload
+         * @description Create a study from uploaded source files.
+         *
+         *     Route and protocol version are required because no column carries them
+         *     and a governed fact is never inferred from data; the caller is recorded
+         *     as their source.
+         *
+         *     The package is stored with no claims. Computing those is the section
+         *     executor's job, so the release gate starts blocked and stays blocked
+         *     until real validation runs.
+         */
+        post: operations["create_study_from_upload_api_v1_studies_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/studies/jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Submit Study Upload
+         * @description Accept an upload and process it in the background.
+         *
+         *     The synchronous `POST /api/v1/studies` is unchanged and remains the
+         *     simpler choice for a small study. This exists because a 150-animal
+         *     study takes long enough that a caller needs to see what is happening.
+         *
+         *     Returns 202 with a job id. Poll `GET /api/v1/studies/jobs/{job_id}`.
+         */
+        post: operations["submit_study_upload_api_v1_studies_jobs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/studies/jobs/{job_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Study Upload Job
+         * @description Stage-by-stage progress and timings for an upload job.
+         */
+        get: operations["get_study_upload_job_api_v1_studies_jobs__job_id__get"];
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -32,6 +90,24 @@ export interface paths {
         put?: never;
         /** Record Approval */
         post: operations["record_approval_api_v1_studies__study_id__approvals_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/studies/{study_id}/chat": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Chat */
+        get: operations["get_chat_api_v1_studies__study_id__chat_get"];
+        put?: never;
+        /** Post Chat */
+        post: operations["post_chat_api_v1_studies__study_id__chat_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -225,6 +301,126 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/studies/{study_id}/sections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Sections */
+        get: operations["list_sections_api_v1_studies__study_id__sections_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/studies/{study_id}/sections/{section_id}/apply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Apply Section Draft */
+        post: operations["apply_section_draft_api_v1_studies__study_id__sections__section_id__apply_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/studies/{study_id}/sections/{section_id}/discard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Discard Section Draft */
+        post: operations["discard_section_draft_api_v1_studies__study_id__sections__section_id__discard_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/studies/{study_id}/sections/{section_id}/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Section Draft */
+        get: operations["get_section_draft_api_v1_studies__study_id__sections__section_id__draft_get"];
+        put?: never;
+        /** Generate Section Draft */
+        post: operations["generate_section_draft_api_v1_studies__study_id__sections__section_id__draft_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/studies/{study_id}/sections/{section_id}/drafts/{version}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Section Draft Version */
+        get: operations["get_section_draft_version_api_v1_studies__study_id__sections__section_id__drafts__version__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/studies/{study_id}/sections/{section_id}/revise": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Revise Section Draft */
+        post: operations["revise_section_draft_api_v1_studies__study_id__sections__section_id__revise_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/studies/{study_id}/sections/{section_id}/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Verify Section Draft */
+        post: operations["verify_section_draft_api_v1_studies__study_id__sections__section_id__verify_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/studies/{study_id}/validation-results/{result_id}/dispositions": {
         parameters: {
             query?: never;
@@ -374,6 +570,54 @@ export interface components {
             /** Title */
             title: string;
         };
+        /** Body_create_study_from_upload_api_v1_studies_post */
+        Body_create_study_from_upload_api_v1_studies_post: {
+            /** Authorized By */
+            authorized_by: string;
+            /** Files */
+            files: string[];
+            /** Protocol Version */
+            protocol_version: string;
+            /** Route */
+            route: string;
+            /** Study Id */
+            study_id: string;
+            /**
+             * Study Start
+             * @default
+             */
+            study_start: string;
+            /**
+             * Study Type Id
+             * @default REPEAT_DOSE_28D_RODENT
+             */
+            study_type_id: string;
+        };
+        /** Body_submit_study_upload_api_v1_studies_jobs_post */
+        Body_submit_study_upload_api_v1_studies_jobs_post: {
+            /** Authorized By */
+            authorized_by: string;
+            /** Files */
+            files: string[];
+            /** Idempotency Key */
+            idempotency_key: string;
+            /** Protocol Version */
+            protocol_version: string;
+            /** Route */
+            route: string;
+            /** Study Id */
+            study_id: string;
+            /**
+             * Study Start
+             * @default
+             */
+            study_start: string;
+            /**
+             * Study Type Id
+             * @default REPEAT_DOSE_28D_RODENT
+             */
+            study_type_id: string;
+        };
         /** BoundDisposition */
         BoundDisposition: {
             /** Artifact Hash */
@@ -451,6 +695,57 @@ export interface components {
             /** Section Package Id */
             section_package_id: string;
             stored_run?: components["schemas"]["StoredSectionRun"] | null;
+        };
+        /** ChatMessage */
+        ChatMessage: {
+            /** Content */
+            content: string;
+            /** Created At */
+            created_at: string;
+            /** Draft Version */
+            draft_version?: number | null;
+            /**
+             * Intent
+             * @default ask
+             * @enum {string}
+             */
+            intent: "ask" | "revise";
+            /** Message Id */
+            message_id: number;
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "user" | "assistant";
+            /**
+             * Scope
+             * @enum {string}
+             */
+            scope: "section" | "study";
+            /** Section Id */
+            section_id?: string | null;
+        };
+        /** ChatRequest */
+        ChatRequest: {
+            /** Message */
+            message: string;
+            /**
+             * Scope
+             * @default section
+             * @enum {string}
+             */
+            scope: "section" | "study";
+            /** Section Id */
+            section_id?: string | null;
+        };
+        /**
+         * ChatTurn
+         * @description One assistant turn: the reply, plus a proposed rewrite when the model
+         *     read the message as an edit request (approved via 👍/👎).
+         */
+        ChatTurn: {
+            message: components["schemas"]["ChatMessage"];
+            proposed?: components["schemas"]["SectionContentDraft"] | null;
         };
         /** Claim */
         Claim: {
@@ -712,6 +1007,11 @@ export interface components {
             sexes: ("M" | "F")[];
             /** Study Id */
             study_id: string;
+        };
+        /** DraftRequest */
+        DraftRequest: {
+            /** Feedback */
+            feedback?: string[];
         };
         /** DraftingCycle */
         DraftingCycle: {
@@ -1049,6 +1349,16 @@ export interface components {
             /** Reasons */
             reasons: string[];
         };
+        /** NoteBlock */
+        NoteBlock: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "note";
+            /** Text */
+            text: string;
+        };
         /** ParseReuse */
         ParseReuse: {
             /** Content Hash */
@@ -1185,6 +1495,16 @@ export interface components {
             schema_version: "helix.section-promotion-decision/v1";
             /** Warnings */
             warnings: string[];
+        };
+        /** ProseBlock */
+        ProseBlock: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "prose";
+            /** Markdown */
+            markdown: string;
         };
         /** ProvenanceBinding */
         ProvenanceBinding: {
@@ -1406,6 +1726,11 @@ export interface components {
             /** Timestamp */
             timestamp: string | null;
         };
+        /** ReviseRequest */
+        ReviseRequest: {
+            /** Feedback */
+            feedback: string;
+        };
         /** RunPlan */
         RunPlan: {
             /** Created At */
@@ -1485,6 +1810,39 @@ export interface components {
             /** Title */
             title: string;
         };
+        /** SectionContentDraft */
+        SectionContentDraft: {
+            /** Blocks */
+            blocks: (components["schemas"]["ProseBlock"] | components["schemas"]["TableBlock"] | components["schemas"]["NoteBlock"])[];
+            /** Created At */
+            created_at: string;
+            /** Data Available */
+            data_available: boolean;
+            /** Feedback */
+            feedback?: string[];
+            /** Model */
+            model?: string | null;
+            /** Narrative Md */
+            narrative_md?: string | null;
+            /** Note */
+            note?: string | null;
+            /**
+             * Provenance Count
+             * @default 0
+             */
+            provenance_count: number;
+            /** Section Id */
+            section_id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "needs_review" | "proposed" | "verified" | "discarded" | "empty";
+            /** Title */
+            title: string;
+            /** Version */
+            version: number;
+        };
         /** SectionDraft */
         SectionDraft: {
             /** Bound Dispositions */
@@ -1561,6 +1919,28 @@ export interface components {
             /** Transitive */
             transitive: string[];
         };
+        /** SectionListItem */
+        SectionListItem: {
+            /** Data Available */
+            data_available?: boolean | null;
+            /** Has Verified Claims */
+            has_verified_claims: boolean;
+            /** Order */
+            order: number;
+            /** Section Id */
+            section_id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "needs_review" | "proposed" | "verified" | "discarded" | "empty";
+            /** Template Section */
+            template_section: string | null;
+            /** Title */
+            title: string;
+            /** Version */
+            version?: number | null;
+        };
         /** SectionRunCommand */
         SectionRunCommand: {
             /** Idempotency Key */
@@ -1628,6 +2008,11 @@ export interface components {
          * @enum {string}
          */
         SectionStatus: "validated" | "needs_review" | "reviewed";
+        /** SectionVersionRequest */
+        SectionVersionRequest: {
+            /** Version */
+            version: number;
+        };
         /** SourceRecord */
         SourceRecord: {
             /** Attributes */
@@ -1842,6 +2227,20 @@ export interface components {
             predecessor_run_id: string;
             /** Reason */
             reason: string;
+        };
+        /** TableBlock */
+        TableBlock: {
+            /** Columns */
+            columns: string[];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "table";
+            /** Rows */
+            rows: string[][];
+            /** Title */
+            title: string;
         };
         /** TemplateConformanceReceipt */
         TemplateConformanceReceipt: {
@@ -2154,6 +2553,109 @@ export interface operations {
             };
         };
     };
+    create_study_from_upload_api_v1_studies_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_create_study_from_upload_api_v1_studies_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    submit_study_upload_api_v1_studies_jobs_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_submit_study_upload_api_v1_studies_jobs_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_study_upload_job_api_v1_studies_jobs__job_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     record_approval_api_v1_studies__study_id__approvals_post: {
         parameters: {
             query?: never;
@@ -2176,6 +2678,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["WorkspaceResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_chat_api_v1_studies__study_id__chat_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatMessage"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_chat_api_v1_studies__study_id__chat_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChatRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatTurn"];
                 };
             };
             /** @description Validation Error */
@@ -2556,6 +3124,278 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SectionDraft"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_sections_api_v1_studies__study_id__sections_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SectionListItem"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    apply_section_draft_api_v1_studies__study_id__sections__section_id__apply_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+                section_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SectionVersionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SectionContentDraft"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    discard_section_draft_api_v1_studies__study_id__sections__section_id__discard_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+                section_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SectionVersionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SectionContentDraft"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_section_draft_api_v1_studies__study_id__sections__section_id__draft_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+                section_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SectionContentDraft"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generate_section_draft_api_v1_studies__study_id__sections__section_id__draft_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+                section_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DraftRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SectionContentDraft"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_section_draft_version_api_v1_studies__study_id__sections__section_id__drafts__version__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+                section_id: string;
+                version: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SectionContentDraft"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    revise_section_draft_api_v1_studies__study_id__sections__section_id__revise_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+                section_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviseRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SectionContentDraft"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    verify_section_draft_api_v1_studies__study_id__sections__section_id__verify_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+                section_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SectionContentDraft"];
                 };
             };
             /** @description Validation Error */
