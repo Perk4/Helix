@@ -70,6 +70,18 @@ class ValidationRunRow(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
 
 
+class PinnedRunRow(Base):
+    __tablename__ = "pinned_runs"
+    __table_args__ = (UniqueConstraint("study_id", "idempotency_key", name="uq_pinned_run_key"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    run_id: Mapped[str] = mapped_column(String(80), index=True, nullable=False)
+    study_id: Mapped[str] = mapped_column(String(80), index=True, nullable=False)
+    idempotency_key: Mapped[str] = mapped_column(String(160), nullable=False)
+    request_hash: Mapped[str] = mapped_column(String(80), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+
+
 class SectionRunRow(Base):
     __tablename__ = "section_runs"
     __table_args__ = (UniqueConstraint("study_id", "idempotency_key", name="uq_section_run_key"),)

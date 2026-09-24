@@ -4,7 +4,14 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from .models import AuditEventRow, ExportFileRow, SectionRunRow, StudyPackageRow, ValidationRunRow
+from .models import (
+    AuditEventRow,
+    ExportFileRow,
+    PinnedRunRow,
+    SectionRunRow,
+    StudyPackageRow,
+    ValidationRunRow,
+)
 from .schemas import StoredSectionRun, StudyEvidencePackage, ValidationRun
 
 
@@ -147,6 +154,32 @@ class StudyPackageRepository:
             )
         )
         self.session.flush()
+
+    def get_pinned_run(self, study_id: str, idempotency_key: str) -> PinnedRunRow | None:
+        return self.session.scalar(
+            select(PinnedRunRow).where(
+                PinnedRunRow.study_id == study_id,
+                PinnedRunRow.idempotency_key == idempotency_key,
+            )
+        )
+
+    def add_pinned_run(
+        self,
+        *,
+        run_id: str,
+        study_id: str,
+        idempotency_key: str,
+        request_hash: str,
+    ) -> PinnedRunRow:
+        row = PinnedRunRow(
+            run_id=run_id,
+            study_id=study_id,
+            idempotency_key=idempotency_key,
+            request_hash=request_hash,
+        )
+        self.session.add(row)
+        self.session.flush()
+        return row
 
     def get_section_run(self, study_id: str, idempotency_key: str) -> SectionRunRow | None:
         return self.session.scalar(

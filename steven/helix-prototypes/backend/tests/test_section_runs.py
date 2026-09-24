@@ -1,5 +1,6 @@
 import json
 import re
+import shutil
 import sys
 from pathlib import Path
 from types import SimpleNamespace
@@ -104,11 +105,30 @@ class FakeSectionAgent:
         return AgentResult(thread_id="thread-test-001", final_response=json.dumps(candidate))
 
 
-def build_client(agent: FakeSectionAgent, *, raise_server_exceptions: bool = True):
+def governed_root(tmp_path: Path) -> Path:
+    root = tmp_path / "helix"
+    for relative in ["skills", ".agents"]:
+        shutil.copytree(ROOT / relative, root / relative)
+    (root / "backend" / "app" / "agents").mkdir(parents=True)
+    for filename in ["validation.py", "agents/codex_section_agent.py"]:
+        source = ROOT / "backend" / "app" / filename
+        target = root / "backend" / "app" / filename
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, target)
+    shutil.copytree(ROOT / "backend" / "app" / "data", root / "backend" / "app" / "data")
+    return root
+
+
+def build_client(
+    agent: FakeSectionAgent,
+    *,
+    repository_root: Path = ROOT,
+    raise_server_exceptions: bool = True,
+):
     settings = Settings(
         database_url="sqlite+pysqlite:///:memory:",
         seed_path=ROOT / "synthetic-e2e" / "helix-synthetic-bundle.json",
-        codex_repository_root=ROOT,
+        codex_repository_root=repository_root,
         auto_seed=True,
     )
     engine = create_database_engine(settings)
@@ -171,6 +191,9 @@ def test_section_run_records_candidate_receipt_scaffold_and_exact_replay() -> No
             "PROMOTION-DISABLED-section.5_2_3_body_weight",
         ]
         assert stored["envelope"]["validated_claims"][0]["grain"] == "dose_group"
+        assert "run_plan" not in stored["envelope"]
+        assert "study_evidence_package" not in stored["envelope"]
+        assert "records" not in stored["envelope"]
         assert stored["envelope"]["pinned_run_id"].startswith("RUN-")
         assert stored["envelope"]["manifest_hash"].startswith("sha256:")
         assert stored["envelope"]["structured_failures"] == [
@@ -318,10 +341,9 @@ def test_pinned_run_rejects_manifest_and_governed_version_drift() -> None:
         with client.app.state.session_factory() as session:
             repository = StudyPackageRepository(session)
             package = repository.get(STUDY_ID)
+            original_checksum = package.manifest[0].checksum
             changed_manifest = [*package.manifest]
-            changed_manifest[0] = changed_manifest[0].model_copy(
-                update={"checksum": "sha256:" + "0" * 64}
-            )
+            changed_manifest[0] = changed_manifest[0].model_copy(update={"checksum": "sha256:" + "0" * 64})
             repository.save(package.model_copy(update={"manifest": changed_manifest}))
             session.commit()
 
@@ -333,20 +355,25 @@ def test_pinned_run_rejects_manifest_and_governed_version_drift() -> None:
             repository = StudyPackageRepository(session)
             package = repository.get(STUDY_ID)
             original_manifest = [*package.manifest]
-            original_manifest[0] = original_manifest[0].model_copy(
-                update={"checksum": "sha256:" + "a" * 64}
-            )
+            original_manifest[0] = original_manifest[0].model_copy(update={"checksum": original_checksum})
             repository.save(package.model_copy(update={"manifest": original_manifest}))
             session.commit()
         validate(client)
 
-        with patch("app.section_runs.GOVERNED_VERSIONS", {"schema": "2.0.0"}):
+        original_file_hash = SectionRunService._file_hash
+
+        def drifted_file_hash(path: Path) -> str:
+            if path.name == "ontology.md":
+                return "sha256:" + "0" * 64
+            return original_file_hash(path)
+
+        with patch.object(SectionRunService, "_file_hash", side_effect=drifted_file_hash):
             governed_drift = client.post(
                 f"/api/v1/studies/{STUDY_ID}/section-runs",
                 json={**COMMAND, "idempotency_key": "governed-version-drift"},
             )
         assert governed_drift.status_code == 409
-        assert "governed-version fingerprint" in governed_drift.json()["detail"]
+        assert "governed-input fingerprint" in governed_drift.json()["detail"]
         assert agent.calls == 0
     engine.dispose()
 
@@ -370,9 +397,7 @@ def test_unpromoted_candidate_blocks_release_and_export() -> None:
             disposition = client.post(
                 f"/api/v1/studies/{STUDY_ID}/validation-results/{result['result_id']}/dispositions",
                 json={
-                    "decision": (
-                        "approved_exception" if result["result_id"] == "VR-006" else "corrected"
-                    ),
+                    "decision": ("approved_exception" if result["result_id"] == "VR-006" else "corrected"),
                     "reason": f"Synthetic disposition recorded for {result['rule_id']}.",
                     "reviewer": "Dr. Ada Path",
                 },
@@ -401,6 +426,44 @@ def test_unpromoted_candidate_blocks_release_and_export() -> None:
             "PROMOTION-DISABLED-section.5_2_3_body_weight"
         ]
         assert export.status_code == 409
+    engine.dispose()
+
+
+def test_inapplicable_section_package_is_excluded_and_cannot_execute(tmp_path: Path) -> None:
+    root = governed_root(tmp_path)
+    package_path = (
+        root
+        / "skills"
+        / "helix-evidence-pipeline"
+        / "packages"
+        / "sections"
+        / "5_2_3_body_weight"
+        / "package.json"
+    )
+    definition = json.loads(package_path.read_text())
+    definition["study_type_ids"] = ["INAPPLICABLE_STUDY_TYPE"]
+    package_path.write_text(json.dumps(definition))
+    agent = FakeSectionAgent()
+    client, engine = build_client(agent, repository_root=root)
+
+    with client:
+        pinned = client.post(
+            f"/api/v1/studies/{STUDY_ID}/pinned-runs",
+            json={"actor": "Dr. Run Owner", "idempotency_key": "inapplicable-section"},
+        )
+        assert pinned.status_code == 201
+        assert all(
+            node["package_id"] != "section.5_2_3_body_weight" for node in pinned.json()["run_plan"]["nodes"]
+        )
+        validate(client)
+        workspace = client.get(f"/api/v1/studies/{STUDY_ID}/workspace").json()
+        eligibility = workspace["section_run_eligibility"][0]
+        assert eligibility["eligible"] is False
+        assert "The Section Package does not apply to the resolved study type" in eligibility["reasons"]
+
+        response = client.post(f"/api/v1/studies/{STUDY_ID}/section-runs", json=COMMAND)
+        assert response.status_code == 409
+        assert agent.calls == 0
     engine.dispose()
 
 

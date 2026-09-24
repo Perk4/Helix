@@ -29,6 +29,13 @@ test("runs the synthetic study from validation through explicit export", async (
   await expect(page.getByRole("status")).toContainText("13 checks completed");
   await expect(page.getByTestId("draft-body-weight")).toBeEnabled();
   await expect(page.getByText("3", { exact: true }).first()).toBeVisible();
+  const runPlan = page.getByTestId("run-plan");
+  await expect(runPlan.getByText(/^RUN-/)).toBeVisible();
+  await expect(runPlan.getByText("REPEAT_DOSE_28D_RODENT", { exact: true })).toBeVisible();
+  await runPlan.getByText(/Complete Run Plan/).click();
+  await expect(runPlan.getByText("section.5_2_3_body_weight", { exact: true }).first()).toBeVisible();
+  await expect(runPlan.getByText("helix-section-agent", { exact: true })).toBeVisible();
+  await page.screenshot({ path: "../evidence/helix-run-plan.png", fullPage: true });
 
   await page.getByRole("button", { name: /Evidence chain/ }).click();
   await expect(page.getByTestId("evidence-chain")).toBeVisible();
