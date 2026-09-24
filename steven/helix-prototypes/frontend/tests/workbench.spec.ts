@@ -1,4 +1,6 @@
 import { expect, test } from "@playwright/test";
+import { mkdir, writeFile } from "node:fs/promises";
+import { resolve } from "node:path";
 
 const apiRoot = process.env.HELIX_API_URL ?? "http://127.0.0.1:8000/api/v1";
 
@@ -37,11 +39,39 @@ test("runs the synthetic study from validation through explicit export", async (
   await expect(runPlan.getByText("helix-section-agent", { exact: true })).toBeVisible();
   await page.screenshot({ path: "../evidence/helix-run-plan.png", fullPage: true });
 
+  const dataValidation = page.getByTestId("data-validation-package");
+  await expect(dataValidation.getByText("validation.body_weight", { exact: true }).first()).toBeVisible();
+  await expect(dataValidation.getByText("body-weight-summary@1.0.0")).toBeVisible();
+  await expect(page.getByTestId("validated-claim-C-BW-HIGH").getByText("286.2 g")).toBeVisible();
+  await expect(page.getByTestId("section-claim-references").getByText("section.5_2_3_body_weight")).toBeVisible();
+  await expect(page.getByTestId("section-claim-references").getByText("section.5_3_discussion")).toBeVisible();
+  await page.getByTestId("run-body-weight-validation").click();
+  await expect(page.getByRole("status")).toContainText("persisted claims");
+  const executionResponse = await request.post(`${apiRoot}/studies/STUDY-HLX-028/data-validation-packages`, {
+    data: {
+      actor: "HELIX workbench",
+      package_id: "validation.body_weight",
+      idempotency_key: "workbench-STUDY-HLX-028-validation.body_weight-v1",
+    },
+  });
+  expect(executionResponse.ok()).toBeTruthy();
+  const execution: unknown = await executionResponse.json();
+  expect(isObject(execution) && isObject(execution.receipt) && execution.receipt.idempotent_replay === true).toBeTruthy();
+  await mkdir(resolve(process.cwd(), "../evidence"), { recursive: true });
+  await writeFile(
+    resolve(process.cwd(), "../evidence/body-weight-validation-receipt.json"),
+    `${JSON.stringify(execution, null, 2)}\n`,
+  );
+  await page.screenshot({ path: "../evidence/helix-body-weight-validation.png", fullPage: true });
+
   await page.getByRole("button", { name: /Evidence chain/ }).click();
   await expect(page.getByTestId("evidence-chain")).toBeVisible();
   await expect(page.getByText("286.2 g", { exact: true }).first()).toBeVisible();
   await expect(page.getByText("10 exact records", { exact: true })).toBeVisible();
   await expect(page.getByText("Exact reconciliation passed", { exact: true })).toBeVisible();
+  await expect(page.getByTestId("claim-lineage").getByText("dose × group")).toBeVisible();
+  await expect(page.getByTestId("claim-lineage").getByText(/sha256:/)).toBeVisible();
+  await expect(page.getByTestId("claim-lineage").getByText(/body-weight-summary-recompute@1.0.0/)).toBeVisible();
 
   await page.getByRole("button", { name: /Liver Hypertrophy Incidence/ }).click();
   await expect(page.getByText("4 animals", { exact: true }).first()).toBeVisible();
@@ -85,6 +115,7 @@ test("runs the synthetic study from validation through explicit export", async (
   expect(workspaceResponse.ok()).toBeTruthy();
   const workspace: unknown = await workspaceResponse.json();
   expect(isExportedWorkspace(workspace)).toBeTruthy();
+  expect(hasSingleBodyWeightExecution(workspace)).toBeTruthy();
 
   await page.screenshot({ path: "../evidence/helix-workbench-exported.png", fullPage: true });
   expect(browserErrors).toEqual([]);
@@ -94,6 +125,30 @@ async function recordApproval(page: import("@playwright/test").Page, label: stri
   const row = page.locator(".approval-row").filter({ hasText: label });
   await row.getByRole("button", { name: "Record" }).click();
   await expect(row.locator(".approval-check")).toBeVisible();
+}
+
+function hasSingleBodyWeightExecution(value: unknown): boolean {
+  if (typeof value !== "object" || value === null || !("data_validation_executions" in value)) {
+    return false;
+  }
+  const executions = value.data_validation_executions;
+  if (!Array.isArray(executions) || executions.length !== 1 || !isObject(executions[0])) {
+    return false;
+  }
+  const execution = executions[0];
+  if (!isObject(execution.receipt) || !Array.isArray(execution.section_references)) {
+    return false;
+  }
+  const receiptId = execution.receipt.receipt_id;
+  return (
+    execution.receipt.package_id === "validation.body_weight" &&
+    execution.receipt.executor_id === "body-weight-summary" &&
+    typeof receiptId === "string" &&
+    execution.section_references.length === 2 &&
+    execution.section_references.every(
+      (item) => isObject(item) && item.claim_id === "C-BW-HIGH" && item.executor_receipt_id === receiptId,
+    )
+  );
 }
 
 function isExportedWorkspace(value: unknown): boolean {
@@ -121,4 +176,8 @@ function isExportedWorkspace(value: unknown): boolean {
         artifact.checksum.startsWith("sha256:"),
     )
   );
+}
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
 }

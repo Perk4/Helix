@@ -197,6 +197,30 @@ export function EvidenceChain({ workspace, selectedClaimId, onSelectClaim }: Pro
                 The backend recomputes this value from the selected source IDs. The UI only displays
                 the returned evidence.
               </p>
+              <div className="lineage-meta" data-testid="claim-lineage">
+                <div>
+                  <span>Grain</span>
+                  <strong>{chain.claim.grain.replaceAll("_", " × ")}</strong>
+                </div>
+                <div>
+                  <span>Transform</span>
+                  <strong>
+                    {chain.transform_id ?? "None"} {chain.transform_version ?? ""}
+                  </strong>
+                </div>
+                <div>
+                  <span>Source hashes</span>
+                  <code>{chain.source_hashes?.at(0) ?? "None"}</code>
+                </div>
+                <div>
+                  <span>Rule versions</span>
+                  <code>
+                    {Object.entries(chain.rule_versions ?? {})
+                      .map(([ruleId, version]) => `${ruleId}@${version}`)
+                      .join(" · ") || "None"}
+                  </code>
+                </div>
+              </div>
             </aside>
           </div>
 

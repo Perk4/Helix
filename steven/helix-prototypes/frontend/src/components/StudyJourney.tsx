@@ -8,9 +8,11 @@ type Props = {
   workspace: Workspace;
   planner: PlannerMode;
   validationBusy: boolean;
+  dataValidationBusy: boolean;
   sectionRunBusy: boolean;
   onPlannerChange: (planner: PlannerMode) => void;
   onValidate: () => void;
+  onExecuteBodyWeight: () => void;
   onDraftBodyWeight: () => void;
 };
 
@@ -18,9 +20,11 @@ export function StudyJourney({
   workspace,
   planner,
   validationBusy,
+  dataValidationBusy,
   sectionRunBusy,
   onPlannerChange,
   onValidate,
+  onExecuteBodyWeight,
   onDraftBodyWeight,
 }: Props) {
   const defaultStage = useMemo(
@@ -45,6 +49,9 @@ export function StudyJourney({
     (item) => item.section_package_id === "section.5_2_3_body_weight",
   );
   const bodyWeightRun = workspace.section_runs.at(-1);
+  const dataValidation = workspace.data_validation_executions.at(-1);
+  const terminalClaim = dataValidation?.claims.find((claim) => claim.claim_id === "C-BW-HIGH");
+  const commandBusy = validationBusy || dataValidationBusy || sectionRunBusy;
 
   if (!stage) {
     return null;
@@ -198,7 +205,7 @@ export function StudyJourney({
             className="button primary wide"
             type="button"
             onClick={onValidate}
-            disabled={validationBusy || sectionRunBusy}
+            disabled={commandBusy}
             data-testid="run-validation"
           >
             {validationBusy ? "Running checks…" : "Run hybrid validation"}
@@ -206,8 +213,17 @@ export function StudyJourney({
           <button
             className="button secondary wide"
             type="button"
+            onClick={onExecuteBodyWeight}
+            disabled={commandBusy}
+            data-testid="run-body-weight-validation"
+          >
+            {dataValidationBusy ? "Executing package…" : "Execute body-weight package"}
+          </button>
+          <button
+            className="button secondary wide"
+            type="button"
             onClick={onDraftBodyWeight}
-            disabled={!bodyWeightEligibility?.eligible || validationBusy || sectionRunBusy}
+            disabled={!bodyWeightEligibility?.eligible || commandBusy}
             data-testid="draft-body-weight"
           >
             {sectionRunBusy ? "Drafting with Codex…" : "Draft body-weight component"}
@@ -295,6 +311,89 @@ export function StudyJourney({
               </div>
             </div>
           </details>
+        </article>
+      )}
+
+      {dataValidation && (
+        <article className="panel run-plan-card" data-testid="data-validation-package">
+          <div className="panel-heading">
+            <div>
+              <p className="eyebrow">Body-weight Data Validation Package</p>
+              <h3>{dataValidation.receipt.package_id}</h3>
+            </div>
+            <span className={`owner-chip ${dataValidation.receipt.status === "passed" ? "agent" : "human"}`}>
+              {dataValidation.receipt.status}
+            </span>
+          </div>
+          <div className="run-plan-fingerprints">
+            <div>
+              <span>Pinned run</span>
+              <code>{dataValidation.receipt.run_id}</code>
+            </div>
+            <div>
+              <span>Executor</span>
+              <code>
+                {dataValidation.receipt.executor_id}@{dataValidation.receipt.executor_version}
+              </code>
+            </div>
+            <div>
+              <span>Source</span>
+              <code>
+                {dataValidation.receipt.source_artifact_id} · {dataValidation.receipt.source_hash}
+              </code>
+            </div>
+          </div>
+          <p className="fine-print">
+            Package {dataValidation.receipt.package_version} · {dataValidation.receipt.package_hash}
+          </p>
+          <div className="dvp-claim-block" data-testid="validated-claim-C-BW-HIGH">
+            {terminalClaim ? (
+              <>
+                <strong>
+                  {terminalClaim.claim_id} · {terminalClaim.value} {terminalClaim.unit}
+                </strong>
+                <span>
+                  Grain {terminalClaim.grain.replaceAll("_", " × ")} · transform {terminalClaim.transform_id}{" "}
+                  {terminalClaim.transform_version}
+                </span>
+                <code>{terminalClaim.source_hashes?.at(0)}</code>
+                <small>
+                  Rule versions{" "}
+                  {Object.entries(terminalClaim.rule_versions ?? {})
+                    .map(([ruleId, version]) => `${ruleId}@${version}`)
+                    .join(" · ")}
+                </small>
+              </>
+            ) : (
+              <strong>No validated body-weight claim was persisted.</strong>
+            )}
+          </div>
+          <div className="dvp-rule-list" data-testid="data-validation-rules">
+            {dataValidation.results.map((result) => (
+              <div className="run-plan-row" key={result.result_id}>
+                <span className={`result-chip ${result.status}`}>{result.enforcement_class}</span>
+                <div>
+                  <strong>{result.rule_id}</strong>
+                  <small>{result.message}</small>
+                </div>
+                <code>{result.waivable ? "waivable" : "non-waivable"}</code>
+              </div>
+            ))}
+          </div>
+          <div className="dvp-section-refs" data-testid="section-claim-references">
+            {dataValidation.section_references.map((reference) => (
+              <div className="run-plan-row" key={reference.section_package_id}>
+                <span className="count-chip">{reference.section_id}</span>
+                <div>
+                  <strong>{reference.title}</strong>
+                  <small>
+                    {reference.section_package_id} cites {reference.claim_id}
+                  </small>
+                </div>
+                <code>{reference.executor_receipt_id}</code>
+              </div>
+            ))}
+          </div>
         </article>
       )}
 

@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from .artifacts import GeneratedArtifact, generate_artifact
 from .config import Settings
+from .data_validation import DataValidationService, as_validation_results
 from .reporting import assemble_report, claim_report_text
 from .repository import StudyPackageRepository
 from .run_plans import PinnedRunService
@@ -16,6 +17,8 @@ from .schemas import (
     ApprovalRole,
     Claim,
     ClaimStatus,
+    DataValidationCommand,
+    DataValidationExecution,
     DispositionCommand,
     DispositionDecision,
     EvidenceChain,
@@ -25,6 +28,7 @@ from .schemas import (
     FreezeRunCommand,
     GateDecision,
     GateStatus,
+    PinnedRun,
     PlannerCapability,
     PlannerMode,
     ProvenanceEdge,
@@ -35,6 +39,7 @@ from .schemas import (
     StudyEvidencePackage,
     StudyListItem,
     ValidationRequest,
+    ValidationResult,
     ValidationRun,
     ValidationStatus,
     WorkflowEvent,
@@ -87,6 +92,7 @@ class StudyService:
         self.repository = StudyPackageRepository(session)
         self.section_runs = section_runs
         self.pinned_runs = pinned_runs
+        self.data_validation = DataValidationService(session, pinned_runs, settings.codex_repository_root)
 
     def workspace(self, study_id: str) -> WorkspaceResponse:
         package = self.repository.get(study_id)
@@ -105,6 +111,22 @@ class StudyService:
             for package in self.repository.list_packages()
         ]
 
+    def freeze_run(self, study_id: str, command: FreezeRunCommand) -> PinnedRun:
+        pinned_run = self.pinned_runs.freeze(study_id, command)
+        if pinned_run.status == "planned":
+            self.data_validation.execute(
+                study_id,
+                DataValidationCommand(
+                    actor=command.actor,
+                    package_id="validation.body_weight",
+                    idempotency_key=f"dvp-{pinned_run.run_id}-validation.body_weight",
+                ),
+            )
+        return pinned_run
+
+    def run_data_validation(self, study_id: str, command: DataValidationCommand) -> DataValidationExecution:
+        return self.data_validation.execute(study_id, command)
+
     def run_validation(self, study_id: str, request: ValidationRequest) -> ValidationRun:
         pinned_run = self.pinned_runs.freeze(
             study_id,
@@ -115,6 +137,14 @@ class StudyService:
         )
         if pinned_run.status != "planned":
             raise WorkflowConflictError("The Pinned Run requires study-type review")
+        execution = self.data_validation.execute(
+            study_id,
+            DataValidationCommand(
+                actor="HELIX validation service",
+                package_id="validation.body_weight",
+                idempotency_key=f"dvp-{pinned_run.run_id}-validation.body_weight",
+            ),
+        )
         package = self.repository.get(study_id, for_update=True)
         self._ensure_mutable(package)
         planner = self._planner(request.planner)
@@ -148,7 +178,12 @@ class StudyService:
             "validation_run",
             "HELIX validation service",
             "complete",
-            {"run_id": run.run_id, "planner": request.planner.value, "llm_used": planner.llm_used},
+            {
+                "run_id": run.run_id,
+                "planner": request.planner.value,
+                "llm_used": planner.llm_used,
+                "data_validation_receipt_id": execution.receipt.receipt_id,
+            },
         )
         updated = package.model_copy(
             update={
@@ -178,39 +213,65 @@ class StudyService:
 
     def evidence(self, study_id: str, claim_id: str) -> EvidenceChain:
         package = self.repository.get(study_id)
-        claim = next((item for item in package.claims if item.claim_id == claim_id), None)
+        claim, edges = self._claim_and_edges(package, claim_id)
         if claim is None:
             raise InvalidCommandError(f"Unknown claim {claim_id}")
-        edges = [edge for edge in package.provenance_edges if edge.claim_id == claim_id]
         record_map = self._source_record_map(package)
         sources = [record_map[edge.source_record_id] for edge in edges if edge.source_record_id in record_map]
         transform_ids = {edge.transform_id for edge in edges}
         recomputed_value: float | None = None
         exact_match: bool | None = None
-        if claim.field_id.startswith("terminal-body-weight-high") and sources:
-            recomputed_value = round(sum(float(source.value) for source in sources) / len(sources), 1)
-            exact_match = recomputed_value == claim.value
+        if claim.claim_type == "body_weight.mean" or claim.field_id.startswith("terminal-body-weight-high"):
+            if sources:
+                recomputed_value = round(sum(float(source.value) for source in sources) / len(sources), 1)
+                exact_match = recomputed_value == claim.value
+        elif claim.field_id.startswith("standard-deviation-"):
+            if len(sources) > 1:
+                values = [float(source.value) for source in sources]
+                mean = sum(values) / len(values)
+                recomputed_value = round(
+                    (sum((value - mean) ** 2 for value in values) / (len(values) - 1)) ** 0.5,
+                    1,
+                )
+                exact_match = recomputed_value == claim.value
         elif claim_id == "C-MI-LIVER":
             recomputed_value = float(len(sources))
             exact_match = recomputed_value == claim.value
         validations = [
             result
-            for result in package.validation_results
-            if result.scope_id in {claim_id, claim.section_id} or claim_id in result.evidence_ids
+            for result in self._workspace_validations(package)
+            if result.scope_id in {claim_id, claim.section_id, claim.package_id or ""}
+            or claim_id in result.evidence_ids
         ]
         return EvidenceChain(
             claim=claim,
             sources=sources,
-            transform_id=next(iter(transform_ids)) if len(transform_ids) == 1 else None,
+            transform_id=next(iter(transform_ids)) if len(transform_ids) == 1 else claim.transform_id,
             recomputed_value=recomputed_value,
             exact_match=exact_match,
             validations=validations,
-            report_text=claim_report_text(package, claim_id),
+            report_text=self._claim_text(package, claim),
+            source_hashes=claim.source_hashes
+            or [edge.source_hash or "" for edge in edges if edge.source_hash],
+            transform_version=claim.transform_version,
+            rule_versions=claim.rule_versions,
+            lineage=edges,
         )
 
     def disposition(self, study_id: str, result_id: str, command: DispositionCommand) -> WorkspaceResponse:
         package = self.repository.get(study_id, for_update=True)
         self._ensure_mutable(package)
+        dvp_result = next(
+            (
+                result
+                for execution in package.data_validation_executions
+                for result in execution.results
+                if result.result_id == result_id
+            ),
+            None,
+        )
+        if dvp_result is not None and dvp_result.enforcement_class == "hard_blocker":
+            raise WorkflowConflictError("hard_blocker results cannot be waived")
         result = next((item for item in package.validation_results if item.result_id == result_id), None)
         if result is None:
             raise InvalidCommandError(f"Unknown validation result {result_id}")
@@ -454,7 +515,7 @@ class StudyService:
                 section_count=len(package.report_sections),
             ),
             claims=package.claims,
-            validations=package.validation_results,
+            validations=self._workspace_validations(package),
             dispositions=package.review_dispositions,
             approvals=package.approvals,
             release_gate=gate,
@@ -479,6 +540,7 @@ class StudyService:
                 ),
             ],
             pinned_run=self.pinned_runs.latest(package.study.study_id),
+            data_validation_executions=package.data_validation_executions,
             section_run_eligibility=[self.section_runs.eligibility(package)],
             section_runs=self.repository.list_section_runs(package.study.study_id),
         )
@@ -644,6 +706,40 @@ class StudyService:
     def _now() -> str:
         return datetime.now(UTC).isoformat().replace("+00:00", "Z")
 
+    @staticmethod
+    def _claim_and_edges(
+        package: StudyEvidencePackage,
+        claim_id: str,
+    ) -> tuple[Claim | None, list[ProvenanceEdge]]:
+        claim = next((item for item in package.claims if item.claim_id == claim_id), None)
+        edges = [edge for edge in package.provenance_edges if edge.claim_id == claim_id]
+        if claim is not None:
+            return claim, edges
+        for execution in package.data_validation_executions:
+            claim = next((item for item in execution.claims if item.claim_id == claim_id), None)
+            if claim is not None:
+                return claim, [edge for edge in execution.provenance_edges if edge.claim_id == claim_id]
+        return None, []
+
+    @staticmethod
+    def _workspace_validations(package: StudyEvidencePackage) -> list[ValidationResult]:
+        results = list(package.validation_results)
+        seen = {item.result_id for item in results}
+        for execution in package.data_validation_executions:
+            for item in as_validation_results(execution):
+                if item.result_id not in seen:
+                    results.append(item)
+                    seen.add(item.result_id)
+        return results
+
+    @staticmethod
+    def _claim_text(package: StudyEvidencePackage, claim: Claim) -> str:
+        if any(item.claim_id == claim.claim_id for item in package.claims):
+            return claim_report_text(package, claim.claim_id)
+        if claim.value is None:
+            return "Needs review"
+        return f"{claim.claim_type or claim.field_id} is {claim.value} {claim.unit} at {claim.grain}."
+
 
 def derive_release_gate(
     package: StudyEvidencePackage,
@@ -659,7 +755,14 @@ def derive_release_gate(
         if latest_dispositions.get(result.result_id) is None
         or latest_dispositions[result.result_id].decision not in RESOLVED_DISPOSITIONS
     ]
+    unresolved.extend(
+        result.result_id
+        for execution in package.data_validation_executions
+        for result in execution.results
+        if result.status == ValidationStatus.FAIL and result.enforcement_class == "hard_blocker"
+    )
     unresolved.extend(candidate_blocker_ids or [])
+    unresolved = list(dict.fromkeys(unresolved))
     approval_roles = {approval.role for approval in package.approvals}
     has_unreviewed_sections = any(
         section.status == SectionStatus.NEEDS_REVIEW for section in package.report_sections
