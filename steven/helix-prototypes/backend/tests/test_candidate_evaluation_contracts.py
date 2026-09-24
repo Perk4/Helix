@@ -5,6 +5,7 @@ from pathlib import Path
 from jsonschema import Draft202012Validator
 from pydantic import ValidationError
 
+from app.contract_schema import draft202012_validator
 from app.schemas import (
     CandidateEvaluation,
     CrossSectionQueryReceipt,
@@ -39,7 +40,7 @@ def load_json(path: Path) -> dict[str, object]:
 
 
 def validator_for(filename: str) -> Draft202012Validator:
-    return Draft202012Validator(load_json(CONTRACTS / filename))
+    return draft202012_validator(load_json(CONTRACTS / filename), CONTRACTS)
 
 
 def test_valid_receipt_fixtures_pass_schema_and_pydantic() -> None:
@@ -74,3 +75,32 @@ def test_unknown_property_is_rejected_from_a_valid_receipt() -> None:
         raise AssertionError("Pydantic accepted an unknown property")
     except ValidationError:
         pass
+
+
+NESTED_RECEIPT_FIELDS = (
+    "provenance_receipt",
+    "study_output_evaluation_receipt",
+    "template_conformance_receipt",
+)
+
+
+def test_unknown_nested_receipt_properties_fail_schema_and_pydantic() -> None:
+    payload = load_json(FIXTURES.parent / "valid-receipts" / "candidate-evaluation.json")
+    validator = validator_for("candidate-evaluation.schema.json")
+    for field in NESTED_RECEIPT_FIELDS:
+        mutated = deepcopy(payload)
+        nested = mutated[field]
+        assert isinstance(nested, dict)
+        nested["invented"] = True
+        schema_errors = list(validator.iter_errors(mutated))
+        assert schema_errors, f"JSON Schema must reject unknown properties on {field}"
+        named = [(list(error.path), error.message) for error in schema_errors]
+        assert any(
+            path == [field] and "invented" in message for path, message in named
+        ), f"JSON Schema must name {field}.invented, got {named}"
+        try:
+            CandidateEvaluation.model_validate(mutated)
+            raise AssertionError(f"Pydantic accepted an unknown property on {field}")
+        except ValidationError as error:
+            assert "invented" in str(error)
+            assert "extra_forbidden" in str(error)

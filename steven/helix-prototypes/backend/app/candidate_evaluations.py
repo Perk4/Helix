@@ -3,9 +3,9 @@ from datetime import UTC, datetime
 from pathlib import Path
 from uuid import uuid4
 
-from jsonschema import Draft202012Validator
 from sqlalchemy.orm import Session
 
+from .contract_schema import draft202012_validator
 from .cross_section_queries import execute_cross_section_query
 from .provenance_compiler import allowed_claims_for, compile_provenance
 from .repository import StudyPackageRepository
@@ -264,7 +264,7 @@ class CandidateEvaluationService:
     def _validate_receipt(self, receipt, filename: str) -> None:
         schema = json.loads((self.contracts / filename).read_text())
         payload = receipt.model_dump(mode="json")
-        errors = list(Draft202012Validator(schema).iter_errors(payload))
+        errors = list(draft202012_validator(schema, self.contracts).iter_errors(payload))
         if errors:
             raise CandidateEvaluationConflictError(errors[0].message)
 

@@ -42,13 +42,13 @@
       "minLength": 1
     },
     "provenance_receipt": {
-      "type": "object"
+      "$ref": "helix://contracts/provenance-receipt/v1"
     },
     "study_output_evaluation_receipt": {
-      "type": "object"
+      "$ref": "helix://contracts/study-output-evaluation-receipt/v1"
     },
     "template_conformance_receipt": {
-      "type": "object"
+      "$ref": "helix://contracts/template-conformance-receipt/v1"
     },
     "next_attempt_decision": {
       "type": "object",
