@@ -21,15 +21,12 @@ type Props = {
   onApplied?: () => void;
 };
 
-type Mode = "ask" | "revise";
-
 export function ChatDock({ studyId, sectionId, sectionTitle, onApplied }: Props) {
   const [open, setOpen] = useState(false);
-  const [mode, setMode] = useState<Mode>("ask");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [proposed, setProposed] = useState<SectionDraft | null>(null);
   const [input, setInput] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState<null | "ask" | "revise" | "apply">(null);
   const [error, setError] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -64,47 +61,57 @@ export function ChatDock({ studyId, sectionId, sectionTitle, onApplied }: Props)
     ]);
   }
 
-  async function submit() {
+  async function ask() {
     const text = input.trim();
-    if (!text || busy) {
-      return;
-    }
-    setBusy(true);
+    if (!text || busy) return;
+    setBusy("ask");
     setError(null);
     setOpen(true);
     setInput("");
+    const optimistic: ChatMessage = {
+      message_id: -Date.now(),
+      role: "user",
+      content: text,
+      scope: "section",
+      section_id: sectionId,
+      intent: "ask",
+      created_at: new Date().toISOString(),
+    };
+    setMessages((prev) => [...prev, optimistic]);
     try {
-      if (mode === "revise") {
-        pushLocal("user", `Revise: ${text}`);
-        const draft = await reviseSection(studyId, sectionId, text);
-        setProposed(draft);
-        pushLocal("assistant", `Proposed v${draft.version} — review and apply or discard below.`);
-      } else {
-        const optimistic: ChatMessage = {
-          message_id: -Date.now(),
-          role: "user",
-          content: text,
-          scope: "section",
-          section_id: sectionId,
-          intent: "ask",
-          created_at: new Date().toISOString(),
-        };
-        setMessages((prev) => [...prev, optimistic]);
-        // The backend always includes the whole-study summary + this section's
-        // data, so one call answers study-wide or section questions.
-        await sendChat(studyId, text, "section", sectionId);
-        setMessages(await getChat(studyId));
-      }
+      // The backend grounds every answer in the study summary + this section,
+      // so one Ask handles study-wide or section questions.
+      await sendChat(studyId, text, "section", sectionId);
+      setMessages(await getChat(studyId));
     } catch (cause) {
-      setError(cause instanceof ApiError || cause instanceof Error ? cause.message : "Request failed.");
+      setError(toMessage(cause));
     } finally {
-      setBusy(false);
+      setBusy(null);
+    }
+  }
+
+  async function revise() {
+    const text = input.trim();
+    if (!text || busy) return;
+    setBusy("revise");
+    setError(null);
+    setOpen(true);
+    setInput("");
+    pushLocal("user", `Revise: ${text}`);
+    try {
+      const draft = await reviseSection(studyId, sectionId, text);
+      setProposed(draft);
+      pushLocal("assistant", `Proposed v${draft.version} — review and approve or discard below.`);
+    } catch (cause) {
+      setError(toMessage(cause));
+    } finally {
+      setBusy(null);
     }
   }
 
   async function apply() {
     if (!proposed || busy) return;
-    setBusy(true);
+    setBusy("apply");
     setError(null);
     try {
       await applySection(studyId, sectionId, proposed.version);
@@ -112,24 +119,24 @@ export function ChatDock({ studyId, sectionId, sectionTitle, onApplied }: Props)
       setProposed(null);
       onApplied?.();
     } catch (cause) {
-      setError(cause instanceof ApiError || cause instanceof Error ? cause.message : "Apply failed.");
+      setError(toMessage(cause));
     } finally {
-      setBusy(false);
+      setBusy(null);
     }
   }
 
   async function discard() {
     if (!proposed || busy) return;
-    setBusy(true);
+    setBusy("apply");
     setError(null);
     try {
       await discardSection(studyId, sectionId, proposed.version);
-      pushLocal("assistant", `Discarded v${proposed.version}. Give more feedback to try again.`);
+      pushLocal("assistant", `Discarded v${proposed.version}. Describe another change to try again.`);
       setProposed(null);
     } catch (cause) {
-      setError(cause instanceof ApiError || cause instanceof Error ? cause.message : "Discard failed.");
+      setError(toMessage(cause));
     } finally {
-      setBusy(false);
+      setBusy(null);
     }
   }
 
@@ -151,36 +158,13 @@ export function ChatDock({ studyId, sectionId, sectionTitle, onApplied }: Props)
             💬
           </span>
           <span className="chat-title">
-            {mode === "revise" ? "Revise" : "Ask"}
-            <strong>{mode === "revise" ? sectionTitle : "the study or this section"}</strong>
+            Assistant
+            <strong>{sectionTitle}</strong>
           </span>
           <span className="chat-chevron" aria-hidden="true">
             {open ? "⌄" : "⌃"}
           </span>
         </button>
-        <div className="chat-controls">
-          <div className="chat-scope" role="radiogroup" aria-label="Chat mode">
-            <button
-              type="button"
-              role="radio"
-              aria-checked={mode === "ask"}
-              className={mode === "ask" ? "chat-scope-option active" : "chat-scope-option"}
-              onClick={() => setMode("ask")}
-            >
-              Ask
-            </button>
-            <button
-              type="button"
-              role="radio"
-              aria-checked={mode === "revise"}
-              className={mode === "revise" ? "chat-scope-option active" : "chat-scope-option"}
-              onClick={() => setMode("revise")}
-              title="Rewrite this section with your feedback"
-            >
-              Revise
-            </button>
-          </div>
-        </div>
       </div>
 
       {open && (
@@ -188,8 +172,8 @@ export function ChatDock({ studyId, sectionId, sectionTitle, onApplied }: Props)
           <div className="chat-messages" ref={listRef}>
             {messages.length === 0 && !proposed && (
               <p className="chat-empty">
-                <strong>Ask</strong> a question (grounded in verified data), or switch to{" "}
-                <strong>Revise</strong> to rewrite “{sectionTitle}” with your feedback.
+                <strong>Ask</strong> a question about the study or this section, or describe a change
+                and click <strong>Revise</strong> to rewrite it — you approve with 👍 / 👎.
               </p>
             )}
             {messages.map((message) => (
@@ -203,9 +187,9 @@ export function ChatDock({ studyId, sectionId, sectionTitle, onApplied }: Props)
                 </div>
               </div>
             ))}
-            {busy && (
+            {busy && busy !== "apply" && (
               <div className="chat-msg assistant">
-                <div className="chat-bubble typing">{mode === "revise" ? "Rewriting…" : "Thinking…"}</div>
+                <div className="chat-bubble typing">{busy === "revise" ? "Rewriting…" : "Thinking…"}</div>
               </div>
             )}
             {proposed && (
@@ -224,7 +208,7 @@ export function ChatDock({ studyId, sectionId, sectionTitle, onApplied }: Props)
                     className="button small thumbs-up"
                     type="button"
                     onClick={() => void apply()}
-                    disabled={busy}
+                    disabled={busy !== null}
                     data-testid="apply-proposed"
                   >
                     👍 Apply
@@ -233,7 +217,7 @@ export function ChatDock({ studyId, sectionId, sectionTitle, onApplied }: Props)
                     className="button small thumbs-down"
                     type="button"
                     onClick={() => void discard()}
-                    disabled={busy}
+                    disabled={busy !== null}
                     data-testid="discard-proposed"
                   >
                     👎 Discard
@@ -250,25 +234,37 @@ export function ChatDock({ studyId, sectionId, sectionTitle, onApplied }: Props)
         className="chat-input-row"
         onSubmit={(event) => {
           event.preventDefault();
-          void submit();
+          void ask();
         }}
       >
         <input
           className="chat-input"
           value={input}
-          placeholder={
-            mode === "revise"
-              ? `Describe the change to “${sectionTitle}”…`
-              : `Ask about the study or “${sectionTitle}”…`
-          }
+          placeholder={`Ask about the study, or describe a change to “${sectionTitle}”…`}
           onChange={(event) => setInput(event.target.value)}
           onFocus={() => setOpen(true)}
           data-testid="chat-input"
         />
-        <button className="button primary small" type="submit" disabled={busy || !input.trim()}>
-          {busy ? "…" : mode === "revise" ? "Rewrite" : "Send"}
+        <button className="button secondary small" type="submit" disabled={busy !== null || !input.trim()}>
+          {busy === "ask" ? "…" : "Ask"}
+        </button>
+        <button
+          className="button primary small"
+          type="button"
+          onClick={() => void revise()}
+          disabled={busy !== null || !input.trim()}
+          title="Rewrite this section with your feedback"
+        >
+          {busy === "revise" ? "…" : "Revise"}
         </button>
       </form>
     </div>
   );
+}
+
+function toMessage(cause: unknown): string {
+  if (cause instanceof ApiError || cause instanceof Error) {
+    return cause.message;
+  }
+  return "Request failed.";
 }
