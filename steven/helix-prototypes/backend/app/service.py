@@ -1431,9 +1431,19 @@ def derive_release_gate(
         section.status == SectionStatus.NEEDS_REVIEW for section in package.report_sections
     )
     current_approval = approval_is_current(package.final_study_approval, live_release_candidate)
-    if all(artifact.status == "exported" for artifact in package.export_artifacts):
+
+    # Nothing has been checked yet. "No failing result" is not "passed", and an
+    # uploaded study reaches this function before any validation has run, so
+    # without this it falls through to READY_FOR_SIGNATURE on an empty result
+    # set. Packages that have been validated are unaffected.
+    never_validated = not package.validation_results
+
+    # An empty export set means nothing has been exported, not everything.
+    if package.export_artifacts and all(
+        artifact.status == "exported" for artifact in package.export_artifacts
+    ):
         status = GateStatus.EXPORTED
-    elif unresolved:
+    elif never_validated or unresolved:
         status = GateStatus.BLOCKED
     elif not REQUIRED_APPROVALS.issubset(approval_roles):
         status = GateStatus.READY_FOR_SIGNATURE

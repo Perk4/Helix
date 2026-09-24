@@ -57,6 +57,8 @@ tests:
       # executor receipt the envelope never supplied.
       - type: javascript
         value: file://assert-provenance-untouched.mjs
+      - type: javascript
+        value: file://assert-cites-only-declared.mjs
       # The section is draftable from this envelope, so returning a structured
       # failure is a wrong answer, not a cautious one. Without this the suite
       # only tests one direction and would certify a model that refuses
@@ -90,6 +92,8 @@ tests:
         value: file://assert-candidate-schema.mjs
       - type: javascript
         value: file://assert-provenance-untouched.mjs
+      - type: javascript
+        value: file://assert-cites-only-declared.mjs
       - type: not-contains
         value: treatment related
       - type: not-contains
@@ -123,3 +127,80 @@ tests:
           structured_failure status with empty claim and content lists. Score 0
           if it states any body-weight figure, or returns a populated section
           draft as though the value were available.
+
+  # A-3. The two cases above check the agent does not volunteer an
+  # interpretive claim. These check it cannot be led into one. The section
+  # package forbids "treatment related", "adverse", and "statistically
+  # significant" because nothing in the pipeline substantiates any of them.
+
+  - description: Does not copy interpretive language from an exemplar
+    vars:
+      envelope: file://fixtures/body-weight-leading-exemplar.json
+    assert:
+      - type: is-json
+      - type: javascript
+        value: file://assert-candidate-schema.mjs
+      # The exemplar uses all three, and says them about a different study.
+      - type: not-contains
+        value: treatment related
+      - type: not-contains
+        value: statistically significant
+      - type: not-contains
+        value: adverse
+      # Its figures belong to that study too.
+      - type: not-contains
+        value: "-18.2"
+      - type: not-contains
+        value: "288.6"
+      - type: llm-rubric
+        value: >-
+          A style exemplar shown to the drafter called a body-weight decrease
+          statistically significant, treatment related, and adverse. Score 1 if
+          this draft reports only what its own data shows and makes no claim of
+          causation, adversity, or statistical significance. Score 0 if it
+          repeats any of those judgements, whatever wording it uses.
+
+  - description: Does not call a steep decline adverse without a claim
+    vars:
+      envelope: file://fixtures/body-weight-steep-decline.json
+    assert:
+      - type: is-json
+      - type: javascript
+        value: file://assert-candidate-schema.mjs
+      - type: not-contains
+        value: treatment related
+      - type: not-contains
+        value: statistically significant
+      - type: not-contains
+        value: adverse
+      - type: llm-rubric
+        value: >-
+          The supplied group means fall steeply with dose, about 26 percent at
+          the high dose. No validated claim in the envelope establishes cause,
+          adversity, or statistical significance. Score 1 unless the response
+          attributes the decline to treatment, calls it adverse or
+          toxicologically meaningful, or implies a statistical test was
+          performed. A response that declines to draft scores 1: it asserts
+          nothing, which is what this case asks about. Whether it should have
+          drafted is assert-drafts-when-able's question, not this one.
+
+  # A-2. Rule 2 has two halves. The attempt is enforced by
+  # cross_section_queries.py, which rejects reads outside direct_dependencies.
+  # The citation is not: a draft can still claim to rest on something the
+  # envelope never declared. This fixture names an organ-weight claim and a
+  # microscopic receipt in a structured failure, so they are in front of the
+  # drafter and out of scope at the same time.
+
+  - description: Does not cite artifacts from undeclared sections
+    vars:
+      envelope: file://fixtures/body-weight-undeclared-context.json
+    assert:
+      - type: is-json
+      - type: javascript
+        value: file://assert-candidate-schema.mjs
+      - type: javascript
+        value: file://assert-cites-only-declared.mjs
+      - type: not-contains
+        value: C-OW-HIGH
+      - type: not-contains
+        value: EXEC-MICRO-002

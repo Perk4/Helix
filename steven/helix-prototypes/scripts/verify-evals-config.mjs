@@ -3,7 +3,7 @@
 // longer resolves. Either one turns a green suite into a suite that proved
 // nothing. Run before every push.
 
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 
 const root = resolve(import.meta.dirname, "..");
@@ -89,6 +89,26 @@ for (const fixture of ["body-weight-envelope.json", "body-weight-missing-claim.j
   gaps.length === 0
     ? console.log(`envelope ok      ${fixture} exercises every contract property`)
     : fail(`${fixture} does not exercise ${gaps.join(", ")}. The contract moved and the fixture did not; regenerate it from a real envelope.`);
+}
+
+// Judge fixtures must read as ordinary study sections.
+//
+// The eval playbook bars meta words from anything the judged model sees: a
+// fixture that announces it is a test invites the model to perform rather
+// than behave. This was checked by hand when G-1 and G-2 were authored, which
+// is not a mechanism — the next fixture gets written by someone who never
+// read the playbook.
+//
+// Matches the meta senses only. "the highest dose tested" is ordinary
+// toxicology and tripped a naive substring version of this check.
+const META = /\b(eval|evaluation|judge|judging|rubric|scored?|scoring|candidate|test case|testing|benchmark|arena|fixture|ground truth|expected)\b/gi;
+
+for (const name of readdirSync(resolve(evalsDir, "fixtures")).filter((file) => file.startsWith("study-"))) {
+  const body = readFileSync(resolve(evalsDir, "fixtures", name), "utf8");
+  const leaks = [...new Set([...body.matchAll(META)].map((match) => match[0].toLowerCase()))];
+  leaks.length === 0
+    ? console.log(`blinding ok      ${name}`)
+    : fail(`${name} leaks ${leaks.join(", ")} into content the judge reads; fixtures must read as ordinary sections`);
 }
 
 if (problems.length > 0) {

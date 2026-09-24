@@ -408,6 +408,63 @@
         "title": "AssembledSection",
         "type": "object"
       },
+      "Body_create_study_from_upload_api_v1_studies_post": {
+        "properties": {
+          "authorized_by": {
+            "maxLength": 120,
+            "minLength": 2,
+            "title": "Authorized By",
+            "type": "string"
+          },
+          "files": {
+            "items": {
+              "contentMediaType": "application/octet-stream",
+              "type": "string"
+            },
+            "title": "Files",
+            "type": "array"
+          },
+          "protocol_version": {
+            "maxLength": 40,
+            "minLength": 1,
+            "title": "Protocol Version",
+            "type": "string"
+          },
+          "route": {
+            "maxLength": 80,
+            "minLength": 2,
+            "title": "Route",
+            "type": "string"
+          },
+          "study_id": {
+            "maxLength": 64,
+            "minLength": 7,
+            "title": "Study Id",
+            "type": "string"
+          },
+          "study_start": {
+            "default": "",
+            "maxLength": 32,
+            "title": "Study Start",
+            "type": "string"
+          },
+          "study_type_id": {
+            "default": "REPEAT_DOSE_28D_RODENT",
+            "maxLength": 80,
+            "title": "Study Type Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "files",
+          "study_id",
+          "route",
+          "protocol_version",
+          "authorized_by"
+        ],
+        "title": "Body_create_study_from_upload_api_v1_studies_post",
+        "type": "object"
+      },
       "BoundDisposition": {
         "additionalProperties": false,
         "properties": {
@@ -6483,6 +6540,48 @@
           }
         },
         "summary": "List Studies",
+        "tags": [
+          "studies"
+        ]
+      },
+      "post": {
+        "description": "Create a study from uploaded source files.\n\nRoute and protocol version are required because no column carries them\nand a governed fact is never inferred from data; the caller is recorded\nas their source.\n\nThe package is stored with no claims. Computing those is the section\nexecutor's job, so the release gate starts blocked and stays blocked\nuntil real validation runs.",
+        "operationId": "create_study_from_upload_api_v1_studies_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_create_study_from_upload_api_v1_studies_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Create Study From Upload Api V1 Studies Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Study From Upload",
         "tags": [
           "studies"
         ]

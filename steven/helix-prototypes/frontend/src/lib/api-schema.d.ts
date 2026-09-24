@@ -14,7 +14,19 @@ export interface paths {
         /** List Studies */
         get: operations["list_studies_api_v1_studies_get"];
         put?: never;
-        post?: never;
+        /**
+         * Create Study From Upload
+         * @description Create a study from uploaded source files.
+         *
+         *     Route and protocol version are required because no column carries them
+         *     and a governed fact is never inferred from data; the caller is recorded
+         *     as their source.
+         *
+         *     The package is stored with no claims. Computing those is the section
+         *     executor's job, so the release gate starts blocked and stays blocked
+         *     until real validation runs.
+         */
+        post: operations["create_study_from_upload_api_v1_studies_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -455,6 +467,29 @@ export interface components {
             status: components["schemas"]["SectionStatus"];
             /** Title */
             title: string;
+        };
+        /** Body_create_study_from_upload_api_v1_studies_post */
+        Body_create_study_from_upload_api_v1_studies_post: {
+            /** Authorized By */
+            authorized_by: string;
+            /** Files */
+            files: string[];
+            /** Protocol Version */
+            protocol_version: string;
+            /** Route */
+            route: string;
+            /** Study Id */
+            study_id: string;
+            /**
+             * Study Start
+             * @default
+             */
+            study_start: string;
+            /**
+             * Study Type Id
+             * @default REPEAT_DOSE_28D_RODENT
+             */
+            study_type_id: string;
         };
         /** BoundDisposition */
         BoundDisposition: {
@@ -2579,6 +2614,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StudyListItem"][];
+                };
+            };
+        };
+    };
+    create_study_from_upload_api_v1_studies_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_create_study_from_upload_api_v1_studies_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

@@ -448,3 +448,38 @@ def test_workspace_docs_separate_audit_history_from_live_stream() -> None:
     for claim in ["fda approved", "fda approval", "submission-ready", "submission ready", "compliant"]:
         assert claim not in text
     engine.dispose()
+
+
+def test_uploaded_study_projects_upload_current_with_no_run() -> None:
+    """An intake-uploaded study (no claims, never validated) starts at Upload, not later."""
+    roster = (
+        b"study_id,animal_id,group_number,group_name,sex,dose_mgkg_day,species,strain\n"
+        b"S,A1,1,Control,M,0,Rat,SD\nS,A2,2,High,F,100,Rat,SD\n"
+    )
+    weights = b"study_id,animal_id,study_day,body_weight_g\nS,A1,1,100.5\nS,A2,1,90.5\n"
+    client, engine = build_client()
+    with client:
+        created = client.post(
+            "/api/v1/studies",
+            data={
+                "study_id": "STUDY-JOURNEY-UP",
+                "route": "oral gavage",
+                "protocol_version": "1.0",
+                "authorized_by": "journey test",
+            },
+            files=[
+                ("files", ("animal_roster.csv", roster, "text/csv")),
+                ("files", ("body_weights.csv", weights, "text/csv")),
+            ],
+        )
+        assert created.status_code == 201, created.text
+        workspace = client.get("/api/v1/studies/STUDY-JOURNEY-UP/workspace").json()
+    projection = workspace["journey"]
+    assert workspace["release_gate"]["status"] == "blocked"
+    assert projection["label"] == LABEL
+    assert projection["run"] is None
+    assert projection["current_stage_id"] == "upload"
+    assert statuses(projection) == {sid: ("current" if sid == "upload" else "pending") for sid in STAGE_IDS}
+    freeze_action = stage(projection, "upload")["actions"][-1]
+    assert freeze_action["command"] == "POST /api/v1/studies/STUDY-JOURNEY-UP/pinned-runs"
+    engine.dispose()
