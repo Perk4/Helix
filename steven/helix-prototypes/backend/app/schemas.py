@@ -493,3 +493,60 @@ class ExportReceipt(StrictModel):
     exported_at: str
     artifacts: list[ExportArtifact]
     idempotent_replay: bool
+
+
+# --------------------------------------------------------------------------- #
+# Section drafts (per-section generated content for the UI)
+# --------------------------------------------------------------------------- #
+
+SectionDraftStatus = Literal["needs_review", "proposed", "verified", "discarded", "empty"]
+
+
+class ProseBlock(StrictModel):
+    kind: Literal["prose"] = "prose"
+    markdown: str
+
+
+class TableBlock(StrictModel):
+    kind: Literal["table"] = "table"
+    title: str
+    columns: list[str]
+    rows: list[list[str]]
+
+
+class NoteBlock(StrictModel):
+    kind: Literal["note"] = "note"
+    text: str
+
+
+SectionBlock = Annotated[ProseBlock | TableBlock | NoteBlock, Field(discriminator="kind")]
+
+
+class SectionDraft(StrictModel):
+    section_id: str
+    title: str
+    version: int
+    status: SectionDraftStatus
+    data_available: bool
+    blocks: list[SectionBlock]
+    narrative_md: str | None = None
+    note: str | None = None
+    provenance_count: int = 0
+    feedback: list[str] = Field(default_factory=list)
+    model: str | None = None
+    created_at: str
+
+
+class SectionListItem(StrictModel):
+    section_id: str
+    title: str
+    order: int
+    template_section: str | None
+    has_verified_claims: bool
+    status: SectionDraftStatus
+    version: int | None = None
+    data_available: bool | None = None
+
+
+class DraftRequest(StrictModel):
+    feedback: list[str] = Field(default_factory=list)

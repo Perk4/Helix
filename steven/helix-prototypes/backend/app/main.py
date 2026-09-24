@@ -7,16 +7,21 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import Engine, text
 from sqlalchemy.orm import Session
 
+from . import llm
 from .agents.codex_section_agent import CodexSectionAgent, SectionAgent
 from .config import Settings, get_settings
 from .database import create_database_engine, create_schema, create_session_factory
+from .draft_service import DraftService
 from .repository import StudyNotFoundError
 from .schemas import (
     ApprovalCommand,
     DispositionCommand,
+    DraftRequest,
     EvidenceChain,
     ExportCommand,
     ExportReceipt,
+    SectionDraft,
+    SectionListItem,
     SectionRunCommand,
     SectionRunReceipt,
     StudyListItem,
@@ -100,6 +105,11 @@ def create_app(
 
     SectionRunServiceDependency = Annotated[SectionRunService, Depends(section_run_service)]
 
+    def draft_service(session: SessionDependency) -> DraftService:
+        return DraftService(session, render_fn=llm.chat)
+
+    DraftServiceDependency = Annotated[DraftService, Depends(draft_service)]
+
     @app.get("/health", tags=["system"])
     def health(session: SessionDependency) -> dict[str, str]:
         session.execute(text("SELECT 1"))
@@ -142,6 +152,40 @@ def create_app(
         section_service: SectionRunServiceDependency,
     ) -> SectionRunReceipt:
         return _call(lambda: section_service.run(study_id, command))
+
+    @app.get(
+        "/api/v1/studies/{study_id}/sections",
+        response_model=list[SectionListItem],
+        tags=["sections"],
+    )
+    def list_sections(study_id: str, drafts: DraftServiceDependency) -> list[SectionListItem]:
+        return _call(lambda: drafts.list_sections(study_id))
+
+    @app.get(
+        "/api/v1/studies/{study_id}/sections/{section_id}/draft",
+        response_model=SectionDraft | None,
+        tags=["sections"],
+    )
+    def get_section_draft(
+        study_id: str,
+        section_id: str,
+        drafts: DraftServiceDependency,
+    ) -> SectionDraft | None:
+        return _call(lambda: drafts.get_current(study_id, section_id))
+
+    @app.post(
+        "/api/v1/studies/{study_id}/sections/{section_id}/draft",
+        response_model=SectionDraft,
+        status_code=status.HTTP_201_CREATED,
+        tags=["sections"],
+    )
+    def generate_section_draft(
+        study_id: str,
+        section_id: str,
+        request: DraftRequest,
+        drafts: DraftServiceDependency,
+    ) -> SectionDraft:
+        return _call(lambda: drafts.generate(study_id, section_id, feedback=request.feedback))
 
     @app.get(
         "/api/v1/studies/{study_id}/claims/{claim_id}/evidence",
@@ -217,7 +261,7 @@ def _call[ResponseT](operation: Callable[[], ResponseT]) -> ResponseT:
         return operation()
     except StudyNotFoundError as error:
         raise HTTPException(status_code=404, detail=f"Unknown study {error.args[0]}") from error
-    except (InvalidCommandError, UnknownSectionPackageError) as error:
+    except (InvalidCommandError, UnknownSectionPackageError, KeyError) as error:
         raise HTTPException(status_code=404, detail=str(error)) from error
     except (WorkflowConflictError, SectionRunConflictError) as error:
         raise HTTPException(status_code=409, detail=str(error)) from error

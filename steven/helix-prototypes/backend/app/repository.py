@@ -4,7 +4,14 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from .models import AuditEventRow, ExportFileRow, SectionRunRow, StudyPackageRow, ValidationRunRow
+from .models import (
+    AuditEventRow,
+    ExportFileRow,
+    SectionDraftRow,
+    SectionRunRow,
+    StudyPackageRow,
+    ValidationRunRow,
+)
 from .schemas import StoredSectionRun, StudyEvidencePackage, ValidationRun
 
 
@@ -177,6 +184,57 @@ class StudyPackageRepository:
         self.session.add(row)
         self.session.flush()
         return row
+
+    # -- section drafts ---------------------------------------------------- #
+
+    def next_section_draft_version(self, study_id: str, section_id: str) -> int:
+        rows = self.session.scalars(
+            select(SectionDraftRow).where(
+                SectionDraftRow.study_id == study_id,
+                SectionDraftRow.section_id == section_id,
+            )
+        ).all()
+        return max((row.version for row in rows), default=0) + 1
+
+    def add_section_draft(self, **fields: Any) -> SectionDraftRow:
+        row = SectionDraftRow(**fields)
+        self.session.add(row)
+        self.session.flush()
+        return row
+
+    def current_section_draft(self, study_id: str, section_id: str) -> SectionDraftRow | None:
+        """Latest applied draft: newest version that is not proposed or discarded."""
+        return self.session.scalar(
+            select(SectionDraftRow)
+            .where(
+                SectionDraftRow.study_id == study_id,
+                SectionDraftRow.section_id == section_id,
+                SectionDraftRow.status.in_(("needs_review", "verified")),
+            )
+            .order_by(SectionDraftRow.version.desc())
+            .limit(1)
+        )
+
+    def get_section_draft(self, study_id: str, section_id: str, version: int) -> SectionDraftRow | None:
+        return self.session.scalar(
+            select(SectionDraftRow).where(
+                SectionDraftRow.study_id == study_id,
+                SectionDraftRow.section_id == section_id,
+                SectionDraftRow.version == version,
+            )
+        )
+
+    def list_section_drafts(self, study_id: str, section_id: str) -> list[SectionDraftRow]:
+        return list(
+            self.session.scalars(
+                select(SectionDraftRow)
+                .where(
+                    SectionDraftRow.study_id == study_id,
+                    SectionDraftRow.section_id == section_id,
+                )
+                .order_by(SectionDraftRow.version)
+            ).all()
+        )
 
     def list_section_runs(self, study_id: str) -> list[StoredSectionRun]:
         rows = self.session.scalars(

@@ -1,7 +1,7 @@
 # Section Drafting + Human-in-the-Loop Chat — Requirements, Design & Plan
 
 - **Branch:** `feat/draft-section-hitl`
-- **Status:** Design approved → implementation not started
+- **Status:** Phase 0 + A done (backend) → Phase B (UI) next
 - **Created:** 2026-09-24
 - **Approach:** B (lighter first) — build the UI + chat now on already-verified numbers; mark the rest `needs_review`; expand verified coverage over time.
 
@@ -109,20 +109,20 @@ generate(study_id, section_id, feedback_history, existing_content, apply=False)
 
 ## 4. Phased plan (tasks)
 
-### Phase 0 — Foundations · Status: not started
-- [ ] `backend/app/llm.py` — APIM client (detect `azure-api.net`, `subscription-key`, `/deployments/{model}`); reads settings
-- [ ] `config.py` — APIM base URL / key / model settings (server-side)
-- [ ] `backend/app/section_catalog.py` — 14 sections → `{id, title, order, template_section, has_verified_claims}`
-- [ ] Smoke test: render one section's prose via APIM
+### Phase 0 — Foundations · Status: done
+- [x] `backend/app/llm.py` — APIM client (detect `azure-api.net`, `subscription-key`, `/deployments/{model}`); lazy OpenAI import so the app loads without the SDK
+- [x] APIM settings — read `APIM_API_KEY` / `APIM_BASE_URL` / `APIM_MODEL` from env in `llm.py` (matches `draft_pipeline.py`; no `config.py` change needed); `openai` added to `backend/pyproject.toml`
+- [x] `backend/app/section_catalog.py` — 14 sections → `{id, title, order, template_section, has_verified_claims}`
+- [x] Smoke test: executor → assembly runs without credentials (prose degrades gracefully)
 
-### Phase A — Per-section drafts: generate, store, read (R1 backend, R3) · Status: not started
-- [ ] `section_drafts` table + migration/DDL (append-only versions)
-- [ ] `backend/app/draft_service.py` — `generate(...)` anchored + grounded + `temperature=0`
-- [ ] Assemble draft = **verified tables (structured) + AI prose**; sections without data → `needs_review` + note (no invented prose)
-- [ ] `get(...)`, `list_sections(...)`
-- [ ] Endpoints: `GET /sections`, `GET/POST /sections/{sid}/draft`
-- [ ] Schemas: `SectionDraft`, `SectionDraftBlock (paragraph|table)`, `SectionListItem`
-- [ ] Tests: deterministic assembly (tables/provenance) + endpoint tests (mock LLM)
+### Phase A — Per-section drafts: generate, store, read (R1 backend, R3) · Status: done
+- [x] `section_drafts` table (append-only versions) in `models.py` + repository methods
+- [x] `backend/app/draft_service.py` — `generate(...)` anchored to current draft + feedback; `temperature=0` via `llm.chat`
+- [x] Assemble draft = **verified tables (structured, from executor facts) + AI prose**; sections without data → `needs_review` + note (no invented prose)
+- [x] `get_current(...)`, `list_sections(...)`
+- [x] Endpoints: `GET /sections`, `GET/POST /sections/{sid}/draft`
+- [x] Schemas: `SectionDraft`, `SectionBlock (prose|table|note)`, `SectionListItem`, `DraftRequest`
+- [x] Tests: `tests/test_section_drafts.py` — deterministic tables/provenance, feedback-anchoring, no-data note, endpoints (6 tests)
 
 ### Phase B — Show section content richly (R1 frontend) · Status: not started
 - [ ] `lib/api.ts` + `lib/types.ts` — `getSections`, `getSectionDraft`, `generateSectionDraft` + types
@@ -164,4 +164,5 @@ generate(study_id, section_id, feedback_history, existing_content, apply=False)
 ## 7. Progress log
 | Date | Phase / task | Change | Commit |
 |---|---|---|---|
-| 2026-09-24 | — | Plan captured | (pending) |
+| 2026-09-24 | — | Plan captured | (local) |
+| 2026-09-24 | Phase 0 + A | Backend: `llm.py`, `section_catalog.py`, `section_drafts` table, `draft_service.py`, 3 section endpoints, schemas, 6 tests (all pass, ruff clean) | (pending) |
