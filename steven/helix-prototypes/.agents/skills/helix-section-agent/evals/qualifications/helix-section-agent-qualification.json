@@ -1,6 +1,6 @@
 {
-  "qualification_id": "helix-section-agent-qualification@0.1.0/2026-09-24T04:55:57Z",
-  "qualification_hash": "sha256:d0632fa92002fe8aa513f5e249db868c37e8c2f46f13eb9a550061033fe719d9",
+  "qualification_id": "helix-section-agent-qualification@0.1.0/2026-09-24T05:09:51Z",
+  "qualification_hash": "sha256:e83fb1356dfaebc27ee2c75551762e6cebd06d4f91452606516dc912932d2ede",
   "inputs": {
     ".agents/skills/helix-section-agent/SKILL.md": "sha256:40f2a2076c14ec4efce86c6d3d3c2627c52a043866cc9abebef49f18086369f4",
     ".agents/skills/helix-section-agent/evals/assert-candidate-schema.mjs": "sha256:77d880f261b09021e49f309c2dbdf12bb5b57d805e4e8fe601c412a7f02263b6",
@@ -8,7 +8,7 @@
     ".agents/skills/helix-section-agent/evals/fixtures/body-weight-envelope.json": "sha256:01d0d88a00f3eea465f984a161db9547befd7db3d8dcde3f55c3ca5011a30fcf",
     ".agents/skills/helix-section-agent/evals/fixtures/body-weight-missing-claim.json": "sha256:22ff16e842a11d1447ba6fbbffca6277f1f65579e6ad2990f2a4f06fa07ecd41",
     ".agents/skills/helix-section-agent/evals/prompt.txt": "sha256:caa1187090abbe74cece4a0539da70f7f72d0907033e4be0cdd4bd8175a5836f",
-    ".agents/skills/helix-section-agent/evals/promptfooconfig.yaml": "sha256:9826b03bd974775a4fa51b3ddfa74f61b7cc2c1b44cd5568bb82c95c5400ee0c",
+    ".agents/skills/helix-section-agent/evals/promptfooconfig.yaml": "sha256:ef209f08c76393cbde4bfe9d0574f7172812742aaf25a306d2ca0186ef02f0eb",
     "skills/helix-evidence-pipeline/contracts/section-draft-candidate.schema.json": "sha256:07ea5dc4a7fe952800bae4d22a1072bec32d6f17818296b34685ed1e2b10640b"
   },
   "outcome": {

@@ -6,10 +6,11 @@
 //
 //   node scripts/record-qualification.mjs [--dry-run]
 
-import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { relative, resolve } from "node:path";
+
+import { canonicalHash, fileHash } from "./lib/hash.mjs";
 
 const root = resolve(import.meta.dirname, "..");
 const evalsDir = resolve(root, ".agents/skills/helix-section-agent/evals");
@@ -17,21 +18,6 @@ const skillPath = resolve(root, ".agents/skills/helix-section-agent/SKILL.md");
 const packagePath = resolve(root, "skills/helix-evidence-pipeline/packages/sections/5_2_3_body_weight/package.json");
 const qualificationsDir = resolve(evalsDir, "qualifications");
 const dryRun = process.argv.includes("--dry-run");
-
-// Matches SectionRunService._file_hash in backend/app/section_runs.py. One
-// algorithm across both languages, so a Python reviewer and this script agree.
-const fileHash = (path) => `sha256:${createHash("sha256").update(readFileSync(path)).digest("hex")}`;
-
-// Matches canonical_hash in the same module: compact separators, sorted keys.
-const canonicalHash = (value) => {
-  const canonical = (node) =>
-    Array.isArray(node)
-      ? node.map(canonical)
-      : node && typeof node === "object"
-        ? Object.fromEntries(Object.keys(node).sort().map((key) => [key, canonical(node[key])]))
-        : node;
-  return `sha256:${createHash("sha256").update(JSON.stringify(canonical(value))).digest("hex")}`;
-};
 
 const walk = (dir) =>
   readdirSync(dir).flatMap((name) => {

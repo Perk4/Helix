@@ -1,0 +1,86 @@
+# Tier-1 qualification gate.
+#
+# This repo is Azure DevOps and had no CI of any kind, so PKG-005 was a rule
+# nothing enforced: a skill could be edited and pinned runs would keep citing a
+# qualification that no longer described it. This pipeline is that enforcement.
+#
+# The order of the steps is the point. The qualification check needs no provider
+# call, so it runs first and fails a stale certificate before the build spends
+# anything on a model. The suite runs after, and only then.
+
+trigger:
+  branches:
+    # Deliberately not `main`. The eval stack lands on evals-build and its
+    # children; gating trunk is a separate decision that belongs to whoever
+    # owns trunk, not to this workstream.
+    include:
+      - evals-build
+      - feature/ev*
+      - feat/ev*
+  paths:
+    include:
+      - steven/helix-prototypes/.agents/skills/helix-section-agent/**
+      - steven/helix-prototypes/skills/helix-evidence-pipeline/packages/sections/**
+      - steven/helix-prototypes/skills/helix-evidence-pipeline/contracts/**
+      - steven/helix-prototypes/scripts/**
+      - steven/helix-prototypes/package.json
+      - steven/helix-prototypes/package-lock.json
+      - steven/helix-prototypes/azure-pipelines.yml
+
+pr:
+  branches:
+    include:
+      - evals-build
+  paths:
+    include:
+      - steven/helix-prototypes/.agents/skills/helix-section-agent/**
+      - steven/helix-prototypes/skills/helix-evidence-pipeline/packages/sections/**
+      - steven/helix-prototypes/skills/helix-evidence-pipeline/contracts/**
+      - steven/helix-prototypes/scripts/**
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  # Holds APIM_SUBSCRIPTION_KEY. Provider keys never come from a committed file.
+  # Mark the value secret in the group so Azure DevOps masks it in the log.
+  - group: helix-evals
+  - name: workingDirectory
+    value: steven/helix-prototypes
+
+steps:
+  - task: NodeTool@0
+    displayName: Use Node 22
+    inputs:
+      versionSpec: "22.x"
+
+  - script: npm ci
+    displayName: Install pinned dependencies
+    workingDirectory: $(workingDirectory)
+
+  # No provider call. Catches an undocumented placeholder or a `file://` that
+  # no longer resolves before the run wastes a request on a broken config.
+  - script: node scripts/verify-evals-config.mjs
+    displayName: Check the eval config
+    workingDirectory: $(workingDirectory)
+
+  # PKG-005. Fails when the package is not `passed`, or when any certified input
+  # no longer hashes to what was recorded — which is what editing prompt.txt or
+  # a fixture without re-qualifying looks like.
+  - script: node scripts/verify-qualification.mjs
+    displayName: Enforce PKG-005 qualification
+    workingDirectory: $(workingDirectory)
+
+  # Only now does anything cost money.
+  - script: npm run evals
+    displayName: Run the tier-1 suite
+    workingDirectory: $(workingDirectory)
+    env:
+      AZURE_API_KEY: $(APIM_SUBSCRIPTION_KEY)
+      AZURE_OPENAI_API_BASE_URL: https://lgts1tetamapi01.azure-api.net/gpt51
+      AZURE_API_VERSION: "2024-10-21"
+      HELIX_PROMPTFOO_PROVIDER: azureopenai:chat:gpt-5.5
+      # The rubrics are graded cross-family, so the judge needs its own binding.
+      ANTHROPIC_API_KEY: $(APIM_SUBSCRIPTION_KEY)
+      ANTHROPIC_BASE_URL: https://lgts1tetamapi01.azure-api.net/claude/anthropic
+      HELIX_PROMPTFOO_JUDGE_PROVIDER: anthropic:messages:claude-sonnet-4-6

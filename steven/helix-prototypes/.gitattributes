@@ -6,5 +6,6 @@
 .agents/skills/helix-section-agent/** text eol=lf
 skills/helix-evidence-pipeline/contracts/** text eol=lf
 skills/helix-evidence-pipeline/packages/** text eol=lf
-scripts/record-qualification.mjs text eol=lf
-scripts/verify-evals-config.mjs text eol=lf
+scripts/*.mjs text eol=lf
+scripts/lib/*.mjs text eol=lf
+azure-pipelines.yml text eol=lf
