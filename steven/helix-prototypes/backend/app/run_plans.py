@@ -20,6 +20,12 @@ from .schemas import (
     StudyEvidencePackage,
     StudyTypeResolution,
 )
+from .superseding_runs import (
+    apply_supersession,
+    capture_frozen_inputs,
+    plan_supersession,
+    snapshot_predecessor,
+)
 
 
 def canonical_hash(value: object) -> str:
@@ -203,9 +209,44 @@ class PinnedRunService:
             ),
             supersession_reason=command.supersession.reason if command.supersession is not None else None,
         )
-        self.repository.save(
-            package.model_copy(update={"pinned_run": pinned, "superseded_pinned_runs": superseded})
-        )
+        current_inputs = capture_frozen_inputs(package, self.repository_root)
+        if command.supersession is not None:
+            frozen = package.frozen_inputs or current_inputs
+            predecessor = snapshot_predecessor(
+                package,
+                frozen_inputs=frozen,
+                section_runs=self.repository.list_section_runs(study_id),
+                section_drafts=self.repository.list_section_drafts(study_id),
+                candidate_evaluations=self.repository.list_candidate_evaluations(study_id),
+                drafting_cycles=self.repository.list_drafting_cycles(study_id),
+            )
+            superseding = plan_supersession(
+                snapshot=predecessor,
+                successor=pinned,
+                current_inputs=current_inputs,
+                section_definitions=[
+                    item
+                    for item in package_definitions
+                    if item.get("schema_version") == "helix.section-package/v1"
+                ],
+                reason=command.supersession.reason,
+            )
+            stored = apply_supersession(
+                package,
+                successor=pinned,
+                snapshot=predecessor,
+                receipt=superseding,
+                frozen_inputs=current_inputs,
+            )
+        else:
+            stored = package.model_copy(
+                update={
+                    "pinned_run": pinned,
+                    "superseded_pinned_runs": superseded,
+                    "frozen_inputs": current_inputs,
+                }
+            )
+        self.repository.save(stored)
         self.repository.add_pinned_run(
             run_id=run_id,
             study_id=study_id,

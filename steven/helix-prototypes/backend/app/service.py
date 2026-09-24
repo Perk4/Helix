@@ -60,6 +60,7 @@ from .section_runs import (
     governed_versions_fingerprint,
     manifest_fingerprint,
 )
+from .superseding_runs import with_fresh_authority
 from .template_contracts import BODY_WEIGHT_PACKAGE_ID
 from .validation import (
     FixturePlanner,
@@ -123,8 +124,9 @@ class StudyService:
 
     def freeze_run(self, study_id: str, command: FreezeRunCommand) -> PinnedRun:
         pinned_run = self.pinned_runs.freeze(study_id, command)
+        execution = None
         if pinned_run.status == "planned":
-            self.data_validation.execute(
+            execution = self.data_validation.execute(
                 study_id,
                 DataValidationCommand(
                     actor=command.actor,
@@ -132,6 +134,27 @@ class StudyService:
                     idempotency_key=f"dvp-{pinned_run.run_id}-validation.body_weight",
                 ),
             )
+        package = self.repository.get(study_id, for_update=True)
+        if package.superseding_run_receipt is not None:
+            event_id = (
+                pinned_run.event_history[0].event_id
+                if pinned_run.event_history
+                else f"EV-{uuid4().hex[:12].upper()}"
+            )
+            package = self.section_runs.persist_contract_revision(package, event_id=event_id)
+            gate = self._release_gate(package)
+            package = with_fresh_authority(
+                package,
+                validation_receipt_ids=[execution.receipt.receipt_id] if execution is not None else [],
+                gate_ids=[gate.gate_id],
+                scaffold_revision=(
+                    int(package.review_scaffold_revisions[-1]["sequence"])
+                    if package.review_scaffold_revisions
+                    else 0
+                ),
+            )
+            self.repository.save(package)
+            self.session.commit()
         return pinned_run
 
     def run_data_validation(self, study_id: str, command: DataValidationCommand) -> DataValidationExecution:
@@ -765,6 +788,8 @@ class StudyService:
             review_scaffold_revisions=package.review_scaffold_revisions,
             drafting_cycles=self.repository.list_drafting_cycles(package.study.study_id),
             can_open_revision=self._can_open_revision(package.study.study_id),
+            predecessor_snapshots=package.predecessor_snapshots,
+            superseding_run_receipt=package.superseding_run_receipt,
         )
 
     def _can_open_revision(self, study_id: str) -> bool:
