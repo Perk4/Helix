@@ -7,6 +7,10 @@ COPY backend/pyproject.toml backend/uv.lock ./
 RUN uv sync --frozen --no-dev
 
 COPY backend/app ./app
+# create_schema() runs Alembic on PostgreSQL (the compose database) and reads these
+# relative to app/, so the image must carry them or startup fails before /health.
+COPY backend/alembic.ini ./alembic.ini
+COPY backend/migrations ./migrations
 COPY backend/openapi.json ./openapi.json
 COPY synthetic-e2e /app/synthetic-e2e
 
