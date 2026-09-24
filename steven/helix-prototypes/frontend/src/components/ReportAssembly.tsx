@@ -60,13 +60,26 @@ export function ReportAssembly({ workspace, busy, onResolve, onApprove, onExport
     setDraftError(null);
     setDraftLoading(true);
     getSectionDraft(studyId, selectedSectionId)
-      .then((value) => active && setDraft(value))
+      .then(async (value) => {
+        if (!active) return;
+        if (value) {
+          setDraft(value);
+          return;
+        }
+        // No draft persisted yet — generate once so content is present, then
+        // it is fetched from the database on every later visit.
+        const created = await generateSectionDraft(studyId, selectedSectionId);
+        if (active) {
+          setDraft(created);
+          void refreshSections();
+        }
+      })
       .catch((cause) => active && setDraftError(messageFrom(cause)))
       .finally(() => active && setDraftLoading(false));
     return () => {
       active = false;
     };
-  }, [studyId, selectedSectionId]);
+  }, [studyId, selectedSectionId, refreshSections]);
 
   async function generate() {
     setDraftBusy(true);

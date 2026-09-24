@@ -2380,3 +2380,21 @@ code {
   display: flex;
   gap: 0.5rem;
 }
+
+/* --- Thumbs (apply green / discard red) -------------------------------- */
+.button.thumbs-up {
+  background: #1f8a4c;
+  color: #fff;
+  border: 1px solid #1f8a4c;
+}
+.button.thumbs-up:hover:not(:disabled) {
+  background: #196f3d;
+}
+.button.thumbs-down {
+  background: #fff;
+  color: #b3261e;
+  border: 1px solid #e2a6a1;
+}
+.button.thumbs-down:hover:not(:disabled) {
+  background: #fdecea;
+}

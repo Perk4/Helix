@@ -12,7 +12,7 @@ import {
   reviseSection,
   sendChat,
 } from "@/lib/api";
-import type { ChatMessage, ChatScope, SectionDraft } from "@/lib/types";
+import type { ChatMessage, SectionDraft } from "@/lib/types";
 
 type Props = {
   studyId: string;
@@ -26,7 +26,6 @@ type Mode = "ask" | "revise";
 export function ChatDock({ studyId, sectionId, sectionTitle, onApplied }: Props) {
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<Mode>("ask");
-  const [scope, setScope] = useState<ChatScope>("section");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [proposed, setProposed] = useState<SectionDraft | null>(null);
   const [input, setInput] = useState("");
@@ -85,13 +84,15 @@ export function ChatDock({ studyId, sectionId, sectionTitle, onApplied }: Props)
           message_id: -Date.now(),
           role: "user",
           content: text,
-          scope,
-          section_id: scope === "section" ? sectionId : null,
+          scope: "section",
+          section_id: sectionId,
           intent: "ask",
           created_at: new Date().toISOString(),
         };
         setMessages((prev) => [...prev, optimistic]);
-        await sendChat(studyId, text, scope, scope === "section" ? sectionId : null);
+        // The backend always includes the whole-study summary + this section's
+        // data, so one call answers study-wide or section questions.
+        await sendChat(studyId, text, "section", sectionId);
         setMessages(await getChat(studyId));
       }
     } catch (cause) {
@@ -150,8 +151,8 @@ export function ChatDock({ studyId, sectionId, sectionTitle, onApplied }: Props)
             💬
           </span>
           <span className="chat-title">
-            {mode === "revise" ? "Revise" : "Ask about"}
-            <strong>{mode === "revise" || scope === "section" ? sectionTitle : "the whole study"}</strong>
+            {mode === "revise" ? "Revise" : "Ask"}
+            <strong>{mode === "revise" ? sectionTitle : "the study or this section"}</strong>
           </span>
           <span className="chat-chevron" aria-hidden="true">
             {open ? "⌄" : "⌃"}
@@ -174,32 +175,11 @@ export function ChatDock({ studyId, sectionId, sectionTitle, onApplied }: Props)
               aria-checked={mode === "revise"}
               className={mode === "revise" ? "chat-scope-option active" : "chat-scope-option"}
               onClick={() => setMode("revise")}
+              title="Rewrite this section with your feedback"
             >
               Revise
             </button>
           </div>
-          {mode === "ask" && (
-            <div className="chat-scope" role="radiogroup" aria-label="Chat scope">
-              <button
-                type="button"
-                role="radio"
-                aria-checked={scope === "section"}
-                className={scope === "section" ? "chat-scope-option active" : "chat-scope-option"}
-                onClick={() => setScope("section")}
-              >
-                This section
-              </button>
-              <button
-                type="button"
-                role="radio"
-                aria-checked={scope === "study"}
-                className={scope === "study" ? "chat-scope-option active" : "chat-scope-option"}
-                onClick={() => setScope("study")}
-              >
-                Whole study
-              </button>
-            </div>
-          )}
         </div>
       </div>
 
@@ -240,10 +220,22 @@ export function ChatDock({ studyId, sectionId, sectionTitle, onApplied }: Props)
                   </ReactMarkdown>
                 </div>
                 <div className="proposed-actions">
-                  <button className="button primary small" type="button" onClick={() => void apply()} disabled={busy}>
+                  <button
+                    className="button small thumbs-up"
+                    type="button"
+                    onClick={() => void apply()}
+                    disabled={busy}
+                    data-testid="apply-proposed"
+                  >
                     👍 Apply
                   </button>
-                  <button className="button secondary small" type="button" onClick={() => void discard()} disabled={busy}>
+                  <button
+                    className="button small thumbs-down"
+                    type="button"
+                    onClick={() => void discard()}
+                    disabled={busy}
+                    data-testid="discard-proposed"
+                  >
                     👎 Discard
                   </button>
                 </div>
@@ -267,7 +259,7 @@ export function ChatDock({ studyId, sectionId, sectionTitle, onApplied }: Props)
           placeholder={
             mode === "revise"
               ? `Describe the change to “${sectionTitle}”…`
-              : `Ask about “${scope === "section" ? sectionTitle : "the study"}”…`
+              : `Ask about the study or “${sectionTitle}”…`
           }
           onChange={(event) => setInput(event.target.value)}
           onFocus={() => setOpen(true)}
