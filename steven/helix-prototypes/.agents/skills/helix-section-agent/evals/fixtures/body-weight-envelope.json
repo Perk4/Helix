@@ -619,6 +619,14 @@
       ]
     }
   ],
+  "reference_drafts": [
+    {
+      "report_id": "TOX-2024-0412",
+      "section_title": "Body Weight",
+      "hash": "sha256:556f3ecf65a8e406dd1a7603a4c119bb922c52e52c8a4681747b3e460e8b65ab",
+      "content": "Body weights were recorded on Day 1 (pre-dose) and weekly thereafter through Day 28.\n\n**Male Mean Body Weights (g):**\n\n| Group | Day 1 | Day 7 | Day 14 | Day 21 | Day 28 |\n|---|---|---|---|---|---|\n| G1 \u2014 Control (0 mg/kg) | 231.4 | 261.3 | 288.6 | 312.4 | 338.7 |\n| G2 \u2014 Low (10 mg/kg) | 229.8 | 260.1 | 287.4 | 310.8 | 336.2 |\n| G3 \u2014 Mid (50 mg/kg) | 232.1 | 256.4 | 281.2 | 299.7 | 318.4 |\n| G4 \u2014 High (200 mg/kg) | 230.5 | 247.6 | 264.8 | 278.3 | 291.5 |\n\n**Female Mean Body Weights (g):**\n\n| Group | Day 1 | Day 7 | Day 14 | Day 21 | Day 28 |\n|---|---|---|---|---|---|\n| G1 \u2014 Control (0 mg/kg) | 183.2 | 203.8 | 219.4 | 232.7 | 244.8 |\n| G2 \u2014 Low (10 mg/kg) | 184.6 | 204.2 | 220.1 | 233.5 | 245.6 |\n| G3 \u2014 Mid (50 mg/kg) | 182.9 | 201.6 | 215.8 | 226.4 | 235.9 |\n| G4 \u2014 High (200 mg/kg) | 184.1 | 196.2 | 207.3 | 214.8 | 220.6 |\n\nBody weight gain in Group 4 males was reduced by 13.9% relative to controls by Day 28 (291.5 g vs. 338.7 g). Group 4 females showed a similar reduction of 9.9% (220.6 g vs. 244.8 g). Group 3 showed mild reductions of 6.0% (males) and 3.6% (females) relative to controls at Day 28. Groups 1 and 2 showed comparable body weight trajectories throughout the study."
+    }
+  ],
   "governed_versions": {
     "schema": "1.0.0",
     "ontology": "1.0.0",
