@@ -244,7 +244,107 @@ teammate who is not on VPN, `base_url` should be the APIM route.
 
 ---
 
-## 6. What is not in this branch
+## 6. PostgreSQL — tested, works
+
+Ran your backend against the team Cosmos DB for PostgreSQL (`titaniumdb`, PostgreSQL
+16.15, Citus) in a throwaway schema, then dropped it:
+
+```
+/health                      {"status":"ok","storage":"postgresql"}
+seeded study                 STUDY-HLX-028, release_status blocked
+GET /workspace               200, 3 claims
+POST /api/v1/studies         201  ← the new intake, against real Postgres
+tables created               audit_events, export_files, section_runs,
+                             study_packages, validation_runs
+```
+
+So Postgres is a working alternative to blob for storing study data, and the intake
+endpoint works against it unchanged.
+
+Three things to know:
+
+- **The database is shared and teams isolate by schema** — `team04`, `team05`, `team07`,
+  `team8`, `team9`, `craft_team6`, `policypulse`. There is no HELIX schema yet, and no
+  table named `study_packages` anywhere in the database.
+- **`team04` is not us**, despite the `04` in the repo name. It holds `borrower_profiles`,
+  `hmda_sample`, `borrower_cohorts` — a lending project. We need our own schema.
+- Scope the connection with `?options=-csearch_path%3D<schema>` so `create_schema` cannot
+  land tables in `public`, which already has 18 tables belonging to other projects.
+
+---
+
+## 7. Deploying Codex on Azure
+
+### Two blockers to clear first
+
+**The skill is not in the image.** `backend/Dockerfile` copies `backend/app`,
+`backend/openapi.json` and `synthetic-e2e`. It does not copy `.agents/`. And
+`codex_repository_root` is `Path(__file__).resolve().parents[2]`, which resolves to
+`/app` in the container — a directory that contains `backend/` and `synthetic-e2e/` but
+no `.agents/`. Locally it resolves to the repo root and works, so this only bites in
+Docker.
+
+```dockerfile
+COPY backend/app ./app
+COPY synthetic-e2e /app/synthetic-e2e
++ COPY .agents /app/.agents          # helix-section-agent lives here
+```
+
+**`Sandbox.read_only` is blocked on a corporate Windows machine.**
+`CodexSectionAgent.run` requests `Sandbox.read_only`. On this laptop that mode — and
+`workspace-write` — fail with `powershell.exe rejected: blocked by policy`; only
+`danger-full-access` runs. The model connects and reasons fine either way, so the failure
+looks like a bad answer rather than a sandbox problem. Whether Linux fares better is
+**unverified** (Docker is not installed on this machine, so no container build was tested).
+
+### The pattern
+
+`openai-codex-cli-bin` publishes a `manylinux_2_17_x86_64` wheel, so `uv sync` inside
+`python:3.13-slim` gets a working Linux binary with no extra install step. That makes the
+backend image itself a viable host, and the official guidance is:
+
+> Use `danger-full-access` only in a controlled environment (for example, an isolated CI
+> runner or container).
+
+In a container the container *is* the sandbox, so full access inside it is the documented
+posture rather than a workaround.
+
+**Least change:** keep `CodexSectionAgent` in the API container, add the `COPY .agents`
+line, and make the sandbox mode a setting rather than a constant so it can be
+`read-only` locally on Linux and `danger-full-access` in the image.
+
+**What I would argue for instead**, given the project's own thesis: run the agent as a
+separate Azure Container Apps **Job**, not inside the API.
+
+```
+helix-api        FastAPI + Postgres credentials + frozen manifest
+                 │  enqueues a section run with only the envelope
+                 ▼
+helix-agent-job  codex exec, danger-full-access, no database credentials
+                 │  returns a candidate
+                 ▼
+helix-api        validates against section-draft-candidate and stores it
+```
+
+The API holds the database credentials and the manifest; the agent should hold neither.
+Giving full filesystem access to the same process that owns the connection string widens
+the blast radius for no benefit, and a section run is slow enough that a request handler
+is the wrong place for it regardless. Container Apps Jobs are built for exactly this
+shape.
+
+That is a refactor, not a config change — today `CodexSectionAgent` is constructed inside
+`create_app`. Worth deciding before the deployment target is fixed, because it is much
+cheaper now than after.
+
+### Not verified
+
+- Whether Azure Container Apps permits the process spawning Codex needs.
+- Whether App Service permits it at all. I would not assume it does.
+- Any container build, because Docker is not installed on this machine.
+
+---
+
+## 8. What is not in this branch
 
 About 12,900 lines remain on `feat/chris-helix-port`, unported on purpose:
 
