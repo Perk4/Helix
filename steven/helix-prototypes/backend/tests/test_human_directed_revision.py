@@ -317,6 +317,57 @@ def test_stored_cycle_impact_set_includes_injected_dependent(monkeypatch) -> Non
     engine.dispose()
 
 
+def test_hold_allows_revision_and_new_cycle_attempt() -> None:
+    agent = FakeSectionAgent()
+    client, engine = build_client(agent)
+    with client:
+        validate(client)
+        held = draft(client, key="hold-revise-attempt-1")
+        body = evaluate(client, held["run_id"], "hold-revise-eval-1")
+        assert body["next_attempt_decision"]["action"] == "hold"
+        blocked = client.post(
+            f"/api/v1/studies/{STUDY_ID}/section-runs",
+            json={**COMMAND, "idempotency_key": "hold-revise-attempt-2"},
+        )
+        assert blocked.status_code == 409
+        before = client.get(f"/api/v1/studies/{STUDY_ID}/workspace").json()
+        assert before["can_open_revision"] is True
+        receipt = revise(client, key="hold-revise-v1")
+        recorded = draft(client, key="hold-cycle-2-attempt-1")
+        workspace = client.get(f"/api/v1/studies/{STUDY_ID}/workspace").json()
+        assert recorded["run_id"] != held["run_id"]
+        assert workspace["section_runs"][-1]["candidate"]["drafting_cycle_id"] == receipt["cycle"][
+            "cycle_id"
+        ]
+        assert workspace["section_runs"][-1]["candidate"]["attempt"] == 1
+        assert [item["receipt"]["run_id"] for item in workspace["section_runs"][:1]] == [
+            item["receipt"]["run_id"] for item in before["section_runs"]
+        ]
+        assert workspace["can_open_revision"] is False
+    engine.dispose()
+
+
+def test_revision_rejects_empty_successor_stack() -> None:
+    agent = FakeSectionAgent("unsupported_value")
+    client, engine = build_client(agent)
+    with client:
+        validate(client)
+        fail_attempts(client, "stack")
+        first = revise(client, key="stack-revise-v1")
+        stacked = client.post(
+            f"/api/v1/studies/{STUDY_ID}/section-revisions",
+            json={**REVISION, "idempotency_key": "stack-revise-v2"},
+        )
+        workspace = client.get(f"/api/v1/studies/{STUDY_ID}/workspace").json()
+        assert stacked.status_code == 409
+        assert "current cycle" in stacked.json()["detail"]
+        assert [item["cycle_id"] for item in workspace["drafting_cycles"]].count(
+            first["cycle"]["cycle_id"]
+        ) == 1
+        assert workspace["can_open_revision"] is False
+    engine.dispose()
+
+
 def test_unknown_package_and_idempotent_replay() -> None:
     agent = FakeSectionAgent("unsupported_value")
     client, engine = build_client(agent)

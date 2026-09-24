@@ -112,7 +112,13 @@ export function HelixWorkbench({ studyId }: Props) {
     setNotice(null);
     setError(null);
     try {
-      const receipt = await reviseSection(studyId);
+      const current = workspace?.drafting_cycles
+        ?.filter((cycle) => cycle.section_package_id === "section.5_2_3_body_weight")
+        .at(-1);
+      const receipt = await reviseSection(
+        studyId,
+        `workbench-${studyId}-revise-${current?.cycle_id ?? "CYCLE-BW-001"}`,
+      );
       await refresh();
       setNotice(
         `${receipt.cycle.cycle_id} opened from ${receipt.cycle.predecessor_cycle_id ?? "no predecessor"}.`,

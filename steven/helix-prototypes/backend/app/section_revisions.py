@@ -4,6 +4,7 @@ from uuid import uuid4
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from .drafting_cycles import load_recorded_attempts
 from .repository import StudyPackageRepository
 from .schemas import (
     DraftingCycle,
@@ -49,6 +50,16 @@ class SectionRevisionService:
         current = self.repository.latest_drafting_cycle(study_id, command.section_package_id)
         if current is None:
             raise RevisionConflictError("A drafting cycle must exist before a human-directed revision")
+        recorded = load_recorded_attempts(
+            self.repository.list_section_runs(study_id),
+            self.repository.list_candidate_evaluations(study_id),
+            command.section_package_id,
+            current.cycle_id,
+        )
+        if not recorded:
+            raise RevisionConflictError(
+                "Draft at least one Candidate Attempt in the current cycle before opening another"
+            )
         now = datetime.now(UTC).isoformat().replace("+00:00", "Z")
         event_id = f"EV-{uuid4().hex[:12].upper()}"
         cycle = DraftingCycle(

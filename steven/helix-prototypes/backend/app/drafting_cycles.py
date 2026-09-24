@@ -67,7 +67,7 @@ def cycle_exhausted(recorded: tuple[RecordedAttempt, ...]) -> bool:
     latest = recorded[-1]
     return (
         latest.evaluation is not None
-        and latest.evaluation.next_attempt_decision.action == "stop_for_review"
+        and latest.evaluation.next_attempt_decision.action != "retry"
     )
 
 
