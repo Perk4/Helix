@@ -15,6 +15,8 @@ test("runs the synthetic study from validation through explicit export", async (
   await expect(page.getByTestId("helix-workbench")).toBeVisible();
   await expect(page.getByText("Synthetic / not for submission", { exact: true })).toBeVisible();
   await expect(page.getByTestId("release-status")).toHaveText("blocked");
+  await expect(page.getByTestId("draft-body-weight")).toBeDisabled();
+  await expect(page.getByTestId("section-run-ineligible")).toContainText("Run hybrid validation first");
   await expect(page.getByLabel("Study summary").getByText("1,662", { exact: true })).toBeVisible();
   await page.screenshot({ path: "../evidence/helix-workbench-initial.png", fullPage: true });
 
@@ -25,6 +27,7 @@ test("runs the synthetic study from validation through explicit export", async (
 
   await page.getByTestId("run-validation").click();
   await expect(page.getByRole("status")).toContainText("13 checks completed");
+  await expect(page.getByTestId("draft-body-weight")).toBeEnabled();
   await expect(page.getByText("3", { exact: true }).first()).toBeVisible();
 
   await page.getByRole("button", { name: /Evidence chain/ }).click();

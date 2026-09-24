@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import Engine, text
 from sqlalchemy.orm import Session
 
+from .agents.codex_section_agent import CodexSectionAgent, SectionAgent
 from .config import Settings, get_settings
 from .database import create_database_engine, create_schema, create_session_factory
 from .repository import StudyNotFoundError
@@ -16,19 +17,33 @@ from .schemas import (
     EvidenceChain,
     ExportCommand,
     ExportReceipt,
+    SectionRunCommand,
+    SectionRunReceipt,
     StudyListItem,
     ValidationRequest,
     ValidationRun,
     WorkspaceResponse,
+)
+from .section_runs import (
+    CandidateValidationError,
+    SectionRunConflictError,
+    SectionRunService,
+    SectionRunUnavailableError,
+    UnknownSectionPackageError,
 )
 from .seed import seed_database
 from .service import InvalidCommandError, StudyService, WorkflowConflictError
 from .validation import PlannerUnavailableError
 
 
-def create_app(settings: Settings | None = None, engine: Engine | None = None) -> FastAPI:
+def create_app(
+    settings: Settings | None = None,
+    engine: Engine | None = None,
+    section_agent: SectionAgent | None = None,
+) -> FastAPI:
     active_settings = settings or get_settings()
     active_engine = engine or create_database_engine(active_settings)
+    active_section_agent = section_agent or CodexSectionAgent(active_settings.codex_repository_root)
     session_factory = create_session_factory(active_engine)
 
     @asynccontextmanager
@@ -67,9 +82,23 @@ def create_app(settings: Settings | None = None, engine: Engine | None = None) -
     SessionDependency = Annotated[Session, Depends(get_session)]
 
     def service(session: SessionDependency) -> StudyService:
-        return StudyService(session, active_settings)
+        section_runs = SectionRunService(
+            session,
+            active_section_agent,
+            active_settings.codex_repository_root,
+        )
+        return StudyService(session, active_settings, section_runs)
 
     ServiceDependency = Annotated[StudyService, Depends(service)]
+
+    def section_run_service(session: SessionDependency) -> SectionRunService:
+        return SectionRunService(
+            session,
+            active_section_agent,
+            active_settings.codex_repository_root,
+        )
+
+    SectionRunServiceDependency = Annotated[SectionRunService, Depends(section_run_service)]
 
     @app.get("/health", tags=["system"])
     def health(session: SessionDependency) -> dict[str, str]:
@@ -100,6 +129,19 @@ def create_app(settings: Settings | None = None, engine: Engine | None = None) -
         study_service: ServiceDependency,
     ) -> ValidationRun:
         return _call(lambda: study_service.run_validation(study_id, request))
+
+    @app.post(
+        "/api/v1/studies/{study_id}/section-runs",
+        response_model=SectionRunReceipt,
+        status_code=status.HTTP_201_CREATED,
+        tags=["section-runs"],
+    )
+    def run_section(
+        study_id: str,
+        command: SectionRunCommand,
+        section_service: SectionRunServiceDependency,
+    ) -> SectionRunReceipt:
+        return _call(lambda: section_service.run(study_id, command))
 
     @app.get(
         "/api/v1/studies/{study_id}/claims/{claim_id}/evidence",
@@ -175,11 +217,13 @@ def _call[ResponseT](operation: Callable[[], ResponseT]) -> ResponseT:
         return operation()
     except StudyNotFoundError as error:
         raise HTTPException(status_code=404, detail=f"Unknown study {error.args[0]}") from error
-    except InvalidCommandError as error:
+    except (InvalidCommandError, UnknownSectionPackageError) as error:
         raise HTTPException(status_code=404, detail=str(error)) from error
-    except WorkflowConflictError as error:
+    except (WorkflowConflictError, SectionRunConflictError) as error:
         raise HTTPException(status_code=409, detail=str(error)) from error
-    except PlannerUnavailableError as error:
+    except CandidateValidationError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+    except (PlannerUnavailableError, SectionRunUnavailableError) as error:
         raise HTTPException(status_code=503, detail=str(error)) from error
 
 

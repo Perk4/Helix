@@ -3,6 +3,7 @@ import type {
   EvidenceChainData,
   ExportReceipt,
   PlannerMode,
+  SectionRunReceipt,
   ValidationRun,
   Workspace,
 } from "./types";
@@ -36,6 +37,18 @@ export async function runValidation(
     body: JSON.stringify({ planner }),
   });
   assertValidationRun(value);
+  return value;
+}
+
+export async function runSectionAgent(studyId: string): Promise<SectionRunReceipt> {
+  const value = await request(`/studies/${encodeURIComponent(studyId)}/section-runs`, {
+    method: "POST",
+    body: JSON.stringify({
+      section_package_id: "section.5_2_3_body_weight",
+      idempotency_key: `workbench-${studyId}-body-weight-v1`,
+    }),
+  });
+  assertSectionRunReceipt(value);
   return value;
 }
 
@@ -149,6 +162,20 @@ function assertValidationRun(value: unknown): asserts value is ValidationRun {
     !Array.isArray(value.results)
   ) {
     throw new Error("The validation response does not match the generated API contract.");
+  }
+}
+
+function assertSectionRunReceipt(value: unknown): asserts value is SectionRunReceipt {
+  if (
+    !isObject(value) ||
+    value.status !== "candidate_recorded" ||
+    value.agent_runtime !== "codex_sdk" ||
+    typeof value.candidate_hash !== "string" ||
+    typeof value.envelope_hash !== "string" ||
+    typeof value.codex_thread_id !== "string" ||
+    typeof value.skill_hash !== "string"
+  ) {
+    throw new Error("The section-run response does not match the generated API contract.");
   }
 }
 

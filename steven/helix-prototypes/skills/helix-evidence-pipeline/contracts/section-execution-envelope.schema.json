@@ -8,6 +8,7 @@
     "schema_version",
     "envelope_id",
     "run_id",
+    "pinned_run_id",
     "run_plan_hash",
     "manifest_hash",
     "section_package",
@@ -27,6 +28,10 @@
       "minLength": 1
     },
     "run_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "pinned_run_id": {
       "type": "string",
       "minLength": 1
     },
