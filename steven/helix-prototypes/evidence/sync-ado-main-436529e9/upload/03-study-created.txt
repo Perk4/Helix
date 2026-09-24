@@ -1,0 +1,115 @@
+$ curl /api/v1/studies
+[
+    {
+        "study_id": "STUDY-HLX-028",
+        "study_type_id": "REPEAT_DOSE_28D_RODENT",
+        "title": "28-day oral gavage toxicity study",
+        "workflow_state": "gated",
+        "release_status": "blocked",
+        "label": "SYNTHETIC / NOT FOR SUBMISSION"
+    },
+    {
+        "study_id": "STUDY-YZ389-LIVE",
+        "study_type_id": "REPEAT_DOSE_28D_RODENT",
+        "title": "28-day oral gavage toxicity study",
+        "workflow_state": "gated",
+        "release_status": "blocked",
+        "label": "SYNTHETIC / NOT FOR SUBMISSION"
+    }
+]
+$ curl /api/v1/studies/STUDY-YZ389-LIVE/workspace | summary
+{
+ "study": {
+  "study_id": "STUDY-YZ389-LIVE",
+  "study_type_id": "REPEAT_DOSE_28D_RODENT",
+  "species": "Sprague-Dawley (Crl:CD(SD)) Rat",
+  "route": "oral gavage",
+  "duration_days": 28,
+  "study_start": "2026-09-24",
+  "protocol_version": "YZ389 v1",
+  "dose_groups": [
+   {
+    "group_id": "G1",
+    "label": "Vehicle Control",
+    "dose": 0.0,
+    "study_id": "STUDY-YZ389-LIVE",
+    "dose_unit": "mg/kg/day",
+    "sexes": [
+     "F",
+     "M"
+    ],
+    "planned_n_per_sex": 5
+   },
+   {
+    "group_id": "G2",
+    "label": "Low Dose",
+    "dose": 25.0,
+    "study_id": "STUDY-YZ389-LIVE",
+    "dose_unit": "mg/kg/day",
+    "sexes": [
+     "F",
+     "M"
+    ],
+    "planned_n_per_sex": 5
+   },
+   {
+    "group_id": "G3",
+    "label": "Mid Dose",
+    "dose": 100.0,
+    "study_id": "STUDY-YZ389-LIVE",
+    "dose_unit": "mg/kg/day",
+    "sexes": [
+     "F",
+     "M"
+    ],
+    "planned_n_per_sex": 5
+   },
+   {
+    "group_id": "G4",
+    "label": "High Dose",
+    "dose": 400.0,
+    "study_id": "STUDY-YZ389-LIVE",
+    "dose_unit": "mg/kg/day",
+    "sexes": [
+     "F",
+     "M"
+    ],
+    "planned_n_per_sex": 5
+   }
+  ]
+ },
+ "summary": {
+  "record_count": 937,
+  "source_count": 8,
+  "provenance_count": 0,
+  "blocker_count": 0,
+  "resolved_blocker_count": 0,
+  "section_count": 8
+ },
+ "workflow_state": "gated",
+ "release_gate": "blocked",
+ "manifest": [
+  "animal_roster.csv",
+  "body_weights.csv",
+  "clinical_observations.csv",
+  "dosing_formulation.csv",
+  "gross_pathology.csv",
+  "histopathology.csv",
+  "organ_weights.csv",
+  "study_protocol_YZ389.docx"
+ ]
+}
+$ psql: intake_jobs / study_packages
+(eval):1: command not found: psql -h 127.0.0.1 -p 55441 -U helix helix_live
+$ psql: intake_jobs / study_packages
+     job_id      |     study_id     |  status   |   stage   |          created_at           
+-----------------+------------------+-----------+-----------+-------------------------------
+ IJ-7A502581A0AE | STUDY-YZ389-LIVE | succeeded | persisted | 2026-09-24 17:27:45.733566-05
+(1 row)
+
+     study_id     | version | animals | body_weights 
+------------------+---------+---------+--------------
+ STUDY-HLX-028    |       1 |      40 |          200
+ STUDY-YZ389-LIVE |       1 |      40 |          200
+(2 rows)
+
