@@ -25,8 +25,11 @@ queue means replacing `submit`, and nothing else here changes.
 
 from __future__ import annotations
 
+import hashlib
+import json
 import time
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -59,11 +62,15 @@ class StageRecorder:
     metrics: dict[str, Any] = field(default_factory=dict)
     _started: float = field(default_factory=time.perf_counter)
     _last: float = field(default_factory=time.perf_counter)
+    _on_done: Callable[[str, dict[str, Any], dict[str, Any]], None] | None = field(
+        default=None, repr=False)
 
     def done(self, stage: str, **detail: Any) -> None:
         now = time.perf_counter()
         self.stages[stage] = {"ms": round((now - self._last) * 1000), **detail}
         self._last = now
+        if self._on_done is not None:
+            self._on_done(stage, self.stages, self.metrics)
 
     def finish(self) -> None:
         self.metrics["total_ms"] = round((time.perf_counter() - self._started) * 1000)
@@ -80,7 +87,8 @@ class IntakeJobService:
     # ── submission ────────────────────────────────────────────────────────────
     def submit(self, *, study_id: str, idempotency_key: str,
                uploads: list[tuple[str, bytes]], facts: dict[str, str]) -> IntakeJobRow:
-        """Record a queued job. Replaying the same key returns the original."""
+        """Record a queued job. Replaying the same request returns the original."""
+        request_hash = _request_hash(study_id, uploads, facts)
         with self.session_factory() as session:
             existing = session.scalar(
                 select(IntakeJobRow).where(IntakeJobRow.idempotency_key == idempotency_key))
@@ -89,6 +97,9 @@ class IntakeJobService:
                     raise IntakeJobConflictError(
                         f"idempotency key {idempotency_key!r} was used for "
                         f"{existing.study_id}, not {study_id}")
+                if existing.request_hash != request_hash:
+                    raise IntakeJobConflictError(
+                        f"idempotency key {idempotency_key!r} was used for a different request")
                 session.expunge(existing)
                 return existing
 
@@ -96,7 +107,7 @@ class IntakeJobService:
             row = IntakeJobRow(
                 job_id=f"IJ-{uuid.uuid4().hex[:12].upper()}",
                 study_id=study_id, idempotency_key=idempotency_key,
-                status=QUEUED, stage="received",
+                request_hash=request_hash, status=QUEUED, stage="received",
                 stages={"received": {"ms": 0, "files": len(uploads), "bytes": received}},
                 metrics={"uploaded_bytes": received, "uploaded_files": len(uploads)})
             session.add(row)
@@ -116,7 +127,10 @@ class IntakeJobService:
             row.status = RUNNING
             session.commit()
 
-        recorder = StageRecorder(stages=dict(row.stages), metrics=dict(row.metrics))
+        recorder = StageRecorder(
+            stages=dict(row.stages), metrics=dict(row.metrics),
+            _on_done=lambda stage, stages, metrics: self._persist_progress(
+                job_id, stage, stages, metrics))
         try:
             package, report = self._build(recorder, row.study_id, uploads, facts)
         except IntakeRejected as exc:
@@ -181,6 +195,17 @@ class IntakeJobService:
         recorder.metrics["records_by_domain"] = by_domain
         return package, report
 
+    def _persist_progress(self, job_id: str, stage: str,
+                          stages: dict[str, Any], metrics: dict[str, Any]) -> None:
+        with self.session_factory() as session:
+            row = session.get(IntakeJobRow, job_id)
+            if row is None:
+                return
+            row.stage = stage
+            row.stages = dict(stages)
+            row.metrics = dict(metrics)
+            session.commit()
+
     def _fail(self, job_id: str, recorder: StageRecorder, message: str) -> None:
         recorder.finish()
         with self.session_factory() as session:
@@ -198,6 +223,21 @@ class IntakeJobService:
             if row is not None:
                 session.expunge(row)
             return row
+
+
+def _request_hash(study_id: str, uploads: list[tuple[str, bytes]],
+                  facts: dict[str, str]) -> str:
+    payload = {
+        "study_id": study_id,
+        "facts": facts,
+        "uploads": [
+            {"name": name, "bytes": len(content),
+             "sha256": hashlib.sha256(content).hexdigest()}
+            for name, content in uploads
+        ],
+    }
+    encoded = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
+    return f"sha256:{hashlib.sha256(encoded).hexdigest()}"
 
 
 def as_record(row: IntakeJobRow) -> dict:

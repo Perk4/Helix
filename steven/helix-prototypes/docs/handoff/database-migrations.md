@@ -44,40 +44,27 @@ than in `public`.
 | `alembic_version` placement | created in the target schema, not `public` |
 | test suite | 84 failed / 87 passed — identical to the `origin/main` baseline, **0 new failures** |
 
-## The limitation, stated plainly
+## Adopting databases created before Alembic
 
-**The baseline assumes an empty database.** Run `upgrade head` against a schema that
-already has HELIX tables and it fails on the first `CREATE TABLE`:
+At startup, an unversioned schema created by the former `create_all` path is checked before
+any migration runs. If every baseline table and column is present, the app stamps
+`bf13e5f55c15` and applies later migrations. Existing tables are never replayed.
 
-```
-(psycopg.errors.DuplicateTable) relation "section_runs" already exists
-```
+The check is deliberately conservative. A partial schema, an already-present post-baseline
+table, or a baseline column mismatch stops startup with an `Unversioned HELIX schema does
+not match` error. Automatically stamping one of those databases would record a false
+revision and hide drift.
 
-So there are two cases, and they need different handling.
-
-**A new database** — nothing to do. The app runs `upgrade head` at startup.
-
-**A database that already has the tables** — decide first whether it matches the baseline.
+For a rejected schema, inspect the difference before taking action:
 
 ```bash
-# Does the existing schema match the models?
 HELIX_DATABASE_URL='...?options=-csearch_path%3Dhelix_team03' \
   uv run alembic revision --autogenerate -m "probe"
 ```
 
-If the generated file contains **no operations**, the schema matches. Delete the probe and
-adopt the baseline without running it:
-
-```bash
-uv run alembic stamp head
-```
-
-If it contains operations, the schema has drifted and stamping would record a lie. Either
-apply the generated migration deliberately after reading it, or — on a sandbox with
-reproducible data — drop and rebuild.
-
-`helix_team03` was rebuilt and then stamped, so it is at `bf13e5f55c15` with all four
-studies reloaded.
+Delete the probe after inspection. Apply a reviewed corrective migration, or — only for a
+sandbox with reproducible data — drop and rebuild. Do not manually stamp a mismatched
+schema.
 
 ## Adding a migration
 

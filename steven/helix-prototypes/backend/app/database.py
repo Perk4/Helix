@@ -1,13 +1,16 @@
 from pathlib import Path
 from sqlite3 import Connection as SQLiteConnection
 
-from sqlalchemy import Engine, create_engine, event
+from sqlalchemy import Engine, create_engine, event, inspect
 from sqlalchemy.engine import Connection
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from .config import Settings
 from .models import Base
+
+BASELINE_REVISION = "bf13e5f55c15"
+BASELINE_TABLES = frozenset(Base.metadata.tables) - {"intake_jobs"}
 
 
 def create_database_engine(settings: Settings) -> Engine:
@@ -62,7 +65,45 @@ def upgrade_to_head(engine: Engine) -> None:
                            str(Path(__file__).resolve().parents[1] / "migrations"))
     with engine.begin() as connection:
         config.attributes["connection"] = connection
+        _adopt_unversioned_baseline(connection, config, command)
         command.upgrade(config, "head")
+
+
+def _adopt_unversioned_baseline(connection: Connection, config: object,
+                                  command: object) -> None:
+    """Stamp a schema created by the former ``create_all`` startup path.
+
+    Adoption is deliberately conservative. A partially-created or drifted
+    schema must stop with an actionable error rather than being stamped as a
+    baseline it does not match.
+    """
+    schema = inspect(connection)
+    existing = set(schema.get_table_names())
+    if "alembic_version" in existing or not (existing & BASELINE_TABLES):
+        return
+
+    missing_tables = BASELINE_TABLES - existing
+    unexpected_migrated_tables = (existing - BASELINE_TABLES) & {"intake_jobs"}
+    mismatched_columns: list[str] = []
+    for table_name in BASELINE_TABLES & existing:
+        expected = set(Base.metadata.tables[table_name].columns.keys())
+        actual = {column["name"] for column in schema.get_columns(table_name)}
+        if expected != actual:
+            mismatched_columns.append(table_name)
+
+    if missing_tables or unexpected_migrated_tables or mismatched_columns:
+        details = []
+        if missing_tables:
+            details.append(f"missing tables: {', '.join(sorted(missing_tables))}")
+        if unexpected_migrated_tables:
+            details.append("post-baseline tables already exist: intake_jobs")
+        if mismatched_columns:
+            details.append(f"column mismatch: {', '.join(sorted(mismatched_columns))}")
+        raise RuntimeError(
+            "Unversioned HELIX schema does not match the Alembic baseline; "
+            "refusing to stamp it (" + "; ".join(details) + ").")
+
+    command.stamp(config, BASELINE_REVISION)
 
 
 def _serialize_sqlite_writers(engine: Engine) -> None:

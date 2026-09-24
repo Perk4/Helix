@@ -215,6 +215,7 @@ class IntakeJobRow(Base):
     job_id: Mapped[str] = mapped_column(String(80), primary_key=True)
     study_id: Mapped[str] = mapped_column(String(80), index=True, nullable=False)
     idempotency_key: Mapped[str] = mapped_column(String(160), nullable=False)
+    request_hash: Mapped[str] = mapped_column(String(80), nullable=False)
     status: Mapped[str] = mapped_column(String(20), index=True, nullable=False)
     stage: Mapped[str] = mapped_column(String(40), nullable=False)
     # Stage name -> {"ms": int, "detail": ...}. Append-only while the job runs.

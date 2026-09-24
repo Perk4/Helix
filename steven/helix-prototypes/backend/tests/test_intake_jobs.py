@@ -14,6 +14,7 @@ What is new here is the job, and the properties that matter are:
 from __future__ import annotations
 
 import io
+import threading
 import zipfile
 
 import pytest
@@ -22,7 +23,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.pool import StaticPool
 
 from app.config import Settings
-from app.intake_jobs import STAGES
+from app.intake_jobs import STAGES, IntakeJobService
 from app.main import create_app
 
 ROSTER = (b"study_id,animal_id,group_number,group_name,sex,dose_mgkg_day,species,strain\n"
@@ -83,6 +84,37 @@ def test_the_study_really_exists_afterwards(client):
 
 
 # ── progress is stage-based, not invented ─────────────────────────────────────
+def test_completed_stages_are_visible_while_the_job_is_running(client, monkeypatch):
+    service = IntakeJobService(client.app.state.session_factory)
+    uploads = [("animal_roster.csv", ROSTER), ("body_weights.csv", WEIGHTS)]
+    job = service.submit(study_id="STUDY-LIVE-PROGRESS", idempotency_key="job-live-progress",
+                         uploads=uploads, facts=FORM)
+    parsed = threading.Event()
+    release = threading.Event()
+    original_build = service._build
+
+    def block_after_parsing(recorder, study_id, pending_uploads, facts):
+        result = original_build(recorder, study_id, pending_uploads, facts)
+        parsed.set()
+        assert release.wait(timeout=5)
+        return result
+
+    monkeypatch.setattr(service, "_build", block_after_parsing)
+    worker = threading.Thread(target=service.run, args=(job.job_id, uploads, FORM))
+    worker.start()
+    try:
+        assert parsed.wait(timeout=5)
+        running = service.get(job.job_id)
+        assert running is not None
+        assert running.status == "running"
+        assert running.stage == "parsed"
+        assert list(running.stages) == ["received", "expanded", "classified", "parsed"]
+    finally:
+        release.set()
+        worker.join(timeout=5)
+    assert not worker.is_alive()
+
+
 def test_every_declared_stage_is_recorded_in_order(client):
     job_id = submit(client).json()["job_id"]
     job = client.get(f"/api/v1/studies/jobs/{job_id}").json()
@@ -149,7 +181,7 @@ def test_metrics_scale_with_the_study(client):
         roster.append(f"S,B{i},{group},G{group},{sex},{0 if group == 1 else 100},Rat,SD")
         for day in (1, 7, 14, 21, 28):
             many.append(f"S,B{i},{day},{100 + i + day}")
-    big = client.get(f"/api/v1/studies/jobs/" + submit(
+    big = client.get("/api/v1/studies/jobs/" + submit(
         client, study_id="STUDY-JOB-BIG", key="job-key-big-01", files=[
             ("files", ("animal_roster.csv", "\n".join(roster).encode(), "text/csv")),
             ("files", ("body_weights.csv", "\n".join(many).encode(), "text/csv")),
@@ -195,6 +227,22 @@ def test_the_same_key_for_a_different_study_is_a_conflict(client):
     clash = submit(client, study_id="STUDY-OTHER", key="job-key-clash")
     assert clash.status_code == 409
     assert "was used for" in clash.json()["detail"]
+
+
+def test_the_same_key_with_different_facts_is_a_conflict(client):
+    submit(client, key="job-key-facts")
+    clash = submit(client, key="job-key-facts", route="inhalation")
+    assert clash.status_code == 409
+    assert "different request" in clash.json()["detail"]
+
+
+def test_the_same_key_with_different_files_is_a_conflict(client):
+    submit(client, key="job-key-files")
+    changed = WEIGHTS.replace(b"150.5", b"151.5")
+    clash = submit(client, key="job-key-files", files=[
+        FILES[0], ("files", ("body_weights.csv", changed, "text/csv"))])
+    assert clash.status_code == 409
+    assert "different request" in clash.json()["detail"]
 
 
 def test_a_bad_study_id_is_refused_before_any_work(client):
