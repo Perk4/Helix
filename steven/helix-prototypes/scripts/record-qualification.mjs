@@ -67,6 +67,23 @@ const runSuite = () => {
   return report;
 };
 
+// Which models produced this result. Without them the certificate says a suite
+// passed and not what graded it, so swapping the drafter or letting the judge
+// version move leaves the digest byte-identical. The rubrics are read by a
+// model; a qualification that does not name it is describing half the run.
+//
+// Taken from the resolved config rather than the report: promptfoo exposes the
+// drafter per result but not the grader reliably, and both are bound here by
+// the same two variables the suite runs under.
+const drafter = process.env.HELIX_PROMPTFOO_PROVIDER;
+const judge = process.env.HELIX_PROMPTFOO_JUDGE_PROVIDER;
+if (!drafter || !judge) {
+  console.error("FAIL cannot certify without both model bindings.");
+  console.error(`     HELIX_PROMPTFOO_PROVIDER=${drafter ?? "unset"}`);
+  console.error(`     HELIX_PROMPTFOO_JUDGE_PROVIDER=${judge ?? "unset"}`);
+  process.exit(1);
+}
+
 const report = runSuite();
 const stats = report.results?.stats ?? {};
 const cases = (report.results?.results ?? []).map((entry) => ({
@@ -101,9 +118,19 @@ const suite = JSON.parse(readFileSync(packagePath, "utf8")).skill.promptfoo_suit
 // times what it used to is a qualification nobody runs before pushing.
 const tokens = stats.tokenUsage?.total ?? 0;
 
+// Cross-check the report against what the config claimed. A mismatch means the
+// run did not use the binding being recorded.
+const observed = [...new Set((report.results?.results ?? []).map((entry) => entry.provider?.id).filter(Boolean))];
+if (observed.length > 0 && !observed.includes(drafter)) {
+  console.error(`FAIL the run used ${observed.join(", ")} but HELIX_PROMPTFOO_PROVIDER is ${drafter}.`);
+  process.exit(1);
+}
+
 const outcome = {
   suite_id: suite.id,
   suite_version: suite.version,
+  drafter,
+  judge,
   tokens,
   cases: cases.length,
   assertions: assertions.length,

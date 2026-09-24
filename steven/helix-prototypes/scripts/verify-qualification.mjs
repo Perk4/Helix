@@ -80,4 +80,15 @@ if (problems.length > 0) {
   process.exit(1);
 }
 
-console.log(JSON.stringify({ verified: true, qualification_status: status, qualification_hash: recorded }));
+const artifact = existsSync(artifactPath) ? JSON.parse(readFileSync(artifactPath, "utf8")) : null;
+console.log(
+  JSON.stringify({
+    verified: true,
+    qualification_status: status,
+    qualification_hash: recorded,
+    // Surfaced so a reviewer reading CI sees which models earned the pass,
+    // rather than having to open the artifact to find out.
+    drafter: artifact?.outcome?.drafter ?? null,
+    judge: artifact?.outcome?.judge ?? null,
+  }),
+);
