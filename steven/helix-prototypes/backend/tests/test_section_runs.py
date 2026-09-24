@@ -1,5 +1,6 @@
 import json
 import re
+import shutil
 import sys
 from pathlib import Path
 from types import SimpleNamespace
@@ -104,11 +105,30 @@ class FakeSectionAgent:
         return AgentResult(thread_id="thread-test-001", final_response=json.dumps(candidate))
 
 
-def build_client(agent: FakeSectionAgent, *, raise_server_exceptions: bool = True):
+def governed_root(tmp_path: Path) -> Path:
+    root = tmp_path / "helix"
+    for relative in ["skills", ".agents"]:
+        shutil.copytree(ROOT / relative, root / relative)
+    (root / "backend" / "app" / "agents").mkdir(parents=True)
+    for filename in ["validation.py", "agents/codex_section_agent.py"]:
+        source = ROOT / "backend" / "app" / filename
+        target = root / "backend" / "app" / filename
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, target)
+    shutil.copytree(ROOT / "backend" / "app" / "data", root / "backend" / "app" / "data")
+    return root
+
+
+def build_client(
+    agent: FakeSectionAgent,
+    *,
+    repository_root: Path = ROOT,
+    raise_server_exceptions: bool = True,
+):
     settings = Settings(
         database_url="sqlite+pysqlite:///:memory:",
         seed_path=ROOT / "synthetic-e2e" / "helix-synthetic-bundle.json",
-        codex_repository_root=ROOT,
+        codex_repository_root=repository_root,
         auto_seed=True,
     )
     engine = create_database_engine(settings)
@@ -406,6 +426,44 @@ def test_unpromoted_candidate_blocks_release_and_export() -> None:
             "PROMOTION-DISABLED-section.5_2_3_body_weight"
         ]
         assert export.status_code == 409
+    engine.dispose()
+
+
+def test_inapplicable_section_package_is_excluded_and_cannot_execute(tmp_path: Path) -> None:
+    root = governed_root(tmp_path)
+    package_path = (
+        root
+        / "skills"
+        / "helix-evidence-pipeline"
+        / "packages"
+        / "sections"
+        / "5_2_3_body_weight"
+        / "package.json"
+    )
+    definition = json.loads(package_path.read_text())
+    definition["study_type_ids"] = ["INAPPLICABLE_STUDY_TYPE"]
+    package_path.write_text(json.dumps(definition))
+    agent = FakeSectionAgent()
+    client, engine = build_client(agent, repository_root=root)
+
+    with client:
+        pinned = client.post(
+            f"/api/v1/studies/{STUDY_ID}/pinned-runs",
+            json={"actor": "Dr. Run Owner", "idempotency_key": "inapplicable-section"},
+        )
+        assert pinned.status_code == 201
+        assert all(
+            node["package_id"] != "section.5_2_3_body_weight" for node in pinned.json()["run_plan"]["nodes"]
+        )
+        validate(client)
+        workspace = client.get(f"/api/v1/studies/{STUDY_ID}/workspace").json()
+        eligibility = workspace["section_run_eligibility"][0]
+        assert eligibility["eligible"] is False
+        assert "The Section Package does not apply to the resolved study type" in eligibility["reasons"]
+
+        response = client.post(f"/api/v1/studies/{STUDY_ID}/section-runs", json=COMMAND)
+        assert response.status_code == 409
+        assert agent.calls == 0
     engine.dispose()
 
 
