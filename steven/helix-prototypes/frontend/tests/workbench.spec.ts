@@ -72,6 +72,15 @@ test("runs the synthetic study from validation through explicit export", async (
   await expect(page.getByTestId("claim-lineage").getByText("dose × group")).toBeVisible();
   await expect(page.getByTestId("claim-lineage").getByText(/sha256:/)).toBeVisible();
   await expect(page.getByTestId("claim-lineage").getByText(/body-weight-summary-recompute@1.0.0/)).toBeVisible();
+  const lineageResponse = await request.get(`${apiRoot}/studies/STUDY-HLX-028/claims/C-BW-HIGH/evidence`);
+  expect(lineageResponse.ok()).toBeTruthy();
+  const lineage: unknown = await lineageResponse.json();
+  expect(isPersistedClaimLineage(lineage)).toBeTruthy();
+  await writeFile(
+    resolve(process.cwd(), "../evidence/body-weight-claim-lineage.json"),
+    `${JSON.stringify(lineage, null, 2)}\n`,
+  );
+  await page.screenshot({ path: "../evidence/helix-body-weight-lineage.png", fullPage: true });
 
   await page.getByRole("button", { name: /Liver Hypertrophy Incidence/ }).click();
   await expect(page.getByText("4 animals", { exact: true }).first()).toBeVisible();
@@ -125,6 +134,22 @@ async function recordApproval(page: import("@playwright/test").Page, label: stri
   const row = page.locator(".approval-row").filter({ hasText: label });
   await row.getByRole("button", { name: "Record" }).click();
   await expect(row.locator(".approval-check")).toBeVisible();
+}
+
+function isPersistedClaimLineage(value: unknown): boolean {
+  if (!isObject(value) || !isObject(value.claim) || !Array.isArray(value.lineage) || !Array.isArray(value.source_hashes)) {
+    return false;
+  }
+  return (
+    value.claim.claim_id === "C-BW-HIGH" &&
+    value.claim.value === 286.2 &&
+    value.claim.grain === "dose_group" &&
+    value.exact_match === true &&
+    value.lineage.length > 0 &&
+    value.source_hashes.some((item) => typeof item === "string" && item.startsWith("sha256:")) &&
+    isObject(value.rule_versions) &&
+    value.rule_versions["body-weight-summary-recompute"] === "1.0.0"
+  );
 }
 
 function hasSingleBodyWeightExecution(value: unknown): boolean {

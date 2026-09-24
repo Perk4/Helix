@@ -10352,7 +10352,7 @@
     "event_id": "EV-DVP-129627106060",
     "event": "data_validation_completed",
     "actor": "HELIX validation service",
-    "timestamp": "2026-09-24T05:01:55.497431Z",
+    "timestamp": "2026-09-24T05:05:55.050288Z",
     "outcome": "passed",
     "details": {
       "run_id": "RUN-2C4843B5588AF458",
