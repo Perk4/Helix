@@ -371,6 +371,85 @@ def test_gate_checks_use_pinned_package_json_rules() -> None:
         engine.dispose()
 
 
+def test_failing_review_required_blocks_without_claims_until_disposition() -> None:
+    with package_json_rules(
+        patches={
+            "body-weight-summary-recompute": {
+                "enforcement_class": "review_required",
+            }
+        }
+    ):
+        client, engine = build_client()
+        with client:
+            with client.app.state.session_factory() as session:
+                repository = StudyPackageRepository(session)
+                package = repository.get(STUDY_ID)
+                weights = list(package.records.body_weights)
+                current = float(weights[0].value)
+                weights[0] = weights[0].model_copy(update={"value": current + 10})
+                records = package.records.model_copy(update={"body_weights": weights})
+                repository.save(package.model_copy(update={"records": records}))
+                session.commit()
+
+            response = execute(client)
+            assert response.status_code == 201
+            body = response.json()
+            grain = next(
+                result
+                for result in body["results"]
+                if result["rule_id"] == "body-weight-required-grain"
+            )
+            provenance = next(
+                result
+                for result in body["results"]
+                if result["rule_id"] == "body-weight-cell-provenance"
+            )
+            recompute = next(
+                result
+                for result in body["results"]
+                if result["rule_id"] == "body-weight-summary-recompute"
+            )
+            assert grain["status"] == "pass"
+            assert provenance["status"] == "pass"
+            assert recompute["status"] == "fail"
+            assert recompute["enforcement_class"] == "review_required"
+            assert recompute["waivable"] is False
+            assert recompute["evidence_ids"]
+            assert any(item.startswith("C-BW-") for item in recompute["evidence_ids"])
+            assert body["receipt"]["status"] == "blocked"
+            assert body["claims"] == []
+
+            workspace = client.get(f"/api/v1/studies/{STUDY_ID}/workspace").json()
+            assert "VR-BW-RECOMPUTE" in workspace["release_gate"]["blocking_result_ids"]
+            assert any(result["result_id"] == "VR-BW-RECOMPUTE" for result in workspace["validations"])
+            with client.app.state.session_factory() as session:
+                stored = StudyPackageRepository(session).get(STUDY_ID)
+                execution = stored.data_validation_executions[-1]
+                assert execution.receipt.status == "blocked"
+                assert execution.claims == []
+                assert not any(claim.claim_id.startswith("C-BW-MEAN-") for claim in stored.claims)
+
+            waiver = client.post(
+                f"/api/v1/studies/{STUDY_ID}/validation-results/VR-BW-RECOMPUTE/dispositions",
+                json={
+                    "decision": "explained_in_nsdrg",
+                    "reason": "Recompute mismatch is accepted against this receipt.",
+                    "reviewer": "Dr. Ada Path",
+                },
+            )
+            assert waiver.status_code == 200
+            reviewed = waiver.json()
+            assert "VR-BW-RECOMPUTE" not in reviewed["release_gate"]["blocking_result_ids"]
+            recorded = next(
+                item
+                for item in reviewed["dispositions"]
+                if item["result_id"] == "VR-BW-RECOMPUTE"
+                and item["decision"] == "explained_in_nsdrg"
+            )
+            assert recorded["artifact_id"] == body["receipt"]["receipt_id"]
+        engine.dispose()
+
+
 def test_package_json_rule_without_evaluator_is_a_hard_blocker() -> None:
     with package_json_rules(
         extra_rules=[
