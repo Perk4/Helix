@@ -4,11 +4,31 @@ from uuid import uuid4
 
 from sqlalchemy.orm import Session
 
-from .artifacts import GeneratedArtifact, generate_artifact
+from .approved_exports import (
+    ApprovedExportError,
+    ExportProbe,
+    exported_artifacts_from,
+    install_export_probe,
+    materialize_approved_artifacts,
+    pending_approved_export_artifacts,
+    reset_export_probe,
+)
+from .artifacts import GeneratedArtifact
 from .config import Settings
 from .data_validation import DataValidationService, as_validation_results, policy_for
+from .drafting_cycles import current_cycle, cycle_exhausted, load_recorded_attempts
+from .release_candidates import (
+    MissingReleaseCandidateError,
+    approval_is_current,
+    approval_request_hash,
+    compile_release_candidate,
+    hashes_for,
+    recorded_request_hash,
+    validate_final_study_approval,
+)
 from .reporting import assemble_report, claim_report_text
 from .repository import StudyPackageRepository
+from .review_scaffolds import ExportAdmissionError, admit_export_document
 from .run_plans import PinnedRunService
 from .schemas import (
     RESOLVED_DISPOSITIONS,
@@ -24,7 +44,10 @@ from .schemas import (
     EvidenceChain,
     ExportArtifact,
     ExportCommand,
+    ExportInstrumentation,
     ExportReceipt,
+    FinalStudyApproval,
+    FinalStudyApprovalCommand,
     FreezeRunCommand,
     GateDecision,
     GateStatus,
@@ -32,6 +55,7 @@ from .schemas import (
     PlannerCapability,
     PlannerMode,
     ProvenanceEdge,
+    ReleaseCandidate,
     ReviewDisposition,
     SectionStatus,
     SourceRecord,
@@ -53,10 +77,13 @@ from .section_promotion import (
     section_package_definition,
 )
 from .section_runs import (
+    SECTION_PACKAGE_ID,
     SectionRunService,
     governed_versions_fingerprint,
     manifest_fingerprint,
 )
+from .superseding_runs import assert_bound_pinned_run, with_fresh_authority
+from .template_contracts import BODY_WEIGHT_PACKAGE_ID
 from .validation import (
     FixturePlanner,
     OpenAICompatiblePlanner,
@@ -118,29 +145,60 @@ class StudyService:
         ]
 
     def freeze_run(self, study_id: str, command: FreezeRunCommand) -> PinnedRun:
-        pinned_run = self.pinned_runs.freeze(study_id, command)
+        pinned_run = self.pinned_runs.freeze(study_id, command, commit=False)
+        execution = None
         if pinned_run.status == "planned":
-            self.data_validation.execute(
+            execution = self.data_validation.execute(
                 study_id,
                 DataValidationCommand(
                     actor=command.actor,
                     package_id="validation.body_weight",
                     idempotency_key=f"dvp-{pinned_run.run_id}-validation.body_weight",
                 ),
+                commit=False,
             )
+        package = self.repository.get(study_id, for_update=True)
+        assert_bound_pinned_run(package, pinned_run)
+        if package.superseding_run_receipt is not None:
+            event_id = (
+                pinned_run.event_history[0].event_id
+                if pinned_run.event_history
+                else f"EV-{uuid4().hex[:12].upper()}"
+            )
+            package = self.section_runs.persist_contract_revision(package, event_id=event_id)
+            assert_bound_pinned_run(package, pinned_run)
+            gate = self._release_gate(package)
+            package = with_fresh_authority(
+                package,
+                pinned_run=pinned_run,
+                validation_receipt_ids=[execution.receipt.receipt_id] if execution is not None else [],
+                gate_ids=[gate.gate_id],
+                scaffold_revision=(
+                    int(package.review_scaffold_revisions[-1]["sequence"])
+                    if package.review_scaffold_revisions
+                    else 0
+                ),
+            )
+            self.repository.save(package)
+            assert_bound_pinned_run(package, pinned_run)
+        self.session.commit()
         return pinned_run
 
     def run_data_validation(self, study_id: str, command: DataValidationCommand) -> DataValidationExecution:
         return self.data_validation.execute(study_id, command)
 
     def run_validation(self, study_id: str, request: ValidationRequest) -> ValidationRun:
-        pinned_run = self.pinned_runs.freeze(
-            study_id,
-            FreezeRunCommand(
-                actor="HELIX validation service",
-                idempotency_key=f"validation-freeze-{study_id}",
-            ),
-        )
+        package = self.repository.get(study_id)
+        if package.pinned_run is None:
+            pinned_run = self.pinned_runs.freeze(
+                study_id,
+                FreezeRunCommand(
+                    actor="HELIX validation service",
+                    idempotency_key=f"validation-freeze-{study_id}",
+                ),
+            )
+        else:
+            pinned_run = package.pinned_run
         if pinned_run.status != "planned":
             raise WorkflowConflictError("The Pinned Run requires study-type review")
         execution = self.data_validation.execute(
@@ -216,7 +274,6 @@ class StudyService:
         )
         updated = self.section_runs.persist_contract_revision(
             updated,
-            run_id=pinned_run.run_id,
             event_id=event.event_id,
         )
         self.repository.save(updated)
@@ -360,6 +417,7 @@ class StudyService:
             }
         )
         updated = self._with_derived_gate(updated, timestamp)
+        updated = self.section_runs.persist_contract_revision(updated, event_id=event.event_id)
         self.repository.save(updated)
         self.repository.append_event(
             study_id=study_id,
@@ -417,6 +475,7 @@ class StudyService:
             }
         )
         updated = self._with_derived_gate(updated, timestamp)
+        updated = self.section_runs.persist_contract_revision(updated, event_id=event.event_id)
         self.repository.save(updated)
         self.repository.append_event(
             study_id=study_id,
@@ -496,6 +555,7 @@ class StudyService:
             }
         )
         updated = self._with_derived_gate(updated, timestamp)
+        updated = self.section_runs.persist_contract_revision(updated, event_id=event.event_id)
         self.repository.save(updated)
         self.repository.append_event(
             study_id=study_id,
@@ -547,12 +607,33 @@ class StudyService:
                     "Pathologist, peer reviewer, and Quality Assurance Unit records are required first"
                 )
         timestamp = self._now()
+        artifact_hash = None
+        dependency_fingerprint = None
+        body_weight = next(
+            (
+                run
+                for run in reversed(self.repository.list_section_runs(study_id))
+                if run.receipt.section_package_id == BODY_WEIGHT_PACKAGE_ID
+            ),
+            None,
+        )
+        if body_weight is not None:
+            definition = section_package_definition(
+                self.settings.codex_repository_root,
+                BODY_WEIGHT_PACKAGE_ID,
+            )
+            artifact_hash = body_weight.receipt.candidate_hash
+            dependency_fingerprint = dependency_fingerprint_for(
+                package, [str(item) for item in definition.get("depends_on", [])]
+            )
         approval = Approval(
             approval_id=f"APR-{uuid4().hex[:12].upper()}",
             role=command.role,
             reviewer=command.reviewer,
             meaning=command.meaning,
             timestamp=timestamp,
+            artifact_hash=artifact_hash,
+            dependency_fingerprint=dependency_fingerprint,
         )
         sections = [section.model_copy() for section in package.report_sections]
         if command.role == ApprovalRole.STUDY_DIRECTOR:
@@ -577,6 +658,7 @@ class StudyService:
             }
         )
         updated = self._with_derived_gate(updated, timestamp)
+        updated = self.section_runs.persist_contract_revision(updated, event_id=event.event_id)
         self.repository.save(updated)
         self.repository.append_event(
             study_id=study_id,
@@ -589,73 +671,192 @@ class StudyService:
         self.session.commit()
         return self._workspace(updated)
 
-    def export(self, study_id: str, command: ExportCommand) -> ExportReceipt:
+    def record_final_study_approval(
+        self,
+        study_id: str,
+        command: FinalStudyApprovalCommand,
+    ) -> WorkspaceResponse:
         package = self.repository.get(study_id, for_update=True)
-        storage_key = f"export:{command.idempotency_key}"
-        prior_event = self.repository.get_event_by_idempotency_key(study_id, storage_key)
-        already_exported = all(artifact.status == "exported" for artifact in package.export_artifacts)
-        if prior_event is not None or already_exported:
-            return ExportReceipt(
-                study_id=study_id,
-                status="exported",
-                exported_at=self._exported_at(package),
-                artifacts=package.export_artifacts,
-                idempotent_replay=True,
-            )
+        self._ensure_mutable(package)
+        live = self._live_release_candidate(package)
+        if live is None:
+            raise WorkflowConflictError("Freeze the authorized manifest before Final Study Approval")
+        request_hash = approval_request_hash(study_id, command.reviewer, live)
+        existing = package.final_study_approval
+        if existing is not None:
+            same_key = existing.idempotency_key == command.idempotency_key
+            same_hash = recorded_request_hash(existing) == request_hash
+            if same_key and same_hash:
+                return self._workspace(package)
+            if same_key:
+                raise WorkflowConflictError("The idempotency key was already used for another command")
+            if approval_is_current(existing, live):
+                raise WorkflowConflictError(
+                    "Final Study Approval is already recorded for this release candidate"
+                )
         gate = self._release_gate(package)
-        if gate.status != GateStatus.READY_FOR_EXPORT:
-            raise WorkflowConflictError("The release gate is not ready for export")
+        if gate.blocking_result_ids:
+            raise WorkflowConflictError("Unresolved sections, gates, or dispositions prevent approval")
+        approval_roles = {item.role for item in package.approvals}
+        if not REQUIRED_APPROVALS.issubset(approval_roles):
+            raise WorkflowConflictError("Configured reviewer prerequisites prevent approval")
+        if any(section.status == SectionStatus.NEEDS_REVIEW for section in package.report_sections):
+            raise WorkflowConflictError("Unresolved sections prevent approval")
         timestamp = self._now()
+        approval = FinalStudyApproval(
+            schema_version="helix.final-study-approval/v1",
+            approval_id=f"FSA-{uuid4().hex[:12].upper()}",
+            run_id=live.run_id,
+            study_id=study_id,
+            reviewer=command.reviewer,
+            recorded_at=timestamp,
+            manifest_hash=live.content_hash,
+            included_artifact_hashes=hashes_for(live),
+            idempotency_key=command.idempotency_key,
+        )
+        validate_final_study_approval(approval)
         event = self._event(
-            "explicit_export",
-            command.actor,
-            "exported",
-            {"artifact_count": len(package.export_artifacts), "synthetic": True},
+            "final_study_approval_recorded",
+            command.reviewer,
+            "complete",
+            {
+                "approval_id": approval.approval_id,
+                "manifest_hash": approval.manifest_hash,
+                "run_id": approval.run_id,
+            },
             timestamp=timestamp,
         )
-        artifact_source = package.model_copy(
+        updated = package.model_copy(
             update={
-                "workflow_state": "exported",
+                "release_candidate": live,
+                "final_study_approval": approval,
+                "export_artifacts": pending_approved_export_artifacts(live),
                 "events": [*package.events, event],
             }
         )
-        generated_files = [
-            (artifact, generate_artifact(artifact_source, artifact)) for artifact in package.export_artifacts
-        ]
-        artifacts = [
-            self._exported_artifact(artifact, generated.content) for artifact, generated in generated_files
-        ]
-        updated = artifact_source.model_copy(update={"export_artifacts": artifacts})
         updated = self._with_derived_gate(updated, timestamp)
+        updated = self.section_runs.persist_contract_revision(updated, event_id=event.event_id)
         self.repository.save(updated)
-        for artifact, generated in generated_files:
-            exported = next(item for item in artifacts if item.artifact_id == artifact.artifact_id)
-            if exported.checksum is None:
-                raise RuntimeError(f"Export checksum was not created for {artifact.artifact_id}")
-            self.repository.save_export_file(
-                study_id=study_id,
-                artifact_id=artifact.artifact_id,
-                filename=generated.filename,
-                media_type=generated.media_type,
-                checksum=exported.checksum,
-                content=generated.content,
-            )
         self.repository.append_event(
             study_id=study_id,
             event_type=event.event,
             actor=event.actor,
             payload={"outcome": event.outcome, **event.details},
-            idempotency_key=storage_key,
+            idempotency_key=f"final-study-approval:{command.idempotency_key}",
             occurred_at=datetime.fromisoformat(timestamp.replace("Z", "+00:00")),
         )
         self.session.commit()
-        return ExportReceipt(
-            study_id=study_id,
-            status="exported",
-            exported_at=timestamp,
-            artifacts=artifacts,
-            idempotent_replay=False,
+        return self._workspace(updated)
+
+    def export(self, study_id: str, command: ExportCommand) -> ExportReceipt:
+        package = self.repository.get(study_id, for_update=True)
+        storage_key = f"export:{command.idempotency_key}"
+        prior_event = self.repository.get_event_by_idempotency_key(study_id, storage_key)
+        already_exported = bool(package.export_artifacts) and all(
+            artifact.status == "exported" for artifact in package.export_artifacts
         )
+        approval = package.final_study_approval
+        if prior_event is not None or already_exported:
+            if approval is None:
+                raise WorkflowConflictError("Exported package is missing Final Study Approval")
+            return ExportReceipt(
+                study_id=study_id,
+                status="exported",
+                exported_at=self._exported_at(package),
+                approval_id=approval.approval_id,
+                manifest_hash=approval.manifest_hash,
+                artifacts=package.export_artifacts,
+                idempotent_replay=True,
+                instrumentation=ExportInstrumentation(agent_starts=0, calculation_runs=0),
+            )
+        gate = self._release_gate(package)
+        if gate.status != GateStatus.READY_FOR_EXPORT:
+            raise WorkflowConflictError("The release gate is not ready for export")
+        live = self._live_release_candidate(package)
+        if approval is None or live is None or not approval_is_current(approval, live):
+            raise WorkflowConflictError("Final Study Approval is stale and blocks export")
+        for revision in package.review_scaffold_revisions:
+            try:
+                admit_export_document(revision)
+            except ExportAdmissionError:
+                continue
+            raise WorkflowConflictError("A Review Scaffold revision was admitted for export")
+        probe = ExportProbe()
+        token = install_export_probe(probe)
+        try:
+            section_runs = self.repository.list_section_runs(study_id)
+            section_drafts = self.repository.list_section_drafts(study_id)
+            try:
+                materialized = materialize_approved_artifacts(
+                    package,
+                    approval,
+                    live=live,
+                    section_runs=section_runs,
+                    section_drafts=section_drafts,
+                )
+            except ApprovedExportError as error:
+                raise WorkflowConflictError(str(error)) from error
+            if probe.agent_starts or probe.calculation_runs:
+                raise WorkflowConflictError(
+                    "Export started an agent or ran a deterministic calculation"
+                )
+            timestamp = self._now()
+            artifacts = exported_artifacts_from(materialized)
+            event = self._event(
+                "explicit_export",
+                command.actor,
+                "exported",
+                {
+                    "artifact_count": len(artifacts),
+                    "approval_id": approval.approval_id,
+                    "manifest_hash": approval.manifest_hash,
+                    "agent_starts": probe.agent_starts,
+                    "calculation_runs": probe.calculation_runs,
+                },
+                timestamp=timestamp,
+            )
+            updated = package.model_copy(
+                update={
+                    "workflow_state": "exported",
+                    "export_artifacts": artifacts,
+                    "events": [*package.events, event],
+                }
+            )
+            updated = self._with_derived_gate(updated, timestamp)
+            self.repository.save(updated)
+            for item in materialized:
+                self.repository.save_export_file(
+                    study_id=study_id,
+                    artifact_id=item.artifact_id,
+                    filename=item.filename,
+                    media_type=item.media_type,
+                    checksum=item.content_hash,
+                    content=item.content,
+                )
+            self.repository.append_event(
+                study_id=study_id,
+                event_type=event.event,
+                actor=event.actor,
+                payload={"outcome": event.outcome, **event.details},
+                idempotency_key=storage_key,
+                occurred_at=datetime.fromisoformat(timestamp.replace("Z", "+00:00")),
+            )
+            self.session.commit()
+            return ExportReceipt(
+                study_id=study_id,
+                status="exported",
+                exported_at=timestamp,
+                approval_id=approval.approval_id,
+                manifest_hash=approval.manifest_hash,
+                artifacts=artifacts,
+                idempotent_replay=False,
+                instrumentation=ExportInstrumentation(
+                    agent_starts=probe.agent_starts,
+                    calculation_runs=probe.calculation_runs,
+                ),
+            )
+        finally:
+            reset_export_probe(token)
 
     def artifact(self, study_id: str, artifact_id: str) -> GeneratedArtifact:
         package = self.repository.get(study_id)
@@ -729,7 +930,30 @@ class StudyService:
             section_drafts=self.repository.list_section_drafts(package.study.study_id),
             cross_section_queries=self.repository.list_cross_section_queries(package.study.study_id),
             review_scaffold_revisions=package.review_scaffold_revisions,
+            drafting_cycles=self.repository.list_drafting_cycles(package.study.study_id),
+            can_open_revision=self._can_open_revision(package.study.study_id),
+            predecessor_snapshots=package.predecessor_snapshots,
+            superseding_run_receipt=package.superseding_run_receipt,
+            release_candidate=self._live_release_candidate(package),
+            final_study_approval=package.final_study_approval,
+            approval_current=approval_is_current(
+                package.final_study_approval,
+                self._live_release_candidate(package),
+            ),
         )
+
+    def _can_open_revision(self, study_id: str) -> bool:
+        cycles = self.repository.list_drafting_cycles(study_id)
+        latest = current_cycle(cycles, SECTION_PACKAGE_ID)
+        if latest is None:
+            return False
+        recorded = load_recorded_attempts(
+            self.repository.list_section_runs(study_id),
+            self.repository.list_candidate_evaluations(study_id),
+            SECTION_PACKAGE_ID,
+            latest.cycle_id,
+        )
+        return cycle_exhausted(recorded)
 
     @staticmethod
     def _ensure_mutable(package: StudyEvidencePackage) -> None:
@@ -766,7 +990,19 @@ class StudyService:
             package,
             candidate_blocker_ids=blockers,
             decided_at=decided_at,
+            live_release_candidate=self._live_release_candidate(package),
         )
+
+    def _live_release_candidate(self, package: StudyEvidencePackage) -> ReleaseCandidate | None:
+        try:
+            return compile_release_candidate(
+                package,
+                section_runs=self.repository.list_section_runs(package.study.study_id),
+                section_drafts=self.repository.list_section_drafts(package.study.study_id),
+                drafting_cycles=self.repository.list_drafting_cycles(package.study.study_id),
+            )
+        except MissingReleaseCandidateError:
+            return None
 
     def _apply_claim_correction(
         self,
@@ -955,6 +1191,7 @@ def derive_release_gate(
     package: StudyEvidencePackage,
     candidate_blocker_ids: list[str] | None = None,
     decided_at: str | None = None,
+    live_release_candidate: ReleaseCandidate | None = None,
 ) -> GateDecision:
     latest_dispositions: dict[str, ReviewDisposition] = {}
     for disposition in package.review_dispositions:
@@ -972,6 +1209,7 @@ def derive_release_gate(
     has_unreviewed_sections = any(
         section.status == SectionStatus.NEEDS_REVIEW for section in package.report_sections
     )
+    current_approval = approval_is_current(package.final_study_approval, live_release_candidate)
     if all(artifact.status == "exported" for artifact in package.export_artifacts):
         status = GateStatus.EXPORTED
     elif unresolved:
@@ -980,6 +1218,8 @@ def derive_release_gate(
         status = GateStatus.READY_FOR_SIGNATURE
     elif has_unreviewed_sections:
         status = GateStatus.BLOCKED
+    elif not current_approval:
+        status = GateStatus.READY_FOR_SIGNATURE
     else:
         status = GateStatus.READY_FOR_EXPORT
     prior = next((gate for gate in package.gate_decisions if gate.gate_type == "release"), None)
@@ -1111,8 +1351,8 @@ def build_stages(package: StudyEvidencePackage, gate: GateDecision) -> list[Stag
             "Approved release package",
             "Report and illustrative data support files",
             "Checksummed export",
-            f"{len(package.export_artifacts)} synthetic artifacts",
-            "Preparation never triggers export. Export does not mean FDA acceptance.",
+            f"{len(package.export_artifacts)} approved artifacts",
+            "Preparation never triggers export. Export packages approved hashes only; never FDA acceptance.",
             ["Release checked", "Package preflight checked", "Explicit action recorded"],
         ),
     ]

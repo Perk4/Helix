@@ -13,10 +13,12 @@ type Props = {
   evaluationBusy: boolean;
   queryBusy: boolean;
   promotionBusy: boolean;
+  revisionBusy: boolean;
   onPlannerChange: (planner: PlannerMode) => void;
   onValidate: () => void;
   onExecuteBodyWeight: () => void;
   onDraftBodyWeight: () => void;
+  onReviseBodyWeight: () => void;
   onRetryBodyWeight: () => void;
   onEvaluateCandidate: () => void;
   onQueryCrossSection: () => void;
@@ -32,10 +34,12 @@ export function StudyJourney({
   evaluationBusy,
   queryBusy,
   promotionBusy,
+  revisionBusy,
   onPlannerChange,
   onValidate,
   onExecuteBodyWeight,
   onDraftBodyWeight,
+  onReviseBodyWeight,
   onRetryBodyWeight,
   onEvaluateCandidate,
   onQueryCrossSection,
@@ -90,8 +94,35 @@ export function StudyJourney({
     sectionRunBusy ||
     evaluationBusy ||
     queryBusy ||
-    promotionBusy;
-  const latestScaffold = workspace.review_scaffold_revisions?.at(-1);
+    promotionBusy ||
+    revisionBusy;
+  const scaffoldRevisions = workspace.review_scaffold_revisions ?? [];
+  const [selectedScaffoldSequence, setSelectedScaffoldSequence] = useState<number | null>(null);
+  const selectedScaffold = useMemo(() => {
+    const selected = scaffoldRevisions.find(
+      (item) => isRecord(item) && item.sequence === selectedScaffoldSequence,
+    );
+    const latest = scaffoldRevisions.at(-1);
+    return isRecord(selected) ? selected : isRecord(latest) ? latest : null;
+  }, [scaffoldRevisions, selectedScaffoldSequence]);
+
+  useEffect(() => {
+    const latest = scaffoldRevisions.at(-1);
+    if (!isRecord(latest) || typeof latest.sequence !== "number") {
+      return;
+    }
+    if (
+      selectedScaffoldSequence != null &&
+      scaffoldRevisions.some((item) => isRecord(item) && item.sequence === selectedScaffoldSequence)
+    ) {
+      return;
+    }
+    setSelectedScaffoldSequence(latest.sequence);
+  }, [scaffoldRevisions, selectedScaffoldSequence]);
+  const eventNames = useMemo(
+    () => new Map(workspace.events.map((item) => [item.event_id, item.event])),
+    [workspace.events],
+  );
 
   if (!stage) {
     return null;
@@ -288,10 +319,10 @@ export function StudyJourney({
               <div
                 className="section-run-receipt"
                 key={run.receipt.run_id}
-                data-testid={`candidate-attempt-${run.candidate.attempt}`}
+                data-testid={`candidate-attempt-${run.candidate.drafting_cycle_id}-${run.candidate.attempt}`}
               >
                 <strong>
-                  Candidate attempt {run.candidate.attempt} of 3
+                  Candidate attempt {run.candidate.attempt} of 3 · {run.candidate.drafting_cycle_id}
                 </strong>
                 {isLatest ? (
                   <span data-testid="section-run-receipt">{run.receipt.candidate_id}</span>
@@ -301,6 +332,7 @@ export function StudyJourney({
                 <code>{run.receipt.candidate_hash}</code>
                 <span>{run.receipt.skill_name}</span>
                 <code>{run.receipt.skill_hash}</code>
+                <code>{run.receipt.skill_references_hash}</code>
                 <span>Thread {run.receipt.codex_thread_id}</span>
                 <code>Envelope {run.receipt.envelope_hash}</code>
                 <span>Review Scaffold Revision {run.receipt.review_scaffold_revision}</span>
@@ -358,6 +390,25 @@ export function StudyJourney({
               {sectionRunBusy ? "Retrying with Codex…" : "Retry candidate"}
             </button>
           )}
+          <button
+            className="button secondary wide"
+            type="button"
+            onClick={onReviseBodyWeight}
+            disabled={!workspace.can_open_revision || commandBusy}
+            data-testid="revise-body-weight"
+          >
+            {revisionBusy ? "Opening revision cycle…" : "Revise body-weight cycle"}
+          </button>
+          {(workspace.drafting_cycles ?? []).map((cycle) => (
+            <div
+              className="section-run-receipt"
+              key={cycle.cycle_id}
+              data-testid={`drafting-cycle-${cycle.cycle_id}`}
+            >
+              <strong>{cycle.cycle_id}</strong>
+              <span>{cycle.predecessor_cycle_id ?? "first cycle"}</span>
+            </div>
+          ))}
           <button
             className="button secondary wide"
             type="button"
@@ -474,6 +525,48 @@ export function StudyJourney({
               </code>
             </div>
           </div>
+          {workspace.pinned_run.predecessor_run_id && (
+            <div className="run-plan-fingerprints" data-testid="superseding-run">
+              <div>
+                <span>Predecessor</span>
+                <code data-testid="predecessor-run-id">{workspace.pinned_run.predecessor_run_id}</code>
+              </div>
+              <div>
+                <span>Supersession</span>
+                <span data-testid="supersession-reason">{workspace.pinned_run.supersession_reason}</span>
+              </div>
+              {workspace.superseding_run_receipt && (
+                <>
+                  <div>
+                    <span>Parse reuse</span>
+                    <span data-testid="parse-reuse">
+                      {workspace.superseding_run_receipt.parse_reuse
+                        .map((item) => `${item.node_id} ${item.reused ? "reused" : "rerun"}`)
+                        .join(", ")}
+                    </span>
+                  </div>
+                  <div>
+                    <span>Carried forward</span>
+                    <span data-testid="carried-forward-count">
+                      {workspace.superseding_run_receipt.carried_forward.length}
+                    </span>
+                  </div>
+                  <div>
+                    <span>Rerun nodes</span>
+                    <span data-testid="rerun-nodes">
+                      {workspace.superseding_run_receipt.rerun_node_ids.join(", ") || "none"}
+                    </span>
+                  </div>
+                </>
+              )}
+              {(workspace.predecessor_snapshots ?? []).map((item) => (
+                <div key={item.snapshot_hash}>
+                  <span>Snapshot</span>
+                  <code data-testid="predecessor-snapshot-hash">{item.snapshot_hash}</code>
+                </div>
+              ))}
+            </div>
+          )}
           <details>
             <summary>
               Complete Run Plan · {workspace.pinned_run.run_plan.nodes.length} nodes · {workspace.pinned_run.governed_inputs.length} governed inputs
@@ -631,24 +724,69 @@ export function StudyJourney({
             </div>
           </div>
         ))}
-        {isRecord(latestScaffold) && (
-          <div className="scaffold-revision" data-testid="review-scaffold-revision">
-            <strong>
-              Review Scaffold Revision {String(latestScaffold.sequence)} · {String(latestScaffold.revision_id)}
-            </strong>
-            {scaffoldEntries(latestScaffold).map((section) => (
-              <div className="run-plan-row" key={section.section_id}>
-                <span className={`result-chip ${section.render_state}`}>{section.render_state}</span>
-                <div>
-                  <strong>{section.section_id}</strong>
-                  <small>{section.heading}</small>
-                </div>
-                <code>{section.placeholder ?? "none"}</code>
-              </div>
-            ))}
-          </div>
-        )}
       </article>
+
+      {scaffoldRevisions.length > 0 && (
+        <article className="panel run-plan-card" data-testid="review-scaffold-history">
+          <div className="panel-heading">
+            <div>
+              <p className="eyebrow">Review Scaffold history</p>
+              <h3>Ordered control-plane revisions. Not a draft report. Not exportable.</h3>
+            </div>
+          </div>
+          <p className="fine-print">
+            This is Review Scaffold history. It is not a draft report and it is not exportable.
+          </p>
+          <div className="scaffold-history-list">
+            {scaffoldRevisions.map((revision) => {
+              if (!isRecord(revision) || typeof revision.sequence !== "number") {
+                return null;
+              }
+              const sequence = revision.sequence;
+              const eventId =
+                typeof revision.triggering_event_id === "string" ? revision.triggering_event_id : "";
+              const selected = sequence === selectedScaffold?.sequence;
+              return (
+                <button
+                  key={String(revision.revision_id ?? sequence)}
+                  type="button"
+                  className={`scaffold-history-item ${selected ? "selected" : ""}`}
+                  onClick={() => setSelectedScaffoldSequence(sequence)}
+                  aria-current={selected ? "true" : undefined}
+                >
+                  <strong>Revision {sequence}</strong>
+                  <code>{String(revision.revision_id ?? "")}</code>
+                  <span>{eventId}</span>
+                  <span>{eventNames.get(eventId) ?? ""}</span>
+                  <small>
+                    {typeof revision.created_at === "string" ? formatTime(revision.created_at) : ""}
+                  </small>
+                </button>
+              );
+            })}
+          </div>
+          {isRecord(selectedScaffold) && (
+            <div className="scaffold-revision" data-testid="review-scaffold-revision">
+              <strong>
+                Review Scaffold Revision {String(selectedScaffold.sequence)} ·{" "}
+                {String(selectedScaffold.revision_id)}
+              </strong>
+              {scaffoldEntries(selectedScaffold).map((section) => (
+                <div className="run-plan-row" key={section.section_id}>
+                  <span className={`result-chip ${section.render_state}`}>{section.render_state}</span>
+                  <div>
+                    <strong>{section.section_id}</strong>
+                    <small>{section.heading}</small>
+                    <small>blockers {section.blocker_result_ids.join(", ") || "none"}</small>
+                    <small>artifacts {section.artifact_ids.join(", ") || "none"}</small>
+                  </div>
+                  <code>{section.placeholder ?? "none"}</code>
+                </div>
+              ))}
+            </div>
+          )}
+        </article>
+      )}
 
       <div className="journey-lower-grid">
         <article className="panel source-map-card">
@@ -770,9 +908,18 @@ function scaffoldEntries(revision: Record<string, unknown>) {
         heading: item.heading,
         render_state: typeof item.render_state === "string" ? item.render_state : "unknown",
         placeholder: typeof item.placeholder === "string" ? item.placeholder : null,
+        blocker_result_ids: stringList(item.blocker_result_ids),
+        artifact_ids: stringList(item.artifact_ids),
       },
     ];
   });
+}
+
+function stringList(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value.filter((item): item is string => typeof item === "string");
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

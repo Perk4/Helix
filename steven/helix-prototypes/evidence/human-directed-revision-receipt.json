@@ -1,0 +1,28 @@
+{
+  "predecessor_cycle_id": "CYCLE-BW-001",
+  "new_cycle_id": "CYCLE-FCCD2212A7E1",
+  "cycle_attempts": {
+    "CYCLE-BW-001": [
+      1,
+      2,
+      3
+    ],
+    "CYCLE-FCCD2212A7E1": [
+      1,
+      2,
+      3
+    ]
+  },
+  "revision_agent_calls": 0,
+  "fourth_new_cycle_status": 409,
+  "fresh_evaluation_id": "CEV-361DFA4A8FE9",
+  "prior_evaluation_id": "CEV-6DB99D53EC9F",
+  "stale_disposition_ids": [
+    "SOE-550F0F89B830",
+    "RD-CE6716862F48"
+  ],
+  "stale_approval_ids": [
+    "APR-A9131B29D573"
+  ],
+  "discussion_impact_unchanged": true
+}

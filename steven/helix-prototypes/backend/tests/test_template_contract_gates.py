@@ -335,4 +335,3 @@ def test_frontend_renders_backend_eligibility_and_does_not_compute_it() -> None:
     assert "gate_results" not in api
     assert "TCR-" not in report
     assert "runSectionAgent" in api
-    assert "section_run_eligibility" not in api

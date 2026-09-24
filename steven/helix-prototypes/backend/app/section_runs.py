@@ -10,11 +10,19 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from .agents.codex_section_agent import SectionAgent
-from .drafting_cycles import RejectAttempt, admit_attempt, cycle_fingerprint, load_recorded_attempts
+from .drafting_cycles import (
+    DRAFTING_CYCLE_ID,
+    RejectAttempt,
+    admit_attempt,
+    cycle_fingerprint,
+    load_recorded_attempts,
+)
 from .repository import StudyPackageRepository
-from .review_scaffolds import assemble_review_scaffold, record_if_changed
+from .review_scaffolds import persist
 from .schemas import (
     ClaimStatus,
+    CodexAgentReceipt,
+    DraftingCycle,
     PinnedRun,
     SectionDraftCandidate,
     SectionRunCommand,
@@ -23,6 +31,7 @@ from .schemas import (
     StudyEvidencePackage,
     WorkflowEvent,
 )
+from .skill_integrity import SECTION_AGENT_ROOT, SkillIntegrity, skill_integrity
 from .template_contracts import evaluate_template_contract, impact_set_for
 
 SECTION_PACKAGE_ID = "section.5_2_3_body_weight"
@@ -77,7 +86,6 @@ class SectionRunService:
             / "package.json"
         )
         self.template_path = repository_root / "backend" / "app" / "data" / "report-template.json"
-        self.skill_path = repository_root / ".agents" / "skills" / SKILL_NAME / "SKILL.md"
 
     def eligibilities(self, package: StudyEvidencePackage) -> list[SectionRunEligibility]:
         definitions = self._section_package_definitions()
@@ -105,21 +113,16 @@ class SectionRunService:
         self,
         package: StudyEvidencePackage,
         *,
-        run_id: str,
         event_id: str,
-        candidate_id: str | None = None,
-        extra_blockers: tuple[str, ...] = (),
     ) -> StudyEvidencePackage:
-        revision = assemble_review_scaffold(
+        return persist(
+            self.repository,
             package,
-            self.eligibilities(package),
-            run_id=run_id,
             event_id=event_id,
-            candidate_id=candidate_id,
-            extra_blockers=extra_blockers,
+            contracts=self.contracts,
+            eligibilities=self.eligibilities(package),
+            repository_root=self.repository_root,
         )
-        schema = self._load_json(self.contracts / "review-scaffold-revision.schema.json")
-        return record_if_changed(package, revision, schema)
 
     def _eligibility_for(
         self,
@@ -199,8 +202,13 @@ class SectionRunService:
         return [self._load_json(path) for path in sorted(directory.glob("*/package.json"))]
 
     def run(self, study_id: str, command: SectionRunCommand) -> SectionRunReceipt:
+        snapshot = self.repository.get(study_id)
         request_hash = canonical_hash(
-            {"study_id": study_id, "section_package_id": command.section_package_id}
+            {
+                "study_id": study_id,
+                "section_package_id": command.section_package_id,
+                "pinned_run_id": snapshot.pinned_run.run_id if snapshot.pinned_run is not None else "",
+            }
         )
         prior_receipt = self._replay(study_id, command.idempotency_key, request_hash)
         if prior_receipt is not None:
@@ -209,6 +217,13 @@ class SectionRunService:
             raise UnknownSectionPackageError(f"Unknown Section Package {command.section_package_id}")
 
         package = self.repository.get(study_id, for_update=True)
+        request_hash = canonical_hash(
+            {
+                "study_id": study_id,
+                "section_package_id": command.section_package_id,
+                "pinned_run_id": package.pinned_run.run_id if package.pinned_run is not None else "",
+            }
+        )
         prior_receipt = self._replay(study_id, command.idempotency_key, request_hash)
         if prior_receipt is not None:
             return prior_receipt
@@ -216,14 +231,8 @@ class SectionRunService:
         if not eligibility.eligible:
             if any(item.status == "blocked" for item in eligibility.gate_results):
                 event_id = f"EV-{uuid4().hex[:12].upper()}"
-                blocked_run_id = (
-                    package.pinned_run.run_id
-                    if package.pinned_run is not None
-                    else f"RUN-{uuid4().hex[:12].upper()}"
-                )
                 updated = self.persist_contract_revision(
                     package,
-                    run_id=blocked_run_id,
                     event_id=event_id,
                 )
                 if updated.review_scaffold_revisions != package.review_scaffold_revisions:
@@ -238,12 +247,14 @@ class SectionRunService:
 
         run_id = f"SRUN-{uuid4().hex[:12].upper()}"
         envelope = self._build_envelope(package, run_id, pinned_run)
+        cycle = self._ensure_implicit_cycle(package, command.section_package_id, pinned_run)
         recorded = load_recorded_attempts(
             self.repository.list_section_runs(study_id),
             self.repository.list_candidate_evaluations(study_id),
             command.section_package_id,
+            cycle.cycle_id,
         )
-        admission = admit_attempt(recorded, cycle_fingerprint(envelope))
+        admission = admit_attempt(recorded, cycle_fingerprint(envelope), cycle.cycle_id)
         if isinstance(admission, RejectAttempt):
             raise SectionRunConflictError(admission.message)
         if admission.retry_failures:
@@ -259,11 +270,13 @@ class SectionRunService:
             if errors:
                 raise CandidateValidationError(errors[0].message)
         envelope_hash = canonical_hash(envelope)
+        integrity = skill_integrity(self.repository_root / SECTION_AGENT_ROOT)
         try:
             row = self.repository.add_section_run(
                 run_id=run_id,
                 study_id=study_id,
                 section_package_id=SECTION_PACKAGE_ID,
+                drafting_cycle_id=admission.drafting_cycle_id,
                 attempt=admission.attempt,
                 idempotency_key=command.idempotency_key,
                 request_hash=request_hash,
@@ -278,7 +291,6 @@ class SectionRunService:
                 "A Candidate Attempt is already recorded for this cycle slot"
             ) from error
         candidate_schema = self._load_json(self.contracts / "section-draft-candidate.schema.json")
-        skill_hash = self._file_hash(self.skill_path)
         candidate_id = f"SDC-{uuid4().hex[:12].upper()}"
         prompt = self._prompt(
             envelope=envelope,
@@ -287,7 +299,8 @@ class SectionRunService:
             attempt=admission.attempt,
             thread_receipt_instruction=(
                 "Set agent_receipt.thread_id to {{CODEX_THREAD_ID}}. "
-                f"Set skill_name to {SKILL_NAME} and skill_hash to {skill_hash}."
+                f"Set skill_name to {SKILL_NAME}, skill_hash to {integrity.skill_hash}, "
+                f"and skill_references_hash to {integrity.skill_references_hash}."
             ),
         )
         try:
@@ -308,18 +321,18 @@ class SectionRunService:
                 drafting_cycle_id=admission.drafting_cycle_id,
                 attempt=admission.attempt,
                 thread_id=result.thread_id,
-                skill_hash=skill_hash,
+                integrity=integrity,
                 executor_receipt_ids=[
                     str(receipt["artifact_id"]) for receipt in envelope["executor_receipts"]
                 ],
             )
             now = datetime.now(UTC).isoformat().replace("+00:00", "Z")
             event_id = f"EV-{uuid4().hex[:12].upper()}"
+            row.candidate = candidate.model_dump(mode="json")
+            self.session.flush()
             package = self.persist_contract_revision(
                 package,
-                run_id=run_id,
                 event_id=event_id,
-                candidate_id=candidate.candidate_id,
             )
             revision = package.review_scaffold_revisions[-1]
             receipt = SectionRunReceipt(
@@ -333,10 +346,10 @@ class SectionRunService:
                 agent_runtime="codex_sdk",
                 codex_thread_id=result.thread_id,
                 skill_name=SKILL_NAME,
-                skill_hash=skill_hash,
+                skill_hash=integrity.skill_hash,
+                skill_references_hash=integrity.skill_references_hash,
                 review_scaffold_revision=int(revision["sequence"]),
             )
-            row.candidate = candidate.model_dump(mode="json")
             row.receipt = receipt.model_dump(mode="json")
             row.review_scaffold = revision
             event = WorkflowEvent(
@@ -367,6 +380,55 @@ class SectionRunService:
         except Exception:
             self.session.rollback()
             raise
+
+    def _ensure_implicit_cycle(
+        self,
+        package: StudyEvidencePackage,
+        section_package_id: str,
+        pinned_run: PinnedRun,
+    ) -> DraftingCycle:
+        existing = self.repository.latest_drafting_cycle(package.study.study_id, section_package_id)
+        if existing is not None:
+            return existing
+        now = datetime.now(UTC).isoformat().replace("+00:00", "Z")
+        cycle_id = DRAFTING_CYCLE_ID
+        prior_ids = {
+            item.cycle_id
+            for item in self.repository.list_drafting_cycles(
+                package.study.study_id, include_predecessor=True
+            )
+        }
+        if cycle_id in prior_ids:
+            cycle_id = f"CYCLE-{uuid4().hex[:12].upper()}"
+        cycle = DraftingCycle(
+            schema_version="helix.drafting-cycle/v1",
+            cycle_id=cycle_id,
+            run_id=pinned_run.run_id,
+            section_package_id=section_package_id,
+            predecessor_cycle_id=None,
+            max_attempts=3,
+            impact_set=impact_set_for(section_package_id, self._section_package_definitions()),
+            opened_at=now,
+            opened_by="HELIX Codex section runtime",
+            triggering_event_id=f"EV-{uuid4().hex[:12].upper()}",
+        )
+        self.repository.add_drafting_cycle(
+            study_id=package.study.study_id,
+            cycle=cycle,
+            idempotency_key=f"implicit:{package.study.study_id}:{section_package_id}:{cycle_id}:{pinned_run.run_id}",
+            request_hash=canonical_hash(
+                {
+                    "study_id": package.study.study_id,
+                    "section_package_id": section_package_id,
+                    "run_id": pinned_run.run_id,
+                    "cycle_id": cycle_id,
+                }
+            ),
+            stale_disposition_ids=[],
+            stale_approval_ids=[],
+            review_scaffold_revision=0,
+        )
+        return cycle
 
     def _replay(
         self,
@@ -472,7 +534,7 @@ class SectionRunService:
         drafting_cycle_id: str,
         attempt: int,
         thread_id: str,
-        skill_hash: str,
+        integrity: SkillIntegrity,
         executor_receipt_ids: list[str],
     ) -> SectionDraftCandidate:
         try:
@@ -514,13 +576,13 @@ class SectionRunService:
             candidate.executor_receipt_ids
         ) != set(executor_receipt_ids):
             raise CandidateValidationError("Codex candidate returned invalid executor receipts")
-        receipt = candidate.agent_receipt
-        if receipt != {
-            "runtime": "codex_sdk",
-            "thread_id": thread_id,
-            "skill_name": SKILL_NAME,
-            "skill_hash": skill_hash,
-        }:
+        if candidate.agent_receipt != CodexAgentReceipt(
+            runtime="codex_sdk",
+            thread_id=thread_id,
+            skill_name=SKILL_NAME,
+            skill_hash=integrity.skill_hash,
+            skill_references_hash=integrity.skill_references_hash,
+        ):
             raise CandidateValidationError("Codex candidate omitted or changed its runtime receipt")
         if "286.2 g" not in json.dumps(candidate.content_blocks, ensure_ascii=False):
             raise CandidateValidationError("Codex candidate did not preserve the validated value 286.2 g")
