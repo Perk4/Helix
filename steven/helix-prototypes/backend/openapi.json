@@ -465,6 +465,70 @@
         "title": "Body_create_study_from_upload_api_v1_studies_post",
         "type": "object"
       },
+      "Body_submit_study_upload_api_v1_studies_jobs_post": {
+        "properties": {
+          "authorized_by": {
+            "maxLength": 120,
+            "minLength": 2,
+            "title": "Authorized By",
+            "type": "string"
+          },
+          "files": {
+            "items": {
+              "contentMediaType": "application/octet-stream",
+              "type": "string"
+            },
+            "title": "Files",
+            "type": "array"
+          },
+          "idempotency_key": {
+            "maxLength": 160,
+            "minLength": 8,
+            "title": "Idempotency Key",
+            "type": "string"
+          },
+          "protocol_version": {
+            "maxLength": 40,
+            "minLength": 1,
+            "title": "Protocol Version",
+            "type": "string"
+          },
+          "route": {
+            "maxLength": 80,
+            "minLength": 2,
+            "title": "Route",
+            "type": "string"
+          },
+          "study_id": {
+            "maxLength": 64,
+            "minLength": 7,
+            "title": "Study Id",
+            "type": "string"
+          },
+          "study_start": {
+            "default": "",
+            "maxLength": 32,
+            "title": "Study Start",
+            "type": "string"
+          },
+          "study_type_id": {
+            "default": "REPEAT_DOSE_28D_RODENT",
+            "maxLength": 80,
+            "title": "Study Type Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "files",
+          "study_id",
+          "route",
+          "protocol_version",
+          "authorized_by",
+          "idempotency_key"
+        ],
+        "title": "Body_submit_study_upload_api_v1_studies_jobs_post",
+        "type": "object"
+      },
       "BoundDisposition": {
         "additionalProperties": false,
         "properties": {
@@ -6582,6 +6646,95 @@
           }
         },
         "summary": "Create Study From Upload",
+        "tags": [
+          "studies"
+        ]
+      }
+    },
+    "/api/v1/studies/jobs": {
+      "post": {
+        "description": "Accept an upload and process it in the background.\n\nThe synchronous `POST /api/v1/studies` is unchanged and remains the\nsimpler choice for a small study. This exists because a 150-animal\nstudy takes long enough that a caller needs to see what is happening.\n\nReturns 202 with a job id. Poll `GET /api/v1/studies/jobs/{job_id}`.",
+        "operationId": "submit_study_upload_api_v1_studies_jobs_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_submit_study_upload_api_v1_studies_jobs_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Submit Study Upload Api V1 Studies Jobs Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Submit Study Upload",
+        "tags": [
+          "studies"
+        ]
+      }
+    },
+    "/api/v1/studies/jobs/{job_id}": {
+      "get": {
+        "description": "Stage-by-stage progress and timings for an upload job.",
+        "operationId": "get_study_upload_job_api_v1_studies_jobs__job_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "title": "Job Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Get Study Upload Job Api V1 Studies Jobs  Job Id  Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Study Upload Job",
         "tags": [
           "studies"
         ]

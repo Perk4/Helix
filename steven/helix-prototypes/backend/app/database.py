@@ -10,7 +10,12 @@ from .config import Settings
 from .models import Base
 
 BASELINE_REVISION = "bf13e5f55c15"
-BASELINE_TABLES = frozenset(Base.metadata.tables) - {"intake_jobs"}
+# Tables a migration after the baseline creates. They are not part of the baseline stamp.
+INTAKE_JOB_TABLES = frozenset({"intake_jobs"})
+# Created by feat/steven-workspace's former `create_all` path (#25) and now by revision
+# 9edd082c07ae. An unversioned database from that branch may already carry them.
+RUN_EVENT_TABLES = frozenset({"run_events", "run_journey_states"})
+BASELINE_TABLES = frozenset(Base.metadata.tables) - INTAKE_JOB_TABLES - RUN_EVENT_TABLES
 
 
 def create_database_engine(settings: Settings) -> Engine:
@@ -83,9 +88,11 @@ def _adopt_unversioned_baseline(connection: Connection, config: object,
         return
 
     missing_tables = BASELINE_TABLES - existing
-    unexpected_migrated_tables = (existing - BASELINE_TABLES) & {"intake_jobs"}
+    unexpected_migrated_tables = (existing - BASELINE_TABLES) & INTAKE_JOB_TABLES
     mismatched_columns: list[str] = []
-    for table_name in BASELINE_TABLES & existing:
+    # Run-event tables from the old create_all path are adopted too, but only if their
+    # columns match; revision 9edd082c07ae then skips creating them.
+    for table_name in (BASELINE_TABLES | RUN_EVENT_TABLES) & existing:
         expected = set(Base.metadata.tables[table_name].columns.keys())
         actual = {column["name"] for column in schema.get_columns(table_name)}
         if expected != actual:
