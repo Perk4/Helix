@@ -1,12 +1,12 @@
 {
-  "qualification_id": "helix-section-agent-qualification@0.1.0/2026-09-24T14:37:18Z",
-  "qualification_hash": "sha256:db66466bc4a1d5d5c80931ae264adf7f428c7d97f672b19997d4fefa23f7a5f3",
+  "qualification_id": "helix-section-agent-qualification@0.1.0/2026-09-24T14:48:15Z",
+  "qualification_hash": "sha256:621bd7da598113e3f9713165dc94a76a52d74763fdaab34e1bf3555d9d0dffe3",
   "inputs": {
-    ".agents/skills/helix-section-agent/SKILL.md": "sha256:8d2e2b8065fa7042438df3647cf7f610960637f4e865642dbd32643521f21fbd",
-    ".agents/skills/helix-section-agent/evals/assert-candidate-schema.mjs": "sha256:9fba6302c6410cbcc77ff234b3ed52c6908371b67c023698b572c34c9711275b",
+    ".agents/skills/helix-section-agent/SKILL.md": "sha256:62abd7721d062c807a8481014e513bb41e45c11fa8fc0861b6658340bf860a0e",
+    ".agents/skills/helix-section-agent/evals/assert-candidate-schema.mjs": "sha256:77d880f261b09021e49f309c2dbdf12bb5b57d805e4e8fe601c412a7f02263b6",
     ".agents/skills/helix-section-agent/evals/assert-no-unsupported-value.mjs": "sha256:523679f1e5ea17e95dc9413f79a9df9bb235dbd93d9e40305cd896d491234934",
-    ".agents/skills/helix-section-agent/evals/fixtures/body-weight-envelope.json": "sha256:f9f034123f7cbf9047ac6afec05ca6cd6fe4704bcc490366116b672cdfd2312b",
-    ".agents/skills/helix-section-agent/evals/fixtures/body-weight-missing-claim.json": "sha256:b6fb3af84b2740d79fc96c238dd6f57b6cdcbf6b4dd5556a638798fa179b2e35",
+    ".agents/skills/helix-section-agent/evals/fixtures/body-weight-envelope.json": "sha256:f840b40d38846727bea68cd6e58d5d622e1d3115a1d77118afd3ece83440b68f",
+    ".agents/skills/helix-section-agent/evals/fixtures/body-weight-missing-claim.json": "sha256:e966055e7ba36386d3f74ff15416a3f010a6c7cb0491b0c480eed9eff6bb4731",
     ".agents/skills/helix-section-agent/evals/prompt.txt": "sha256:caa1187090abbe74cece4a0539da70f7f72d0907033e4be0cdd4bd8175a5836f",
     ".agents/skills/helix-section-agent/evals/promptfooconfig.yaml": "sha256:ef209f08c76393cbde4bfe9d0574f7172812742aaf25a306d2ca0186ef02f0eb",
     "skills/helix-evidence-pipeline/contracts/section-draft-candidate.schema.json": "sha256:07ea5dc4a7fe952800bae4d22a1072bec32d6f17818296b34685ed1e2b10640b"
