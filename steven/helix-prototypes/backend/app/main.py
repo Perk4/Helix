@@ -311,6 +311,7 @@ def create_app(
         # Start polling from the validated cursor, not zero, so an empty replay (the client is
         # already current) never re-emits retained events on the first poll.
         initial_sequence = parse_cursor(run_id, cursor) if cursor else 0
+        stream_label, stream_run_version = study_service.run_event_context(study_id, run_id)
 
         def frames() -> Iterator[str]:
             last_sequence = initial_sequence
@@ -325,7 +326,19 @@ def create_app(
                     try:
                         cursor_id = f"{run_id}.E{last_sequence:06d}" if last_sequence else None
                         fresh = store.replay(run_id, cursor_id)
-                    except EventCursorExpiredError:
+                    except EventCursorExpiredError as error:
+                        # Terminal frame: the client must refresh the workspace and reconnect
+                        # from journey.run.latest_event_id. No `id:` line, so the browser's
+                        # Last-Event-ID stays at the last delivered event.
+                        expired = EventCursorExpired(
+                            label=stream_label,
+                            code="event_cursor_expired",
+                            detail=str(error),
+                            run_id=run_id,
+                            run_version=stream_run_version,
+                            latest_event_id=error.latest_event_id,
+                        )
+                        yield f"event: cursor_expired\ndata: {expired.model_dump_json()}\n\n"
                         return
                 for event in fresh:
                     last_sequence = int(event["sequence"])

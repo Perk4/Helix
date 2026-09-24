@@ -62,6 +62,10 @@ class RunEventStore:
     def state(self, run_id: str) -> RunJourneyStateRow | None:
         return self.session.get(RunJourneyStateRow, run_id)
 
+    def lock_state(self, run_id: str, study_id: str) -> RunJourneyStateRow:
+        """Take (creating if needed) the per-run state lock. Call before reading facts."""
+        return self._state_for_update(run_id, study_id)
+
     def _state_for_update(self, run_id: str, study_id: str) -> RunJourneyStateRow:
         state = self.session.scalar(
             select(RunJourneyStateRow).where(RunJourneyStateRow.run_id == run_id).with_for_update()
@@ -286,4 +290,10 @@ class RunEventStore:
             .where(RunEventRow.run_id == run_id, RunEventRow.sequence > after)
             .order_by(RunEventRow.sequence)
         ).all()
+        # A prune that races this read leaves a gap after the cursor. Report it as an
+        # expired cursor (409) instead of silently skipping the missing events.
+        gap = (rows and rows[0].sequence != after + 1) or (not rows and last_sequence > after)
+        if cursor and gap:
+            latest = rows[-1].event_id if rows else event_id_for(run_id, last_sequence)
+            raise EventCursorExpiredError(run_id, latest)
         return [dict(row.payload) for row in rows]

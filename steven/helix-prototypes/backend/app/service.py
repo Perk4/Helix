@@ -6,6 +6,7 @@ from datetime import UTC, datetime
 from typing import Any, cast
 from uuid import uuid4
 
+from sqlalchemy import event
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
@@ -222,8 +223,19 @@ class StudyService:
         stage_id: str,
         operation: Callable[[], ResultT],
     ) -> ResultT:
+        """Run a command so every commit it makes also appends its run events atomically.
+
+        A ``before_commit`` hook syncs run events inside each transaction the command
+        commits, so events and the state change they describe commit (or roll back)
+        together. Failed run-scoped commands record ``command_failed`` afterwards.
+        """
+
+        def sync_before_commit(_session: Session) -> None:
+            self._sync_run_events_in_transaction(study_id)
+
+        event.listen(self.session, "before_commit", sync_before_commit)
         try:
-            result = operation()
+            return operation()
         except (
             WorkflowConflictError,
             InvalidCommandError,
@@ -231,6 +243,7 @@ class StudyService:
             UnknownValidationPackageError,
             RunConflictError,
         ) as error:
+            event.remove(self.session, "before_commit", sync_before_commit)
             self.session.rollback()
             try:
                 self._record_command_failure(study_id, command_name, stage_id, str(error))
@@ -238,29 +251,25 @@ class StudyService:
                 self.session.rollback()
                 LOGGER.exception("Could not record command_failed for %s on %s", command_name, study_id)
             raise
-        try:
-            journey = self.sync_run_events(study_id)
-        except SQLAlchemyError:
-            # The command already committed. A missed sync is recovered by the next command's diff.
-            self.session.rollback()
-            LOGGER.exception("Run-event sync failed after %s for %s", command_name, study_id)
-            journey = None
-        if isinstance(result, WorkspaceResponse) and journey is not None:
-            return cast(ResultT, result.model_copy(update={"journey": journey}))
-        return result
+        finally:
+            if event.contains(self.session, "before_commit", sync_before_commit):
+                event.remove(self.session, "before_commit", sync_before_commit)
 
-    def sync_run_events(self, study_id: str) -> WorkbenchJourney | None:
-        """Append run events for persisted transitions not yet reflected in the event log.
+    def _sync_run_events_in_transaction(self, study_id: str) -> None:
+        """Append run events for persisted transitions, inside the caller's open transaction.
 
-        Returns the refreshed projection (with new sequence marks) for the command response.
+        The run-state row lock is taken before the package facts are read, so a concurrent
+        sync can never diff stale facts against newer recorded state. The caller commits.
         """
+        self.session.flush()
+        current = self.repository.get(study_id).pinned_run
+        if current is None:
+            return
+        self.run_events.lock_state(current.run_id, study_id)
         package = self.repository.get(study_id)
-        if package.pinned_run is None:
-            return None
-        facts = self._journey_facts(package)
-        self.run_events.sync(project_journey(facts))
-        self.session.commit()
-        return project_journey(self._with_event_state(facts, package.pinned_run.run_id))
+        if package.pinned_run is None or package.pinned_run.run_id != current.run_id:
+            return
+        self.run_events.sync(project_journey(self._journey_facts(package)))
 
     def _record_command_failure(self, study_id: str, command_name: str, stage_id: str, detail: str) -> None:
         try:

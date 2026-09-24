@@ -9,21 +9,30 @@ exercises the journey/event contract and makes no qualification claim.
 
 import json
 import shutil
+import socket
+import subprocess
+import tempfile
 import threading
 import time
+from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
+from app.agents.codex_section_agent import CodexSectionAgent
 from app.config import Settings
-from app.database import create_database_engine
+from app.database import create_database_engine, create_schema, create_session_factory
 from app.main import create_app
 from app.models import RunEventRow
 from app.run_events import RUN_EVENT_ADAPTER, RunEventStore
-from app.run_plans import file_hash
+from app.run_plans import PinnedRunService, file_hash
+from app.schemas import DispositionCommand, FreezeRunCommand, ValidationRequest
+from app.section_runs import SectionRunService
+from app.seed import seed_database
+from app.service import StudyService
 
 ROOT = Path(__file__).resolve().parents[2]
 STUDY_ID = "STUDY-HLX-028"
@@ -546,3 +555,281 @@ def test_run_conflict_and_unknown_package_record_command_failed(tmp_path: Path) 
         ("command_failed", "freeze_run", "upload"),
         ("command_failed", "run_data_validation", "extract"),
     ]
+
+
+# --- Feed hardening (CoS/Tester review of PR #18) -------------------------------------
+
+
+def _append(engine, run_id: str, reason: str, *, session: Session | None = None) -> None:
+    owned = session is None
+    active = session or Session(engine)
+    try:
+        RunEventStore(active).append(
+            run_id=run_id,
+            study_id=STUDY_ID,
+            label=LABEL,
+            event_type="run_paused",
+            stage_id="validate",
+            payload={"reason": reason},
+        )
+        if owned:
+            active.commit()
+    finally:
+        if owned:
+            active.close()
+
+
+def test_mid_history_reconnect_delivers_exactly_the_missing_range(tmp_path: Path) -> None:
+    client, engine = build_client(qualified_fixture_root(tmp_path))
+    with client:
+        run_id = client.post(f"{BASE}/pinned-runs", json=FREEZE).json()["run_id"]
+        assert client.post(f"{BASE}/validation-runs", json={"planner": "fixture"}).status_code == 201
+        latest = journey(client)["run"]["latest_sequence"]
+        assert latest > 8
+        everything = parse_frames(stream(client, run_id).text)
+        assert [item["sequence"] for item in everything] == list(range(1, latest + 1))
+        middle = latest // 2
+        missing = parse_frames(stream(client, run_id, f"{run_id}.E{middle:06d}").text)
+    engine.dispose()
+    assert [item["sequence"] for item in missing] == list(range(middle + 1, latest + 1))
+    assert missing == everything[middle:]
+
+
+def test_silent_then_cursor_plus_one_reconnect_delivers_exactly_next_event_once(tmp_path: Path) -> None:
+    """Reconnect with Last-Event-ID=N, stay silent, then N+1 arrives: deliver N+1 once, nothing else."""
+    client, engine = build_client(
+        qualified_fixture_root(tmp_path), run_event_stream_seconds=1.2, run_event_poll_seconds=0.1
+    )
+    with client:
+        run_id = client.post(f"{BASE}/pinned-runs", json=FREEZE).json()["run_id"]
+        cursor = journey(client)["run"]["latest_event_id"]
+        n = int(cursor.rsplit(".E", 1)[1])
+
+        def append_after_silence() -> None:
+            time.sleep(0.5)  # several empty polls first
+            _append(engine, run_id, "the next event after a silent reconnect")
+
+        writer = threading.Thread(target=append_after_silence)
+        writer.start()
+        response = stream(client, run_id, cursor)
+        writer.join()
+    engine.dispose()
+    received = parse_frames(response.text)
+    assert "cursor_expired" not in response.text
+    assert [item["sequence"] for item in received] == [n + 1]
+    assert [item["event_id"] for item in received] == [f"{run_id}.E{n + 1:06d}"]
+
+
+def test_cursor_at_oldest_minus_one_replays_and_oldest_minus_two_expires(tmp_path: Path) -> None:
+    client, engine = build_client(qualified_fixture_root(tmp_path), run_event_retention=5)
+    with client:
+        run_id = client.post(f"{BASE}/pinned-runs", json=FREEZE).json()["run_id"]
+        latest = journey(client)["run"]["latest_sequence"]
+        oldest = latest - 4
+        assert oldest > 2
+        replayed = stream(client, run_id, f"{run_id}.E{oldest - 1:06d}")
+        expired = stream(client, run_id, f"{run_id}.E{oldest - 2:06d}")
+    engine.dispose()
+    assert replayed.status_code == 200
+    assert [item["sequence"] for item in parse_frames(replayed.text)] == list(range(oldest, latest + 1))
+    assert expired.status_code == 409
+    assert expired.json()["code"] == "event_cursor_expired"
+
+
+@pytest.mark.parametrize("pruned", ["partial", "all"])
+def test_prune_racing_replay_returns_409_not_a_silent_gap(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, pruned: str
+) -> None:
+    """Inject a prune between replay's state read and its row read (deterministic race)."""
+    client, engine = build_client(qualified_fixture_root(tmp_path))
+    with client:
+        run_id = client.post(f"{BASE}/pinned-runs", json=FREEZE).json()["run_id"]
+        latest = journey(client)["run"]["latest_sequence"]
+        assert latest > 6
+        original_state = RunEventStore.state
+        armed = {"on": True}
+
+        def state_then_prune(self: RunEventStore, target: str):
+            state = original_state(self, target)
+            if armed["on"]:
+                armed["on"] = False
+                # A concurrent prune commits after the state (oldest_retained) was read.
+                cutoff = 5 if pruned == "partial" else latest
+                self.session.execute(
+                    delete(RunEventRow).where(RunEventRow.run_id == target, RunEventRow.sequence <= cutoff)
+                )
+            return state
+
+        monkeypatch.setattr(RunEventStore, "state", state_then_prune)
+        response = stream(client, run_id, f"{run_id}.E000002")
+    engine.dispose()
+    assert response.status_code == 409, response.text
+    assert response.json()["code"] == "event_cursor_expired"
+
+
+def test_poll_loop_cursor_expiry_emits_terminal_cursor_expired_frame(tmp_path: Path) -> None:
+    client, engine = build_client(
+        qualified_fixture_root(tmp_path), run_event_stream_seconds=1.2, run_event_poll_seconds=0.1
+    )
+    with client:
+        run_id = client.post(f"{BASE}/pinned-runs", json=FREEZE).json()["run_id"]
+        current = journey(client)["run"]
+        cursor = current["latest_event_id"]
+        n = current["latest_sequence"]
+
+        def append_with_gap() -> None:
+            time.sleep(0.3)
+            with Session(engine) as session:
+                _append(engine, run_id, "pruned before the poll saw it", session=session)
+                _append(engine, run_id, "visible after the gap", session=session)
+                session.execute(
+                    delete(RunEventRow).where(RunEventRow.run_id == run_id, RunEventRow.sequence == n + 1)
+                )
+                session.commit()
+
+        writer = threading.Thread(target=append_with_gap)
+        writer.start()
+        started = time.monotonic()
+        response = stream(client, run_id, cursor)
+        elapsed = time.monotonic() - started
+        writer.join()
+    engine.dispose()
+    assert response.status_code == 200
+    assert "run_paused" not in response.text  # nothing from after the gap leaks through
+    blocks = [block for block in response.text.split("\n\n") if block.strip() and not block.startswith(":")]
+    assert len(blocks) == 1
+    lines = dict(line.split(": ", 1) for line in blocks[0].splitlines())
+    assert lines["event"] == "cursor_expired"
+    assert "id" not in lines
+    body = json.loads(lines["data"])
+    assert body["code"] == "event_cursor_expired"
+    assert body["run_id"] == run_id
+    assert body["label"] == LABEL
+    assert elapsed < 1.1  # terminal: the stream ends at the expiry, not at the window
+
+
+def _postgres_url(tmp_path_factory: pytest.TempPathFactory) -> Iterator[str]:
+    binaries = [
+        shutil.which(name) or f"/opt/homebrew/bin/{name}" for name in ("initdb", "pg_ctl", "createdb")
+    ]
+    if not all(Path(item).exists() for item in binaries):
+        pytest.skip("PostgreSQL binaries (initdb/pg_ctl/createdb) are not installed")
+    initdb, pg_ctl, createdb = binaries
+    data = tmp_path_factory.mktemp("pgdata")
+    sockets = Path(tempfile.mkdtemp(prefix="pg", dir="/tmp"))  # unix socket paths are length-limited
+    with socket.socket() as probe:
+        probe.bind(("127.0.0.1", 0))
+        port = probe.getsockname()[1]
+    subprocess.run([initdb, "-D", str(data), "-U", "helix", "-A", "trust"], check=True, capture_output=True)
+    subprocess.run(
+        [
+            pg_ctl,
+            "-D",
+            str(data),
+            "-l",
+            str(data / "server.log"),
+            "-o",
+            f"-p {port} -k {sockets} -c listen_addresses=127.0.0.1",
+            "-w",
+            "start",
+        ],
+        check=True,
+        capture_output=True,
+    )
+    try:
+        subprocess.run(
+            [createdb, "-h", "127.0.0.1", "-p", str(port), "-U", "helix", "helix"],
+            check=True,
+            capture_output=True,
+        )
+        yield f"postgresql+psycopg://helix@127.0.0.1:{port}/helix"
+    finally:
+        subprocess.run([pg_ctl, "-D", str(data), "-m", "immediate", "stop"], capture_output=True)
+        shutil.rmtree(sockets, ignore_errors=True)
+
+
+@pytest.fixture
+def database_url(request: pytest.FixtureRequest, tmp_path: Path, tmp_path_factory: pytest.TempPathFactory):
+    if request.param == "sqlite-file":
+        yield f"sqlite+pysqlite:///{tmp_path / 'helix.db'}"
+    else:
+        yield from _postgres_url(tmp_path_factory)
+
+
+@pytest.mark.parametrize("database_url", ["sqlite-file", "postgresql"], indirect=True)
+def test_concurrent_commands_on_one_study_emit_gap_free_sequences_without_duplicates(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, database_url: str
+) -> None:
+    """Two dispositions run in parallel threads with their own sessions.
+
+    Thread A is delayed right before it takes the run-state lock, so B's command can
+    commit in between. Facts must be read under the lock, or A emits stale diffs.
+    """
+    root = qualified_fixture_root(tmp_path)
+    settings = Settings(
+        database_url=database_url,
+        seed_path=ROOT / "synthetic-e2e" / "helix-synthetic-bundle.json",
+        codex_repository_root=root,
+        auto_seed=True,
+        run_event_stream_seconds=0,
+    )
+    engine = create_database_engine(settings)
+    create_schema(engine)
+    factory = create_session_factory(engine)
+
+    def study_service(session: Session) -> StudyService:
+        section_runs = SectionRunService(session, CodexSectionAgent(root), root)
+        return StudyService(session, settings, section_runs, PinnedRunService(session, root))
+
+    with factory() as session:
+        seed_database(session, settings)
+        session.commit()
+    with factory() as session:
+        run_id = study_service(session).freeze_run(STUDY_ID, FreezeRunCommand(**FREEZE)).run_id
+    with factory() as session:
+        study_service(session).run_validation(STUDY_ID, ValidationRequest(planner="fixture"))
+
+    original_lock = RunEventStore._state_for_update
+
+    def delayed_lock(self: RunEventStore, target_run: str, study_id: str):
+        if threading.current_thread().name == "A":
+            time.sleep(0.6)
+        return original_lock(self, target_run, study_id)
+
+    monkeypatch.setattr(RunEventStore, "_state_for_update", delayed_lock)
+    errors: list[BaseException] = []
+
+    def disposition(result_id: str) -> None:
+        try:
+            with factory() as session:
+                study_service(session).disposition(
+                    STUDY_ID,
+                    result_id,
+                    DispositionCommand(
+                        decision="corrected",
+                        reason=f"Concurrent disposition {result_id}.",
+                        reviewer="Dr. Ada Path",
+                    ),
+                )
+        except BaseException as exc:  # noqa: BLE001 - surfaced by the assertion below
+            errors.append(exc)
+
+    first = threading.Thread(target=disposition, args=("VR-004",), name="A")
+    second = threading.Thread(target=disposition, args=("VR-005",), name="B")
+    first.start()
+    time.sleep(0.15)
+    second.start()
+    first.join(20)
+    second.join(20)
+    monkeypatch.setattr(RunEventStore, "_state_for_update", original_lock)
+    assert not errors, errors
+
+    with factory() as session:
+        events = RunEventStore(session).replay(run_id, None)
+    engine.dispose()
+    sequences = [item["sequence"] for item in events]
+    assert sequences == list(range(1, len(events) + 1))
+    finished = [(item["action_id"], item["outcome"]) for item in events if item["type"] == "action_finished"]
+    assert len(finished) == len(set(finished)), finished
+    dispositioned = {action for action, outcome in finished if outcome == "dispositioned"}
+    assert {"disposition:VR-004", "disposition:VR-005"} <= dispositioned
