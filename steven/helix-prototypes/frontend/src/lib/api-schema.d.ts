@@ -681,8 +681,8 @@ export interface components {
             /** Feedback */
             feedback: string;
         };
-        /** SectionDraft */
-        SectionDraft: {
+        /** SectionContentDraft */
+        SectionContentDraft: {
             /** Blocks */
             blocks: (components["schemas"]["ProseBlock"] | components["schemas"]["TableBlock"] | components["schemas"]["NoteBlock"])[];
             /** Created At */
@@ -1406,7 +1406,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SectionDraft"];
+                    "application/json": components["schemas"]["SectionContentDraft"];
                 };
             };
             /** @description Validation Error */
@@ -1442,7 +1442,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SectionDraft"];
+                    "application/json": components["schemas"]["SectionContentDraft"];
                 };
             };
             /** @description Validation Error */
@@ -1474,7 +1474,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SectionDraft"] | null;
+                    "application/json": components["schemas"]["SectionContentDraft"] | null;
                 };
             };
             /** @description Validation Error */
@@ -1510,7 +1510,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SectionDraft"];
+                    "application/json": components["schemas"]["SectionContentDraft"];
                 };
             };
             /** @description Validation Error */
@@ -1546,7 +1546,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SectionDraft"];
+                    "application/json": components["schemas"]["SectionContentDraft"];
                 };
             };
             /** @description Validation Error */
@@ -1578,7 +1578,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SectionDraft"];
+                    "application/json": components["schemas"]["SectionContentDraft"];
                 };
             };
             /** @description Validation Error */

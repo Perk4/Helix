@@ -7,8 +7,8 @@ from sqlalchemy.orm import Session
 from .models import (
     AuditEventRow,
     ChatMessageRow,
+    ContentDraftRow,
     ExportFileRow,
-    SectionDraftRow,
     SectionRunRow,
     StudyPackageRow,
     ValidationRunRow,
@@ -190,64 +190,64 @@ class StudyPackageRepository:
 
     def next_section_draft_version(self, study_id: str, section_id: str) -> int:
         rows = self.session.scalars(
-            select(SectionDraftRow).where(
-                SectionDraftRow.study_id == study_id,
-                SectionDraftRow.section_id == section_id,
+            select(ContentDraftRow).where(
+                ContentDraftRow.study_id == study_id,
+                ContentDraftRow.section_id == section_id,
             )
         ).all()
         return max((row.version for row in rows), default=0) + 1
 
-    def add_section_draft(self, **fields: Any) -> SectionDraftRow:
-        row = SectionDraftRow(**fields)
+    def add_section_draft(self, **fields: Any) -> ContentDraftRow:
+        row = ContentDraftRow(**fields)
         self.session.add(row)
         self.session.flush()
         return row
 
-    def current_section_draft(self, study_id: str, section_id: str) -> SectionDraftRow | None:
+    def current_section_draft(self, study_id: str, section_id: str) -> ContentDraftRow | None:
         """Latest applied draft: newest version that is not proposed or discarded."""
         return self.session.scalar(
-            select(SectionDraftRow)
+            select(ContentDraftRow)
             .where(
-                SectionDraftRow.study_id == study_id,
-                SectionDraftRow.section_id == section_id,
-                SectionDraftRow.status.in_(("needs_review", "verified")),
+                ContentDraftRow.study_id == study_id,
+                ContentDraftRow.section_id == section_id,
+                ContentDraftRow.status.in_(("needs_review", "verified")),
             )
-            .order_by(SectionDraftRow.version.desc())
+            .order_by(ContentDraftRow.version.desc())
             .limit(1)
         )
 
-    def latest_active_section_draft(self, study_id: str, section_id: str) -> SectionDraftRow | None:
+    def latest_active_section_draft(self, study_id: str, section_id: str) -> ContentDraftRow | None:
         """Highest version that is not discarded (includes proposed) — the
         anchor a rerun builds on."""
         return self.session.scalar(
-            select(SectionDraftRow)
+            select(ContentDraftRow)
             .where(
-                SectionDraftRow.study_id == study_id,
-                SectionDraftRow.section_id == section_id,
-                SectionDraftRow.status != "discarded",
+                ContentDraftRow.study_id == study_id,
+                ContentDraftRow.section_id == section_id,
+                ContentDraftRow.status != "discarded",
             )
-            .order_by(SectionDraftRow.version.desc())
+            .order_by(ContentDraftRow.version.desc())
             .limit(1)
         )
 
-    def get_section_draft(self, study_id: str, section_id: str, version: int) -> SectionDraftRow | None:
+    def get_section_draft(self, study_id: str, section_id: str, version: int) -> ContentDraftRow | None:
         return self.session.scalar(
-            select(SectionDraftRow).where(
-                SectionDraftRow.study_id == study_id,
-                SectionDraftRow.section_id == section_id,
-                SectionDraftRow.version == version,
+            select(ContentDraftRow).where(
+                ContentDraftRow.study_id == study_id,
+                ContentDraftRow.section_id == section_id,
+                ContentDraftRow.version == version,
             )
         )
 
-    def list_section_drafts(self, study_id: str, section_id: str) -> list[SectionDraftRow]:
+    def list_section_drafts(self, study_id: str, section_id: str) -> list[ContentDraftRow]:
         return list(
             self.session.scalars(
-                select(SectionDraftRow)
+                select(ContentDraftRow)
                 .where(
-                    SectionDraftRow.study_id == study_id,
-                    SectionDraftRow.section_id == section_id,
+                    ContentDraftRow.study_id == study_id,
+                    ContentDraftRow.section_id == section_id,
                 )
-                .order_by(SectionDraftRow.version)
+                .order_by(ContentDraftRow.version)
             ).all()
         )
 

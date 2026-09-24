@@ -86,13 +86,13 @@ class SectionRunRow(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
 
 
-class SectionDraftRow(Base):
+class ContentDraftRow(Base):
     """One version of a section's drafted content. Append-only; the current
     draft is the latest non-discarded, non-proposed version."""
 
-    __tablename__ = "section_drafts"
+    __tablename__ = "content_drafts"
     __table_args__ = (
-        UniqueConstraint("study_id", "section_id", "version", name="uq_section_draft_version"),
+        UniqueConstraint("study_id", "section_id", "version", name="uq_content_draft_version"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)

@@ -522,7 +522,7 @@ class NoteBlock(StrictModel):
 SectionBlock = Annotated[ProseBlock | TableBlock | NoteBlock, Field(discriminator="kind")]
 
 
-class SectionDraft(StrictModel):
+class SectionContentDraft(StrictModel):
     section_id: str
     title: str
     version: int

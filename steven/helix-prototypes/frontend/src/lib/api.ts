@@ -5,7 +5,7 @@ import type {
   EvidenceChainData,
   ExportReceipt,
   PlannerMode,
-  SectionDraft,
+  SectionContentDraft,
   SectionListItem,
   SectionRunReceipt,
   ValidationRun,
@@ -67,67 +67,67 @@ export async function getSections(studyId: string): Promise<SectionListItem[]> {
 export async function getSectionDraft(
   studyId: string,
   sectionId: string,
-): Promise<SectionDraft | null> {
+): Promise<SectionContentDraft | null> {
   const value = await request(
     `/studies/${encodeURIComponent(studyId)}/sections/${encodeURIComponent(sectionId)}/draft`,
   );
-  return (value ?? null) as SectionDraft | null;
+  return (value ?? null) as SectionContentDraft | null;
 }
 
 export async function generateSectionDraft(
   studyId: string,
   sectionId: string,
   feedback: string[] = [],
-): Promise<SectionDraft> {
+): Promise<SectionContentDraft> {
   const value = await request(
     `/studies/${encodeURIComponent(studyId)}/sections/${encodeURIComponent(sectionId)}/draft`,
     { method: "POST", body: JSON.stringify({ feedback }) },
   );
-  return value as SectionDraft;
+  return value as SectionContentDraft;
 }
 
-export async function reviseSection(
+export async function reviseSectionDraft(
   studyId: string,
   sectionId: string,
   feedback: string,
-): Promise<SectionDraft> {
+): Promise<SectionContentDraft> {
   const value = await request(
     `/studies/${encodeURIComponent(studyId)}/sections/${encodeURIComponent(sectionId)}/revise`,
     { method: "POST", body: JSON.stringify({ feedback }) },
   );
-  return value as SectionDraft;
+  return value as SectionContentDraft;
 }
 
 export async function applySection(
   studyId: string,
   sectionId: string,
   version: number,
-): Promise<SectionDraft> {
+): Promise<SectionContentDraft> {
   const value = await request(
     `/studies/${encodeURIComponent(studyId)}/sections/${encodeURIComponent(sectionId)}/apply`,
     { method: "POST", body: JSON.stringify({ version }) },
   );
-  return value as SectionDraft;
+  return value as SectionContentDraft;
 }
 
 export async function discardSection(
   studyId: string,
   sectionId: string,
   version: number,
-): Promise<SectionDraft> {
+): Promise<SectionContentDraft> {
   const value = await request(
     `/studies/${encodeURIComponent(studyId)}/sections/${encodeURIComponent(sectionId)}/discard`,
     { method: "POST", body: JSON.stringify({ version }) },
   );
-  return value as SectionDraft;
+  return value as SectionContentDraft;
 }
 
-export async function verifySection(studyId: string, sectionId: string): Promise<SectionDraft> {
+export async function verifySection(studyId: string, sectionId: string): Promise<SectionContentDraft> {
   const value = await request(
     `/studies/${encodeURIComponent(studyId)}/sections/${encodeURIComponent(sectionId)}/verify`,
     { method: "POST", body: JSON.stringify({}) },
   );
-  return value as SectionDraft;
+  return value as SectionContentDraft;
 }
 
 export async function getChat(studyId: string): Promise<ChatMessage[]> {

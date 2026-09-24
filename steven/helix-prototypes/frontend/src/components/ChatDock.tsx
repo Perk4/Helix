@@ -9,10 +9,10 @@ import {
   applySection,
   discardSection,
   getChat,
-  reviseSection,
+  reviseSectionDraft,
   sendChat,
 } from "@/lib/api";
-import type { ChatMessage, SectionDraft } from "@/lib/types";
+import type { ChatMessage, SectionContentDraft } from "@/lib/types";
 
 type Props = {
   studyId: string;
@@ -24,7 +24,7 @@ type Props = {
 export function ChatDock({ studyId, sectionId, sectionTitle, onApplied }: Props) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [proposed, setProposed] = useState<SectionDraft | null>(null);
+  const [proposed, setProposed] = useState<SectionContentDraft | null>(null);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState<null | "ask" | "revise" | "apply">(null);
   const [error, setError] = useState<string | null>(null);
@@ -99,7 +99,7 @@ export function ChatDock({ studyId, sectionId, sectionTitle, onApplied }: Props)
     setInput("");
     pushLocal("user", `Revise: ${text}`);
     try {
-      const draft = await reviseSection(studyId, sectionId, text);
+      const draft = await reviseSectionDraft(studyId, sectionId, text);
       setProposed(draft);
       pushLocal("assistant", `Proposed v${draft.version} — review and approve or discard below.`);
     } catch (cause) {

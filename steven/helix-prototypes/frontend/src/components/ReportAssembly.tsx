@@ -17,7 +17,7 @@ import { ChatDock } from "./ChatDock";
 import type {
   ApprovalRole,
   SectionBlock,
-  SectionDraft,
+  SectionContentDraft,
   SectionListItem,
   Workspace,
 } from "@/lib/types";
@@ -37,7 +37,7 @@ export function ReportAssembly({ workspace, busy, onResolve, onApprove, onExport
   const studyId = workspace.study.study_id;
   const [sections, setSections] = useState<SectionListItem[]>([]);
   const [selectedSectionId, setSelectedSectionId] = useState("5_2_3_body_weight");
-  const [draft, setDraft] = useState<SectionDraft | null>(null);
+  const [draft, setDraft] = useState<SectionContentDraft | null>(null);
   const [draftLoading, setDraftLoading] = useState(false);
   const [draftBusy, setDraftBusy] = useState(false);
   const [draftError, setDraftError] = useState<string | null>(null);

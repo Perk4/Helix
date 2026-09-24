@@ -1071,7 +1071,7 @@
         "title": "ReviseRequest",
         "type": "object"
       },
-      "SectionDraft": {
+      "SectionContentDraft": {
         "additionalProperties": false,
         "properties": {
           "blocks": {
@@ -1185,7 +1185,7 @@
           "blocks",
           "created_at"
         ],
-        "title": "SectionDraft",
+        "title": "SectionContentDraft",
         "type": "object"
       },
       "SectionDraftCandidate": {
@@ -2697,7 +2697,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SectionDraft"
+                  "$ref": "#/components/schemas/SectionContentDraft"
                 }
               }
             },
@@ -2758,7 +2758,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SectionDraft"
+                  "$ref": "#/components/schemas/SectionContentDraft"
                 }
               }
             },
@@ -2811,7 +2811,7 @@
                 "schema": {
                   "anyOf": [
                     {
-                      "$ref": "#/components/schemas/SectionDraft"
+                      "$ref": "#/components/schemas/SectionContentDraft"
                     },
                     {
                       "type": "null"
@@ -2876,7 +2876,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SectionDraft"
+                  "$ref": "#/components/schemas/SectionContentDraft"
                 }
               }
             },
@@ -2937,7 +2937,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SectionDraft"
+                  "$ref": "#/components/schemas/SectionContentDraft"
                 }
               }
             },
@@ -2988,7 +2988,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SectionDraft"
+                  "$ref": "#/components/schemas/SectionContentDraft"
                 }
               }
             },

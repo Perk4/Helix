@@ -18,7 +18,7 @@ from sqlalchemy.orm import Session
 
 from . import section_catalog
 from .repository import StudyPackageRepository
-from .schemas import SectionDraft, SectionListItem
+from .schemas import SectionContentDraft, SectionListItem
 from .section_executor import (
     REGISTRY,
     SectionNotDraftable,
@@ -192,7 +192,7 @@ class DraftService:
             )
         return items
 
-    def get_current(self, study_id: str, section_id: str) -> SectionDraft | None:
+    def get_current(self, study_id: str, section_id: str) -> SectionContentDraft | None:
         self._require_section(section_id)
         row = self.repository.current_section_draft(study_id, section_id)
         return _to_schema(row) if row else None
@@ -205,7 +205,7 @@ class DraftService:
         feedback: list[str] | None = None,
         status: str = "needs_review",
         anchor: str | None = None,
-    ) -> SectionDraft:
+    ) -> SectionContentDraft:
         self._require_section(section_id)
         feedback = feedback or []
         package = self.repository.get(study_id)
@@ -239,7 +239,7 @@ class DraftService:
 
     MAX_OPEN_ATTEMPTS = 3
 
-    def revise(self, study_id: str, section_id: str, feedback: str) -> SectionDraft:
+    def revise(self, study_id: str, section_id: str, feedback: str) -> SectionContentDraft:
         """A feedback-driven rerun -> a new *proposed* version (not applied).
 
         Anchored to the latest active draft so it refines rather than reinvents.
@@ -262,7 +262,7 @@ class DraftService:
             anchor=anchor,
         )
 
-    def apply(self, study_id: str, section_id: str, version: int) -> SectionDraft:
+    def apply(self, study_id: str, section_id: str, version: int) -> SectionContentDraft:
         row = self._require_draft(study_id, section_id, version)
         if row.status != "proposed":
             raise DraftCycleError("Only a proposed version can be applied.")
@@ -274,7 +274,7 @@ class DraftService:
         self.session.commit()
         return _to_schema(row)
 
-    def discard(self, study_id: str, section_id: str, version: int) -> SectionDraft:
+    def discard(self, study_id: str, section_id: str, version: int) -> SectionContentDraft:
         row = self._require_draft(study_id, section_id, version)
         if row.status != "proposed":
             raise DraftCycleError("Only a proposed version can be discarded.")
@@ -283,7 +283,7 @@ class DraftService:
         self.session.commit()
         return _to_schema(row)
 
-    def verify(self, study_id: str, section_id: str) -> SectionDraft:
+    def verify(self, study_id: str, section_id: str) -> SectionContentDraft:
         self._require_section(section_id)
         row = self.repository.current_section_draft(study_id, section_id)
         if row is None:
@@ -352,10 +352,10 @@ def _model_name() -> str | None:
     return os.environ.get("APIM_MODEL", "gpt-5.5")
 
 
-def _to_schema(row: Any) -> SectionDraft:
+def _to_schema(row: Any) -> SectionContentDraft:
     created = row.created_at
     created_at = created.isoformat() if hasattr(created, "isoformat") else str(created)
-    return SectionDraft(
+    return SectionContentDraft(
         section_id=row.section_id,
         title=row.title,
         version=row.version,

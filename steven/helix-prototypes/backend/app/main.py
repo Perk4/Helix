@@ -24,7 +24,7 @@ from .schemas import (
     ExportCommand,
     ExportReceipt,
     ReviseRequest,
-    SectionDraft,
+    SectionContentDraft,
     SectionListItem,
     SectionRunCommand,
     SectionRunReceipt,
@@ -173,19 +173,19 @@ def create_app(
 
     @app.get(
         "/api/v1/studies/{study_id}/sections/{section_id}/draft",
-        response_model=SectionDraft | None,
+        response_model=SectionContentDraft | None,
         tags=["sections"],
     )
     def get_section_draft(
         study_id: str,
         section_id: str,
         drafts: DraftServiceDependency,
-    ) -> SectionDraft | None:
+    ) -> SectionContentDraft | None:
         return _call(lambda: drafts.get_current(study_id, section_id))
 
     @app.post(
         "/api/v1/studies/{study_id}/sections/{section_id}/draft",
-        response_model=SectionDraft,
+        response_model=SectionContentDraft,
         status_code=status.HTTP_201_CREATED,
         tags=["sections"],
     )
@@ -194,12 +194,12 @@ def create_app(
         section_id: str,
         request: DraftRequest,
         drafts: DraftServiceDependency,
-    ) -> SectionDraft:
+    ) -> SectionContentDraft:
         return _call(lambda: drafts.generate(study_id, section_id, feedback=request.feedback))
 
     @app.post(
         "/api/v1/studies/{study_id}/sections/{section_id}/revise",
-        response_model=SectionDraft,
+        response_model=SectionContentDraft,
         status_code=status.HTTP_201_CREATED,
         tags=["sections"],
     )
@@ -208,12 +208,12 @@ def create_app(
         section_id: str,
         request: ReviseRequest,
         drafts: DraftServiceDependency,
-    ) -> SectionDraft:
+    ) -> SectionContentDraft:
         return _call(lambda: drafts.revise(study_id, section_id, request.feedback))
 
     @app.post(
         "/api/v1/studies/{study_id}/sections/{section_id}/apply",
-        response_model=SectionDraft,
+        response_model=SectionContentDraft,
         tags=["sections"],
     )
     def apply_section_draft(
@@ -221,12 +221,12 @@ def create_app(
         section_id: str,
         request: SectionVersionRequest,
         drafts: DraftServiceDependency,
-    ) -> SectionDraft:
+    ) -> SectionContentDraft:
         return _call(lambda: drafts.apply(study_id, section_id, request.version))
 
     @app.post(
         "/api/v1/studies/{study_id}/sections/{section_id}/discard",
-        response_model=SectionDraft,
+        response_model=SectionContentDraft,
         tags=["sections"],
     )
     def discard_section_draft(
@@ -234,19 +234,19 @@ def create_app(
         section_id: str,
         request: SectionVersionRequest,
         drafts: DraftServiceDependency,
-    ) -> SectionDraft:
+    ) -> SectionContentDraft:
         return _call(lambda: drafts.discard(study_id, section_id, request.version))
 
     @app.post(
         "/api/v1/studies/{study_id}/sections/{section_id}/verify",
-        response_model=SectionDraft,
+        response_model=SectionContentDraft,
         tags=["sections"],
     )
     def verify_section_draft(
         study_id: str,
         section_id: str,
         drafts: DraftServiceDependency,
-    ) -> SectionDraft:
+    ) -> SectionContentDraft:
         return _call(lambda: drafts.verify(study_id, section_id))
 
     @app.get(
