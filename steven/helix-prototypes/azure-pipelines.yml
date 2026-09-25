@@ -102,7 +102,11 @@ steps:
   # `echo` (no drafter key needed); only the judge key is required. These
   # target §5.3.3–5.3.4 which don't exist yet, so they qualify the rubric
   # now and go live against real candidates in Phase 5.
-  - script: npm run evals:guardrails
+  # --output writes the Promptfoo result JSON to a well-known path. The
+  # candidate_evaluations service reads it at evaluation time and merges the
+  # llm-rubric verdicts (G-1, G-2, A-1) into the StudyOutputEvaluationReceipt.
+  # This must run before the evaluation POST fires (T2.1 alongside wiring).
+  - script: npm run evals:guardrails -- --output promptfoo-guardrails-result.json
     displayName: Run the G-1/G-2 guardrail judges
     workingDirectory: $(workingDirectory)
     env:

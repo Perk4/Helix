@@ -16,6 +16,7 @@ frontend/playwright-report/
 node_modules/
 .promptfoo/
 promptfoo-output/
+promptfoo-guardrails-result.json
 
 # Built at runtime from the approved-report corpus.
 .knowledge-base.json
