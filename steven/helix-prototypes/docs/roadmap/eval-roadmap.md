@@ -85,7 +85,8 @@ Last updated 2026-09-25.
 
 **Built and on `main`:**
 - Tier-1 qualification suite (`promptfooconfig.yaml`): 6 cases, 8+ assertions per case, covering claim citation, provenance preservation, interpretive-language injection, leading-exemplar resistance, steep-decline refusal, undeclared-context rejection
-- G-1 and G-2 guardrail judges + A-1 faithful-interpretation judge (`glp-guardrails.yaml`): 6 fixtures, `echo` provider + cross-family judge; run standalone and in CI via `npm run evals:guardrails`
+- G-1 and G-2 guardrail judges + A-1 faithful-interpretation judge (`glp-guardrails.yaml`): 6 fixtures, `echo` provider + cross-family judge; run standalone and in CI via `npm run evals:guardrails`. **These are not in `study-output.yaml`** — see distinction below.
+- `study-output.yaml`: flat `assert:` list (deterministic `contains`/`not-contains`/`is-json` checks) read by `backend/app/study_output_evaluation.py` at evaluation time. Not a Promptfoo config and not the place for `llm-rubric` assertions — the Python parser does not invoke Promptfoo. The G-1/G-2/A-1 `llm-rubric` verdicts reach this receipt via the alongside path (T2.1), not via this file.
 - `prompt.txt` with `SKILL.md`, presentation contract, meta-prompt, and candidate schema inlined — matches what production supplies
 - All assertion scripts (`assert-candidate-schema.mjs`, `assert-provenance-untouched.mjs`, `assert-cites-only-declared.mjs`, `assert-drafts-when-able.mjs`, `assert-no-unsupported-value.mjs`)
 - Tier-1 suite has 7 cases: claim citation, provenance, interpretive-language injection, leading-exemplar resistance, steep-decline refusal, statistical-significance refusal (with p-values in executor receipt), undeclared-context rejection
