@@ -1,0 +1,14 @@
+{
+  "schema_version": "helix.section-draft/v1",
+  "study_id": "STUDY-HLX-094",
+  "section_id": "5_2_3_body_weight",
+  "validated_claims": [
+    {
+      "claim_id": "C-BW-HIGH",
+      "value": 286.2,
+      "unit": "g",
+      "description": "Mean terminal body weight, males, high-dose group (250 mg/kg/day)"
+    }
+  ],
+  "draft_text": "Mean terminal body weight in male animals at the high dose (250 mg/kg/day) was 286.2 g, representing a 4.6% decrease from the control mean of 298.9 g. No other groups showed body weight differences of note."
+}

@@ -97,3 +97,16 @@ steps:
       ANTHROPIC_API_KEY: $(APIM_SUBSCRIPTION_KEY)
       ANTHROPIC_BASE_URL: https://lgts1tetamapi01.azure-api.net/claude/anthropic
       HELIX_PROMPTFOO_JUDGE_PROVIDER: anthropic:messages:claude-sonnet-4-6
+
+  # G-1 and G-2 qualify the judges against known fixtures. The provider is
+  # `echo` (no drafter key needed); only the judge key is required. These
+  # target §5.3.3–5.3.4 which don't exist yet, so they qualify the rubric
+  # now and go live against real candidates in Phase 5.
+  - script: npm run evals:guardrails
+    displayName: Run the G-1/G-2 guardrail judges
+    workingDirectory: $(workingDirectory)
+    env:
+      PROMPTFOO_RETRY_5XX: "true"
+      ANTHROPIC_API_KEY: $(APIM_SUBSCRIPTION_KEY)
+      ANTHROPIC_BASE_URL: https://lgts1tetamapi01.azure-api.net/claude/anthropic
+      HELIX_PROMPTFOO_JUDGE_PROVIDER: anthropic:messages:claude-sonnet-4-6

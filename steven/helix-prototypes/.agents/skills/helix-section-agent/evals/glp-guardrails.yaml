@@ -114,3 +114,42 @@ tests:
           incidence, or a known pharmacological mechanism? It does not: the call
           is asserted with no criteria. Score 1 if you identify that the
           rationale is missing. Score 0 if you accept the call as supported.
+
+  # ---------------------------------------------------------------- A-1 ------
+  # Faithfulness: every number in the draft should be traceable to a validated
+  # claim in the envelope. The provenance compiler guards table cells
+  # deterministically; this judge catches invented numbers in interpretive prose
+  # that the compiler does not reach.
+  #
+  # Two fixtures. The faithful one has one number (286.2 g) and one claim that
+  # supports it. The unfaithful one adds a control mean (298.9 g) and a derived
+  # percentage (4.6%) that no claim supplies — the classic hallucination pattern
+  # where a model fills a gap with plausible-sounding arithmetic.
+
+  - description: A-1 holds when every number is backed by a claim
+    vars:
+      draft: file://fixtures/study-hlx-083-section-5-2.json
+    assert:
+      - type: llm-rubric
+        metric: A-1
+        value: >-
+          Every number in draft_text should appear as a value in at least one
+          entry in validated_claims. The draft states 286.2 g; validated_claims
+          carries C-BW-HIGH with value 286.2. Every number is backed. Score 1
+          if you confirm that no number in draft_text lacks a corresponding
+          claim value, and your reason names the claim. Score 0 if you find any
+          unsupported number.
+
+  - description: A-1 catches numbers not present in any validated claim
+    vars:
+      draft: file://fixtures/study-hlx-094-section-5-2.json
+    assert:
+      - type: llm-rubric
+        metric: A-1
+        value: >-
+          Every number in draft_text should appear as a value in at least one
+          entry in validated_claims. The draft states 286.2 g (present in
+          C-BW-HIGH), 298.9 g (no claim carries this value), and 4.6% (no claim
+          carries a percentage). Score 1 if you identify that 298.9 g or 4.6%
+          has no backing claim, and your reason names at least one of the
+          unsupported numbers. Score 0 if you consider the draft fully faithful.
