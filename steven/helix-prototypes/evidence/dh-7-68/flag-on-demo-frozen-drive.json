@@ -14,5 +14,19 @@
   "approval_qau": 200,
   "approval_study_director": 200,
   "fsa": 200,
-  "release_gate_before_export": "ready_for_export"
+  "release_gate_before_export": "ready_for_export",
+  "export": {
+    "status": 409,
+    "body": {
+      "detail": {
+        "code": "demo_not_qualified",
+        "message": "Export refused: this run was frozen with the demo flag (packages not qualified)."
+      }
+    }
+  },
+  "release_gate_after_export": "ready_for_export",
+  "export_artifacts_after": [
+    "pending",
+    "pending"
+  ]
 }

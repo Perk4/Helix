@@ -1,6 +1,6 @@
-# Full backend pytest, DH-7 head vs base d4e5015a (both flag off, own DB /tmp/helix-dh7*-pytest.db)
-# base: 284 tests, 200 passed, 84 failed. head: 287 tests, 203 passed, 84 failed.
-# Failure sets identical (comm: 0 new, 0 fixed). +3 tests: freeze-409 flag-off param, strict-on-qualified-with-flag-on export 200, helper unit test. Flipped test passes.
+# Full backend pytest, DH-7 head vs base 6cc1bb96 (both flag off; DBs /tmp/helix-dh7-pytest.db and /tmp/helix-dh7-base-pytest.db)
+# base: 285 tests, 201 passed, 84 failed. head: 292 tests, 208 passed, 84 failed.
+# Failure sets identical (comm: 0 new, 0 fixed). +7 tests: freeze-409 flag-off param, strict-on-qualified-with-flag-on export 200, helper unit, legacy replay flag on/off, legacy download flag on/off.
 FAILED tests/test_api.py::test_hybrid_validation_review_approval_and_export_flow
 FAILED tests/test_candidate_attempts.py::test_attempt_three_stops_automation_and_records_needs_review
 FAILED tests/test_candidate_attempts.py::test_attempts_one_and_two_start_only_after_provenance_failure
