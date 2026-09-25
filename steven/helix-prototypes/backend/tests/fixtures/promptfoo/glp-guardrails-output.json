@@ -1,0 +1,436 @@
+{
+  "evalId": "eval-7Qx-2026-09-24T21:14:03",
+  "results": {
+    "version": 3,
+    "timestamp": "2026-09-24T21:14:03.512Z",
+    "prompts": [
+      {
+        "raw": "{{ draft }}",
+        "label": "{{ draft }}",
+        "id": "4d1a0b1f3c",
+        "provider": "echo",
+        "metrics": {
+          "score": 3,
+          "testPassCount": 3,
+          "testFailCount": 1,
+          "testErrorCount": 0,
+          "assertPassCount": 3,
+          "assertFailCount": 1,
+          "totalLatencyMs": 12,
+          "tokenUsage": {
+            "total": 0
+          },
+          "namedScores": {
+            "G-1": 2,
+            "G-2": 0,
+            "A-1": 1
+          },
+          "namedScoresCount": {
+            "G-1": 2,
+            "G-2": 1,
+            "A-1": 1
+          },
+          "cost": 0.0164
+        }
+      }
+    ],
+    "results": [
+      {
+        "id": "0f6c2a1e-6b1d-4c3a-9f7e-000000000000",
+        "promptIdx": 0,
+        "testIdx": 0,
+        "testCase": {
+          "description": "G-1 holds when the NOAEL matches the findings",
+          "vars": {
+            "draft": "file://fixtures/study-hlx-041-section-5-3.json"
+          },
+          "assert": [
+            {
+              "type": "llm-rubric",
+              "metric": "G-1",
+              "value": "Score 1 if ... Score 0 otherwise."
+            }
+          ],
+          "options": {
+            "provider": {
+              "id": "anthropic:messages:claude-sonnet-4-5",
+              "config": {
+                "max_tokens": 4000,
+                "temperature": 0
+              }
+            }
+          },
+          "metadata": {}
+        },
+        "promptId": "4d1a0b1f3c",
+        "provider": {
+          "id": "echo",
+          "label": ""
+        },
+        "prompt": {
+          "raw": "{\"section\": \"5.3\"}",
+          "label": "{{ draft }}"
+        },
+        "vars": {
+          "draft": "file://fixtures/study-hlx-041-section-5-3.json"
+        },
+        "response": {
+          "output": "{\"section\": \"5.3\"}",
+          "cached": false
+        },
+        "error": null,
+        "failureReason": 0,
+        "success": true,
+        "score": 1,
+        "latencyMs": 3,
+        "gradingResult": {
+          "pass": true,
+          "score": 1,
+          "reason": "All assertions passed",
+          "namedScores": {
+            "G-1": 1
+          },
+          "tokensUsed": {
+            "total": 812,
+            "prompt": 640,
+            "completion": 172,
+            "cached": 0
+          },
+          "componentResults": [
+            {
+              "pass": true,
+              "score": 1,
+              "reason": "Consistent: the NOAEL sits at the 30 mg/kg/day group, the highest dose without adverse findings in 5.3.3.",
+              "assertion": {
+                "type": "llm-rubric",
+                "metric": "G-1",
+                "value": "Score 1 if ... Score 0 otherwise."
+              },
+              "namedScores": {
+                "G-1": 1
+              },
+              "tokensUsed": {
+                "total": 812,
+                "prompt": 640,
+                "completion": 172,
+                "cached": 0
+              }
+            }
+          ]
+        },
+        "namedScores": {
+          "G-1": 1
+        },
+        "cost": 0.0041,
+        "metadata": {
+          "_promptfooFileMetadata": {}
+        }
+      },
+      {
+        "id": "0f6c2a1e-6b1d-4c3a-9f7e-000000000001",
+        "promptIdx": 0,
+        "testIdx": 1,
+        "testCase": {
+          "description": "G-1 catches a NOAEL set at a dose with adverse findings",
+          "vars": {
+            "draft": "file://fixtures/study-hlx-052-section-5-3.json"
+          },
+          "assert": [
+            {
+              "type": "llm-rubric",
+              "metric": "G-1",
+              "value": "Score 1 if ... Score 0 otherwise."
+            }
+          ],
+          "options": {
+            "provider": {
+              "id": "anthropic:messages:claude-sonnet-4-5",
+              "config": {
+                "max_tokens": 4000,
+                "temperature": 0
+              }
+            }
+          },
+          "metadata": {}
+        },
+        "promptId": "4d1a0b1f3c",
+        "provider": {
+          "id": "echo",
+          "label": ""
+        },
+        "prompt": {
+          "raw": "{\"section\": \"5.3\"}",
+          "label": "{{ draft }}"
+        },
+        "vars": {
+          "draft": "file://fixtures/study-hlx-052-section-5-3.json"
+        },
+        "response": {
+          "output": "{\"section\": \"5.3\"}",
+          "cached": false
+        },
+        "error": null,
+        "failureReason": 0,
+        "success": true,
+        "score": 1,
+        "latencyMs": 3,
+        "gradingResult": {
+          "pass": true,
+          "score": 1,
+          "reason": "All assertions passed",
+          "namedScores": {
+            "G-1": 1
+          },
+          "tokensUsed": {
+            "total": 812,
+            "prompt": 640,
+            "completion": 172,
+            "cached": 0
+          },
+          "componentResults": [
+            {
+              "pass": true,
+              "score": 1,
+              "reason": "Contradiction identified: hepatocellular necrosis is reported at the dose named as the NOAEL.",
+              "assertion": {
+                "type": "llm-rubric",
+                "metric": "G-1",
+                "value": "Score 1 if ... Score 0 otherwise."
+              },
+              "namedScores": {
+                "G-1": 1
+              },
+              "tokensUsed": {
+                "total": 812,
+                "prompt": 640,
+                "completion": 172,
+                "cached": 0
+              }
+            }
+          ]
+        },
+        "namedScores": {
+          "G-1": 1
+        },
+        "cost": 0.0041,
+        "metadata": {
+          "_promptfooFileMetadata": {}
+        }
+      },
+      {
+        "id": "0f6c2a1e-6b1d-4c3a-9f7e-000000000002",
+        "promptIdx": 0,
+        "testIdx": 2,
+        "testCase": {
+          "description": "G-2 catches a non-adverse call asserted without criteria",
+          "vars": {
+            "draft": "file://fixtures/study-hlx-074-section-5-3.json"
+          },
+          "assert": [
+            {
+              "type": "llm-rubric",
+              "metric": "G-2",
+              "value": "Score 1 if ... Score 0 otherwise."
+            }
+          ],
+          "options": {
+            "provider": {
+              "id": "anthropic:messages:claude-sonnet-4-5",
+              "config": {
+                "max_tokens": 4000,
+                "temperature": 0
+              }
+            }
+          },
+          "metadata": {}
+        },
+        "promptId": "4d1a0b1f3c",
+        "provider": {
+          "id": "echo",
+          "label": ""
+        },
+        "prompt": {
+          "raw": "{\"section\": \"5.3\"}",
+          "label": "{{ draft }}"
+        },
+        "vars": {
+          "draft": "file://fixtures/study-hlx-074-section-5-3.json"
+        },
+        "response": {
+          "output": "{\"section\": \"5.3\"}",
+          "cached": false
+        },
+        "error": "The judge accepted the non-adverse call although no criteria were given.",
+        "failureReason": 1,
+        "success": false,
+        "score": 0,
+        "latencyMs": 3,
+        "gradingResult": {
+          "pass": false,
+          "score": 0,
+          "reason": "The judge accepted the non-adverse call although no criteria were given.",
+          "namedScores": {
+            "G-2": 0
+          },
+          "tokensUsed": {
+            "total": 812,
+            "prompt": 640,
+            "completion": 172,
+            "cached": 0
+          },
+          "componentResults": [
+            {
+              "pass": false,
+              "score": 0,
+              "reason": "The judge accepted the non-adverse call although no criteria were given.",
+              "assertion": {
+                "type": "llm-rubric",
+                "metric": "G-2",
+                "value": "Score 1 if ... Score 0 otherwise."
+              },
+              "namedScores": {
+                "G-2": 0
+              },
+              "tokensUsed": {
+                "total": 812,
+                "prompt": 640,
+                "completion": 172,
+                "cached": 0
+              }
+            }
+          ]
+        },
+        "namedScores": {
+          "G-2": 0
+        },
+        "cost": 0.0041,
+        "metadata": {
+          "_promptfooFileMetadata": {}
+        }
+      },
+      {
+        "id": "0f6c2a1e-6b1d-4c3a-9f7e-000000000003",
+        "promptIdx": 0,
+        "testIdx": 3,
+        "testCase": {
+          "description": "A-1 holds when prose stays within the claim's scope",
+          "vars": {
+            "draft": "file://fixtures/study-hlx-083-section-5-2.json"
+          },
+          "assert": [
+            {
+              "type": "llm-rubric",
+              "metric": "A-1",
+              "value": "Score 1 if ... Score 0 otherwise."
+            }
+          ],
+          "options": {
+            "provider": {
+              "id": "anthropic:messages:claude-sonnet-4-5",
+              "config": {
+                "max_tokens": 4000,
+                "temperature": 0
+              }
+            }
+          },
+          "metadata": {}
+        },
+        "promptId": "4d1a0b1f3c",
+        "provider": {
+          "id": "echo",
+          "label": ""
+        },
+        "prompt": {
+          "raw": "{\"section\": \"5.3\"}",
+          "label": "{{ draft }}"
+        },
+        "vars": {
+          "draft": "file://fixtures/study-hlx-083-section-5-2.json"
+        },
+        "response": {
+          "output": "{\"section\": \"5.3\"}",
+          "cached": false
+        },
+        "error": null,
+        "failureReason": 0,
+        "success": true,
+        "score": 1,
+        "latencyMs": 3,
+        "gradingResult": {
+          "pass": true,
+          "score": 1,
+          "reason": "All assertions passed",
+          "namedScores": {
+            "A-1": 1
+          },
+          "tokensUsed": {
+            "total": 812,
+            "prompt": 640,
+            "completion": 172,
+            "cached": 0
+          },
+          "componentResults": [
+            {
+              "pass": true,
+              "score": 1,
+              "reason": "The prose stays within the cited claim's dose groups and timepoints.",
+              "assertion": {
+                "type": "llm-rubric",
+                "metric": "A-1",
+                "value": "Score 1 if ... Score 0 otherwise."
+              },
+              "namedScores": {
+                "A-1": 1
+              },
+              "tokensUsed": {
+                "total": 812,
+                "prompt": 640,
+                "completion": 172,
+                "cached": 0
+              }
+            }
+          ]
+        },
+        "namedScores": {
+          "A-1": 1
+        },
+        "cost": 0.0041,
+        "metadata": {
+          "_promptfooFileMetadata": {}
+        }
+      }
+    ],
+    "stats": {
+      "successes": 3,
+      "failures": 1,
+      "errors": 0,
+      "tokenUsage": {
+        "total": 3248,
+        "prompt": 2560,
+        "completion": 688,
+        "cached": 0,
+        "numRequests": 4
+      }
+    }
+  },
+  "config": {
+    "description": "HELIX GLP guardrails G-1 and G-2, qualified against fixtures",
+    "providers": [
+      {
+        "id": "echo"
+      }
+    ],
+    "prompts": [
+      "{{ draft }}"
+    ]
+  },
+  "shareableUrl": null,
+  "metadata": {
+    "promptfooVersion": "0.123.1",
+    "nodeVersion": "v22.11.0",
+    "platform": "linux",
+    "arch": "x64",
+    "exportedAt": "2026-09-24T21:14:04.020Z",
+    "evaluationCreatedAt": "2026-09-24T21:14:03.512Z"
+  }
+}

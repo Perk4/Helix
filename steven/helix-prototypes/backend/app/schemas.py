@@ -835,6 +835,22 @@ class StudyOutputEvaluationReceipt(StrictModel):
     results: list[StudyOutputAssertionResult] = Field(min_length=1)
 
 
+class SuiteFixtureGuardrailChecks(StrictModel):
+    """Promptfoo guardrail verdicts from canned fixtures (``glp-guardrails.yaml``, echo provider).
+
+    A suite-level configuration check that qualifies the judges. It was never computed on the
+    evaluated candidate, so it sits beside the candidate receipts and never inside one.
+    """
+
+    schema_version: Literal["helix.suite-fixture-guardrail-checks/v1"]
+    scope: Literal["suite_fixture"]
+    candidate_evaluated: Literal[False]
+    suite_path: str = Field(min_length=1)
+    result_path: str = Field(min_length=1)
+    result_hash: Sha256
+    results: list[StudyOutputAssertionResult] = Field(min_length=1)
+
+
 ConformanceCheckKind = Literal[
     "completeness",
     "table_coverage",
@@ -910,6 +926,7 @@ class CandidateEvaluation(StrictModel):
     study_output_evaluation_receipt: StudyOutputEvaluationReceipt
     template_conformance_receipt: TemplateConformanceReceipt
     next_attempt_decision: NextAttemptDecision
+    suite_fixture_guardrail_checks: SuiteFixtureGuardrailChecks | None = None
     hashes: CandidateEvaluationHashes
     idempotent_replay: bool = False
 
@@ -1283,6 +1300,103 @@ class ExportReceipt(StrictModel):
     artifacts: list[ExportArtifact]
     idempotent_replay: bool
     instrumentation: ExportInstrumentation
+
+
+# --------------------------------------------------------------------------- #
+# Section drafts (per-section generated content for the UI)
+# --------------------------------------------------------------------------- #
+
+SectionDraftStatus = Literal["needs_review", "proposed", "verified", "discarded", "empty"]
+
+
+class ProseBlock(StrictModel):
+    kind: Literal["prose"] = "prose"
+    markdown: str
+
+
+class TableBlock(StrictModel):
+    kind: Literal["table"] = "table"
+    title: str
+    columns: list[str]
+    rows: list[list[str]]
+
+
+class NoteBlock(StrictModel):
+    kind: Literal["note"] = "note"
+    text: str
+
+
+SectionBlock = Annotated[ProseBlock | TableBlock | NoteBlock, Field(discriminator="kind")]
+
+
+class SectionContentDraft(StrictModel):
+    section_id: str
+    title: str
+    version: int
+    status: SectionDraftStatus
+    data_available: bool
+    blocks: list[SectionBlock]
+    narrative_md: str | None = None
+    note: str | None = None
+    provenance_count: int = 0
+    feedback: list[str] = Field(default_factory=list)
+    model: str | None = None
+    created_at: str
+
+
+class SectionListItem(StrictModel):
+    section_id: str
+    title: str
+    order: int
+    template_section: str | None
+    has_verified_claims: bool
+    status: SectionDraftStatus
+    version: int | None = None
+    data_available: bool | None = None
+
+
+class DraftRequest(StrictModel):
+    feedback: list[str] = Field(default_factory=list)
+
+
+class ReviseRequest(StrictModel):
+    feedback: str = Field(min_length=1, max_length=2000)
+
+
+class SectionVersionRequest(StrictModel):
+    version: int = Field(ge=1)
+
+
+# --------------------------------------------------------------------------- #
+# Chat (per-study thread, grounded in verified data)
+# --------------------------------------------------------------------------- #
+
+ChatScope = Literal["section", "study"]
+
+
+class ChatMessage(StrictModel):
+    message_id: int
+    role: Literal["user", "assistant"]
+    content: str
+    scope: ChatScope
+    section_id: str | None = None
+    intent: Literal["ask", "revise"] = "ask"
+    draft_version: int | None = None
+    created_at: str
+
+
+class ChatRequest(StrictModel):
+    message: str = Field(min_length=1, max_length=4000)
+    scope: ChatScope = "section"
+    section_id: str | None = None
+
+
+class ChatTurn(StrictModel):
+    """One assistant turn: the reply, plus a proposed rewrite when the model
+    read the message as an edit request (approved via Apply or Discard)."""
+
+    message: ChatMessage
+    proposed: SectionContentDraft | None = None
 
 
 FrozenRunInputs.model_rebuild()

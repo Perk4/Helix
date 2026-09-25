@@ -1,7 +1,7 @@
 from datetime import UTC, datetime
 from typing import Any
 
-from sqlalchemy import JSON, DateTime, Integer, LargeBinary, String, UniqueConstraint
+from sqlalchemy import JSON, Boolean, DateTime, Integer, LargeBinary, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -228,6 +228,48 @@ class RunJourneyStateRow(Base):
     oldest_retained_sequence: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     stages: Mapped[dict[str, Any]] = mapped_column(JsonDocument, nullable=False, default=dict)
     actions: Mapped[dict[str, Any]] = mapped_column(JsonDocument, nullable=False, default=dict)
+
+
+class ContentDraftRow(Base):
+    """One version of a section's drafted content. Append-only; the current
+    draft is the latest non-discarded, non-proposed version."""
+
+    __tablename__ = "content_drafts"
+    __table_args__ = (
+        UniqueConstraint("study_id", "section_id", "version", name="uq_content_draft_version"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    study_id: Mapped[str] = mapped_column(String(80), index=True, nullable=False)
+    section_id: Mapped[str] = mapped_column(String(80), index=True, nullable=False)
+    version: Mapped[int] = mapped_column(Integer, nullable=False)
+    # lifecycle: needs_review | proposed | verified | discarded
+    status: Mapped[str] = mapped_column(String(20), nullable=False)
+    title: Mapped[str] = mapped_column(String(160), nullable=False)
+    blocks: Mapped[list[dict[str, Any]]] = mapped_column(JsonDocument, nullable=False, default=list)
+    narrative_md: Mapped[str | None] = mapped_column(Text, nullable=True)
+    provenance: Mapped[list[dict[str, Any]]] = mapped_column(JsonDocument, nullable=False, default=list)
+    note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    model: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    feedback: Mapped[list[str]] = mapped_column(JsonDocument, nullable=False, default=list)
+    data_available: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+
+
+class ChatMessageRow(Base):
+    """One turn of the per-study chat thread. Append-only."""
+
+    __tablename__ = "chat_messages"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    study_id: Mapped[str] = mapped_column(String(80), index=True, nullable=False)
+    role: Mapped[str] = mapped_column(String(16), nullable=False)  # user | assistant
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    scope: Mapped[str] = mapped_column(String(16), nullable=False, default="section")  # section | study
+    section_id: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    intent: Mapped[str] = mapped_column(String(16), nullable=False, default="ask")  # ask | revise
+    draft_version: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
 
 
 class IntakeJobRow(Base):

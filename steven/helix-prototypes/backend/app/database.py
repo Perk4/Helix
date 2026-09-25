@@ -10,12 +10,15 @@ from .config import Settings
 from .models import Base
 
 BASELINE_REVISION = "bf13e5f55c15"
-# Tables a migration after the baseline creates. They are not part of the baseline stamp.
+# Tables that migrations after the baseline create. They are not part of the baseline stamp,
+# and an unversioned database must not already carry them.
 INTAKE_JOB_TABLES = frozenset({"intake_jobs"})
+CONTENT_CHAT_TABLES = frozenset({"content_drafts", "chat_messages"})  # revision c24154d7a8e9
+MIGRATED_TABLES = INTAKE_JOB_TABLES | CONTENT_CHAT_TABLES
 # Created by feat/steven-workspace's former `create_all` path (#25) and now by revision
 # 9edd082c07ae. An unversioned database from that branch may already carry them.
 RUN_EVENT_TABLES = frozenset({"run_events", "run_journey_states"})
-BASELINE_TABLES = frozenset(Base.metadata.tables) - INTAKE_JOB_TABLES - RUN_EVENT_TABLES
+BASELINE_TABLES = frozenset(Base.metadata.tables) - MIGRATED_TABLES - RUN_EVENT_TABLES
 
 
 def create_database_engine(settings: Settings) -> Engine:
@@ -88,7 +91,7 @@ def _adopt_unversioned_baseline(connection: Connection, config: object,
         return
 
     missing_tables = BASELINE_TABLES - existing
-    unexpected_migrated_tables = (existing - BASELINE_TABLES) & INTAKE_JOB_TABLES
+    unexpected_migrated_tables = (existing - BASELINE_TABLES) & MIGRATED_TABLES
     mismatched_columns: list[str] = []
     # Run-event tables from the old create_all path are adopted too, but only if their
     # columns match; revision 9edd082c07ae then skips creating them.
@@ -103,7 +106,10 @@ def _adopt_unversioned_baseline(connection: Connection, config: object,
         if missing_tables:
             details.append(f"missing tables: {', '.join(sorted(missing_tables))}")
         if unexpected_migrated_tables:
-            details.append("post-baseline tables already exist: intake_jobs")
+            details.append(
+                "post-baseline tables already exist: "
+                + ", ".join(sorted(unexpected_migrated_tables))
+            )
         if mismatched_columns:
             details.append(f"column mismatch: {', '.join(sorted(mismatched_columns))}")
         raise RuntimeError(

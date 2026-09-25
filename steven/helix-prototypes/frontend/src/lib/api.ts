@@ -1,13 +1,18 @@
 import type {
   ApprovalRole,
   CandidateEvaluation,
+  ChatMessage,
+  ChatScope,
+  ChatTurn,
   CrossSectionQueryReceipt,
   DataValidationExecution,
   EvidenceChainData,
   ExportReceipt,
-  PlannerMode,
   HumanDirectedRevisionReceipt,
+  PlannerMode,
+  SectionContentDraft,
   SectionDraft,
+  SectionListItem,
   SectionRunReceipt,
   ValidationRun,
   Workspace,
@@ -91,6 +96,112 @@ export async function runSectionAgent(
   });
   assertSectionRunReceipt(value);
   return value;
+}
+
+export async function getSections(studyId: string): Promise<SectionListItem[]> {
+  const value = await request(`/studies/${encodeURIComponent(studyId)}/sections`);
+  if (!Array.isArray(value)) {
+    throw new Error("The sections response does not match the generated API contract.");
+  }
+  return value as SectionListItem[];
+}
+
+export async function getSectionDraft(
+  studyId: string,
+  sectionId: string,
+): Promise<SectionContentDraft | null> {
+  const value = await request(
+    `/studies/${encodeURIComponent(studyId)}/sections/${encodeURIComponent(sectionId)}/draft`,
+  );
+  return (value ?? null) as SectionContentDraft | null;
+}
+
+export async function getSectionDraftVersion(
+  studyId: string,
+  sectionId: string,
+  version: number,
+): Promise<SectionContentDraft> {
+  const value = await request(
+    `/studies/${encodeURIComponent(studyId)}/sections/${encodeURIComponent(sectionId)}/drafts/${version}`,
+  );
+  return value as SectionContentDraft;
+}
+
+export async function generateSectionDraft(
+  studyId: string,
+  sectionId: string,
+  feedback: string[] = [],
+): Promise<SectionContentDraft> {
+  const value = await request(
+    `/studies/${encodeURIComponent(studyId)}/sections/${encodeURIComponent(sectionId)}/draft`,
+    { method: "POST", body: JSON.stringify({ feedback }) },
+  );
+  return value as SectionContentDraft;
+}
+
+export async function reviseSectionDraft(
+  studyId: string,
+  sectionId: string,
+  feedback: string,
+): Promise<SectionContentDraft> {
+  const value = await request(
+    `/studies/${encodeURIComponent(studyId)}/sections/${encodeURIComponent(sectionId)}/revise`,
+    { method: "POST", body: JSON.stringify({ feedback }) },
+  );
+  return value as SectionContentDraft;
+}
+
+export async function applySection(
+  studyId: string,
+  sectionId: string,
+  version: number,
+): Promise<SectionContentDraft> {
+  const value = await request(
+    `/studies/${encodeURIComponent(studyId)}/sections/${encodeURIComponent(sectionId)}/apply`,
+    { method: "POST", body: JSON.stringify({ version }) },
+  );
+  return value as SectionContentDraft;
+}
+
+export async function discardSection(
+  studyId: string,
+  sectionId: string,
+  version: number,
+): Promise<SectionContentDraft> {
+  const value = await request(
+    `/studies/${encodeURIComponent(studyId)}/sections/${encodeURIComponent(sectionId)}/discard`,
+    { method: "POST", body: JSON.stringify({ version }) },
+  );
+  return value as SectionContentDraft;
+}
+
+export async function verifySection(studyId: string, sectionId: string): Promise<SectionContentDraft> {
+  const value = await request(
+    `/studies/${encodeURIComponent(studyId)}/sections/${encodeURIComponent(sectionId)}/verify`,
+    { method: "POST", body: JSON.stringify({}) },
+  );
+  return value as SectionContentDraft;
+}
+
+export async function getChat(studyId: string): Promise<ChatMessage[]> {
+  const value = await request(`/studies/${encodeURIComponent(studyId)}/chat`);
+  if (!Array.isArray(value)) {
+    throw new Error("The chat response does not match the generated API contract.");
+  }
+  return value as ChatMessage[];
+}
+
+export async function sendChat(
+  studyId: string,
+  message: string,
+  scope: ChatScope,
+  sectionId: string | null,
+): Promise<ChatTurn> {
+  const value = await request(`/studies/${encodeURIComponent(studyId)}/chat`, {
+    method: "POST",
+    body: JSON.stringify({ message, scope, section_id: sectionId }),
+  });
+  return value as ChatTurn;
 }
 
 export async function evaluateCandidate(
