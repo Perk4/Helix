@@ -193,6 +193,36 @@ test("inspect provenance reads the claim evidence endpoint and shows the lineage
   expect(h.evidenceRequests).toContain("/api/v1/studies/STUDY-HLX-028/claims/C-BW-HIGH-M/evidence");
 });
 
+test("a slower evidence response for an earlier claim never overwrites the current selection (#30 l53LR)", async ({
+  page,
+}) => {
+  await harness(page);
+  // Registered after the harness, so it answers first: C-BW-HIGH-M is slow, every other claim is fast.
+  await page.route("**/api/v1/studies/*/claims/*/evidence", async (route) => {
+    const claimId = decodeURIComponent(new URL(route.request().url()).pathname.split("/").at(-2) ?? "");
+    if (claimId === "C-BW-HIGH-M") await new Promise((resolve) => setTimeout(resolve, 1500));
+    const body = clone(fx.evidence) as Json & { claim: Json };
+    body.claim = { ...body.claim, claim_id: claimId };
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
+  });
+  await page.goto("/");
+  await page.getByTestId("review-section-S5").click();
+
+  // Newer claim wins even though the older response arrives last.
+  await page.getByTestId("inspect-provenance-C-BW-HIGH-M").click();
+  await page.getByTestId("inspect-provenance-C-BW-HIGH-F").click();
+  await expect(page.getByTestId("lineage-edges")).toHaveAttribute("data-claim", "C-BW-HIGH-F");
+  await page.waitForTimeout(2000);
+  await expect(page.getByTestId("lineage-edges")).toHaveAttribute("data-claim", "C-BW-HIGH-F");
+
+  // A section change discards an in-flight response for the previous section.
+  await page.getByTestId("inspect-provenance-C-BW-HIGH-M").click();
+  await page.getByTestId("review-section-S7").click();
+  await page.waitForTimeout(2000);
+  await expect(page.getByTestId("lineage-edges")).toHaveCount(0);
+  await expect(page.getByTestId("lineage-readout")).not.toContainText("C-BW-HIGH-M");
+});
+
 test("records one role per call in any order; study director waits for the three priors; never exports", async ({
   page,
 }) => {

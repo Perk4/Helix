@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { ApiError, getEvidence } from "@/lib/api";
 import type { EvidenceChainData, Workspace } from "@/lib/types";
@@ -24,16 +24,24 @@ export function DraftCanvas({ workspace, section }: { workspace: Workspace; sect
   const templateSection = template.sections.find((item) => item.section_id === section.section_id);
   const references = new Map(template.references.map((item) => [item.reference_id, item]));
   const [lineage, setLineage] = useState<Lineage>({ state: "idle" });
+  // #30 Codex P2 (l53LR): only the latest inspect request may write the readout. A newer
+  // inspect or a section change bumps the generation, so a slower earlier response is dropped.
+  const generation = useRef(0);
 
   useEffect(() => {
+    generation.current += 1;
     setLineage({ state: "idle" });
   }, [section.section_id]);
 
   async function inspect(claimId: string) {
+    const request = ++generation.current;
     setLineage({ state: "loading", claimId });
     try {
-      setLineage({ state: "loaded", claimId, chain: await getEvidence(studyId, claimId) });
+      const chain = await getEvidence(studyId, claimId);
+      if (request !== generation.current) return;
+      setLineage({ state: "loaded", claimId, chain });
     } catch (cause) {
+      if (request !== generation.current) return;
       const message = cause instanceof ApiError || cause instanceof Error ? cause.message : "Evidence unavailable.";
       setLineage({ state: "error", claimId, message });
     }
