@@ -400,7 +400,10 @@ test("renders candidate evaluation and cross-section query from backend-owned wo
   expect(queryPosts).toBe(1);
 
   await page.getByTestId("promote-section-draft").click();
-  await expect(page.getByRole("status")).toContainText("package_permission");
+  // The drafted-section view adds its own "Needs your review" status; target the command notice.
+  await expect(page.getByRole("status").filter({ hasText: "Section promotion rejected" })).toContainText(
+    "package_permission",
+  );
   expect(promotionPosts).toBe(1);
   await expect(page.getByTestId("section-draft")).toHaveCount(0);
 });
