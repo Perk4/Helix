@@ -13,6 +13,7 @@ import type { DispositionCommand } from "./dispositionRules";
 import {
   claimForResult,
   continueEligibility,
+  evaluationForClaim,
   isRecorded,
   latestDispositions,
   requiredBlockerIds,
@@ -102,7 +103,8 @@ export function TraceabilityStageView({
   );
 
   const selectedClaim = workspace.claims.find((claim) => claim.claim_id === claimId);
-  const evaluation = latestEvaluation(workspace);
+  const evaluation = evaluationForClaim(workspace, claimId);
+  const evaluationCount = workspace.candidate_evaluations?.length ?? 0;
 
   function selectClaim(nextClaimId: string, resultId?: string) {
     setFormResultId(null);
@@ -210,7 +212,7 @@ export function TraceabilityStageView({
       <GateBlockers workspace={workspace} required={required} claimId={claimId} onSelect={selectClaim} />
 
       <div className="hx-trace-detail">
-        <CandidateReceipts evaluation={evaluation} claimId={claimId} />
+        <CandidateReceipts evaluation={evaluation} evaluationCount={evaluationCount} claimId={claimId} />
         {current && <ClaimEvidence chain={current} />}
       </div>
     </div>
@@ -296,9 +298,6 @@ function defaultClaim(workspace: TraceabilityWorkspace, required: string[]): str
   return workspace.claims.at(0)?.claim_id ?? "";
 }
 
-function latestEvaluation(workspace: TraceabilityWorkspace) {
-  return (workspace.candidate_evaluations ?? []).at(-1);
-}
 
 function humanizeField(fieldId: string): string {
   const text = fieldId.replaceAll("-", " ").replaceAll("_", " ");
