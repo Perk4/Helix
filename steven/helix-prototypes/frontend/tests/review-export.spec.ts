@@ -134,6 +134,11 @@ async function harness(page: Page, init: Partial<Harness> = {}): Promise<Harness
   return h;
 }
 
+// Workspace routes may still be in flight when a test ends (reloads, refresh after export).
+test.afterEach(async ({ page }) => {
+  await page.unrouteAll({ behavior: "ignoreErrors" });
+});
+
 function reviewStage(page: Page) {
   return page.getByTestId("review-stage");
 }
