@@ -91,7 +91,6 @@
 #helix-e2e .hx-note-label.is-warn  { color: var(--hx-warn); }
 #helix-e2e .hx-note-label.is-block { color: var(--hx-block); }
 #helix-e2e .hx-disp-audit { color: var(--hx-muted); font-size: var(--hx-fs-meta); }
-#helix-e2e .hx-rule-meta { margin: 0; font-size: var(--hx-fs-step); color: var(--hx-muted); overflow-wrap: anywhere; }
 #helix-e2e .hx-acc-empty { padding: var(--hx-sp-16) var(--hx-sp-20); margin: 0; }
 #helix-e2e .hx-acc-loading { display: flex; align-items: center; gap: var(--hx-sp-10); padding: var(--hx-sp-16) var(--hx-sp-20); color: var(--hx-muted); }
 #helix-e2e .hx-trace-detail { display: grid; grid-template-columns: minmax(0, 360px) minmax(0, 1fr); gap: var(--hx-gap); align-items: start; }

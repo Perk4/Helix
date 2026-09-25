@@ -116,11 +116,6 @@ export function RuleAccordion({
                       </Button>
                     )}
                   </div>
-                  <p className="hx-mono hx-rule-meta">
-                    {result.result_id} · {result.rule_id}@{result.rule_version} ·{" "}
-                    {result.kind === "agent_planned" ? (result.tool_name ?? "agent tool") : "Python rule"} · evidence{" "}
-                    {result.evidence_ids.join(", ") || "none"}
-                  </p>
                   {display === "blocked" && gateOpen && formResultId === result.result_id && (
                     <DispositionForm
                       resultId={result.result_id}

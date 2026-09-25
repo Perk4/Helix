@@ -130,7 +130,8 @@ export function shortHash(value: string): string {
 }
 
 export function displayGrain(grain: string): string {
-  return grain.replaceAll("_x_", " × ").replaceAll("_", " ");
+  const text = grain.replaceAll("_x_", " × ").replaceAll("_", " ");
+  return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
 export function formatNumber(value: number): string {
