@@ -22,6 +22,12 @@
 // value count comes from there rather than from running the executor.
 //
 //   node scripts/verify-claim-coverage.mjs
+//
+// DEMO ONLY, NOT QUALIFICATION: with HELIX_DEMO_UNQUALIFIED_PACKAGES=1 (or true/yes/on) in
+// the environment, or the --demo-unqualified-packages CLI flag, the check applies option 2
+// of upstream 47c19c4 exactly as the backend does in demo mode: for 5.2.3 only, a table
+// cell backed by the envelope's executor receipt counts as covered. Every such line is
+// labelled "Demo: not qualified". Without the flag the check is unchanged.
 
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
@@ -31,6 +37,16 @@ const sectionsDir = resolve(root, "skills/helix-evidence-pipeline/packages/secti
 const fixturesDir = resolve(root, ".agents/skills/helix-section-agent/evals/fixtures");
 
 const problems = [];
+
+const DEMO_LABEL = "Demo: not qualified";
+// Mirrors backend/app/demo_mode.py RECEIPT_BACKED_CELL_PACKAGE_IDS (5.2.3 only).
+const RECEIPT_BACKED_SECTIONS = new Set(["5_2_3_body_weight"]);
+const demoMode =
+  process.argv.includes("--demo-unqualified-packages") ||
+  /^(1|true|yes|on)$/i.test(process.env.HELIX_DEMO_UNQUALIFIED_PACKAGES ?? "");
+if (demoMode) {
+  console.log(`DEMO MODE (${DEMO_LABEL}): executor-receipt table cells count as covered for 5.2.3 only`);
+}
 
 /** Every leaf number the executor computed, which is one table cell each. */
 const countValues = (node) => {
@@ -72,6 +88,16 @@ for (const sectionId of readdirSync(sectionsDir)) {
     .filter(([key]) => !METADATA_KEYS.has(key))
     .reduce((total, [, value]) => total + countValues(value), 0);
 
+  const receipt = fixture.body.executor_receipts?.[0];
+  if (demoMode && RECEIPT_BACKED_SECTIONS.has(sectionId) && receipt?.artifact_id && cells > declared) {
+    // Every computed value is a table cell the receipt itself backs, so all cells are covered.
+    console.log(
+      `coverage ok   ${sectionId}: ${cells} computed value(s), ${declared} declared claim(s), ` +
+        `${cells} cell(s) backed by executor receipt ${receipt.artifact_id} [${DEMO_LABEL}]`,
+    );
+    continue;
+  }
+
   if (cells > declared) {
     problems.push(
       `${sectionId}: the executor computes ${cells} value(s) but the package declares ${declared} ` +
@@ -89,4 +115,10 @@ if (problems.length > 0) {
   process.exit(1);
 }
 
-console.log(JSON.stringify({ verified: true, sections: readdirSync(sectionsDir).length }));
+console.log(
+  JSON.stringify({
+    verified: true,
+    sections: readdirSync(sectionsDir).length,
+    ...(demoMode ? { demo_unqualified_packages: true, label: DEMO_LABEL } : {}),
+  }),
+);
