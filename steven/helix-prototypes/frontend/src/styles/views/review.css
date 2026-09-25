@@ -129,6 +129,18 @@
 }
 #helix-e2e .hx-export-receipt dd { margin: 0; }
 #helix-e2e .hx-review-disclaimer { text-align: center; }
+/* .hx-doc p is the serif report body; references, disclaimers, and meta stay in the UI face. */
+#helix-e2e .hx-doc .hx-doc-refs p,
+#helix-e2e .hx-doc p.hx-sub { font-family: var(--hx-sans); font-size: var(--hx-fs-row); }
+#helix-e2e .hx-fsa-scope {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--hx-sp-4) var(--hx-sp-12);
+  margin: 0 0 var(--hx-sp-10);
+  font-size: var(--hx-fs-meta);
+}
+#helix-e2e .hx-fsa-scope dt { color: var(--hx-muted); }
+#helix-e2e .hx-fsa-scope dd { margin: 0; overflow-wrap: anywhere; }
 @media (max-width: 1100px) {
   #helix-e2e .hx-doc { padding: var(--hx-sp-24); }
 }

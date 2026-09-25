@@ -1,5 +1,7 @@
 "use client";
 
+import { Fragment } from "react";
+
 import { APPROVAL_ORDER, APPROVAL_POLICY } from "@/lib/api/release";
 import type { ApprovalRole, Workspace } from "@/lib/types";
 
@@ -102,6 +104,26 @@ export function SignOffs({
               </Button>
             )}
           </div>
+          {workspace.final_study_approval && (
+            <dl className="hx-fsa-scope" data-testid="final-study-approval-scope">
+              <dt>Approval</dt>
+              <dd className="hx-mono" data-testid="approval-current">
+                {fsaCurrent ? "current" : "stale"}
+              </dd>
+              <dt>Manifest</dt>
+              <dd className="hx-mono" data-testid="approval-manifest-hash">
+                {workspace.final_study_approval.manifest_hash}
+              </dd>
+              {workspace.final_study_approval.included_artifact_hashes.map((item) => (
+                <Fragment key={item.artifact_id}>
+                  <dt className="hx-mono">{item.artifact_id}</dt>
+                  <dd className="hx-mono" data-testid={`approval-artifact-${item.artifact_id}`}>
+                    {item.content_hash}
+                  </dd>
+                </Fragment>
+              ))}
+            </dl>
+          )}
         </div>
       </div>
       <p className="hx-sub hx-fine">
