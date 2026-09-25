@@ -1,5 +1,8 @@
 import { expect, test, type Page, type Route } from "@playwright/test";
 
+import { nextAgentStep } from "../src/lib/api/agentSteps";
+import type { Workspace } from "../src/lib/types";
+
 import {
   clone,
   freezeFixture,
@@ -302,4 +305,121 @@ test("extract executes the missing package once, with the freeze's run-scoped ke
   await expect(page.getByTestId("agent-stage-view")).toHaveAttribute("data-stage", "validate");
   // The execution is now confirmed for this Pinned Run: no replay is queued before validation.
   await expect(page.getByTestId("agent-run-step")).toHaveText("Run deterministic and hybrid validation");
+});
+
+// P1 (Codex PRRT_kwDOUohZWs6l2RQP): the decision reads the evaluation and promotion outcome,
+// never the mere presence of the promotion decision that evaluation always records.
+test.describe("next agent step after candidate evaluation", () => {
+  const SR = "SR-TEST-0001";
+  function evaluated(
+    action: "retry" | "stop_for_review" | "hold",
+    extra: { promotion_decisions?: Json[]; section_drafts?: Json[] } = {},
+  ): Workspace {
+    const attempt = action === "stop_for_review" ? 3 : 1;
+    return {
+      ...clone(freezeFixture.after),
+      validations: [...clone(dvResults), hybridResult],
+      section_run_eligibility: [{ section_package_id: BW_SECTION, eligible: true, reasons: [] }],
+      section_runs: [{ receipt: { run_id: SR, section_package_id: BW_SECTION } }],
+      cross_section_queries: [{ run_id: SR }],
+      candidate_evaluations: [
+        {
+          run_id: SR,
+          next_attempt_decision: {
+            action,
+            attempt,
+            max_attempts: 3,
+            reasons: action === "hold" ? ["Deterministic gates passed; promotion is out of scope"] : ["blocked"],
+            blocking_receipt_ids: action === "hold" ? [] : ["PR-TEST-1"],
+          },
+        },
+      ],
+      // Evaluation always records a decision; for a blocked candidate it is ineligible.
+      promotion_decisions: extra.promotion_decisions ?? [
+        { run_id: SR, eligible: action === "hold", failed_condition_ids: action === "hold" ? [] : ["no_hard_blocker"] },
+      ],
+      section_drafts: extra.section_drafts ?? [],
+    } as unknown as Workspace;
+  }
+  const confirmed = { confirmedDataValidationRuns: new Set([runId]) };
+
+  test("a capped candidate (stop_for_review) is a human stop, never the Traceability gate", () => {
+    const next = nextAgentStep(evaluated("stop_for_review"), confirmed);
+    expect(next).toMatchObject({ kind: "human-decision", stageId: "draft" });
+    expect(JSON.stringify(next)).toContain("stopped for review after 3 of 3 attempts");
+  });
+
+  test("retry is a human decision", () => {
+    expect(nextAgentStep(evaluated("retry"), confirmed)).toMatchObject({ kind: "human-decision", stageId: "draft" });
+  });
+
+  test("hold with an eligible decision and no Section Draft runs promotion on that run", () => {
+    expect(nextAgentStep(evaluated("hold"), confirmed)).toMatchObject({ action: "section-promotion", runId: SR });
+  });
+
+  test("hold with an ineligible decision stops for a person with the failed conditions", () => {
+    const next = nextAgentStep(
+      evaluated("hold", { promotion_decisions: [{ run_id: SR, eligible: false, failed_condition_ids: ["package_permission"] }] }),
+      confirmed,
+    );
+    expect(next).toMatchObject({ kind: "human-decision", stageId: "draft" });
+    expect(JSON.stringify(next)).toContain("package_permission");
+  });
+
+  test("Traceability is reported only once a Section Draft is promoted for the run", () => {
+    const next = nextAgentStep(evaluated("hold", { section_drafts: [{ run_id: SR, draft_id: "SD-TEST-1" }] }), confirmed);
+    expect(next).toMatchObject({ kind: "gate", stageId: "traceability" });
+    // A draft for another run does not count.
+    const other = nextAgentStep(evaluated("hold", { section_drafts: [{ run_id: "SR-OTHER", draft_id: "SD-TEST-2" }] }), confirmed);
+    expect(other).toMatchObject({ action: "section-promotion" });
+  });
+});
+
+// P1 (Codex PRRT_kwDOUohZWs6l2RQT): one command at a time across the agent and the legacy
+// StudyJourney controls, and a double click starts one command.
+test("legacy commands wait while an agent command is in flight; no duplicate POST /validation-runs", async ({ page }) => {
+  await confirmFreezeExecution(page);
+  const h = await harness(page);
+  let release: () => void = () => undefined;
+  const gate = new Promise<void>((resolve) => (release = resolve));
+  await page.route("**/api/v1/studies/*/validation-runs", async (route) => {
+    (h.bodies.validation ??= []).push((route.request().postDataJSON() ?? {}) as Json);
+    await gate; // hold the agent's validation in flight
+    h.validated = true;
+    await route.fulfill({
+      status: 201,
+      contentType: "application/json",
+      body: JSON.stringify({
+        run_id: "VAL-TEST-1",
+        study_id: "STUDY-HLX-028",
+        planner: "fixture",
+        planner_label: "Fixture planner for tool-contract testing",
+        llm_used: false,
+        rule_bundle_version: "helix-rules-1.0.0",
+        results: dvResults,
+        created_at: "2026-09-24T12:00:00Z",
+      }),
+    });
+  });
+  const commands = trackCommands(page);
+  await page.goto("/");
+  const run = page.getByTestId("agent-run-step");
+  await expect(run).toHaveText("Run deterministic and hybrid validation");
+  await run.dblclick();
+  await expect.poll(() => h.bodies.validation?.length ?? 0).toBe(1);
+  await expect(run).toBeDisabled();
+  await expect(page.getByTestId("agent-run-sequence")).toBeDisabled();
+  for (const id of ["run-validation", "run-body-weight-validation", "draft-body-weight"]) {
+    const control = page.getByTestId(id);
+    if ((await control.count()) > 0) await expect(control).toBeDisabled();
+  }
+  await expect(page.getByTestId("run-validation")).toHaveCount(1);
+  await page.getByTestId("run-validation").click({ force: true }).catch(() => undefined);
+  release();
+  await expect(live(page)).toContainText("Run deterministic and hybrid validation: recorded by the server.");
+  expect(commands.filter((item) => item.endsWith("/validation-runs"))).toEqual([
+    "POST /api/v1/studies/STUDY-HLX-028/validation-runs",
+  ]);
+  // Settled: the legacy controls are usable again.
+  await expect(page.getByTestId("run-validation")).toBeEnabled();
 });
