@@ -1,6 +1,6 @@
 "use client";
 
-import type { CandidateEvaluation, EvidenceChainData, ValidationResult } from "@/lib/types";
+import type { EvidenceChainData, ValidationResult } from "@/lib/types";
 
 import { ChevronIcon } from "../icons";
 import { Button, Chip, cx, type Tone } from "../ui";
@@ -31,7 +31,6 @@ type Props = {
   chain: EvidenceChainData;
   results: ValidationResult[];
   dispositions: Map<string, Disposition>;
-  evaluation: CandidateEvaluation | undefined;
   openResultId: string | null;
   onToggle: (resultId: string) => void;
   gateOpen: boolean;
@@ -44,7 +43,6 @@ export function RuleAccordion({
   chain,
   results,
   dispositions,
-  evaluation,
   openResultId,
   onToggle,
   gateOpen,
@@ -100,7 +98,7 @@ export function RuleAccordion({
             <div className="hx-acc-panel" id={panelId} role="region" aria-labelledby={buttonId} hidden={!isOpen}>
               {isOpen && (
                 <>
-                  <TraceFlow chain={chain} evaluation={evaluation} result={result} tone={badge.flow} />
+                  <TraceFlow chain={chain} result={result} tone={badge.flow} />
                   <div className={cx("hx-note", `t-${badge.flow}`)} data-testid={`rule-note-${result.result_id}`}>
                     <span>
                       <strong className={`hx-note-label is-${badge.flow}`}>{badge.note} </strong>

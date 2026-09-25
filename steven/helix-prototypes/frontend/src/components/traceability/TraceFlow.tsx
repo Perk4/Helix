@@ -1,13 +1,13 @@
-import type { CandidateEvaluation, EvidenceChainData, ValidationResult } from "@/lib/types";
+import type { EvidenceChainData, ValidationResult } from "@/lib/types";
 
 import { Kicker, cx } from "../ui";
 
 // Lane C (#22). The five-step flow for one open rule (research/helix-e2e-workbench-v1.html,
-// `TRACE`). Every value comes from `getEvidence` and the stored candidate evaluation.
+// `TRACE`). Every value comes from `getEvidence`.
 
 export type FlowTone = "pass" | "warn" | "block";
 
-type Step = { key: string; kicker: string; value: string; detail: string[] };
+type Step = { key: string; kicker: string; value: string; detail: string };
 
 /**
  * Which steps a rule checks. Presentation only (the reference highlights the steps the
@@ -26,85 +26,74 @@ export function ruleFocus(ruleId: string): number[] {
   return RULE_FOCUS[ruleId] ?? [3];
 }
 
-export function buildSteps(chain: EvidenceChainData, evaluation: CandidateEvaluation | undefined): Step[] {
+export function buildSteps(chain: EvidenceChainData): Step[] {
   const { claim, sources } = chain;
   const first = sources.at(0);
   const last = sources.at(-1);
   const authority = chain.lineage?.at(0)?.authority_tier;
-  const hashes = sourceHashes(chain);
-  const ruleVersions = ruleVersionList(chain).join(" · ");
-  const bindings = evaluation?.provenance_receipt.bindings.filter((binding) => binding.claim_id === claim.claim_id) ?? [];
-  const conformance = evaluation?.template_conformance_receipt;
+  const grainKey = Object.entries(claim.grain_key ?? {}).map(([key, value]) => `${key}=${value}`);
 
+  // One detail line per step, as in the reference. Hashes, recomputation, exact match and
+  // rule versions are listed in full in ClaimEvidence; receipts in CandidateReceipts.
   return [
     {
       key: "source",
       kicker: "1 · Frozen source",
       value: sources.length > 0 ? `${sources.length} ${first?.domain ?? ""} records`.replace("  ", " ") : "No source records",
-      detail: [
-        first ? (last && last !== first ? `${first.source_pointer} … ${last.source_pointer}` : first.source_pointer) : "Scientific judgment: no source value",
-        hashes.length > 0 ? `hash ${shortHash(hashes[0])}${hashes.length > 1 ? ` +${hashes.length - 1}` : ""}` : "no source hash",
-      ],
+      detail: first ? pointerRange(first.source_pointer, last?.source_pointer) : "Scientific judgment: no source value",
     },
     {
       key: "facts",
       kicker: "2 · Normalized facts",
       value: displayGrain(first?.grain ?? claim.grain),
       detail: [
-        [
-          `domain=${first?.domain ?? "none"}`,
-          `unit=${first?.unit ?? claim.unit ?? "none"}`,
-          `authority=${authority ?? "n/a"}`,
-        ].join(" · "),
-      ],
+        `domain=${first?.domain ?? "none"}`,
+        `unit=${first?.unit ?? claim.unit ?? "none"}`,
+        `authority=${authority ?? "n/a"}`,
+      ].join(" · "),
     },
     {
       key: "transform",
       kicker: "3 · Transform",
       value: chain.transform_id ?? "No transform",
-      detail: [
-        `version=${chain.transform_version ?? claim.transform_version ?? "n/a"} · inputs=${sources.length}`,
-        chain.recomputed_value === null ? "recomputed=not calculated" : `recomputed=${formatNumber(chain.recomputed_value)} ${claim.unit}`,
-      ],
+      detail: [...grainKey, `inputs=${sources.length}`].join(" · "),
     },
     {
       key: "claim",
       kicker: "4 · Validated claim",
       value: claim.value === null ? "Needs review" : `${formatNumber(claim.value)} ${claim.unit}`,
-      detail: [
-        `${claim.claim_id} · exact match ${chain.exact_match === null ? "n/a" : chain.exact_match ? "yes" : "no"}`,
-        `${chain.validations.length} rule results${ruleVersions ? ` · ${ruleVersions}` : ""}`,
-      ],
+      detail: `${claim.claim_id} · ${displayGrain(claim.grain).toLowerCase()}`,
     },
     {
       key: "report",
       kicker: "5 · Report field",
       value: `Section ${claim.section_id}`,
-      detail: [
-        chain.report_text,
-        evaluation
-          ? `${bindings.length} provenance bindings · template ${conformance?.status ?? "n/a"}`
-          : "No candidate evaluation recorded",
-      ],
+      detail: chain.report_text,
     },
   ];
 }
 
+/** "A-BW#M401:DAY28 … F405:DAY28": the last pointer drops the prefix it shares with the first. */
+export function pointerRange(first: string, last: string | undefined): string {
+  if (!last || last === first) return first;
+  const hash = first.indexOf("#");
+  const prefix = hash >= 0 ? first.slice(0, hash + 1) : "";
+  return `${first} … ${prefix && last.startsWith(prefix) ? last.slice(prefix.length) : last}`;
+}
+
 export function TraceFlow({
   chain,
-  evaluation,
   result,
   tone,
 }: {
   chain: EvidenceChainData;
-  evaluation: CandidateEvaluation | undefined;
   result: ValidationResult;
   tone: FlowTone;
 }) {
   const focus = ruleFocus(result.rule_id);
   return (
     <ol className="hx-flow" aria-label="Traceability flow" data-testid="trace-flow">
-      {buildSteps(chain, evaluation).map((step, index) => {
+      {buildSteps(chain).map((step, index) => {
         const focused = focus.includes(index);
         return (
           <li key={step.key} className={cx(focused && `f-${tone}`)} data-step={step.key} data-focused={focused || undefined}>
@@ -112,11 +101,7 @@ export function TraceFlow({
               {step.kicker}
             </Kicker>
             <div className="val">{step.value}</div>
-            {step.detail.map((line, lineIndex) => (
-              <div key={lineIndex} className="hx-mono hx-flow-detail">
-                {line}
-              </div>
-            ))}
+            <div className="hx-mono hx-flow-detail">{step.detail}</div>
           </li>
         );
       })}

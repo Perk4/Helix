@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { getEvidence } from "@/lib/api";
-import type { EvidenceChainData, Workspace } from "@/lib/types";
+import type { EvidenceChainData } from "@/lib/types";
 
 import { CheckIcon, WarnIcon } from "../icons";
 import { Button, Card, Chip, GateBanner, Kicker, ListRow, Spinner, cx, toneColor } from "../ui";
@@ -18,6 +18,7 @@ import {
   requiredBlockerIds,
   ruleDisplay,
   stageById,
+  type TraceabilityWorkspace,
 } from "./gateState";
 import { RuleAccordion, humanizeRule } from "./RuleAccordion";
 
@@ -27,14 +28,21 @@ import { RuleAccordion, humanizeRule } from "./RuleAccordion";
 // which claim and rule row are being viewed and whether the form is open.
 
 export type TraceabilityStageViewProps = {
-  workspace: Workspace;
-  /** Records the typed command and resolves with the refreshed workspace; rejects with the server error. */
-  onRecordDisposition: (resultId: string, command: DispositionCommand) => Promise<Workspace>;
+  workspace: TraceabilityWorkspace;
+  /** Records the typed command and resolves once the refreshed workspace is set; rejects with the server error. */
+  onRecordDisposition: (resultId: string, command: DispositionCommand) => Promise<unknown>;
   /** Selects the Review view. It never passes the gate; the server already has. */
   onContinue: () => void;
+  /** Loads the evidence chain for a claim. Defaults to the API's `getEvidence`. */
+  loadEvidence?: (studyId: string, claimId: string) => Promise<EvidenceChainData>;
 };
 
-export function TraceabilityStageView({ workspace, onRecordDisposition, onContinue }: TraceabilityStageViewProps) {
+export function TraceabilityStageView({
+  workspace,
+  onRecordDisposition,
+  onContinue,
+  loadEvidence = getEvidence,
+}: TraceabilityStageViewProps) {
   const studyId = workspace.study.study_id;
   const dispositions = useMemo(() => latestDispositions(workspace), [workspace]);
   const required = useMemo(() => requiredBlockerIds(workspace), [workspace]);
@@ -55,7 +63,7 @@ export function TraceabilityStageView({ workspace, onRecordDisposition, onContin
   useEffect(() => {
     let active = true;
     setLoadError(null);
-    void getEvidence(studyId, claimId)
+    void loadEvidence(studyId, claimId)
       .then((value) => {
         if (active) setChain(value);
       })
@@ -68,7 +76,7 @@ export function TraceabilityStageView({ workspace, onRecordDisposition, onContin
     return () => {
       active = false;
     };
-  }, [studyId, claimId, workspace.validations, workspace.dispositions]);
+  }, [loadEvidence, studyId, claimId, workspace.validations, workspace.dispositions]);
 
   const current = chain && chain.claim.claim_id === claimId ? chain : null;
   const results = current?.validations ?? [];
@@ -186,7 +194,6 @@ export function TraceabilityStageView({ workspace, onRecordDisposition, onContin
             chain={current}
             results={results}
             dispositions={dispositions}
-            evaluation={evaluation}
             openResultId={openResultId}
             onToggle={(resultId) => {
               setFormResultId(null);
@@ -216,7 +223,7 @@ function GateBlockers({
   claimId,
   onSelect,
 }: {
-  workspace: Workspace;
+  workspace: TraceabilityWorkspace;
   required: string[];
   claimId: string;
   onSelect: (claimId: string, resultId?: string) => void;
@@ -278,7 +285,7 @@ function GateBlockers({
   );
 }
 
-function defaultClaim(workspace: Workspace, required: string[]): string {
+function defaultClaim(workspace: TraceabilityWorkspace, required: string[]): string {
   const dispositions = latestDispositions(workspace);
   const byId = new Map(workspace.validations.map((result) => [result.result_id, result]));
   for (const resultId of required) {
@@ -289,7 +296,7 @@ function defaultClaim(workspace: Workspace, required: string[]): string {
   return workspace.claims.at(0)?.claim_id ?? "";
 }
 
-function latestEvaluation(workspace: Workspace) {
+function latestEvaluation(workspace: TraceabilityWorkspace) {
   return (workspace.candidate_evaluations ?? []).at(-1);
 }
 

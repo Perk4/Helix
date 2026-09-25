@@ -192,15 +192,13 @@ test("loads getEvidence per claim and shows the five-step flow, lineage, and rec
   const flow = page.getByTestId("trace-flow");
   await expect(flow.locator("li")).toHaveCount(5);
   await expect(flow.locator('[data-step="source"]')).toContainText("10 BW records");
-  // The seeded bundle carries no source hashes until data validation runs; the flow says so.
-  await expect(flow.locator('[data-step="source"]')).toContainText(/hash sha256:|no source hash/);
+  await expect(flow.locator('[data-step="source"]')).toContainText(" … ");
   await expect(flow.locator('[data-step="facts"]')).toContainText("domain=BW");
   await expect(flow.locator('[data-step="transform"]')).toContainText("mean-v1");
-  await expect(flow.locator('[data-step="transform"]')).toContainText("recomputed=286.2 g");
+  await expect(flow.locator('[data-step="transform"]')).toContainText("inputs=10");
   await expect(flow.locator('[data-step="claim"]')).toContainText("286.2 g");
-  await expect(flow.locator('[data-step="claim"]')).toContainText("exact match yes");
+  await expect(flow.locator('[data-step="claim"]')).toContainText("C-BW-HIGH · ");
   await expect(flow.locator('[data-step="report"]')).toContainText("Terminal mean body weight");
-  await expect(flow.locator('[data-step="report"]')).toContainText(`${bwBindings} provenance bindings · template passed`);
   // Steps checked by the blocked grain rule carry the block tone.
   await expect(flow.locator("li.f-block")).toHaveCount(3);
 
@@ -209,6 +207,9 @@ test("loads getEvidence per claim and shows the five-step flow, lineage, and rec
   await expect(evidence.getByTestId("lineage-edges").getByRole("row")).toHaveCount(11);
   await expect(evidence.getByTestId("claim-lineage")).toContainText("mean-v1");
   await expect(evidence.getByTestId("claim-lineage")).toContainText("@");
+  // Recomputation and exact match moved from the flow to the full evidence facts.
+  await expect(evidence.getByTestId("claim-lineage")).toContainText("286.2 g");
+  await expect(evidence.getByTestId("claim-lineage")).toContainText("Yes");
 
   const receipts = page.getByTestId("candidate-receipts");
   await expect(receipts.getByTestId("receipt-provenance")).toContainText(`${bwBindings} of ${allBindings.length} bindings for C-BW-HIGH`);

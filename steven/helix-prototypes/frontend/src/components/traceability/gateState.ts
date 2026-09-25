@@ -6,6 +6,18 @@ import type { JourneyStage, ValidationResult, Workspace } from "@/lib/types";
 
 export type Disposition = Workspace["dispositions"][number];
 
+export type GateStage = Pick<JourneyStage, "stage_id" | "status" | "selectable" | "actions">;
+
+/**
+ * The slice of the workspace Gate 2 reads. The full `Workspace` satisfies it; the parity
+ * fixture supplies only this slice, so it never has to fake unrelated run state.
+ */
+export type TraceabilityWorkspace = Pick<Workspace, "claims" | "validations" | "dispositions" | "candidate_evaluations"> & {
+  study: Pick<Workspace["study"], "study_id">;
+  journey: { stages: GateStage[] };
+  release_gate: Pick<Workspace["release_gate"], "blocking_result_ids">;
+};
+
 /** The decisions the backend treats as resolving a blocker (schemas.RESOLVED_DISPOSITIONS). */
 const RECORDED_DECISIONS = new Set<Disposition["decision"]>([
   "corrected",
@@ -13,7 +25,7 @@ const RECORDED_DECISIONS = new Set<Disposition["decision"]>([
   "approved_exception",
 ]);
 
-export function latestDispositions(workspace: Workspace): Map<string, Disposition> {
+export function latestDispositions(workspace: TraceabilityWorkspace): Map<string, Disposition> {
   const latest = new Map<string, Disposition>();
   for (const disposition of workspace.dispositions) {
     latest.set(disposition.result_id, disposition);
@@ -36,12 +48,12 @@ export function ruleDisplay(result: ValidationResult, disposition: Disposition |
   return "warning";
 }
 
-export function stageById(workspace: Workspace, id: JourneyStage["stage_id"]): JourneyStage | undefined {
+export function stageById(workspace: TraceabilityWorkspace, id: JourneyStage["stage_id"]): GateStage | undefined {
   return workspace.journey.stages.find((stage) => stage.stage_id === id);
 }
 
 /** Result IDs the server's traceability stage lists as required dispositions. */
-export function requiredBlockerIds(workspace: Workspace): string[] {
+export function requiredBlockerIds(workspace: TraceabilityWorkspace): string[] {
   const ids = new Set<string>(workspace.release_gate.blocking_result_ids);
   for (const action of stageById(workspace, "traceability")?.actions ?? []) {
     if (action.action_id.startsWith("disposition:")) ids.add(action.action_id.slice("disposition:".length));
@@ -56,7 +68,7 @@ export type ContinueEligibility = { eligible: boolean; hint: string };
  * state reports (a) the Review stage reached and (b) every required blocker carrying a
  * recorded disposition. There is no local `disposed` or `gatePassed` flag.
  */
-export function continueEligibility(workspace: Workspace): ContinueEligibility {
+export function continueEligibility(workspace: TraceabilityWorkspace): ContinueEligibility {
   const trace = stageById(workspace, "traceability");
   const review = stageById(workspace, "review-export");
   const latest = latestDispositions(workspace);
@@ -81,7 +93,7 @@ export function continueEligibility(workspace: Workspace): ContinueEligibility {
 }
 
 /** The claim a validation result belongs to, from its scope or evidence IDs (server data). */
-export function claimForResult(workspace: Workspace, result: ValidationResult | undefined): string | undefined {
+export function claimForResult(workspace: TraceabilityWorkspace, result: ValidationResult | undefined): string | undefined {
   if (!result) return undefined;
   const claimIds = new Set(workspace.claims.map((claim) => claim.claim_id));
   if (claimIds.has(result.scope_id)) return result.scope_id;
