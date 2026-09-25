@@ -1,8 +1,8 @@
 "use client";
 
-import { Fragment } from "react";
+import { Fragment, useState } from "react";
 
-import { APPROVAL_ORDER, APPROVAL_POLICY } from "@/lib/api/release";
+import { APPROVAL_ORDER, APPROVAL_POLICY, artifactLabel } from "@/lib/api/release";
 import type { ApprovalRole, Workspace } from "@/lib/types";
 
 import { CheckIcon, ClockIcon } from "../icons";
@@ -62,8 +62,8 @@ export function SignOffs({
               <div className="hx-signoff-detail">
                 <span className="hx-sub">
                   {approval
-                    ? `${approval.reviewer} · “${approval.meaning}”`
-                    : `Meaning: “${policy.meaning}” · synthetic demo identity ${policy.reviewer}`}
+                    ? `Signed by ${approval.reviewer} (demo): “${approval.meaning}”`
+                    : `Signs as ${policy.reviewer} (demo): “${policy.meaning}”`}
                 </span>
                 {!approval && (
                   <Button
@@ -73,7 +73,7 @@ export function SignOffs({
                     onClick={() => onApprove(role)}
                     data-testid={`approve-${role}`}
                   >
-                    {busy === role ? "Recording…" : `Record ${policy.label.toLowerCase()}`}
+                    {busy === role ? "Signing…" : policy.buttonLabel}
                   </Button>
                 )}
               </div>
@@ -84,14 +84,16 @@ export function SignOffs({
           <ListRow
             icon={fsaCurrent ? <CheckIcon /> : <ClockIcon />}
             iconColor={toneColor(fsaCurrent ? "pass" : "warn")}
-            meta={fsaCurrent ? "Recorded" : workspace.final_study_approval ? "Stale" : "Pending"}
+            meta={fsaCurrent ? "Signed" : workspace.final_study_approval ? "Out of date" : "Pending"}
             metaColor={toneColor(fsaCurrent ? "pass" : "warn")}
           >
-            Final Study Approval (hash-bound)
+            Final Study Approval
           </ListRow>
           <div className="hx-signoff-detail">
             <span className="hx-sub" data-testid="fsa-manifest-hash">
-              {workspace.release_candidate ? "Binds the exact hashes below." : "No release candidate yet"}
+              {workspace.release_candidate
+                ? "You approve exactly these files. Any change needs a new approval."
+                : "Nothing to approve yet."}
             </span>
             {!fsaCurrent && (
               <Button
@@ -100,39 +102,85 @@ export function SignOffs({
                 onClick={onFinalStudyApproval}
                 data-testid="approve-final-study"
               >
-                {busy === "final-study-approval" ? "Recording…" : "Record Final Study Approval"}
+                {busy === "final-study-approval" ? "Signing…" : "Sign Final Study Approval"}
               </Button>
             )}
           </div>
           {workspace.release_candidate && (
             // Scope of the hash-bound record: the exact release-candidate manifest and artifact
-            // hashes (the recorded approval's copy once it exists).
-            <dl className="hx-fsa-scope" data-testid="final-study-approval-scope">
-              <dt>Approval</dt>
-              <dd className="hx-mono" data-testid="approval-current">
-                {fsaCurrent ? "current" : workspace.final_study_approval ? "stale" : "ready for signature"}
-              </dd>
-              <dt>Manifest</dt>
-              <dd className="hx-mono" data-testid="approval-manifest-hash">
-                {workspace.final_study_approval?.manifest_hash ?? workspace.release_candidate.content_hash}
-              </dd>
-              {(workspace.final_study_approval?.included_artifact_hashes ?? workspace.release_candidate.included_artifacts).map(
-                (item) => (
-                  <Fragment key={item.artifact_id}>
-                    <dt className="hx-mono">{item.artifact_id}</dt>
-                    <dd className="hx-mono" data-testid={`approval-artifact-${item.artifact_id}`}>
-                      {item.content_hash}
-                    </dd>
-                  </Fragment>
-                ),
-              )}
-            </dl>
+            // hashes (the recorded approval's copy once it exists). Each full hash stays in the
+            // DOM (and the copy button); the column only truncates it visually.
+            <div className="hx-fsa-scope" data-testid="final-study-approval-scope">
+              <div className="hx-fsa-head">
+                <span className="hx-fsa-kicker">What you are approving</span>
+                <span
+                  className="hx-fsa-status"
+                  data-testid="approval-current"
+                  data-state={fsaCurrent ? "current" : workspace.final_study_approval ? "stale" : "ready"}
+                >
+                  {fsaCurrent ? "Signed" : workspace.final_study_approval ? "Out of date: files changed, sign again" : "Ready to sign"}
+                </span>
+              </div>
+              <dl>
+                <HashRow
+                  label="Package fingerprint"
+                  value={workspace.final_study_approval?.manifest_hash ?? workspace.release_candidate.content_hash}
+                  testId="approval-manifest-hash"
+                />
+                {(workspace.final_study_approval?.included_artifact_hashes ?? workspace.release_candidate.included_artifacts).map(
+                  (item) => (
+                    <HashRow
+                      key={item.artifact_id}
+                      label={labelFor(workspace, item.artifact_id)}
+                      detail={item.artifact_id}
+                      value={item.content_hash}
+                      testId={`approval-artifact-${item.artifact_id}`}
+                    />
+                  ),
+                )}
+              </dl>
+            </div>
           )}
         </div>
       </div>
       <p className="hx-sub hx-fine">
-        Reviewer names are synthetic demo identities, not authenticated signers or e-signatures (#27).
+        Demo names only. These are not real e-signatures.
       </p>
     </div>
+  );
+}
+
+function labelFor(workspace: Workspace, artifactId: string): string {
+  const kind = workspace.release_candidate?.included_artifacts.find((item) => item.artifact_id === artifactId)?.kind;
+  return kind ? artifactLabel(kind) : artifactId;
+}
+
+/** One approved hash: friendly label, visually truncated full hash, and a copy button. */
+function HashRow({ label, detail, value, testId }: { label: string; detail?: string; value: string; testId: string }) {
+  const [copied, setCopied] = useState(false);
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1500);
+    } catch {
+      setCopied(false);
+    }
+  }
+  return (
+    <Fragment>
+      <dt>
+        {label}
+        {detail && <span className="hx-mono hx-fsa-id"> · {detail}</span>}
+      </dt>
+      <dd className="hx-fsa-hash">
+        <span className="hx-mono hx-hash" title={value} data-testid={testId}>
+          {value}
+        </span>
+        <button type="button" className="hx-hash-copy" onClick={() => void copy()} aria-label={`Copy full hash: ${label}`}>
+          {copied ? "Copied" : "Copy"}
+        </button>
+      </dd>
+    </Fragment>
   );
 }
