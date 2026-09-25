@@ -98,7 +98,7 @@ class ChatService:
         section_id: str | None = None,
     ) -> ChatTurn:
         """One turn. The model decides answer-vs-edit; an edit yields a proposed
-        rewrite (gated by the reviewer's 👍/👎). Nothing is applied here."""
+        rewrite (gated by the reviewer's Apply or Discard). Nothing is applied here."""
         package = self.repository.get(study_id)
         prior = self.repository.recent_chat_messages(study_id, HISTORY_WINDOW)
         messages = self._build_messages(package, message, scope, section_id, prior)

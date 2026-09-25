@@ -880,7 +880,7 @@
       },
       "ChatTurn": {
         "additionalProperties": false,
-        "description": "One assistant turn: the reply, plus a proposed rewrite when the model\nread the message as an edit request (approved via \ud83d\udc4d/\ud83d\udc4e).",
+        "description": "One assistant turn: the reply, plus a proposed rewrite when the model\nread the message as an edit request (approved via Apply or Discard).",
         "properties": {
           "message": {
             "$ref": "#/components/schemas/ChatMessage"

@@ -824,7 +824,7 @@ export interface components {
         /**
          * ChatTurn
          * @description One assistant turn: the reply, plus a proposed rewrite when the model
-         *     read the message as an edit request (approved via 👍/👎).
+         *     read the message as an edit request (approved via Apply or Discard).
          */
         ChatTurn: {
             message: components["schemas"]["ChatMessage"];

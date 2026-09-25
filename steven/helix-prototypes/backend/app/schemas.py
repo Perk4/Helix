@@ -1393,7 +1393,7 @@ class ChatRequest(StrictModel):
 
 class ChatTurn(StrictModel):
     """One assistant turn: the reply, plus a proposed rewrite when the model
-    read the message as an edit request (approved via 👍/👎)."""
+    read the message as an edit request (approved via Apply or Discard)."""
 
     message: ChatMessage
     proposed: SectionContentDraft | None = None
