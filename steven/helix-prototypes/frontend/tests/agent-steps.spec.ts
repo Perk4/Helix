@@ -145,6 +145,12 @@ test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => window.sessionStorage.clear());
 });
 
+// A Workspace refetch can still be in flight when a test ends; drop its route instead of
+// failing on "route.fetch: Test ended" (teardown race, not a product failure).
+test.afterEach(async ({ page }) => {
+  await page.unrouteAll({ behavior: "ignoreErrors" });
+});
+
 test("current stage shows server boundary, evidence, and a disabled pause with its reason", async ({ page }) => {
   await harness(page);
   await page.goto("/");
