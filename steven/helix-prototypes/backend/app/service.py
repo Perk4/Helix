@@ -28,7 +28,6 @@ from .data_validation import (
     as_validation_results,
     policy_for,
 )
-from .demo_mode import demo_package_labels
 from .drafting_cycles import current_cycle, cycle_exhausted, load_recorded_attempts
 from .journey import JourneyFacts, project_journey
 from .manifest_authorization import (
@@ -37,6 +36,7 @@ from .manifest_authorization import (
     HumanFreezeRequiredError,
     freeze_data_validation_key,
 )
+from .qualification import demo_package_labels
 from .release_candidates import (
     MissingReleaseCandidateError,
     approval_is_current,
@@ -139,12 +139,6 @@ class InvalidCommandError(ValueError):
     pass
 
 
-class RunEventSyncError(RuntimeError):
-    """Run events could not be appended, so the command's whole transaction was rolled back."""
-
-    code = "run_event_sync_failed"
-
-
 class StudyService:
     def __init__(
         self,
@@ -245,14 +239,7 @@ class StudyService:
         """
 
         def sync_before_commit(_session: Session) -> None:
-            try:
-                self._sync_run_events_in_transaction(study_id)
-            except (SQLAlchemyError, ValueError) as error:
-                # Raising here aborts the commit, so the state change is never written
-                # without its events. The caller rolls back and reports a typed error.
-                raise RunEventSyncError(
-                    f"Run events could not be recorded for {command_name}; nothing was saved"
-                ) from error
+            self._sync_run_events_in_transaction(study_id)
 
         event.listen(self.session, "before_commit", sync_before_commit)
         try:
@@ -271,11 +258,6 @@ class StudyService:
             except SQLAlchemyError:
                 self.session.rollback()
                 LOGGER.exception("Could not record command_failed for %s on %s", command_name, study_id)
-            raise
-        except RunEventSyncError:
-            event.remove(self.session, "before_commit", sync_before_commit)
-            self.session.rollback()
-            LOGGER.exception("Run-event sync failed during %s for %s", command_name, study_id)
             raise
         finally:
             if event.contains(self.session, "before_commit", sync_before_commit):
@@ -1212,6 +1194,7 @@ class StudyService:
             superseding_run_receipt=package.superseding_run_receipt,
             release_candidate=live,
             final_study_approval=package.final_study_approval,
+            approval_current=approval_is_current(package.final_study_approval, live),
             demo_unqualified_packages=[
                 DemoPackageLabel.model_validate(item)
                 for item in demo_package_labels(
@@ -1220,7 +1203,6 @@ class StudyService:
                     pinned_run=package.pinned_run,
                 )
             ],
-            approval_current=approval_is_current(package.final_study_approval, live),
         )
 
     def _can_open_revision(self, study_id: str) -> bool:

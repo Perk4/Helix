@@ -8,9 +8,8 @@ from sqlalchemy.orm import Session
 
 from .contract_schema import draft202012_validator
 from .cross_section_queries import execute_cross_section_query
-from .demo_mode import RECEIPT_BACKED_CELL_PACKAGE_IDS
 from .drafting_cycles import MAX_ATTEMPTS
-from .provenance_compiler import allowed_claims_for, compile_provenance, demo_receipt_backings
+from .provenance_compiler import allowed_claims_for, compile_provenance
 from .repository import StudyPackageRepository
 from .run_plans import canonical_hash
 from .schemas import (
@@ -43,10 +42,8 @@ class UnknownSectionRunError(ValueError):
 
 
 class CandidateEvaluationService:
-    def __init__(self, session: Session, repository_root: Path, *, demo_unqualified_packages: bool = False):
+    def __init__(self, session: Session, repository_root: Path):
         self.session = session
-        # DEMO ONLY (HELIX_DEMO_UNQUALIFIED_PACKAGES): see app/demo_mode.py.
-        self.demo_unqualified_packages = demo_unqualified_packages
         self.repository_root = repository_root
         self.repository = StudyPackageRepository(session)
         self.contracts = repository_root / "skills" / "helix-evidence-pipeline" / "contracts"
@@ -166,15 +163,7 @@ class CandidateEvaluationService:
             raise CandidateEvaluationConflictError("The stored candidate hash does not match the receipt")
         allowed_ids = set(candidate.validated_claim_ids)
         claims = allowed_claims_for(package.claims, package.provenance_edges, allowed_ids)
-        demo_receipts = (
-            demo_receipt_backings(run.envelope)
-            if self.demo_unqualified_packages
-            and run.receipt.section_package_id in RECEIPT_BACKED_CELL_PACKAGE_IDS
-            else None
-        )
-        provenance = compile_provenance(
-            candidate, claims, candidate_hash=candidate_hash, demo_receipts=demo_receipts
-        )
+        provenance = compile_provenance(candidate, claims, candidate_hash=candidate_hash)
         package_definition = self._package_definition(run.receipt.section_package_id)
         suite = package_definition.get("study_output_eval_suite")
         if not isinstance(suite, dict):

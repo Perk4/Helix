@@ -6,7 +6,7 @@ from contextvars import ContextVar, Token
 from dataclasses import dataclass
 from typing import Literal
 
-from .demo_mode import DEMO_LABEL, DEMO_NOTE, demo_notice, demo_packages_of, section_titles
+from .qualification import DEMO_LABEL, DEMO_NOTE, demo_notice, demo_packages_of, section_titles
 from .run_plans import canonical_hash
 from .schemas import (
     ExportArtifact,

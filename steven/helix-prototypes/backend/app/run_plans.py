@@ -10,8 +10,8 @@ from jsonschema.exceptions import SchemaError
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from .demo_mode import DEMO_EVENT_DETAIL, DEMO_UNQUALIFIED_PACKAGE_IDS
 from .models import PinnedRunRow
+from .qualification import DEMO_EVENT_DETAIL, skips_qualification
 from .repository import StudyPackageRepository
 from .schemas import (
     FreezeRunCommand,
@@ -78,7 +78,7 @@ IMPLEMENTATION_PATHS = {
 class PinnedRunService:
     def __init__(self, session: Session, repository_root: Path, *, demo_unqualified_packages: bool = False):
         self.session = session
-        # DEMO ONLY (HELIX_DEMO_UNQUALIFIED_PACKAGES): see app/demo_mode.py.
+        # DEMO ONLY (HELIX_DEMO_UNQUALIFIED_PACKAGES): see app/qualification.py.
         self.demo_unqualified_packages = demo_unqualified_packages
         self._demo_skipped: list[str] = []
         self.repository_root = repository_root.resolve()
@@ -517,13 +517,9 @@ class PinnedRunService:
                 )
             skill = definition.get("skill") or definition.get("agentic_skill")
             if skill is not None:
-                if (
-                    self.demo_unqualified_packages
-                    and package_id in DEMO_UNQUALIFIED_PACKAGE_IDS
-                    and skill.get("qualification_status") == "pending"
-                ):
-                    # DEMO ONLY: accept exactly these two packages while still "pending".
-                    # Any other package, or any other status, keeps the strict check below.
+                if skips_qualification(self.demo_unqualified_packages, package_id, skill):
+                    # DEMO ONLY: accept exactly 5.2.3 and 5.3 while still "pending". No
+                    # qualification receipt is recorded for them, so no hash is invented.
                     self._demo_skipped.append(package_id)
                 elif skill.get("qualification_status") != "passed":
                     evidence.append(
