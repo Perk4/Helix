@@ -104,24 +104,28 @@ export function SignOffs({
               </Button>
             )}
           </div>
-          {workspace.final_study_approval && (
+          {workspace.release_candidate && (
+            // Scope of the hash-bound record: the exact release-candidate manifest and artifact
+            // hashes (the recorded approval's copy once it exists).
             <dl className="hx-fsa-scope" data-testid="final-study-approval-scope">
               <dt>Approval</dt>
               <dd className="hx-mono" data-testid="approval-current">
-                {fsaCurrent ? "current" : "stale"}
+                {fsaCurrent ? "current" : workspace.final_study_approval ? "stale" : "ready for signature"}
               </dd>
               <dt>Manifest</dt>
               <dd className="hx-mono" data-testid="approval-manifest-hash">
-                {workspace.final_study_approval.manifest_hash}
+                {workspace.final_study_approval?.manifest_hash ?? workspace.release_candidate.content_hash}
               </dd>
-              {workspace.final_study_approval.included_artifact_hashes.map((item) => (
-                <Fragment key={item.artifact_id}>
-                  <dt className="hx-mono">{item.artifact_id}</dt>
-                  <dd className="hx-mono" data-testid={`approval-artifact-${item.artifact_id}`}>
-                    {item.content_hash}
-                  </dd>
-                </Fragment>
-              ))}
+              {(workspace.final_study_approval?.included_artifact_hashes ?? workspace.release_candidate.included_artifacts).map(
+                (item) => (
+                  <Fragment key={item.artifact_id}>
+                    <dt className="hx-mono">{item.artifact_id}</dt>
+                    <dd className="hx-mono" data-testid={`approval-artifact-${item.artifact_id}`}>
+                      {item.content_hash}
+                    </dd>
+                  </Fragment>
+                ),
+              )}
             </dl>
           )}
         </div>
