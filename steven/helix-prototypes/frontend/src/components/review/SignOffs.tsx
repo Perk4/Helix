@@ -143,12 +143,12 @@ export function SignOffs({
             // Scope of the hash-bound record: the exact release-candidate manifest and artifact
             // hashes (the recorded approval's copy once it exists). The list is collapsed by
             // default; every full hash stays in the DOM and in its copy button when expanded.
-            <div className="hx-fsa-scope" data-testid="final-study-approval-scope">
+            <div className="hx-fsa-scope" data-testid="review-fsa-scope">
               <div className="hx-fsa-head">
                 <span className="hx-fsa-kicker">What you are approving</span>
                 <span
                   className="hx-fsa-status"
-                  data-testid="approval-current"
+                  data-testid="review-approval-current"
                   data-state={fsaCurrent ? "current" : workspace.final_study_approval ? "stale" : "ready"}
                 >
                   {fsaCurrent ? "Signed" : workspace.final_study_approval ? "Out of date: files changed, sign again" : "Ready to sign"}
@@ -162,7 +162,7 @@ export function SignOffs({
                   <HashRow
                     label="Package fingerprint"
                     value={workspace.final_study_approval?.manifest_hash ?? workspace.release_candidate.content_hash}
-                    testId="approval-manifest-hash"
+                    testId="review-approval-manifest-hash"
                   />
                   {approvedArtifacts.map((item) => (
                     <HashRow
@@ -170,7 +170,7 @@ export function SignOffs({
                       label={labelFor(workspace, item.artifact_id)}
                       detail={item.artifact_id}
                       value={item.content_hash}
-                      testId={`approval-artifact-${item.artifact_id}`}
+                      testId={`review-approval-artifact-${item.artifact_id}`}
                     />
                   ))}
                 </dl>

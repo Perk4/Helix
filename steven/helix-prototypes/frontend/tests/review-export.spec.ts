@@ -165,7 +165,8 @@ test("renders the server report in three columns with blockers, references, and 
   await expect(page.getByTestId("draft-canvas")).toContainText("Anatomic pathology");
   await expect(page.getByTestId("draft-canvas")).toContainText("Minimal hepatocellular hypertrophy");
   await expect(page.getByTestId("regulatory-references")).toBeVisible();
-  await expect(page.getByTestId("required-fields")).toBeVisible();
+  // Required-fields panel removed upstream by Steven (per Perk); do not reintroduce.
+  await expect(page.getByTestId("required-fields")).toHaveCount(0);
   await expect(reviewStage(page)).toContainText("A prepared package is not FDA acceptance.");
   await expect(page.getByTestId("synthetic-badge")).toHaveText("Synthetic data · Not for submission");
   expect(await page.locator("body").innerText()).not.toMatch(regulatoryClaim);
@@ -183,10 +184,9 @@ test("inspect provenance reads the claim evidence endpoint and shows the lineage
   await expect(page.getByTestId("lineage-edges").locator("li")).toHaveCount(fx.evidence.lineage.length);
   // Critique P1-b: the provenance readout carries no hashes.
   await expect(page.getByTestId("lineage-edges")).not.toContainText("sha256:");
-  // Critique P1-f: the legacy fallback panels are not part of the Gate 3 view.
-  await expect(page.getByTestId("stage-view").locator(":scope > .view-content")).toHaveCount(2);
+  // Chief of Staff: the legacy panels (StudyJourney, ReportAssembly) stay reachable at Gate 3.
   for (const panel of await page.getByTestId("stage-view").locator(":scope > .view-content").all()) {
-    await expect(panel).toBeHidden();
+    await expect(panel).toBeVisible();
   }
   expect(h.evidenceRequests).toContain("/api/v1/studies/STUDY-HLX-028/claims/C-BW-HIGH-M/evidence");
 });
@@ -254,14 +254,14 @@ test("export is enabled only by the server ready_for_export gate and is its own 
   await expect(page.getByTestId("export-final-package")).toBeDisabled();
   await page.getByTestId("approve-final-study").click();
   await expect(page.getByTestId("signoff-final-study-approval")).toHaveAttribute("data-signed", "true");
-  await expect(page.getByTestId("approval-current")).toHaveAttribute("data-state", "current");
-  await expect(page.getByTestId("approval-manifest-hash")).toHaveText(/^sha256:[a-f0-9]{64}$/);
+  await expect(page.getByTestId("review-approval-current")).toHaveAttribute("data-state", "current");
+  await expect(page.getByTestId("review-approval-manifest-hash")).toHaveText(/^sha256:[a-f0-9]{64}$/);
   // Critique P1-a: the hash list is collapsed by default; every full hash is there on expand.
   expect(await page.getByTestId("approval-hashes").evaluate((node) => (node as HTMLDetailsElement).open)).toBe(false);
-  await expect(page.getByTestId("approval-manifest-hash")).toBeHidden();
+  await expect(page.getByTestId("review-approval-manifest-hash")).toBeHidden();
   await page.getByTestId("approval-hashes-toggle").click();
-  await expect(page.getByTestId("approval-manifest-hash")).toBeVisible();
-  await expect(page.getByTestId("approval-hashes").locator('[data-testid^="approval-artifact-"]').first()).toBeVisible();
+  await expect(page.getByTestId("review-approval-manifest-hash")).toBeVisible();
+  await expect(page.getByTestId("approval-hashes").locator('[data-testid^="review-approval-artifact-"]').first()).toBeVisible();
   // Final Study Approval recorded; still no export until the explicit click.
   expect(h.exportPosts).toBe(0);
   const exportButton = page.getByTestId("export-final-package");

@@ -25,10 +25,6 @@
 }
 #helix-e2e .hx-flag strong { color: var(--hx-warn); }
 
-/* Critique P1-f: Gate 3 shows only the review view. The legacy fallback panels (StudyJourney,
-   ReportAssembly) stay mounted for the other stages but are hidden while review-export is open. */
-#helix-e2e .hx-stage-view[data-selected-stage="review-export"] > .view-content { display: none; }
-
 /* Lane D (#23) review view composition. Tokens only; shared card/list/button/chip styles live in helix-v1.css. */
 #helix-e2e .hx-review-nav { padding: var(--hx-sp-8); }
 #helix-e2e .hx-review-nav-head {

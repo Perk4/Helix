@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 import { mkdir, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
@@ -175,10 +175,12 @@ test("runs the synthetic study from validation through explicit export", async (
 
   await expect(page.getByTestId("release-status")).toHaveText("Ready for signature");
   await expect(page.getByText("FDA approved")).toHaveCount(0);
-  await expect(page.getByTestId("final-study-approval-scope")).toBeVisible();
+  await expect(page.getByTestId("review-fsa-scope")).toBeVisible();
   await page.getByTestId("approve-final-study").click();
-  await expect(page.getByTestId("approval-current")).toHaveAttribute("data-state", "current");
-  await expect(page.getByTestId("approval-manifest-hash")).toHaveText(/^sha256:[a-f0-9]{64}$/);
+  await expect(page.getByTestId("review-approval-current")).toHaveAttribute("data-state", "current");
+  await expect(page.getByTestId("review-approval-manifest-hash")).toHaveText(/^sha256:[a-f0-9]{64}$/);
+  // The legacy ReportAssembly FSA card stays in sync with the same server record.
+  await expect(page.getByTestId("approval-current")).toHaveText("current");
   await expect(page.getByTestId("release-status")).toHaveText("Ready for export");
   await expect(page.getByTestId("export-final-package")).toBeEnabled();
   await page.getByTestId("export-final-package").click();
@@ -352,7 +354,6 @@ test("renders candidate evaluation and cross-section query from backend-owned wo
   });
 
   await page.goto("/");
-  await showLegacyPanels(page);
   await expect(page.getByTestId("evaluate-candidate")).toBeEnabled();
   await expect(page.getByTestId("query-cross-section")).toBeEnabled();
   await expect(page.getByTestId("promote-section-draft")).toBeDisabled();
@@ -421,7 +422,6 @@ test("renders predecessor run identity and carry-forward counts from the workspa
   });
 
   await page.goto("/");
-  await showLegacyPanels(page);
   await expect(page.getByTestId("superseding-run")).toBeVisible();
   await expect(page.getByTestId("predecessor-run-id")).toHaveText("RUN-PRED00000001");
   await expect(page.getByTestId("supersession-reason")).toHaveText(
@@ -445,11 +445,15 @@ test("renders the exact Final Study Approval scope from the workspace", async ({
   });
 
   await page.goto("/");
-  // Lane D (#23): the scope renders in the Human Gate 3 sign-off column.
   await expect(page.getByTestId("final-study-approval-scope")).toBeVisible();
-  await expect(page.getByTestId("approval-current")).toHaveAttribute("data-state", "current");
+  await expect(page.getByTestId("approval-current")).toHaveText("current");
   await expect(page.getByTestId("approval-manifest-hash")).toHaveText(INJECTED_HASH);
   await expect(page.getByTestId("approval-artifact-RUN-PRED00000001")).toHaveText(INJECTED_HASH);
+  // Lane D (#23): the same scope also renders in the Human Gate 3 sign-off column.
+  await expect(page.getByTestId("review-fsa-scope")).toBeVisible();
+  await expect(page.getByTestId("review-approval-current")).toHaveAttribute("data-state", "current");
+  await expect(page.getByTestId("review-approval-manifest-hash")).toHaveText(INJECTED_HASH);
+  await expect(page.getByTestId("review-approval-artifact-RUN-PRED00000001")).toHaveText(INJECTED_HASH);
   await expect(page.getByText("FDA approved")).toHaveCount(0);
 });
 
@@ -525,7 +529,6 @@ test("renders backend promotion status and draft evidence without recalculating 
   });
 
   await page.goto("/");
-  await showLegacyPanels(page);
   await expect(page.getByTestId("promotion-status")).toHaveText("eligible");
   await expect(page.getByTestId("promotion-failed")).toHaveText("package_permission");
   await expect(page.getByTestId("promotion-condition-package_permission")).toContainText("failed");
@@ -566,7 +569,6 @@ test("shows every immutable attempt and offers no fourth attempt after stop_for_
   });
 
   await page.goto("/");
-  await showLegacyPanels(page);
   await expect(page.getByTestId("candidate-attempt-CYCLE-BW-001-1")).toBeVisible();
   await expect(page.getByTestId("candidate-attempt-CYCLE-BW-001-2")).toBeVisible();
   await expect(page.getByTestId("candidate-attempt-CYCLE-BW-001-3")).toBeVisible();
@@ -618,7 +620,6 @@ test("offers revise after stop_for_review and shows a new cycle without changing
   });
 
   await page.goto("/");
-  await showLegacyPanels(page);
   await expect(page.getByTestId("revise-body-weight")).toBeEnabled();
   const discussionBefore = await page.getByTestId("impact-section.5_3_discussion").textContent();
   await page.getByTestId("revise-body-weight").click();
@@ -1370,11 +1371,3 @@ async function assertRenderedEligibility(
 
 // Critique P1-f: Gate 3 hides the legacy fallback panels. These legacy displays are asserted
 // from the traceability stage, where the fallback panels still render.
-async function showLegacyPanels(page: Page) {
-  await expect(page.getByTestId("helix-workbench")).toBeVisible();
-  const stageView = page.getByTestId("stage-view");
-  if ((await stageView.getAttribute("data-selected-stage")) === "review-export") {
-    await page.getByRole("navigation", { name: "Journey progress" }).getByRole("button").nth(7).click();
-    await expect(stageView).toHaveAttribute("data-selected-stage", "traceability");
-  }
-}
