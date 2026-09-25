@@ -20,6 +20,12 @@ const BW_SECTION = "section.5_2_3_body_weight";
 const runId = freezeFixture.after.pinned_run.run_id;
 const dvResults = (freezeFixture.after.data_validation_executions as Json[])[0].results as Json[];
 
+const sectionNode = (freezeFixture.after.pinned_run.run_plan.nodes as Json[]).find((node) => node.node_id === BW_SECTION);
+const SECTION_RUN_KEY_PREFIX = `workbench:STUDY-HLX-028:${runId}/${BW_SECTION}:section-run:${sectionNode?.package_version ?? "section-run.v1"}`;
+// Backend freeze_data_validation_key(run_id): the freeze and Extract share one run-scoped key.
+const DV_KEY = `dvp-${runId}-validation.body_weight`;
+const CONFIRMED_KEY = "helix.agent-dv-confirmed.v1";
+
 const hybridResult = { ...clone(dvResults[0]), result_id: "VR-HYBRID-TEST-1", executor_id: null };
 
 type Harness = {
@@ -105,11 +111,25 @@ async function harness(page: Page, overrides: Partial<Harness> = {}) {
     record("section-run", route);
     await h.sectionRun(route);
   });
+  // #25 run-event stream: no events in these tests (commands refresh the Workspace).
+  await page.route("**/api/v1/studies/*/pinned-runs/*/events", (route) =>
+    route.fulfill({ status: 200, contentType: "text/event-stream", body: "" }),
+  );
   await page.route("**/api/v1/studies/*/section-runs/*/**", async (route) => {
     record("after-section-run", route);
     await route.fulfill({ status: 500, contentType: "application/json", body: JSON.stringify({ detail: "must not be called" }) });
   });
   return h;
+}
+
+const live = (page: Page) => page.getByTestId("agent-live");
+
+async function confirmFreezeExecution(page: Page) {
+  // The freeze-created execution was already confirmed by an earlier replay in this session.
+  await page.addInitScript(
+    ([key, value]) => window.sessionStorage.setItem(key, JSON.stringify([value])),
+    [CONFIRMED_KEY, runId] as const,
+  );
 }
 
 async function openStage(page: Page, name: RegExp) {
@@ -127,7 +147,12 @@ test("current stage shows server boundary, evidence, and a disabled pause with i
   await page.goto("/");
   const view = page.getByTestId("agent-stage-view");
   await expect(view).toHaveAttribute("data-stage", "validate");
-  await expect(page.getByTestId("agent-run-banner")).toContainText("Stage 5 of 9");
+  await expect(page.getByTestId("agent-run-banner")).toContainText("Agent waiting · Stage 5 of 9");
+  await expect(page.getByTestId("agent-run-banner")).toContainText("Next human gate: Traceability review");
+  await expect(page.getByTestId("agent-stage-card")).toContainText("Stage 5 of 9 · Agent step");
+  await expect(page.getByTestId("agent-activity-card").getByRole("heading", { name: "Agent activity" })).toBeVisible();
+  await expect(page.getByTestId("agent-activity-count")).toHaveText(/^\d+ of \d+ actions$/);
+  await expect(page.getByTestId("agent-live")).toHaveAttribute("aria-live", "polite");
   await expect(page.getByTestId("agent-control-boundary")).toContainText("Control boundary");
   await expect(page.getByTestId("agent-stage-io")).toBeVisible();
   await expect(page.getByTestId("evidence-validation-count")).toContainText("not run");
@@ -158,33 +183,45 @@ test("completed stages are read-only review of recorded actions and never send c
   expect(commands).toEqual([]);
 });
 
-test("the sequence waits for refreshed state, stops on the first failure, and runs nothing after it", async ({ page }) => {
+test("the sequence replays Extract, waits for refreshed state, stops on the first failure, and runs nothing after it", async ({ page }) => {
   const h = await harness(page);
   const commands = trackCommands(page);
   await page.goto("/");
   await page.getByTestId("agent-run-sequence").click();
-  await expect(page.locator(".hx-notice.t-block")).toContainText("Run governed Section Agent failed");
-  await expect(page.locator(".hx-notice.t-block")).toContainText("Section Agent unavailable (test double).");
-  await expect(page.locator(".hx-notice.t-block")).toContainText("later steps did not run");
-  await expect(page.locator(".hx-notice.t-block")).toHaveAttribute("role", "status");
-  // Governed order: validation, then (after the refresh made the section eligible) the section run.
+  await expect(live(page)).toHaveAttribute("data-tone", "block");
+  await expect(live(page)).toContainText("Run governed Section Agent failed");
+  await expect(live(page)).toContainText("Section Agent unavailable (test double).");
+  await expect(live(page)).toContainText("later steps did not run");
+  await expect(live(page)).toHaveAttribute("role", "status");
+  await expect(live(page)).toHaveAttribute("aria-live", "polite");
+  // Governed order: the freeze-created execution is re-addressed (replay), then validation,
+  // then (after the refresh made the section eligible) the section run.
   expect(commands.filter((item) => !item.endsWith("/workspace"))).toEqual([
+    "POST /api/v1/studies/STUDY-HLX-028/data-validation-packages",
     "POST /api/v1/studies/STUDY-HLX-028/validation-runs",
     "POST /api/v1/studies/STUDY-HLX-028/section-runs",
   ]);
+  expect(h.bodies["data-validation"]).toEqual([
+    { actor: "HELIX workbench", package_id: "validation.body_weight", idempotency_key: DV_KEY },
+  ]);
   expect(h.bodies["after-section-run"]).toBeUndefined();
-  // The section-run key is run-scoped per #17.
-  expect(h.bodies["section-run"][0].idempotency_key).toBe(
-    `workbench:STUDY-HLX-028:${runId}:section-run:${BW_SECTION}:a1`,
-  );
+  // #17: governed resource (Pinned Run + section package), command, package version, action ID.
+  expect(h.bodies["section-run"][0].idempotency_key).toBe(`${SECTION_RUN_KEY_PREFIX}:a1`);
   await expect(page.getByTestId("agent-stage-view")).toHaveAttribute("data-stage", "draft");
   await expect(page.getByTestId("evidence-draft")).toHaveCount(0);
   await expect(page.getByTestId("agent-evidence-missing")).toContainText("has not run");
   await page.screenshot({ path: "../evidence/ui-lane-b/agent-sequence-stopped.png", fullPage: true });
+  // Eligibility before and after the validation run, from the two server snapshots.
+  await stageButtons(page).filter({ hasText: /Validate/ }).first().click();
+  await expect(page.getByTestId("evidence-eligibility-before")).toContainText("Blocked");
+  await expect(page.getByTestId("evidence-eligibility")).toContainText("Eligible to draft");
+  await expect(page.getByTestId("evidence-validation-run")).toContainText("VAL-TEST-1");
+  await page.screenshot({ path: "../evidence/ui-lane-b/agent-validate-eligibility-change.png", fullPage: true });
 });
 
 test("an unknown result reuses the key; a definite rejection gets a new attempt key", async ({ page }) => {
   let failFirst = true;
+  await confirmFreezeExecution(page);
   const h = await harness(page, {
     validated: true,
     sectionRun: async (route) => {
@@ -204,36 +241,65 @@ test("an unknown result reuses the key; a definite rejection gets a new attempt 
   await expect(page.getByTestId("agent-stage-view")).toHaveAttribute("data-stage", "draft");
   const run = page.getByTestId("agent-run-step");
   await run.click();
-  await expect(page.locator(".hx-notice.t-block")).toContainText("Run governed Section Agent failed");
+  await expect(live(page)).toContainText("Run governed Section Agent failed");
   await run.click();
-  await expect(page.locator(".hx-notice.t-block")).toContainText("conflicts with server state");
+  await expect(live(page)).toContainText("conflicts with server state");
   await run.click();
   await expect.poll(() => h.bodies["section-run"]?.length).toBe(3);
   const keys = h.bodies["section-run"].map((body) => body.idempotency_key);
-  const prefix = `workbench:STUDY-HLX-028:${runId}:section-run:${BW_SECTION}`;
-  expect(keys).toEqual([`${prefix}:a1`, `${prefix}:a1`, `${prefix}:a2`]);
+  expect(keys).toEqual([`${SECTION_RUN_KEY_PREFIX}:a1`, `${SECTION_RUN_KEY_PREFIX}:a1`, `${SECTION_RUN_KEY_PREFIX}:a2`]);
 });
 
-test("extract replays the freeze-created execution instead of running a second one", async ({ page }) => {
+test("extract replays the freeze-created execution with the freeze's key and never runs a second one", async ({ page }) => {
+  const executions = freezeFixture.after.data_validation_executions as Json[];
+  const h = await harness(page);
+  await page.goto("/");
+  await expect(page.getByTestId("agent-stage-view")).toHaveAttribute("data-stage", "validate");
+  // The freeze already recorded the execution, so the next governed command is its replay.
+  await expect(page.getByTestId("agent-replay-note")).toContainText("idempotent replay");
+  await openStage(page, /Extract/);
+  await expect(page.getByTestId("agent-commands")).toHaveCount(0);
+  await openStage(page, /Validate/);
+  await expect(page.getByTestId("agent-run-step")).toHaveText("Confirm Data Validation receipt (idempotent replay)");
+  await page.getByTestId("agent-run-step").click();
+  await expect(live(page)).toContainText("returned the recorded execution");
+  await expect(live(page)).toContainText("as an idempotent replay");
+  expect(h.bodies["data-validation"]).toHaveLength(1);
+  // Confirmed for this Pinned Run: the next command is validation, not a second replay.
+  await expect(page.getByTestId("agent-run-step")).toHaveText("Run deterministic and hybrid validation");
+  expect(h.bodies["data-validation"][0].idempotency_key).toBe(DV_KEY);
+  await stageButtons(page).filter({ hasText: /Extract/ }).first().click();
+  await expect(page.getByTestId("evidence-dvp-replay")).toContainText("idempotent replay of the recorded execution");
+  await expect(page.getByTestId("evidence-dvp-replay")).toContainText(String((executions[0].receipt as Json).receipt_id));
+  await expect(page.getByTestId("evidence-dvp-receipt")).toContainText(String((executions[0].receipt as Json).receipt_id));
+  await page.screenshot({ path: "../evidence/ui-lane-b/agent-extract-replay.png", fullPage: true });
+});
+
+test("extract executes the missing package once, with the freeze's run-scoped key", async ({ page }) => {
   const h = await harness(page);
   await page.route("**/api/v1/studies/*/workspace", async (route) => {
-    const live = await liveWorkspace(route);
-    if (!live) return;
+    const liveBody = await liveWorkspace(route);
+    if (!liveBody) return;
     // Freeze left the package absent: Extract is the current stage.
-    const workspace = frozenWorkspace(live, { data_validation_executions: [], validations: [], journey: journeyAt("extract") });
+    const workspace = frozenWorkspace(liveBody, { data_validation_executions: [], validations: [], journey: journeyAt("extract") });
     if (h.bodies["data-validation"]?.length) {
       Object.assign(workspace, { data_validation_executions: freezeFixture.after.data_validation_executions, journey: journeyAt("validate") });
     }
     await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(workspace) });
   });
+  h.dataValidation = (route) =>
+    route.fulfill({
+      status: 201,
+      contentType: "application/json",
+      body: JSON.stringify((freezeFixture.after.data_validation_executions as Json[])[0]),
+    });
   await page.goto("/");
   await expect(page.getByTestId("agent-stage-view")).toHaveAttribute("data-stage", "extract");
   await page.getByTestId("agent-run-step").click();
-  await expect(page.locator(".hx-notice.t-info")).toContainText("Execute Data Validation Package: recorded by the server.");
+  await expect(live(page)).toContainText("Execute Data Validation Package: recorded by the server.");
   expect(h.bodies["data-validation"]).toHaveLength(1);
-  expect(h.bodies["data-validation"][0]).toMatchObject({
-    package_id: "validation.body_weight",
-    idempotency_key: `workbench:STUDY-HLX-028:${runId}:data-validation:${BW_SECTION}:a1`,
-  });
+  expect(h.bodies["data-validation"][0]).toMatchObject({ package_id: "validation.body_weight", idempotency_key: DV_KEY });
   await expect(page.getByTestId("agent-stage-view")).toHaveAttribute("data-stage", "validate");
+  // The execution is now confirmed for this Pinned Run: no replay is queued before validation.
+  await expect(page.getByTestId("agent-run-step")).toHaveText("Run deterministic and hybrid validation");
 });
