@@ -419,7 +419,25 @@ export function HelixWorkbench({ studyId }: Props) {
               />
             )}
             {selectedStageId === "review-export" && (
-              <ReviewStageView workspace={workspace} onWorkspace={setWorkspace} onRefresh={refresh} />
+              <ReviewStageView
+                workspace={workspace}
+                onWorkspace={setWorkspace}
+                onRefresh={refresh}
+                draftsBody={
+                  // DH-4 phase 1: the HITL per-section drafts and grounded chat (Steven's
+                  // ReportAssembly + ChatDock) are part of the Gate 3 body, not a second stack
+                  // under every stage view. Same component, props and handlers as before.
+                  <ReportAssembly
+                    workspace={workspace}
+                    busy={busy}
+                    onInspectClaim={traceabilityGate.onInspectClaim}
+                    onResolve={() => selectStage("traceability")}
+                    onApprove={(role) => void approve(role)}
+                    onFinalStudyApproval={() => void approveFinalStudy()}
+                    onExport={() => void performExport()}
+                  />
+                }
+              />
             )}
             {/* DH-2 (#66): the legacy StudyJourney is off the default path; its governed
                 commands live on the stage views. Its read-only records (attempt history,
@@ -455,15 +473,6 @@ export function HelixWorkbench({ studyId }: Props) {
               onPromoteSectionDraft={() => void promoteBodyWeight()}
             />
             )}
-            <ReportAssembly
-              workspace={workspace}
-              busy={busy}
-              onInspectClaim={traceabilityGate.onInspectClaim}
-              onResolve={() => selectStage("traceability")}
-              onApprove={(role) => void approve(role)}
-              onFinalStudyApproval={() => void approveFinalStudy()}
-              onExport={() => void performExport()}
-            />
           </section>
 
           <footer className="hx-footer">

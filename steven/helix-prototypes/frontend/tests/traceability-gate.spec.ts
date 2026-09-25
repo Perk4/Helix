@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
 
 import {
   apiRoot,
@@ -15,6 +15,7 @@ import {
   type Json,
   type Journey,
 } from "./lane-a-helpers";
+import { claimStatus, type RuleDisplay } from "../src/components/traceability/gateState";
 
 // Lane C (#22): Human Gate 2, the Traceability Review.
 //
@@ -141,6 +142,16 @@ async function openGate(page: Page) {
   await expect(page.getByTestId("rule-accordion")).toBeVisible();
 }
 
+// #70: Gate 2 shows no blocker, rule or panel tallies; per-rule badges and the blocker
+// list carry the status. Scoped to the gate chrome and the blocker card.
+async function expectNoCountChrome(page: Page) {
+  for (const id of ["traceability-gate", "gate-blockers"]) {
+    const text = await page.getByTestId(id).innerText();
+    expect(text, `${id} renders a tally`).not.toMatch(/\b\d+\s+(passed|blocked|blockers?|dispositions?|blocked rules?)\b/i);
+    expect(text, `${id} renders an x-of-y tally`).not.toMatch(/\b\d+\s+of\s+\d+\s+(blockers?|rules?|dispositions?)\b/i);
+  }
+}
+
 test("renders Gate 2 from server state with an accessible single-open accordion", async ({ page }) => {
   await serveGate(page);
   await openGate(page);
@@ -150,11 +161,12 @@ test("renders Gate 2 from server state with an accessible single-open accordion"
   await expect(banner).toContainText("Human gate 2 of 3");
   await expect(banner).toContainText("Review the traceability of the agent's work");
   await expect(page.getByTestId("continue-to-review")).toBeDisabled();
-  await expect(page.getByTestId("continue-hint")).toContainText("Record a disposition for 3 blocked rules");
+  await expect(page.getByTestId("continue-hint")).toHaveText("Record a disposition for each blocked rule to continue.");
   await expect(page.getByRole("heading", { name: "Validation and traceability" })).toBeVisible();
   await expect(page.getByTestId("trace-claim-kicker")).toContainText("Claim C-BW-HIGH");
-  await expect(page.getByTestId("trace-summary")).toContainText("1 passed");
-  await expect(page.getByTestId("trace-summary")).toContainText("1 blocked");
+  await expect(page.getByTestId("trace-summary")).toHaveText("Needs disposition");
+  await expect(page.getByTestId("trace-summary")).toHaveAttribute("data-status", "block");
+  await expectNoCountChrome(page);
 
   const rows = page.getByTestId("rule-accordion").locator(".hx-acc-btn");
   await expect(rows).toHaveCount(2);
@@ -204,6 +216,10 @@ test("loads getEvidence per claim and shows the five-step flow, lineage, and rec
 
   const evidence = page.getByTestId("claim-evidence");
   await expect(evidence.getByTestId("source-records").getByRole("row")).toHaveCount(11);
+  // Lineage edges start collapsed (#70) and open on demand with every edge.
+  await expect(evidence.getByTestId("lineage-disclosure")).not.toHaveAttribute("open", "");
+  await expect(evidence.getByTestId("lineage-edges")).toBeHidden();
+  await evidence.getByTestId("lineage-toggle").click();
   await expect(evidence.getByTestId("lineage-edges").getByRole("row")).toHaveCount(11);
   await expect(evidence.getByTestId("claim-lineage")).toContainText("mean-v1");
   await expect(evidence.getByTestId("claim-lineage")).toContainText("@");
@@ -307,7 +323,8 @@ test("a recorded disposition keeps the blocker and shows Disposition, never Pass
   await expect(note).toContainText("Corrected. Re-run mean-v1 by sex before release.");
   await expect(note).toContainText("Reviewer Dr. Lane C Reviewer");
   await expect(note).toContainText(/RD-[A-Z0-9-]+/);
-  await expect(page.getByTestId("trace-summary")).toContainText("1 disposition");
+  await expect(page.getByTestId("trace-summary")).toHaveText("Dispositioned");
+  await expectNoCountChrome(page);
   await expect(page.getByTestId("rule-accordion").getByText("Pass", { exact: true })).toHaveCount(1); // VR-003 only
   await expect(page.getByTestId("continue-to-review")).toBeDisabled();
   expect(commands).toEqual([`POST /api/v1/studies/${studyId}/validation-results/VR-004/dispositions`]);
@@ -340,7 +357,9 @@ test("Continue waits for server-reported dispositions and Review, then only chan
   const commands = trackCommands(page);
   await serveGate(page);
   await openGate(page);
-  await expect(page.getByTestId("gate-blockers")).toContainText("1 of 3 blockers have a disposition");
+  await expect(page.getByTestId("gate-blockers")).toContainText("Blockers awaiting a disposition");
+  await expect(page.getByTestId("blocker-VR-004")).toContainText("Disposition");
+  await expectNoCountChrome(page);
 
   for (const [resultId, decision, rule] of [
     ["VR-005", "Corrected", /Mi severity reconcile/],
@@ -358,7 +377,8 @@ test("Continue waits for server-reported dispositions and Review, then only chan
     await expect(page.getByTestId(`rule-badge-${resultId}`)).toHaveText("Disposition");
   }
 
-  await expect(page.getByTestId("gate-blockers")).toContainText("3 of 3 blockers have a disposition");
+  await expect(page.getByTestId("gate-blockers")).toContainText("Every blocker has a disposition");
+  await expectNoCountChrome(page);
   const next = page.getByTestId("continue-to-review");
   await expect(next).toBeEnabled();
   await expect(page.getByTestId("continue-hint")).toHaveText("Reviewed and approved.");
@@ -414,13 +434,32 @@ test("with zero claims the gate shows an empty state and never requests evidence
   expect(evidenceCalls).toEqual([]);
 });
 
+// DH-4 phase 1: the HITL report (ReportAssembly) renders only in the Gate 3 body, so these tests
+// make Gate 3 selectable (status stays pending) and open it before each Inspect. Assertions are unchanged.
+const reportReachable = (workspace: Json): Json => {
+  const journey = workspace.journey as Journey;
+  return {
+    ...workspace,
+    journey: {
+      ...journey,
+      stages: journey.stages.map((stage) => (stage.stage_id === "review-export" ? { ...stage, selectable: true } : stage)),
+    },
+  };
+};
+
+async function openReport(page: Page) {
+  await stageButtons(page).nth(8).click();
+  await expect(page.getByTestId("review-drafts-body")).toBeVisible();
+}
+
 test("Inspect on a report statement opens Gate 2 on that statement's claim", async ({ page }) => {
-  await serveGate(page);
+  await serveGate(page, reportReachable);
   await openGate(page);
   await expect(page.getByTestId("trace-claim-kicker")).toContainText("Claim C-BW-HIGH");
 
   // The legacy report panel's section S7 carries the liver statements (C-MI-LIVER).
   const inspectLiver = page.getByRole("button", { name: "Inspect 4 provenance edges" }).first();
+  await openReport(page);
   await inspectLiver.click();
   await expect(page.getByTestId("trace-claim-kicker")).toContainText("Claim C-MI-LIVER");
   await expect(page.getByTestId("rule-badge-VR-005")).toBeVisible();
@@ -429,17 +468,33 @@ test("Inspect on a report statement opens Gate 2 on that statement's claim", asy
   // Inspecting the same statement again reselects it after the reviewer switched away.
   await page.getByTestId("claim-C-BW-HIGH").click();
   await expect(page.getByTestId("trace-claim-kicker")).toContainText("Claim C-BW-HIGH");
+  await openReport(page);
   await inspectLiver.click();
   await expect(page.getByTestId("trace-claim-kicker")).toContainText("Claim C-MI-LIVER");
 });
 
-test("a drafted section's Inspect opens Gate 2 on that section's own claim", async ({ page }) => {
-  await serveGate(page);
+/** Unique claim-backed blocks the server's report projection lists for a template section. */
+async function reportClaims(request: APIRequestContext, sectionId: string): Promise<Array<{ claimId: string; edges: number }>> {
+  const workspace = (await (await request.get(`${apiRoot}/studies/${studyId}/workspace`)).json()) as Json;
+  const section = (workspace.report as { sections: Array<{ section_id: string; blocks: Array<Json> }> }).sections.find(
+    (item) => item.section_id === sectionId,
+  );
+  const claims = new Map<string, number>();
+  for (const block of section?.blocks ?? []) {
+    const claimId = block.claim_id as string | null;
+    if (claimId && !claims.has(claimId)) claims.set(claimId, (block.provenance_count as number | null) ?? 0);
+  }
+  return [...claims].map(([claimId, edges]) => ({ claimId, edges }));
+}
+
+test("a drafted section's Inspect opens Gate 2 on that section's own claim", async ({ page, request }) => {
+  await serveGate(page, reportReachable);
   await openGate(page);
   await expect(page.getByTestId("trace-claim-kicker")).toContainText("Claim C-BW-HIGH");
   const navigator = page.getByRole("complementary", { name: "Report sections" });
   const paperClaims = page.getByTestId("draft-section-claims");
 
+  await openReport(page);
   // 5.3.3 Microscopic Findings maps to template section S7, whose only claim is C-MI-LIVER.
   await navigator.getByRole("button", { name: /5\.3\.3 Microscopic Findings/ }).click();
   const inspectLiver = paperClaims.getByTestId("inspect-claim-C-MI-LIVER");
@@ -449,15 +504,47 @@ test("a drafted section's Inspect opens Gate 2 on that section's own claim", asy
   await expect(page.getByTestId("trace-claim-kicker")).toContainText("Claim C-MI-LIVER");
   await expect(page.getByTestId("claim-C-MI-LIVER")).toHaveAttribute("aria-pressed", "true");
 
-  // 5.2.3 Body Weight (S5) inspects C-BW-HIGH with its own edge count.
+  // 5.2.3 Body Weight (S5) offers one Inspect per claim the server reports for S5, each with
+  // its own edge count. Before VR-004 is resolved on the server that is C-BW-HIGH (10 edges);
+  // once a live "corrected" disposition resolves it, the server reports S5 by sex
+  // (C-BW-HIGH-M and C-BW-HIGH-F), so the claims come from the live report, not a constant.
+  const bodyWeight = await reportClaims(request, "S5");
+  expect(bodyWeight.length).toBeGreaterThan(0);
+  if (!LIVE_WRITES) expect(bodyWeight).toEqual([{ claimId: "C-BW-HIGH", edges: 10 }]);
+  await openReport(page);
   await navigator.getByRole("button", { name: /5\.2\.3 Body Weight/ }).click();
-  await expect(paperClaims.getByTestId("inspect-claim-C-BW-HIGH")).toHaveText("Inspect 10 provenance edges");
-  await paperClaims.getByTestId("inspect-claim-C-BW-HIGH").click();
-  await expect(page.getByTestId("trace-claim-kicker")).toContainText("Claim C-BW-HIGH");
+  await expect(paperClaims.getByRole("button")).toHaveCount(bodyWeight.length);
+  for (const [index, { claimId, edges }] of bodyWeight.entries()) {
+    if (index > 0) {
+      // DH-4: each Inspect moves to Gate 2; reopen the report in Gate 3 on 5.2.3 for the next claim.
+      await openReport(page);
+      await navigator.getByRole("button", { name: /5\.2\.3 Body Weight/ }).click();
+    }
+    const inspect = paperClaims.getByTestId(`inspect-claim-${claimId}`);
+    await expect(inspect).toHaveText(`Inspect ${edges} provenance edges`);
+    await inspect.click();
+    await expect(page.getByTestId("trace-claim-kicker")).toContainText(`Claim ${claimId}`);
+    await expect(page.getByTestId(`claim-${claimId}`)).toHaveAttribute("aria-pressed", "true");
+  }
 
   // A section whose template section has no claims shows no Inspect button.
+  await openReport(page);
   await navigator.getByRole("button", { name: /1\. Objective/ }).click();
   await expect(page.getByTestId("draft-section-claims")).toHaveCount(0);
+});
+
+test("the drafted section's review banner is a note, so the page keeps one status region", async ({ page }) => {
+  await serveGate(page, reportReachable);
+  await openGate(page);
+  await openReport(page); // DH-4: the HITL report renders in the Gate 3 body.
+  const navigator = page.getByRole("complementary", { name: "Report sections" });
+  await navigator.getByRole("button", { name: /5\.2\.3 Body Weight/ }).click();
+  const banner = page.locator(".report-view .review-banner");
+  await expect(banner).toBeVisible();
+  await expect(banner).toContainText("Needs your review.");
+  await expect(page.getByRole("note", { name: "Section needs review" })).toBeVisible();
+  // Static guidance must not be a second live status region (workbench.spec.ts:73 reads getByRole("status")).
+  await expect(page.getByRole("status").filter({ hasText: "Needs your review" })).toHaveCount(0);
 });
 
 test("the Gate 2 evidence card shows source hashes, rule versions and exact reconciliation", async ({ page }) => {
@@ -490,4 +577,102 @@ test("the Gate 2 evidence card shows source hashes, rule versions and exact reco
   await expect(evidence.getByTestId("evidence-recomputed")).toHaveText("4 animals");
   await expect(evidence.getByTestId("evidence-exact-match")).toHaveText("Yes");
   await expect(evidence.getByTestId("source-records").getByRole("row")).toHaveCount(5);
+});
+
+// DH-5 P2s (#34 Tester P2-1/P2-2, Codex thread PRRT_kwDOUohZWs6l8Tzz): the claim status chip
+// is honest. Green "All rules pass" only for a non-empty all-pass set; warnings outrank
+// "Dispositioned"; no results or only skipped results read neutral. Still no counts (#70).
+test("claimStatus is green only for a non-empty all-pass set and never hides warnings", () => {
+  const status = (displays: RuleDisplay[]) => {
+    const { tone, status: key, label } = claimStatus(displays);
+    return { tone, key, label };
+  };
+  expect(status([])).toEqual({ tone: "muted", key: "empty", label: "No rule results" });
+  expect(status(["skipped"])).toEqual({ tone: "muted", key: "skipped", label: "Rules skipped" });
+  expect(status(["pass", "skipped"])).toEqual({ tone: "muted", key: "skipped", label: "Rules skipped" });
+  expect(status(["warning"])).toEqual({ tone: "warn", key: "warnings", label: "Warnings to review" });
+  expect(status(["warning", "skipped"])).toEqual({ tone: "warn", key: "warnings", label: "Warnings to review" });
+  expect(status(["pass", "warning"])).toEqual({ tone: "warn", key: "warnings", label: "Warnings to review" });
+  expect(status(["disposition", "warning"])).toEqual({ tone: "warn", key: "warnings", label: "Warnings to review" });
+  expect(status(["disposition", "pass"])).toEqual({ tone: "warn", key: "dispositioned", label: "Dispositioned" });
+  expect(status(["blocked", "warning", "disposition"])).toEqual({ tone: "block", key: "blocked", label: "Needs disposition" });
+  expect(status(["pass"])).toEqual({ tone: "pass", key: "pass", label: "All rules pass" });
+  expect(status(["pass", "pass"])).toEqual({ tone: "pass", key: "pass", label: "All rules pass" });
+  for (const displays of [[], ["warning"], ["skipped"], ["disposition", "warning"]] as RuleDisplay[][]) {
+    expect(claimStatus(displays).label).not.toMatch(/\d/);
+  }
+});
+
+test("the Gate 2 status chip reads neutral or warning, never green, for empty and warning-only claims", async ({ page }) => {
+  // Route-mocked getEvidence: the live C-BW-HIGH chain with its validations replaced.
+  let patch: (validations: Json[]) => Json[] = (validations) => validations;
+  await page.route("**/api/v1/studies/*/claims/C-BW-HIGH/evidence", async (route) => {
+    const body = (await (await route.fetch()).json()) as Json;
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ ...body, validations: patch(body.validations as Json[]) }),
+    });
+  });
+  await serveGate(page);
+  const summary = page.getByTestId("trace-summary");
+
+  // No rule results: neutral, and the accordion shows its empty state.
+  patch = () => [];
+  await openGate(page);
+  await page.getByTestId("claim-C-BW-HIGH").click();
+  await expect(summary).toHaveText("No rule results");
+  await expect(summary).toHaveAttribute("data-status", "muted");
+  await expect(summary).toHaveAttribute("data-claim-status", "empty");
+  await expect(page.getByTestId("traceability-gate")).not.toContainText("All rules pass");
+
+  // Only warning results: a warning state, not green.
+  patch = (validations) => validations.map((item) => ({ ...item, status: "fail", severity: "warning" }));
+  await openGate(page);
+  await page.getByTestId("claim-C-BW-HIGH").click();
+  await expect(summary).toHaveText("Warnings to review");
+  await expect(summary).toHaveAttribute("data-status", "warn");
+  await expect(summary).toHaveAttribute("data-claim-status", "warnings");
+  // VR-003 passes live; here it is only a warning. (VR-004 may carry an earlier serial disposition.)
+  await expect(page.getByTestId("rule-badge-VR-003")).toHaveText("Warning");
+  await expectNoCountChrome(page);
+});
+
+test("a dispositioned blocker with a remaining warning reads Warnings to review, not Dispositioned", async ({ page }) => {
+  // Display-only mocks, no writes: the workspace carries a recorded disposition for VR-004,
+  // and getEvidence turns the passing rule into a warning.
+  await page.route("**/api/v1/studies/*/claims/C-BW-HIGH/evidence", async (route) => {
+    const body = (await (await route.fetch()).json()) as Json;
+    const validations = (body.validations as Json[]).map((item) =>
+      item.status === "pass" ? { ...item, status: "fail", severity: "warning", message: "Synthetic warning left to review." } : item,
+    );
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ...body, validations }) });
+  });
+  await serveGate(page, (workspace) => ({
+    ...workspace,
+    dispositions: [
+      ...(workspace.dispositions as Json[]),
+      {
+        disposition_id: "RD-P2-MOCK-1",
+        result_id: "VR-004",
+        decision: "corrected",
+        reason: "Synthetic display-only disposition.",
+        reviewer: "Dr. Lane C Reviewer",
+        timestamp: new Date().toISOString(),
+        artifact_id: null,
+        artifact_hash: null,
+        dependency_fingerprint: null,
+      },
+    ],
+  }));
+  await openGate(page);
+  await page.getByTestId("claim-C-BW-HIGH").click();
+  await expect(page.getByTestId("rule-badge-VR-004")).toHaveText("Disposition");
+  await expect(page.getByTestId("rule-badge-VR-003")).toHaveText("Warning");
+  const summary = page.getByTestId("trace-summary");
+  await expect(summary).toHaveText("Warnings to review");
+  await expect(summary).toHaveAttribute("data-claim-status", "warnings");
+  await expect(summary).not.toContainText("Dispositioned");
+  await expect(summary).not.toContainText("All rules pass");
+  await expectNoCountChrome(page);
 });
