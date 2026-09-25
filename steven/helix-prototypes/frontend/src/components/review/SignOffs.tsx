@@ -31,6 +31,9 @@ export function SignOffs({
   const priorsDone = priorApprovalsRecorded(workspace);
   const directorRecorded = latestApproval(workspace, "study_director") !== null;
   const fsaCurrent = workspace.approval_current;
+  // Hashes the approval binds: the recorded approval's copy once it exists, else the candidate's.
+  const approvedArtifacts =
+    workspace.final_study_approval?.included_artifact_hashes ?? workspace.release_candidate?.included_artifacts ?? [];
   const fsaHint =
     fsaCurrent || !workspace.release_candidate
       ? null
@@ -138,8 +141,8 @@ export function SignOffs({
           )}
           {workspace.release_candidate && (
             // Scope of the hash-bound record: the exact release-candidate manifest and artifact
-            // hashes (the recorded approval's copy once it exists). Each full hash stays in the
-            // DOM (and the copy button); the column only truncates it visually.
+            // hashes (the recorded approval's copy once it exists). The list is collapsed by
+            // default; every full hash stays in the DOM and in its copy button when expanded.
             <div className="hx-fsa-scope" data-testid="final-study-approval-scope">
               <div className="hx-fsa-head">
                 <span className="hx-fsa-kicker">What you are approving</span>
@@ -151,14 +154,17 @@ export function SignOffs({
                   {fsaCurrent ? "Signed" : workspace.final_study_approval ? "Out of date: files changed, sign again" : "Ready to sign"}
                 </span>
               </div>
-              <dl>
-                <HashRow
-                  label="Package fingerprint"
-                  value={workspace.final_study_approval?.manifest_hash ?? workspace.release_candidate.content_hash}
-                  testId="approval-manifest-hash"
-                />
-                {(workspace.final_study_approval?.included_artifact_hashes ?? workspace.release_candidate.included_artifacts).map(
-                  (item) => (
+              <details className="hx-fsa-details" data-testid="approval-hashes">
+                <summary data-testid="approval-hashes-toggle">
+                  File fingerprints ({1 + approvedArtifacts.length})
+                </summary>
+                <dl>
+                  <HashRow
+                    label="Package fingerprint"
+                    value={workspace.final_study_approval?.manifest_hash ?? workspace.release_candidate.content_hash}
+                    testId="approval-manifest-hash"
+                  />
+                  {approvedArtifacts.map((item) => (
                     <HashRow
                       key={item.artifact_id}
                       label={labelFor(workspace, item.artifact_id)}
@@ -166,9 +172,9 @@ export function SignOffs({
                       value={item.content_hash}
                       testId={`approval-artifact-${item.artifact_id}`}
                     />
-                  ),
-                )}
-              </dl>
+                  ))}
+                </dl>
+              </details>
             </div>
           )}
         </div>

@@ -181,6 +181,13 @@ test("inspect provenance reads the claim evidence endpoint and shows the lineage
   await page.getByTestId("inspect-provenance-C-BW-HIGH-M").click();
   await expect(page.getByTestId("lineage-edges")).toBeVisible();
   await expect(page.getByTestId("lineage-edges").locator("li")).toHaveCount(fx.evidence.lineage.length);
+  // Critique P1-b: the provenance readout carries no hashes.
+  await expect(page.getByTestId("lineage-edges")).not.toContainText("sha256:");
+  // Critique P1-f: the legacy fallback panels are not part of the Gate 3 view.
+  await expect(page.getByTestId("stage-view").locator(":scope > .view-content")).toHaveCount(2);
+  for (const panel of await page.getByTestId("stage-view").locator(":scope > .view-content").all()) {
+    await expect(panel).toBeHidden();
+  }
   expect(h.evidenceRequests).toContain("/api/v1/studies/STUDY-HLX-028/claims/C-BW-HIGH-M/evidence");
 });
 
@@ -215,7 +222,8 @@ test("records one role per call in any order; study director waits for the three
   }
   // Approvals alone never export and never pass the release gate client-side.
   await expect(page.getByTestId("export-final-package")).toBeDisabled();
-  await expect(page.getByTestId("export-disabled-reason")).toContainText("ready for signature");
+  await expect(page.getByTestId("export-disabled-reason")).toHaveAttribute("data-gate", "ready_for_signature");
+  await expect(page.getByTestId("export-disabled-reason")).toHaveText("Export unlocks after Final Study Approval is signed.");
   expect(commands.filter((command) => command.includes("/exports"))).toEqual([]);
   expect(h.exportPosts).toBe(0);
 });
@@ -248,6 +256,12 @@ test("export is enabled only by the server ready_for_export gate and is its own 
   await expect(page.getByTestId("signoff-final-study-approval")).toHaveAttribute("data-signed", "true");
   await expect(page.getByTestId("approval-current")).toHaveAttribute("data-state", "current");
   await expect(page.getByTestId("approval-manifest-hash")).toHaveText(/^sha256:[a-f0-9]{64}$/);
+  // Critique P1-a: the hash list is collapsed by default; every full hash is there on expand.
+  expect(await page.getByTestId("approval-hashes").evaluate((node) => (node as HTMLDetailsElement).open)).toBe(false);
+  await expect(page.getByTestId("approval-manifest-hash")).toBeHidden();
+  await page.getByTestId("approval-hashes-toggle").click();
+  await expect(page.getByTestId("approval-manifest-hash")).toBeVisible();
+  await expect(page.getByTestId("approval-hashes").locator('[data-testid^="approval-artifact-"]').first()).toBeVisible();
   // Final Study Approval recorded; still no export until the explicit click.
   expect(h.exportPosts).toBe(0);
   const exportButton = page.getByTestId("export-final-package");
@@ -256,8 +270,9 @@ test("export is enabled only by the server ready_for_export gate and is its own 
   await expect(stageButtons(page).nth(8)).not.toHaveAccessibleName(/\(Approved\)$|\(Complete\)$|\(Done\)$/);
   await exportButton.click();
   await expect(page.getByTestId("export-receipt")).toBeVisible();
-  await expect(page.getByTestId("export-exported-at")).toHaveText(fx.export_receipt.exported_at);
-  await expect(page.getByTestId("export-idempotent-replay")).toHaveText("no");
+  await expect(page.getByTestId("export-exported-at")).toHaveAttribute("datetime", fx.export_receipt.exported_at);
+  // A first export is not a replay, so the repeat-export row is absent.
+  await expect(page.getByTestId("export-idempotent-replay")).toHaveCount(0);
   await expect(exportButton).toHaveText("Package exported");
   await expect(exportButton).toBeDisabled();
   expect(h.exportPosts).toBe(1);
@@ -308,11 +323,13 @@ test("export errors are shown with a retry, and a replayed export is labeled ide
   const exportButton = page.getByTestId("export-final-package");
   await exportButton.click();
   await expect(page.getByTestId("export-error")).toContainText("Synthetic export conflict injected by the test");
+  await expect(page.getByTestId("export-error")).toContainText("Nothing was exported.");
   await expect(exportButton).toContainText("Retry export");
   await expect(page.getByTestId("downloads")).toHaveCount(0);
   await expect(stageButtons(page).nth(8)).toHaveAccessibleName(/\(Awaiting you\)$/);
   await exportButton.click();
-  await expect(page.getByTestId("export-idempotent-replay")).toHaveText("no");
+  await expect(page.getByTestId("export-receipt")).toBeVisible();
+  await expect(page.getByTestId("export-idempotent-replay")).toHaveCount(0);
   expect(h.exportPosts).toBe(2);
   // The server replays the same receipt for the same idempotency key.
   expect(fx.export_replay.idempotent_replay).toBe(true);
@@ -331,7 +348,7 @@ test("reload restores sign-offs, receipt, downloads, and completed progress from
   await expect(page.getByTestId("signoff-final-study-approval")).toHaveAttribute("data-signed", "true");
   await expect(page.getByTestId("export-final-package")).toHaveText("Package exported");
   await expect(page.getByTestId("export-receipt")).toBeVisible();
-  await expect(page.getByTestId("export-exported-at")).toHaveText(/^\d{4}-\d{2}-\d{2}T/);
+  await expect(page.getByTestId("export-exported-at")).toHaveAttribute("datetime", /^\d{4}-\d{2}-\d{2}T/);
   for (const artifact of fx.export_receipt.artifacts) {
     await expect(page.getByTestId(`download-checksum-${artifact.artifact_id}`)).toHaveText(artifact.checksum);
   }
@@ -340,22 +357,23 @@ test("reload restores sign-offs, receipt, downloads, and completed progress from
   expect(commands).toEqual([]);
 });
 
-test("demo flag on: every demo-skipped package is labeled 'Demo: not qualified' in review and downloads", async ({
+test("demo flag on: the review stage shows no demo UI; the server's pending packages are untouched", async ({
   page,
 }) => {
+  // Critique P1-c: the demo flag has no visible UI. The server still reports the packages.
   await harness(page, { demo: true });
   await page.goto("/");
   const packages = fx.demo_review.demo_unqualified_packages as { section_package_id: string; prototype_section_id: string }[];
   expect(packages.map((item) => item.section_package_id)).toEqual(["section.5_2_3_body_weight", "section.5_3_discussion"]);
-  await expect(page.getByTestId("demo-mode-banner")).toBeVisible();
+  await expect(page.getByTestId("review-stage")).toBeVisible();
   for (const item of packages) {
-    await expect(page.getByTestId(`review-section-${item.prototype_section_id}`)).toContainText(DEMO);
     await page.getByTestId(`review-section-${item.prototype_section_id}`).click();
-    await expect(page.getByTestId("draft-canvas")).toContainText(DEMO);
+    await expect(page.getByTestId("draft-canvas")).toBeVisible();
   }
-  // Sections outside the demo scope carry no label.
-  await expect(page.getByTestId("review-section-S7")).not.toContainText(DEMO);
-  // Packages stay pending: the label never claims qualification or invents hashes.
+  await expect(page.getByText(DEMO)).toHaveCount(0);
+  await expect(page.getByTestId("demo-mode-banner")).toHaveCount(0);
+  await expect(page.locator(".demo-label, .demo-banner")).toHaveCount(0);
+  // Packages stay pending: nothing claims qualification or invents hashes.
   for (const item of fx.demo_review.demo_unqualified_packages as Json[]) {
     expect(item.qualification_status).toBe("pending");
     expect(Object.keys(item)).not.toContain("qualification_hash");
@@ -363,10 +381,12 @@ test("demo flag on: every demo-skipped package is labeled 'Demo: not qualified' 
   expect(await page.locator("body").innerText()).not.toMatch(regulatoryClaim);
 });
 
-test("demo flag on: exported downloads carry the demo note", async ({ page }) => {
+test("demo flag on: exported downloads show no demo note", async ({ page }) => {
   await harness(page, { demo: true, phase: "exported", roles: ["pathologist", "peer_reviewer", "qau", "study_director"] });
   await page.goto("/");
-  await expect(page.getByTestId("downloads-demo-note")).toContainText(DEMO);
+  await expect(page.getByTestId("downloads")).toBeVisible();
+  await expect(page.getByTestId("downloads-demo-note")).toHaveCount(0);
+  await expect(page.getByText(DEMO)).toHaveCount(0);
 });
 
 test("demo flag on: freeze stays a human action; nothing freezes on load or on approval", async ({ page }) => {
@@ -383,8 +403,8 @@ test("demo flag on: freeze stays a human action; nothing freezes on load or on a
   });
   const commands = trackCommands(page);
   await page.goto("/");
-  await expect(page.getByTestId("demo-mode-banner")).toBeVisible();
   await expect(page.getByTestId("stage-view")).toHaveAttribute("data-selected-stage", "upload");
+  await expect(page.getByTestId("demo-mode-banner")).toHaveCount(0);
   await expect(page.getByTestId("freeze-manifest")).toBeDisabled();
   await page.waitForTimeout(1000);
   expect(commands.filter((command) => command.includes("/pinned-runs"))).toEqual([]);

@@ -25,33 +25,9 @@
 }
 #helix-e2e .hx-flag strong { color: var(--hx-warn); }
 
-/*
- * DEMO ONLY (HELIX_DEMO_UNQUALIFIED_PACKAGES): "Demo: not qualified" labels.
- * Ported from the parked demo-flag WIP (was in globals.css); tokens only.
- */
-#helix-e2e .demo-label {
-  display: inline-block;
-  margin: 0 6px;
-  padding: 1px 8px;
-  border: 1px solid var(--hx-warn-line);
-  border-radius: 999px;
-  background: var(--hx-warn-soft);
-  color: var(--hx-warn);
-  font-size: var(--hx-fs-meta, 12px);
-  font-weight: var(--hx-fw-semibold);
-  white-space: nowrap;
-}
-#helix-e2e .demo-banner {
-  display: inline-flex;
-  gap: 8px;
-  align-items: center;
-  padding: 4px 10px;
-  border: 1px solid var(--hx-warn-line);
-  border-radius: var(--hx-radius-control);
-  background: var(--hx-warn-soft);
-  color: var(--hx-warn);
-  font-size: var(--hx-fs-meta, 12px);
-}
+/* Critique P1-f: Gate 3 shows only the review view. The legacy fallback panels (StudyJourney,
+   ReportAssembly) stay mounted for the other stages but are hidden while review-export is open. */
+#helix-e2e .hx-stage-view[data-selected-stage="review-export"] > .view-content { display: none; }
 
 /* Lane D (#23) review view composition. Tokens only; shared card/list/button/chip styles live in helix-v1.css. */
 #helix-e2e .hx-review-nav { padding: var(--hx-sp-8); }
@@ -146,6 +122,13 @@
 #helix-e2e .hx-fsa-status[data-state="current"] { color: var(--hx-pass); font-weight: var(--hx-fw-semibold); }
 #helix-e2e .hx-fsa-status[data-state="stale"] { color: var(--hx-warn); font-weight: var(--hx-fw-semibold); }
 #helix-e2e .hx-fsa-scope dl { margin: 0; }
+#helix-e2e .hx-fsa-details > summary {
+  cursor: pointer;
+  margin-top: var(--hx-sp-8);
+  color: var(--hx-ink-2);
+  font-weight: var(--hx-fw-semibold);
+}
+#helix-e2e .hx-fsa-details > summary:focus-visible { outline: 2px solid var(--hx-accent); outline-offset: 2px; }
 #helix-e2e .hx-fsa-scope dt { color: var(--hx-ink-2); margin-top: var(--hx-sp-8); }
 #helix-e2e .hx-fsa-id { color: var(--hx-muted); }
 #helix-e2e .hx-fsa-hash { display: flex; align-items: center; gap: var(--hx-sp-8); margin: 0; min-width: 0; }

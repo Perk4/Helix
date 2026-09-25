@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import { ApiError, getEvidence } from "@/lib/api";
 import type { EvidenceChainData, Workspace } from "@/lib/types";
 
-import { DemoLabel, demoPackageFor } from "../DemoLabel";
 import { Button, Card, Chip, Kicker, Spinner } from "../ui";
 
 // Lane D (#23): document-style canvas for one report section of WorkspaceResponse.report.
@@ -50,12 +49,10 @@ export function DraftCanvas({ workspace, section }: { workspace: Workspace; sect
       </Kicker>
       <h2 id="hx-doc-title" className="hx-doc-title">
         {section.title}
-        <DemoLabel item={demoPackageFor(workspace, { prototypeSectionId: section.section_id })} context="review-canvas" />
       </h2>
       {templateSection?.purpose && <p className="hx-doc-purpose hx-sub">{templateSection.purpose}</p>}
 
       <div className="hx-doc-body" data-testid="draft-blocks">
-        {section.blocks.length === 0 && <p className="hx-sub">No draft blocks exist for this section yet.</p>}
         {section.blocks.map((block) =>
           block.kind === "review_marker" ? (
             <div className="hx-flag" key={block.block_id} data-testid={`review-marker-${block.block_id}`}>
@@ -97,7 +94,11 @@ export function DraftCanvas({ workspace, section }: { workspace: Workspace; sect
       </div>
 
       <section className="hx-doc-fields" aria-labelledby="hx-doc-fields-h">
-        <h3 id="hx-doc-fields-h">Required fields · sponsor template</h3>
+        <h3 id="hx-doc-fields-h">Required fields · sponsor template ({section.fields.length})</h3>
+        {/* Kept from the legacy report panel: template identity and each field's authority. */}
+        <p className="hx-sub hx-mono" data-testid="template-identity">
+          Template {template.template_id} · CTD location {template.ctd_location}
+        </p>
         <ul className="hx-doc-field-list" data-testid="required-fields">
           {section.fields.map((field) => (
             <li key={field.field_id}>
@@ -115,6 +116,14 @@ export function DraftCanvas({ workspace, section }: { workspace: Workspace; sect
                   </Chip>
                 )}
                 <span className="hx-mono">{field.expected_grain}</span>
+                {field.regulatory_reference_ids.map((id) => {
+                  const reference = references.get(id);
+                  return reference ? (
+                    <a key={id} href={reference.url} target="_blank" rel="noreferrer" data-testid={`field-reference-${field.field_id}-${id}`}>
+                      {reference.citation}
+                    </a>
+                  ) : null;
+                })}
               </span>
             </li>
           ))}
@@ -147,7 +156,12 @@ export function DraftCanvas({ workspace, section }: { workspace: Workspace; sect
         </section>
       )}
 
+      {usedReferenceIds.length === 0 && <p className="hx-sub hx-doc-disclaimer">{template.disclaimer}</p>}
+
       <AgentState workspace={workspace} />
+      <p className="hx-sub hx-mono hx-doc-footer" data-testid="draft-footer">
+        {workspace.study.study_id} · Protocol {workspace.study.protocol_version} · Synthetic working draft
+      </p>
     </Card>
   );
 }
@@ -166,7 +180,6 @@ function LineageReadout({ chain }: { chain: EvidenceChainData }) {
           <li key={edge.edge_id} className="hx-mono" data-testid={`lineage-edge-${edge.edge_id}`}>
             {edge.source_record_id} → {edge.transform_id}
             {edge.transform_version ? `@${edge.transform_version}` : ""} → {edge.claim_id} · tier {edge.authority_tier}
-            {edge.source_hash ? ` · ${edge.source_hash}` : ""}
           </li>
         ))}
       </ol>
@@ -192,10 +205,6 @@ function AgentState({ workspace }: { workspace: Workspace }) {
         <li>
           {latest.candidate.section_package_id} · candidate {latest.candidate.candidate_id} · attempt{" "}
           {latest.candidate.attempt}
-          <DemoLabel
-            item={demoPackageFor(workspace, { sectionPackageId: latest.candidate.section_package_id })}
-            context="review-agent"
-          />
         </li>
         <li>evaluation {evaluation ? `${evaluation.evaluation_id} · ${evaluation.next_attempt_decision.action}` : "not run"}</li>
         <li>

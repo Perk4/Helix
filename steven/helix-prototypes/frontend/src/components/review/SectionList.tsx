@@ -2,7 +2,6 @@
 
 import type { Workspace } from "@/lib/types";
 
-import { DemoLabel, demoPackageFor } from "../DemoLabel";
 import { Card, Chip, cx, type Tone } from "../ui";
 import { openBlockersBySection } from "./reviewState";
 
@@ -49,10 +48,6 @@ export function SectionList({
           >
             <span className="hx-sec-title">
               {index + 1}. {section.title}
-              <DemoLabel
-                item={demoPackageFor(workspace, { prototypeSectionId: section.section_id })}
-                context="review-nav"
-              />
             </span>
             <Chip tone={presentation.tone} size="xs" data-status={section.status}>
               {presentation.label}

@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { mkdir, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
@@ -352,6 +352,7 @@ test("renders candidate evaluation and cross-section query from backend-owned wo
   });
 
   await page.goto("/");
+  await showLegacyPanels(page);
   await expect(page.getByTestId("evaluate-candidate")).toBeEnabled();
   await expect(page.getByTestId("query-cross-section")).toBeEnabled();
   await expect(page.getByTestId("promote-section-draft")).toBeDisabled();
@@ -420,6 +421,7 @@ test("renders predecessor run identity and carry-forward counts from the workspa
   });
 
   await page.goto("/");
+  await showLegacyPanels(page);
   await expect(page.getByTestId("superseding-run")).toBeVisible();
   await expect(page.getByTestId("predecessor-run-id")).toHaveText("RUN-PRED00000001");
   await expect(page.getByTestId("supersession-reason")).toHaveText(
@@ -523,6 +525,7 @@ test("renders backend promotion status and draft evidence without recalculating 
   });
 
   await page.goto("/");
+  await showLegacyPanels(page);
   await expect(page.getByTestId("promotion-status")).toHaveText("eligible");
   await expect(page.getByTestId("promotion-failed")).toHaveText("package_permission");
   await expect(page.getByTestId("promotion-condition-package_permission")).toContainText("failed");
@@ -563,6 +566,7 @@ test("shows every immutable attempt and offers no fourth attempt after stop_for_
   });
 
   await page.goto("/");
+  await showLegacyPanels(page);
   await expect(page.getByTestId("candidate-attempt-CYCLE-BW-001-1")).toBeVisible();
   await expect(page.getByTestId("candidate-attempt-CYCLE-BW-001-2")).toBeVisible();
   await expect(page.getByTestId("candidate-attempt-CYCLE-BW-001-3")).toBeVisible();
@@ -614,6 +618,7 @@ test("offers revise after stop_for_review and shows a new cycle without changing
   });
 
   await page.goto("/");
+  await showLegacyPanels(page);
   await expect(page.getByTestId("revise-body-weight")).toBeEnabled();
   const discussionBefore = await page.getByTestId("impact-section.5_3_discussion").textContent();
   await page.getByTestId("revise-body-weight").click();
@@ -1360,5 +1365,16 @@ async function assertRenderedEligibility(
       await expect(row).toContainText(String(result.message));
       await expect(row).toContainText(result.waivable === true ? "waivable" : "non-waivable");
     }
+  }
+}
+
+// Critique P1-f: Gate 3 hides the legacy fallback panels. These legacy displays are asserted
+// from the traceability stage, where the fallback panels still render.
+async function showLegacyPanels(page: Page) {
+  await expect(page.getByTestId("helix-workbench")).toBeVisible();
+  const stageView = page.getByTestId("stage-view");
+  if ((await stageView.getAttribute("data-selected-stage")) === "review-export") {
+    await page.getByRole("navigation", { name: "Journey progress" }).getByRole("button").nth(7).click();
+    await expect(stageView).toHaveAttribute("data-selected-stage", "traceability");
   }
 }

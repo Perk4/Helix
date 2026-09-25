@@ -51,26 +51,33 @@ export function ExportPanel({
         )}
       </Button>
       {!ready && !exported && (
-        <p className="hx-sub hx-fine" data-testid="export-disabled-reason">
-          Export stays disabled until the server release gate is ready for export (now:{" "}
-          {status.replaceAll("_", " ")}).
+        <p className="hx-sub hx-fine" data-testid="export-disabled-reason" data-gate={status}>
+          {disabledReason(status)}
         </p>
       )}
       {state.kind === "error" && (
         <p className="hx-notice t-block" role="alert" data-testid="export-error">
-          {state.message}
+          Export failed: {state.message} Nothing was exported.
         </p>
       )}
       {(state.kind === "success" || exported) && (
         <dl className="hx-export-receipt" data-testid="export-receipt">
-          <dt>Exported at</dt>
-          <dd className="hx-mono" data-testid="export-exported-at">
-            {exportedAt ?? "recorded by the server"}
+          <dt>Exported</dt>
+          <dd>
+            {exportedAt ? (
+              <time dateTime={exportedAt} data-testid="export-exported-at">
+                {localTime(exportedAt)}
+              </time>
+            ) : (
+              <span data-testid="export-exported-at">Recorded by the server</span>
+            )}
           </dd>
-          <dt>Idempotent replay</dt>
-          <dd className="hx-mono" data-testid="export-idempotent-replay">
-            {state.kind === "success" ? (state.receipt.idempotent_replay ? "yes" : "no") : "not in this session"}
-          </dd>
+          {state.kind === "success" && state.receipt.idempotent_replay && (
+            <>
+              <dt>Repeat export</dt>
+              <dd data-testid="export-idempotent-replay">Already exported. The server returned the same package.</dd>
+            </>
+          )}
         </dl>
       )}
       <p className="hx-sub hx-fine">
@@ -78,4 +85,31 @@ export function ExportPanel({
       </p>
     </div>
   );
+}
+
+/** Plain-language reason for a disabled export, from the server release gate status. */
+function disabledReason(status: string): string {
+  switch (status) {
+    case "ready_for_signature":
+      return "Export unlocks after Final Study Approval is signed.";
+    case "ready_for_review":
+    case "blocked":
+      return "Export unlocks after every sign-off above is recorded.";
+    default:
+      return "Export is not available yet.";
+  }
+}
+
+/** The export time in the reader's local time zone; the full timestamp stays in dateTime. */
+function localTime(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
+  return date.toLocaleString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    timeZoneName: "short",
+  });
 }

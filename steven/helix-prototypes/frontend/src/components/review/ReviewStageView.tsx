@@ -6,7 +6,6 @@ import { ApiError, exportPackage, recordApproval, recordFinalStudyApproval } fro
 import { APPROVAL_POLICY } from "@/lib/api/release";
 import type { ApprovalRole, Workspace } from "@/lib/types";
 
-import { DemoBanner } from "../DemoLabel";
 import { Card, GateBanner } from "../ui";
 import { DraftCanvas } from "./DraftCanvas";
 import { Downloads } from "./Downloads";
@@ -97,30 +96,28 @@ export function ReviewStageView({
   return (
     <div className="stack" data-testid="review-stage" data-gate-status={gateStatus ?? undefined}>
       <GateBanner gateNumber={3} passed={passed} title="Review sections, sign and export" right={hint} data-testid="review-gate-banner" />
-      <DemoBanner workspace={workspace} />
       <p className="hx-visually-hidden" aria-live="polite" data-testid="review-message">
         {announcement}
       </p>
-      {section ? (
-        <div className="g-review">
-          <SectionList workspace={workspace} selectedId={section.section_id} onSelect={setSelectedId} />
+      {/* Empty report content renders as an empty column inside this view; the sign-offs stay. */}
+      <div className="g-review">
+        <SectionList workspace={workspace} selectedId={section?.section_id ?? ""} onSelect={setSelectedId} />
+        {section ? (
           <DraftCanvas workspace={workspace} section={section} />
-          <Card as="aside" className="stack" aria-labelledby="hx-so-h">
-            <SignOffs
-              workspace={workspace}
-              busy={busy ?? (exportState.kind === "loading" ? "export" : null)}
-              onApprove={(role) => void approve(role)}
-              onFinalStudyApproval={() => void approveFinalStudy()}
-              errors={errors}
-            />
-            <ExportPanel workspace={workspace} state={exportState} onExport={() => void performExport()} />
-          </Card>
-        </div>
-      ) : (
-        <Card>
-          <p className="hx-sub">The server returned no report sections.</p>
+        ) : (
+          <Card as="article" className="hx-doc" aria-label="Draft" data-testid="draft-canvas" />
+        )}
+        <Card as="aside" className="stack" aria-labelledby="hx-so-h">
+          <SignOffs
+            workspace={workspace}
+            busy={busy ?? (exportState.kind === "loading" ? "export" : null)}
+            onApprove={(role) => void approve(role)}
+            onFinalStudyApproval={() => void approveFinalStudy()}
+            errors={errors}
+          />
+          <ExportPanel workspace={workspace} state={exportState} onExport={() => void performExport()} />
         </Card>
-      )}
+      </div>
       <Downloads workspace={workspace} />
       <p className="hx-sub hx-fine hx-review-disclaimer">
         Synthetic data · Not for submission. The report follows an FDA-like layout for demonstration only and

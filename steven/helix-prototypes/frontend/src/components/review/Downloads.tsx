@@ -6,7 +6,6 @@ import { artifactDownloadUrl } from "@/lib/api";
 import { artifactLabel, probeArtifact, type ArtifactProbe, type ExportArtifact } from "@/lib/api/release";
 import type { Workspace } from "@/lib/types";
 
-import { DEMO_NOT_QUALIFIED, demoPackages } from "../DemoLabel";
 import { Card, DataTable, Kicker } from "../ui";
 
 // Lane D (#23): after export, every artifact's ID, label, checksum, media type, and a download
@@ -37,7 +36,6 @@ export function Downloads({ workspace }: { workspace: Workspace }) {
   }, [key, studyId]);
 
   if (exported.length === 0) return null;
-  const demo = demoPackages(workspace).length > 0;
   return (
     <Card className="stack" aria-labelledby="hx-dl-h" data-testid="downloads">
       <div>
@@ -45,12 +43,6 @@ export function Downloads({ workspace }: { workspace: Workspace }) {
         <h2 id="hx-dl-h" className="hx-so-title">
           Downloads · {exported.length} checksummed artifacts
         </h2>
-        {demo && (
-          <p className="hx-sub" data-testid="downloads-demo-note">
-            <span className="demo-label">{DEMO_NOT_QUALIFIED}</span> This package was frozen with the demo flag. The
-            section packages stay qualification pending; nothing here is qualified or final.
-          </p>
-        )}
       </div>
       <DataTable<ExportArtifact>
         label="Exported artifacts"
