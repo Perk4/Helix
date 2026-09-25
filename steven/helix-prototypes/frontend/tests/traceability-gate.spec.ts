@@ -413,3 +413,22 @@ test("with zero claims the gate shows an empty state and never requests evidence
   await page.waitForLoadState("networkidle");
   expect(evidenceCalls).toEqual([]);
 });
+
+test("Inspect on a report statement opens Gate 2 on that statement's claim", async ({ page }) => {
+  await serveGate(page);
+  await openGate(page);
+  await expect(page.getByTestId("trace-claim-kicker")).toContainText("Claim C-BW-HIGH");
+
+  // The legacy report panel's section S7 carries the liver statements (C-MI-LIVER).
+  const inspectLiver = page.getByRole("button", { name: "Inspect 4 provenance edges" }).first();
+  await inspectLiver.click();
+  await expect(page.getByTestId("trace-claim-kicker")).toContainText("Claim C-MI-LIVER");
+  await expect(page.getByTestId("rule-badge-VR-005")).toBeVisible();
+  await expect(page.getByTestId("claim-C-MI-LIVER")).toHaveAttribute("aria-pressed", "true");
+
+  // Inspecting the same statement again reselects it after the reviewer switched away.
+  await page.getByTestId("claim-C-BW-HIGH").click();
+  await expect(page.getByTestId("trace-claim-kicker")).toContainText("Claim C-BW-HIGH");
+  await inspectLiver.click();
+  await expect(page.getByTestId("trace-claim-kicker")).toContainText("Claim C-MI-LIVER");
+});
