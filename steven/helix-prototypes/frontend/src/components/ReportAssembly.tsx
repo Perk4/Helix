@@ -127,18 +127,14 @@ export function ReportAssembly({
     }
   }
 
-  // Claim-backed report sections (server report projection). Each keeps its Inspect entry
-  // into Gate 2 (lane C, onInspectClaim) alongside the drafted-section view.
-  const claimSections = workspace.report.sections.flatMap((item) => {
-    const seen = new Set<string>();
-    return item.blocks.flatMap((block) =>
-      block.claim_id && !seen.has(block.claim_id) && seen.add(block.claim_id)
-        ? [{ sectionId: item.section_id, title: item.title, claimId: block.claim_id, edges: block.provenance_count }]
-        : [],
-    );
-  });
+  // Section-to-claim mapping (no invented claims). The server's report projection carries
+  // the claim-backed statements per template section (S1-S8) with their provenance edge
+  // count, as #27/#28 rendered them. Each drafted section maps to one template section
+  // through Steven's catalog (`template_section`), so it inherits exactly those claims.
+  const claimSections = claimsByTemplateSection(workspace);
 
   const selectedMeta = sections.find((item) => item.section_id === selectedSectionId);
+  const selectedClaims = claimSections.filter((item) => item.sectionId === selectedMeta?.template_section);
   const selectedTitle = draft?.title ?? selectedMeta?.title ?? selectedSectionId;
 
   const latestDispositions = latestDispositionMap(workspace);
@@ -287,6 +283,22 @@ export function ReportAssembly({
                     : "No numeric values in this section."}
                   {!draft.model && " · narrative pending (model not configured)"}
                 </p>
+              </div>
+            )}
+
+            {selectedClaims.length > 0 && (
+              <div data-testid="draft-section-claims">
+                {selectedClaims.map((item) => (
+                  <button
+                    key={item.claimId}
+                    type="button"
+                    className="lineage-button"
+                    data-testid={`inspect-claim-${item.claimId}`}
+                    onClick={() => onInspectClaim(item.claimId)}
+                  >
+                    Inspect {item.edges} provenance edges
+                  </button>
+                ))}
               </div>
             )}
 
@@ -521,6 +533,22 @@ export function ReportAssembly({
       />
     </section>
   );
+}
+
+type ClaimEntry = { sectionId: string; title: string; claimId: string; edges: number };
+
+/** Claim-backed statements per template section, one entry per distinct claim. */
+function claimsByTemplateSection(workspace: Workspace): ClaimEntry[] {
+  return workspace.report.sections.flatMap((item) => {
+    const seen = new Set<string>();
+    const entries: ClaimEntry[] = [];
+    for (const block of item.blocks) {
+      if (!block.claim_id || seen.has(block.claim_id)) continue;
+      seen.add(block.claim_id);
+      entries.push({ sectionId: item.section_id, title: item.title, claimId: block.claim_id, edges: block.provenance_count });
+    }
+    return entries;
+  });
 }
 
 function BlockView({ block }: { block: SectionBlock }) {
