@@ -29,7 +29,7 @@ from .schemas import (
 )
 from .section_promotion import SectionPromotionService
 from .section_runs import SectionRunService
-from .study_output_evaluation import evaluate_study_output
+from .study_output_evaluation import evaluate_study_output, suite_fixture_guardrail_checks
 from .template_conformance import evaluate_template_conformance
 
 
@@ -47,6 +47,9 @@ class CandidateEvaluationService:
         self.repository_root = repository_root
         self.repository = StudyPackageRepository(session)
         self.contracts = repository_root / "skills" / "helix-evidence-pipeline" / "contracts"
+        # Written by CI (`npm run evals:guardrails -- --output ...`). Fixture verdicts, not
+        # candidate verdicts: see `suite_fixture_guardrail_checks`.
+        self.guardrail_result_path = repository_root / "promptfoo-guardrails-result.json"
 
     def evaluate(
         self, study_id: str, run_id: str, command: CandidateEvaluationCommand
@@ -165,14 +168,15 @@ class CandidateEvaluationService:
         suite = package_definition.get("study_output_eval_suite")
         if not isinstance(suite, dict):
             raise CandidateEvaluationConflictError("The Section Package is missing a study-output suite")
-        promptfoo_result = self.repository_root / "promptfoo-guardrails-result.json"
         study_output = evaluate_study_output(
             candidate,
             candidate_hash=candidate_hash,
             suite_id=str(suite["id"]),
             suite_version=str(suite["version"]),
             suite_path=self.repository_root / str(suite["path"]),
-            promptfoo_result_path=promptfoo_result,
+        )
+        fixture_checks = suite_fixture_guardrail_checks(
+            self.guardrail_result_path, repository_root=self.repository_root
         )
         template = json.loads(
             (self.repository_root / "backend" / "app" / "data" / "report-template.json").read_text()
@@ -198,6 +202,7 @@ class CandidateEvaluationService:
             study_output_evaluation_receipt=study_output,
             template_conformance_receipt=conformance,
             next_attempt_decision=decision,
+            suite_fixture_guardrail_checks=fixture_checks,
             hashes=CandidateEvaluationHashes(
                 candidate=candidate_hash,
                 provenance=canonical_hash(provenance.model_dump(mode="json")),

@@ -835,6 +835,22 @@ class StudyOutputEvaluationReceipt(StrictModel):
     results: list[StudyOutputAssertionResult] = Field(min_length=1)
 
 
+class SuiteFixtureGuardrailChecks(StrictModel):
+    """Promptfoo guardrail verdicts from canned fixtures (``glp-guardrails.yaml``, echo provider).
+
+    A suite-level configuration check that qualifies the judges. It was never computed on the
+    evaluated candidate, so it sits beside the candidate receipts and never inside one.
+    """
+
+    schema_version: Literal["helix.suite-fixture-guardrail-checks/v1"]
+    scope: Literal["suite_fixture"]
+    candidate_evaluated: Literal[False]
+    suite_path: str = Field(min_length=1)
+    result_path: str = Field(min_length=1)
+    result_hash: Sha256
+    results: list[StudyOutputAssertionResult] = Field(min_length=1)
+
+
 ConformanceCheckKind = Literal[
     "completeness",
     "table_coverage",
@@ -910,6 +926,7 @@ class CandidateEvaluation(StrictModel):
     study_output_evaluation_receipt: StudyOutputEvaluationReceipt
     template_conformance_receipt: TemplateConformanceReceipt
     next_attempt_decision: NextAttemptDecision
+    suite_fixture_guardrail_checks: SuiteFixtureGuardrailChecks | None = None
     hashes: CandidateEvaluationHashes
     idempotent_replay: bool = False
 

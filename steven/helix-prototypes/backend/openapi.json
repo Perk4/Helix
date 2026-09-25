@@ -618,6 +618,16 @@
           "study_output_evaluation_receipt": {
             "$ref": "#/components/schemas/StudyOutputEvaluationReceipt"
           },
+          "suite_fixture_guardrail_checks": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SuiteFixtureGuardrailChecks"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "template_conformance_receipt": {
             "$ref": "#/components/schemas/TemplateConformanceReceipt"
           }
@@ -5939,6 +5949,61 @@
           "evidence"
         ],
         "title": "StudyTypeResolution",
+        "type": "object"
+      },
+      "SuiteFixtureGuardrailChecks": {
+        "additionalProperties": false,
+        "description": "Promptfoo guardrail verdicts from canned fixtures (``glp-guardrails.yaml``, echo provider).\n\nA suite-level configuration check that qualifies the judges. It was never computed on the\nevaluated candidate, so it sits beside the candidate receipts and never inside one.",
+        "properties": {
+          "candidate_evaluated": {
+            "const": false,
+            "title": "Candidate Evaluated",
+            "type": "boolean"
+          },
+          "result_hash": {
+            "pattern": "^sha256:[a-f0-9]{64}$",
+            "title": "Result Hash",
+            "type": "string"
+          },
+          "result_path": {
+            "minLength": 1,
+            "title": "Result Path",
+            "type": "string"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/StudyOutputAssertionResult"
+            },
+            "minItems": 1,
+            "title": "Results",
+            "type": "array"
+          },
+          "schema_version": {
+            "const": "helix.suite-fixture-guardrail-checks/v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "scope": {
+            "const": "suite_fixture",
+            "title": "Scope",
+            "type": "string"
+          },
+          "suite_path": {
+            "minLength": 1,
+            "title": "Suite Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "schema_version",
+          "scope",
+          "candidate_evaluated",
+          "suite_path",
+          "result_path",
+          "result_hash",
+          "results"
+        ],
+        "title": "SuiteFixtureGuardrailChecks",
         "type": "object"
       },
       "SupersedingRunReceipt": {

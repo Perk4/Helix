@@ -739,6 +739,7 @@ export interface components {
             /** Section Package Id */
             section_package_id: string;
             study_output_evaluation_receipt: components["schemas"]["StudyOutputEvaluationReceipt"];
+            suite_fixture_guardrail_checks?: components["schemas"]["SuiteFixtureGuardrailChecks"] | null;
             template_conformance_receipt: components["schemas"]["TemplateConformanceReceipt"];
         };
         /** CandidateEvaluationCommand */
@@ -2599,6 +2600,38 @@ export interface components {
             status: "resolved" | "needs_review";
             /** Study Type Id */
             study_type_id: string | null;
+        };
+        /**
+         * SuiteFixtureGuardrailChecks
+         * @description Promptfoo guardrail verdicts from canned fixtures (``glp-guardrails.yaml``, echo provider).
+         *
+         *     A suite-level configuration check that qualifies the judges. It was never computed on the
+         *     evaluated candidate, so it sits beside the candidate receipts and never inside one.
+         */
+        SuiteFixtureGuardrailChecks: {
+            /**
+             * Candidate Evaluated
+             * @constant
+             */
+            candidate_evaluated: false;
+            /** Result Hash */
+            result_hash: string;
+            /** Result Path */
+            result_path: string;
+            /** Results */
+            results: components["schemas"]["StudyOutputAssertionResult"][];
+            /**
+             * Schema Version
+             * @constant
+             */
+            schema_version: "helix.suite-fixture-guardrail-checks/v1";
+            /**
+             * Scope
+             * @constant
+             */
+            scope: "suite_fixture";
+            /** Suite Path */
+            suite_path: string;
         };
         /** SupersedingRunReceipt */
         SupersedingRunReceipt: {
