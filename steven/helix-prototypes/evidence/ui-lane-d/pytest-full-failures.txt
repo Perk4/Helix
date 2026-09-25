@@ -1,5 +1,5 @@
-# Full backend pytest on lane D: 248 collected, 164 passed, 84 failed.
-# Identical to base be11617 (/tmp/helix-lane-d-base snapshot): comm shows 0 new, 0 fixed. All 84 are invalid_package_qualification (shipped packages are qualification pending).
+# Full backend pytest on lane D after rebase onto bf10719: 265 collected, 181 passed, 84 failed.
+# Same 84 failures as before the rebase (comm: 0 new, 0 fixed). All 84 are invalid_package_qualification (shipped packages are qualification pending). New planner tests from #23 base pass.
 FAILED tests/test_api.py::test_hybrid_validation_review_approval_and_export_flow
 FAILED tests/test_candidate_attempts.py::test_attempt_three_stops_automation_and_records_needs_review
 FAILED tests/test_candidate_attempts.py::test_attempts_one_and_two_start_only_after_provenance_failure
