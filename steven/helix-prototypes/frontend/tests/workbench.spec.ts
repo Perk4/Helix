@@ -154,7 +154,11 @@ test("runs the synthetic study from validation through explicit export", async (
     await buttons.first().click();
     await expect(buttons).toHaveCount(remaining - 1);
   }
-  // Lane D (#23): Human Gate 3 opens once the server reports review-export current.
+  // Lane D (#23): Human Gate 3 opens once the server reports review-export current; the
+  // selected stage is local, so open it from the Progress Bar like a reviewer would.
+  const reviewNode = page.getByRole("navigation", { name: "Journey progress" }).getByRole("button").nth(8);
+  await expect(reviewNode).toBeEnabled();
+  await reviewNode.click();
   await expect(page.getByTestId("review-stage")).toBeVisible();
   await page.getByTestId("review-section-S7").click();
   await expect(page.getByTestId("draft-canvas").getByRole("heading", { name: "Anatomic pathology" })).toBeVisible();
