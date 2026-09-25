@@ -36,3 +36,12 @@
 #helix-e2e .hx-act.active .txt { font-weight: var(--hx-fw-semibold); }
 #helix-e2e .hx-act .tag { font-size: var(--hx-fs-meta); }
 #helix-e2e .hx-hollow { width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--hx-faint); }
+#helix-e2e .hx-agent-stage { display: grid; gap: var(--hx-sp-16); }
+#helix-e2e .hx-agent-banner-meta { display: flex; align-items: center; gap: var(--hx-sp-12); }
+#helix-e2e .hx-agent-facts { display: grid; gap: var(--hx-sp-8); margin: 0; }
+#helix-e2e .hx-agent-fact { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: var(--hx-sp-12); font-size: var(--hx-fs-body); }
+#helix-e2e .hx-agent-fact dt { color: var(--hx-muted); }
+#helix-e2e .hx-agent-fact dd { margin: 0; overflow-wrap: anywhere; }
+#helix-e2e .hx-agent-list { margin: var(--hx-sp-8) 0 0; padding-left: var(--hx-sp-16); }
+#helix-e2e .hx-agent-commands { display: flex; flex-wrap: wrap; align-items: center; gap: var(--hx-sp-12); }
+#helix-e2e .hx-agent-planner { display: flex; gap: var(--hx-sp-16); border: 0; padding: 0; margin: 0; flex-basis: 100%; }
