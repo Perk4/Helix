@@ -5,16 +5,19 @@ import { useCallback, useEffect, useState } from "react";
 import {
   ApiError,
   evaluateCandidate,
+  exportPackage,
   getWorkspace,
   promoteSectionDraft,
   queryCrossSection,
+  recordApproval,
   recordDisposition,
+  recordFinalStudyApproval,
   reviseSection,
   runDataValidation,
   runSectionAgent,
   runValidation,
 } from "@/lib/api";
-import type { PlannerMode, Workspace } from "@/lib/types";
+import type { ApprovalRole, PlannerMode, Workspace } from "@/lib/types";
 
 import { DemoBanner } from "./DemoLabel";
 import { EvidenceChain } from "./EvidenceChain";
@@ -252,6 +255,59 @@ export function HelixWorkbench({ studyId }: Props) {
     }
   }
 
+  async function approve(role: ApprovalRole) {
+    setBusy(role);
+    setNotice(null);
+    setError(null);
+    try {
+      setWorkspace(await recordApproval(studyId, role));
+      setNotice(`${roleLabel(role)} recorded in the synthetic audit trail.`);
+    } catch (cause) {
+      setError(messageFrom(cause));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function approveFinalStudy() {
+    setBusy("final-study-approval");
+    setNotice(null);
+    setError(null);
+    try {
+      const key = `workbench-${studyId}-fsa-${workspace?.release_candidate?.content_hash?.slice(-12) ?? "pending"}`;
+      setWorkspace(await recordFinalStudyApproval(studyId, key));
+      setNotice("Final Study Approval recorded for the exact release-candidate hashes.");
+    } catch (cause) {
+      setError(messageFrom(cause));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function performExport() {
+    setBusy("export");
+    setNotice(null);
+    setError(null);
+    try {
+      const receipt = await exportPackage(studyId);
+      await refresh();
+      setNotice(
+        `${receipt.artifacts.length} approved artifacts exported. Status: exported. Never a regulator approval claim.`,
+      );
+    } catch (cause) {
+      setError(messageFrom(cause));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  function inspectClaim(claimId: string) {
+    setSelectedClaimId(claimId);
+    window.requestAnimationFrame(() => {
+      document.getElementById("hx-evidence")?.scrollIntoView({ block: "start" });
+    });
+  }
+
   return (
     <div id="helix-e2e" className="hx-app" data-testid="helix-shell">
       <ShellHeader
@@ -363,7 +419,11 @@ export function HelixWorkbench({ studyId }: Props) {
             <ReportAssembly
               workspace={workspace}
               busy={busy}
+              onInspectClaim={inspectClaim}
               onResolve={(resultId, message) => void resolve(resultId, message)}
+              onApprove={(role) => void approve(role)}
+              onFinalStudyApproval={() => void approveFinalStudy()}
+              onExport={() => void performExport()}
             />
           </section>
 
@@ -432,6 +492,16 @@ function draftIdempotencyKey(studyId: string, workspace: Workspace | null): stri
 
 function formatStatus(value: string): string {
   return value.replaceAll("_", " ");
+}
+
+function roleLabel(role: ApprovalRole): string {
+  const labels: Record<ApprovalRole, string> = {
+    pathologist: "Pathologist review",
+    peer_reviewer: "Peer review",
+    qau: "Quality Assurance Unit statement",
+    study_director: "Study director approval",
+  };
+  return labels[role];
 }
 
 function messageFrom(cause: unknown): string {

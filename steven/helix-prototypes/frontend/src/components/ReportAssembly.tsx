@@ -1,6 +1,6 @@
 "use client";
 
-import type { Workspace } from "@/lib/types";
+import type { ApprovalRole, Workspace } from "@/lib/types";
 
 // LEGACY fallback (Lane D slimmed it for #23). The report canvas, role approvals, Final Study
 // Approval, export, and downloads moved to components/review/ReviewStageView. What remains is
@@ -11,6 +11,15 @@ type Props = {
   workspace: Workspace;
   busy: string | null;
   onResolve: (resultId: string, message: string) => void;
+  /**
+   * Legacy props HelixWorkbench still passes. Unused here: the review view owns these actions
+   * through its own handlers (components/review). They stay so lane D's HelixWorkbench edit is
+   * limited to its stage case block; drop them when the workbench's legacy handlers go.
+   */
+  onInspectClaim?: (claimId: string) => void;
+  onApprove?: (role: ApprovalRole) => void;
+  onFinalStudyApproval?: () => void;
+  onExport?: () => void;
 };
 
 export function ReportAssembly({ workspace, busy, onResolve }: Props) {
