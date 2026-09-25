@@ -21,7 +21,6 @@ import type { ApprovalRole, PlannerMode, Workspace } from "@/lib/types";
 import { AgentStageView, isAgentStageId } from "./agent/AgentStageView";
 import { TraceabilityStageView } from "./traceability/TraceabilityStageView";
 import { useTraceabilityGate } from "./traceability/useTraceabilityGate";
-import { DemoBanner } from "./DemoLabel";
 import { CloseIcon, RetryIcon } from "./icons";
 import { ReportAssembly } from "./ReportAssembly";
 import { ProgressBar } from "./journey/ProgressBar";
@@ -360,8 +359,6 @@ export function HelixWorkbench({ studyId }: Props) {
             data-selected-stage={selectedStageId ?? undefined}
           >
             {/* Stage-to-view switch: one small block per lane. */}
-            {/* Lane D demo flag: labels every stage, including the freeze gate. */}
-            {selectedStageId !== "review-export" && <DemoBanner workspace={workspace} />}
             {selectedStageId === "upload" && (
               <UploadGate workspace={workspace} onRefresh={refresh} onKeepView={() => selectStage("upload")}>
                 <IntakeUploadForm />
