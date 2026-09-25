@@ -31,7 +31,7 @@ type Props = {
   /** Another workbench command is running; governed commands here wait. */
   otherBusy?: boolean;
   /** Tells the workbench an agent command is in flight, so legacy controls wait. */
-  onBusyChange?: (busy: boolean) => void;
+  onBusyChange?: (busy: boolean, follow?: boolean) => void;
   /**
    * DH-1: set once by the workbench right after a successful human freeze. The view starts
    * the governed sequence at most once, then calls onAutoStartConsumed.

@@ -53,6 +53,7 @@ export function HelixWorkbench({ studyId }: Props) {
   const [planner, setPlanner] = useState<PlannerMode>("fixture");
   const [busy, setBusy] = useState<string | null>(null);
   const [agentBusy, setAgentBusy] = useState(false); // lane B: agent command in flight
+  const [agentFollow, setAgentFollow] = useState(false); // DH-2: false for a person's Draft decision
   const [legacyOpen, setLegacyOpen] = useState(false); // DH-2 (#66): legacy records, off the default path
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -62,7 +63,7 @@ export function HelixWorkbench({ studyId }: Props) {
     selectedStageId,
     select: selectStage,
     followServer,
-  } = useSelectedStage(workspace?.journey, { active: agentBusy });
+  } = useSelectedStage(workspace?.journey, { active: agentFollow });
   const onFrozen = useCallback(
     (announcement: string) => {
       // The freeze confirmation stays on screen as the workbench notice after the view
@@ -409,7 +410,10 @@ export function HelixWorkbench({ studyId }: Props) {
                 stageId={selectedStageId}
                 onWorkspace={setWorkspace}
                 otherBusy={busy !== null || agentBusy}
-                onBusyChange={setAgentBusy}
+                onBusyChange={(value, follow = value) => {
+                  setAgentBusy(value);
+                  setAgentFollow(follow);
+                }}
                 autoStart={autoStart}
                 onAutoStartConsumed={consumeAutoStart}
               />

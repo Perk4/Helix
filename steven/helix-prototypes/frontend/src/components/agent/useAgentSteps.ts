@@ -41,8 +41,10 @@ type Options = {
    * Reports whether an agent command is in flight, so the workbench can disable the legacy
    * StudyJourney controls (one command at a time across both). Called from the command
    * itself, not an effect, so it stays true if this view unmounts mid-command.
+   * DH-2 (#66): `follow` is false for a person's Draft-stage decision, so the view stays on
+   * Draft instead of following the server stage (DH-1); it defaults to `busy`.
    */
-  onBusyChange?: (busy: boolean) => void;
+  onBusyChange?: (busy: boolean, follow?: boolean) => void;
 };
 
 const CONFIRMED_KEY = "helix.agent-dv-confirmed.v1";
@@ -87,10 +89,10 @@ export function useAgentSteps({ studyId, workspace, onWorkspace, onBusyChange }:
   const onBusyChangeRef = useRef(onBusyChange);
   onBusyChangeRef.current = onBusyChange;
 
-  const begin = useCallback((): boolean => {
+  const begin = useCallback((follow = true): boolean => {
     if (runningRef.current) return false;
     runningRef.current = true;
-    onBusyChangeRef.current?.(true);
+    onBusyChangeRef.current?.(true, follow);
     return true;
   }, []);
   const end = useCallback(() => {
@@ -250,7 +252,7 @@ export function useAgentSteps({ studyId, workspace, onWorkspace, onBusyChange }:
   // availability is re-read from a fresh Workspace before anything is sent.
   const runHumanDecision = useCallback(
     async (id: HumanDecisionId) => {
-      if (!begin()) return;
+      if (!begin(false)) return;
       setMessage(null);
       let chosen: HumanDecision | null = null;
       try {

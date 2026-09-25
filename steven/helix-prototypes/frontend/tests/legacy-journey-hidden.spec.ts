@@ -256,6 +256,8 @@ test("the Draft stage offers the retry StudyJourney offered, with the same gover
   await expect(page.getByTestId("agent-human-revise")).toHaveCount(0);
   await retry.click();
   await expect(live(page)).toContainText("recorded by the server");
+  // A person's decision keeps the Draft view; it does not follow the server stage (DH-1).
+  await expect(page.getByTestId("agent-stage-view")).toHaveAttribute("data-stage", "draft");
   expect(bodies.sectionRuns).toEqual([
     expect.objectContaining({ section_package_id: BW, idempotency_key: `workbench-${studyId}-body-weight-CYCLE-BW-001-attempt-2` }),
   ]);
@@ -275,6 +277,7 @@ test("after stop_for_review there is no fourth attempt; revise and the new cycle
   await expect(page.getByTestId("agent-human-retry")).toHaveCount(0);
   await page.getByTestId("agent-human-revise").click();
   await expect(live(page)).toContainText(`${REVISED} opened from CYCLE-BW-001`);
+  await expect(page.getByTestId("agent-stage-view")).toHaveAttribute("data-stage", "draft");
   expect(bodies.revisions).toEqual([
     expect.objectContaining({ section_package_id: BW, idempotency_key: `workbench-${studyId}-revise-CYCLE-BW-001` }),
   ]);
