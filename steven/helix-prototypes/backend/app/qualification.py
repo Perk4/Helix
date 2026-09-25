@@ -10,9 +10,13 @@ With the flag on:
   their qualification_status is still "pending". No other package, status, or hash is
   affected, and the package files are never written.
 - The exact label "Demo: not qualified" is carried by the workspace payload
-  (demo_unqualified_packages), the run_requested event, and the exported artifacts of a
-  demo-frozen run. The review UI does not render a demo label; that is a separate
-  demo-hardening ticket.
+  (demo_unqualified_packages). The run_requested event of a demo-frozen run carries the
+  skipped package ids (DEMO_EVENT_DETAIL), not the label. The UI shows a small
+  "Not qualified" status label for a demo-frozen run only (DH-7, #68).
+- Export fails closed for a demo-frozen run (DH-7, #68): demo_frozen_export_refusal()
+  returns a refusal message, and approved_exports.materialize_approved_artifacts raises it
+  as ApprovedExportError first, which the service maps to 409. Unqualified output can
+  never leave the system. Strict runs and flag-off behaviour are unchanged.
 - The freeze stays human-only. The flag never creates, triggers, or replays a Pinned Run;
   it only changes what the human freeze command accepts.
 - No qualification hash, skill hash, or package hash is fabricated. A skipped package has no
@@ -52,6 +56,17 @@ def demo_packages_of(pinned_run: Any) -> list[str]:
                 return [item for item in value.split(",") if item]
     return []
 
+
+DEMO_EXPORT_REFUSAL = "Export refused: this run was frozen with the demo flag (packages not qualified)."
+
+
+def demo_frozen_export_refusal(pinned_run: Any) -> str | None:
+    """Fail closed: a run that skipped qualification can never be exported.
+
+    Returns the refusal message (not an exception) so approved_exports can raise its own
+    ApprovedExportError without a circular import.
+    """
+    return DEMO_EXPORT_REFUSAL if demo_packages_of(pinned_run) else None
 
 
 def skips_qualification(flag_on: bool, package_id: str, skill: dict[str, Any]) -> bool:
