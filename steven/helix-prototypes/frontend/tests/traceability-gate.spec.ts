@@ -215,6 +215,10 @@ test("loads getEvidence per claim and shows the five-step flow, lineage, and rec
 
   const evidence = page.getByTestId("claim-evidence");
   await expect(evidence.getByTestId("source-records").getByRole("row")).toHaveCount(11);
+  // Lineage edges start collapsed (#70) and open on demand with every edge.
+  await expect(evidence.getByTestId("lineage-disclosure")).not.toHaveAttribute("open", "");
+  await expect(evidence.getByTestId("lineage-edges")).toBeHidden();
+  await evidence.getByTestId("lineage-toggle").click();
   await expect(evidence.getByTestId("lineage-edges").getByRole("row")).toHaveCount(11);
   await expect(evidence.getByTestId("claim-lineage")).toContainText("mean-v1");
   await expect(evidence.getByTestId("claim-lineage")).toContainText("@");
