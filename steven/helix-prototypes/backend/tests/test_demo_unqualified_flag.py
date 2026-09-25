@@ -35,6 +35,7 @@ from app.qualification import (
     DEMO_EVENT_DETAIL,
     DEMO_EXPORT_REFUSAL,
     DEMO_LABEL,
+    DEMO_NOT_QUALIFIED,
     DEMO_UNQUALIFIED_PACKAGE_IDS,
     demo_frozen_export_refusal,
 )
@@ -47,11 +48,13 @@ PACKAGE_FILES = sorted(SECTIONS.glob("*/package.json"))
 FREEZE = {"actor": "Dr. Run Owner", "idempotency_key": "demo-freeze-v1"}
 
 
-def build_client(*, demo: bool | None, root: Path = ROOT) -> tuple[TestClient, object]:
+def build_client(
+    *, demo: bool | None, root: Path = ROOT, database_url: str = "sqlite+pysqlite:///:memory:"
+) -> tuple[TestClient, object]:
     """demo=None builds Settings without naming the flag at all (today's default)."""
     overrides = {} if demo is None else {"demo_unqualified_packages": demo}
     settings = Settings(
-        database_url="sqlite+pysqlite:///:memory:",
+        database_url=database_url,
         seed_path=ROOT / "synthetic-e2e" / "helix-synthetic-bundle.json",
         codex_repository_root=root,
         auto_seed=True,
@@ -311,7 +314,7 @@ def test_flag_on_exports_with_both_packages_pending_and_labels_ui_payload_and_re
     assert ready["release_gate"]["status"] == "ready_for_export"
     for response in (exported, replay):
         assert response.status_code == 409, response.text
-        assert response.json() == {"detail": DEMO_EXPORT_REFUSAL}
+        assert response.json() == {"detail": REFUSAL_DETAIL}
     # Nothing is materialized or recorded: the gate, artifacts and state are untouched.
     assert workspace["release_gate"] == ready["release_gate"]
     assert workspace["export_artifacts"] == ready["export_artifacts"]
@@ -326,6 +329,70 @@ def test_flag_on_exports_with_both_packages_pending_and_labels_ui_payload_and_re
 
     assert package_file_digests() == before
     assert_packages_pending_without_hash()
+
+
+REFUSAL_DETAIL = {"code": DEMO_NOT_QUALIFIED, "message": DEMO_EXPORT_REFUSAL}
+
+
+def export_demo_run_before_the_guard(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> tuple[str, dict]:
+    """A demo-frozen run exported by the parent release (no guard), in a persistent DB."""
+    import app.approved_exports as approved_exports_module
+    import app.service as service_module
+
+    database_url = f"sqlite+pysqlite:///{tmp_path / 'legacy.db'}"
+    with monkeypatch.context() as legacy:
+        legacy.setattr(approved_exports_module, "demo_frozen_export_refusal", lambda _run: None)
+        legacy.setattr(service_module, "demo_frozen_export_refusal", lambda _run: None)
+        client, engine = build_client(demo=True, database_url=database_url)
+        with client:
+            assert freeze(client, "legacy-freeze-v1").status_code == 201
+            clear_blockers(client)
+            record_roles(client)
+            assert record_fsa(client, key="legacy-fsa-v1").status_code == 200
+            exported = export(client)
+            assert exported.status_code == 200, exported.text
+            downloaded = {
+                item["artifact_id"]: client.get(f"{BASE}/exports/{item['artifact_id']}").status_code
+                for item in exported.json()["artifacts"]
+            }
+        engine.dispose()
+    assert set(downloaded.values()) == {200}  # the legacy hole the guard now closes
+    return database_url, exported.json()
+
+
+@pytest.mark.parametrize("demo", [True, False], ids=["flag-on", "flag-off"])
+def test_legacy_demo_export_replay_fails_closed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, demo: bool
+) -> None:
+    """P1 (Tester / Codex l8TeY): a replay with a new key no longer returns the legacy 200."""
+    database_url, _receipt = export_demo_run_before_the_guard(tmp_path, monkeypatch)
+    client, engine = build_client(demo=demo, database_url=database_url)
+    with client:
+        replay_new_key = client.post(
+            f"{BASE}/exports", json={"actor": "Dr. Sam Director", "idempotency_key": "legacy-replay-v2"}
+        )
+        replay_same_key = export(client)
+    engine.dispose()
+    for response in (replay_new_key, replay_same_key):
+        assert response.status_code == 409, response.text
+        assert response.json() == {"detail": REFUSAL_DETAIL}
+
+
+@pytest.mark.parametrize("demo", [True, False], ids=["flag-on", "flag-off"])
+def test_legacy_demo_export_download_fails_closed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, demo: bool
+) -> None:
+    """P1 (Tester / Codex l8TeY): stored bytes of a demo-frozen run are never served again."""
+    database_url, receipt = export_demo_run_before_the_guard(tmp_path, monkeypatch)
+    client, engine = build_client(demo=demo, database_url=database_url)
+    with client:
+        downloads = [client.get(f"{BASE}/exports/{item['artifact_id']}") for item in receipt["artifacts"]]
+    engine.dispose()
+    assert downloads
+    for response in downloads:
+        assert response.status_code == 409, response.text
+        assert response.json() == {"detail": REFUSAL_DETAIL}
+        assert DEMO_LABEL.encode() not in response.content
 
 
 def test_demo_frozen_export_refusal_is_keyed_on_the_frozen_run_not_the_flag(tmp_path: Path) -> None:
