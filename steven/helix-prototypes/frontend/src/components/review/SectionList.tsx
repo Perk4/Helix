@@ -3,10 +3,9 @@
 import type { Workspace } from "@/lib/types";
 
 import { Card, Chip, cx, type Tone } from "../ui";
-import { openBlockersBySection } from "./reviewState";
 
 // Lane D (#23): report section list. Renders WorkspaceResponse.report.sections and their
-// server statuses; open blockers come from the server release gate.
+// server statuses; status labels only.
 
 type Section = Workspace["report"]["sections"][number];
 
@@ -25,17 +24,14 @@ export function SectionList({
   selectedId: string;
   onSelect: (sectionId: string) => void;
 }) {
-  const blockers = openBlockersBySection(workspace);
   return (
     <Card as="nav" className="hx-review-nav" aria-label="Report sections" data-testid="review-sections">
       <div className="hx-kicker hx-review-nav-head">
         {workspace.report.template.name} · Sponsor template {workspace.report.template.version}
       </div>
       {workspace.report.sections.map((section, index) => {
-        const open = blockers.get(section.section_id) ?? 0;
-        const presentation = open
-          ? { label: `${open} issue${open > 1 ? "s" : ""}`, tone: "block" as Tone }
-          : statusPresentation[section.status] ?? { label: section.status, tone: "muted" as Tone };
+        // Per-section blocker counts were removed upstream by Steven (per Perk); status only.
+        const presentation = statusPresentation[section.status] ?? { label: section.status, tone: "muted" as Tone };
         const active = section.section_id === selectedId;
         return (
           <button

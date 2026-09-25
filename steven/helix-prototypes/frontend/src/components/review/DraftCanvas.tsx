@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { ApiError, getEvidence } from "@/lib/api";
 import type { EvidenceChainData, Workspace } from "@/lib/types";
 
-import { Button, Card, Chip, Kicker, Spinner } from "../ui";
+import { Button, Card, Kicker, Spinner } from "../ui";
 
 // Lane D (#23): document-style canvas for one report section of WorkspaceResponse.report.
 // "Inspect provenance edges" calls getEvidence for that block's claim and renders the exact
@@ -93,42 +93,11 @@ export function DraftCanvas({ workspace, section }: { workspace: Workspace; sect
         {lineage.state === "loaded" && <LineageReadout chain={lineage.chain} />}
       </div>
 
-      <section className="hx-doc-fields" aria-labelledby="hx-doc-fields-h">
-        <h3 id="hx-doc-fields-h">Required fields · sponsor template ({section.fields.length})</h3>
-        {/* Kept from the legacy report panel: template identity and each field's authority. */}
-        <p className="hx-sub hx-mono" data-testid="template-identity">
-          Template {template.template_id} · CTD location {template.ctd_location}
-        </p>
-        <ul className="hx-doc-field-list" data-testid="required-fields">
-          {section.fields.map((field) => (
-            <li key={field.field_id}>
-              <span>
-                <strong>{field.label}</strong>
-                <span className="hx-sub"> · {field.source_expectation}</span>
-              </span>
-              <span className="hx-doc-field-meta">
-                <Chip tone={field.required ? "info" : "muted"} size="xs">
-                  {field.required ? "Required" : "Optional"}
-                </Chip>
-                {field.human_judgment && (
-                  <Chip tone="warn" size="xs">
-                    Human judgment
-                  </Chip>
-                )}
-                <span className="hx-mono">{field.expected_grain}</span>
-                {field.regulatory_reference_ids.map((id) => {
-                  const reference = references.get(id);
-                  return reference ? (
-                    <a key={id} href={reference.url} target="_blank" rel="noreferrer" data-testid={`field-reference-${field.field_id}-${id}`}>
-                      {reference.citation}
-                    </a>
-                  ) : null;
-                })}
-              </span>
-            </li>
-          ))}
-        </ul>
-      </section>
+      {/* Template identity only. The per-field "Required fields and authority" list was removed
+          upstream by Steven (per Perk) and is not reintroduced here. */}
+      <p className="hx-sub hx-mono" data-testid="template-identity">
+        Template {template.template_id} · CTD location {template.ctd_location}
+      </p>
 
       {usedReferenceIds.length > 0 && (
         <section className="hx-doc-refs" aria-labelledby="hx-doc-refs-h" data-testid="regulatory-references">

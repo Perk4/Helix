@@ -60,7 +60,6 @@
 #helix-e2e .hx-doc-lineage { margin: 0 0 var(--hx-sp-14); }
 #helix-e2e .hx-doc-readout { padding-top: var(--hx-sp-16); border-top: 1px solid var(--hx-line-soft); min-height: var(--hx-sp-20); }
 #helix-e2e .hx-doc-lineage-list ol { margin: var(--hx-sp-6) 0 0; padding-left: var(--hx-sp-20); }
-#helix-e2e .hx-doc-fields,
 #helix-e2e .hx-doc-refs,
 #helix-e2e .hx-doc-agent {
   margin-top: var(--hx-sp-20);
@@ -68,21 +67,10 @@
   border-top: 1px solid var(--hx-line-soft);
   font-size: var(--hx-fs-row);
 }
-#helix-e2e .hx-doc-fields h3,
 #helix-e2e .hx-doc-refs h3,
 #helix-e2e .hx-doc-agent h3 { font-size: var(--hx-fs-body); margin: 0 0 var(--hx-sp-8); }
-#helix-e2e .hx-doc-field-list,
 #helix-e2e .hx-doc-refs ul,
 #helix-e2e .hx-doc-agent ul { list-style: none; margin: 0; padding: 0; }
-#helix-e2e .hx-doc-field-list li {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: var(--hx-sp-12);
-  min-height: 40px;
-  border-bottom: 1px solid var(--hx-line-soft);
-}
-#helix-e2e .hx-doc-field-meta { display: flex; align-items: center; gap: var(--hx-sp-8); flex-shrink: 0; }
 #helix-e2e .hx-doc-refs li { padding: var(--hx-sp-4) 0; }
 #helix-e2e .hx-doc-refs a { color: var(--hx-accent); font-weight: var(--hx-fw-semibold); }
 #helix-e2e .hx-so-title { margin-top: var(--hx-sp-4); }
