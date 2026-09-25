@@ -64,7 +64,7 @@ No live calls were made for this follow-up; everything below is mocked HTTP.
 Proof, all local:
 - `tests/test_planner_openai_strict.py`: 25 passed, including a route-level test for 400 to 502 and 429 to 429.
 - Full `pytest`: 84 failures, the identical list to base `90407248` (diffed line by line).
-- `ruff check .` in `backend/`: 34 findings, identical to base (diffed); none in the changed files.
+- `ruff check .` in `backend/`: 34 findings, identical to base (diffed). No new findings; the pre-existing `main.py` I001/B008 findings are unchanged.
 - `tsc --noEmit`: clean.
 - `verify-live.sh` on shipped packages: 16 passed, 2 failed, 1 skipped. The failures are `workbench.spec.ts:38` and `:399` (qualification 422), the same as base.
 - `verify-live.sh` against a qualified throwaway copy (`qualified_fixture_root`, outside the repo, `HELIX_CODEX_REPOSITORY_ROOT`): 18 passed, 0 failed, 1 skipped (Codex SDK). No Codex call; the spec never clicks draft.
