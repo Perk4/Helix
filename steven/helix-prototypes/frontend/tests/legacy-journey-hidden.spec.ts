@@ -34,7 +34,7 @@ const LEGACY_CONTROLS = [
 
 type DraftState = {
   cycles: string[];
-  attempts: Array<{ cycle: string; attempt: number; action: "retry" | "stop_for_review" }>;
+  attempts: Array<{ cycle: string; attempt: number; action: "retry" | "stop_for_review"; maxAttempts?: number }>;
   canRevise: boolean;
 };
 
@@ -92,7 +92,7 @@ function storedAttempt(cycle: string, attempt: number): Json {
   };
 }
 
-function evaluation(cycle: string, attempt: number, action: "retry" | "stop_for_review"): Json {
+function evaluation(cycle: string, attempt: number, action: "retry" | "stop_for_review", maxAttempts = 3): Json {
   const id = runId(cycle, attempt);
   return {
     evaluation_id: `CEV-${id}`,
@@ -100,12 +100,13 @@ function evaluation(cycle: string, attempt: number, action: "retry" | "stop_for_
     candidate_id: `SDC-${id}`,
     candidate_hash: hash("cafe"),
     provenance_receipt: { receipt_id: `PRV-${id}`, status: "failed", bindings: [] },
-    study_output_evaluation_receipt: { status: "passed" },
-    template_conformance_receipt: { status: "passed" },
+    study_output_evaluation_receipt: { status: "passed", enforcement_class: "review_required" },
+    template_conformance_receipt: { status: "passed", results: [] },
+    hashes: { evaluation: hash("eeee") },
     next_attempt_decision: {
       action,
       attempt,
-      max_attempts: 3,
+      max_attempts: maxAttempts,
       reasons: ["Provenance compilation failed"],
       blocking_receipt_ids: [`PRV-${id}`],
     },
@@ -146,7 +147,7 @@ function draftWorkspace(live: Json, state: DraftState): Json {
       returned: [],
       rejected_artifact_ids: [],
     })),
-    candidate_evaluations: state.attempts.map((item) => evaluation(item.cycle, item.attempt, item.action)),
+    candidate_evaluations: state.attempts.map((item) => evaluation(item.cycle, item.attempt, item.action, item.maxAttempts)),
     promotion_decisions: [],
     section_drafts: [],
     drafting_cycles: state.cycles.map((id, index) => cycle(id, index === 0 ? null : state.cycles[index - 1])),
@@ -308,6 +309,26 @@ test("a stopped cycle with no revision offered shows the agent stop and no human
   await openDraftStage(page);
   await expect(page.getByTestId("evidence-next-attempt")).toContainText("stop_for_review · attempt 3 of 3");
   await expect(page.getByTestId("agent-human-decisions")).toHaveCount(0);
+  expect(commands).toEqual([]);
+});
+
+test("retry is hidden on the Draft stage exactly when StudyJourney hid it (legacy cap of 3 attempts)", async ({ page }) => {
+  // The server asks for a retry at attempt 3 of 4; StudyJourney never offered a fourth attempt.
+  const state: DraftState = {
+    cycles: ["CYCLE-BW-001"],
+    attempts: [1, 2, 3].map((attempt) => ({ cycle: "CYCLE-BW-001", attempt, action: "retry", maxAttempts: 4 })),
+    canRevise: false,
+  };
+  const commands = trackCommands(page);
+  await serveDraft(page, state);
+  await openDraftStage(page);
+  await expect(page.getByTestId("evidence-next-attempt")).toContainText("retry · attempt 3 of 4");
+  await expect(page.getByTestId("agent-human-retry")).toHaveCount(0);
+  await expect(page.getByTestId("agent-human-decisions")).toHaveCount(0);
+  // Same shared predicate: the legacy panel hides its retry control too.
+  await openLegacyJourney(page);
+  await expect(page.getByTestId("candidate-attempt-CYCLE-BW-001-3")).toBeVisible();
+  await expect(page.getByTestId("retry-body-weight")).toHaveCount(0);
   expect(commands).toEqual([]);
 });
 

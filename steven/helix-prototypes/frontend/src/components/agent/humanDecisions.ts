@@ -15,13 +15,24 @@ export type HumanDecision = {
   idempotencyKey: string;
 };
 
+/**
+ * The legacy StudyJourney retry condition, shared so the Draft stage offers retry exactly when
+ * StudyJourney showed "Retry candidate": the latest body-weight run's evaluation asks for a
+ * retry and fewer than 3 attempts were used (the legacy cap, not `max_attempts`).
+ */
+export function canRetryBodyWeight(workspace: Workspace): boolean {
+  const latest = workspace.section_runs.filter((item) => item.receipt.section_package_id === BODY_WEIGHT_SECTION).at(-1);
+  const evaluation = (workspace.candidate_evaluations ?? []).find((item) => item.run_id === latest?.receipt.run_id);
+  return evaluation?.next_attempt_decision.action === "retry" && evaluation.next_attempt_decision.attempt < 3;
+}
+
 export function humanDecisions(studyId: string, workspace: Workspace): HumanDecision[] {
   const decisions: HumanDecision[] = [];
   const runs = workspace.section_runs.filter((item) => item.receipt.section_package_id === BODY_WEIGHT_SECTION);
   const latest = runs.at(-1);
   const evaluation = (workspace.candidate_evaluations ?? []).find((item) => item.run_id === latest?.receipt.run_id);
   const decision = evaluation?.next_attempt_decision;
-  if (latest && decision?.action === "retry" && decision.attempt < decision.max_attempts) {
+  if (latest && decision && canRetryBodyWeight(workspace)) {
     const cycleId = latest.candidate.drafting_cycle_id ?? "CYCLE-BW-001";
     const attempt = decision.attempt + 1;
     decisions.push({
