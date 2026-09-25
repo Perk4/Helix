@@ -347,3 +347,93 @@
 #helix-e2e .report-view .artifact-download:hover strong { text-decoration: underline; }
 #helix-e2e .report-view .artifact-download:focus-visible { outline: var(--hx-focus-outline); outline-offset: 2px; border-radius: var(--hx-radius-chev); }
 #helix-e2e .report-view .fine-print { color: var(--hx-muted); font-size: var(--hx-fs-meta); }
+
+/* ---------------------------------------------------------------------------------------------
+ * Legacy ChatDock restyle (presentation only). Steven's ChatDock.tsx keeps its DOM, handlers,
+ * testids, class names, and the fixed bottom dock; these rules map it onto helix-v1 tokens and
+ * the UI kit (hx-card, hx-btn, hx-notice). Ask/revise turns, the typing state, the proposed
+ * rewrite with Apply/Discard, and errors each get a token tone.
+ * ------------------------------------------------------------------------------------------- */
+#helix-e2e .chat-dock {
+  background: var(--hx-surface);
+  border-top: 1px solid var(--hx-line);
+  box-shadow: none;
+  color: var(--hx-ink);
+  font-family: var(--hx-sans);
+}
+#helix-e2e .chat-dock .chat-header { border-bottom: 1px solid var(--hx-line-soft); background: var(--hx-surface); }
+#helix-e2e .chat-dock .chat-title-button {
+  gap: var(--hx-sp-10);
+  border: 0;
+  border-radius: var(--hx-radius-control);
+  background: transparent;
+  color: var(--hx-ink);
+}
+#helix-e2e .chat-dock .chat-title-button:hover { background: var(--hx-surface-2); }
+#helix-e2e .chat-dock .chat-title-button:focus-visible { outline: var(--hx-focus-outline); outline-offset: 2px; }
+#helix-e2e .chat-dock .chat-glyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--hx-radius-control);
+  background: var(--hx-accent-soft);
+  color: var(--hx-accent);
+}
+#helix-e2e .chat-dock .chat-title { color: var(--hx-muted); font-size: var(--hx-fs-meta); }
+#helix-e2e .chat-dock .chat-title strong { color: var(--hx-ink); font-size: var(--hx-fs-body); font-weight: var(--hx-fw-semibold); }
+#helix-e2e .chat-dock .chat-chevron { color: var(--hx-muted); }
+#helix-e2e .chat-dock .chat-body { background: var(--hx-bg); }
+#helix-e2e .chat-dock .chat-messages { gap: var(--hx-sp-10); }
+#helix-e2e .chat-dock .chat-empty { color: var(--hx-muted); font-size: var(--hx-fs-row); }
+#helix-e2e .chat-dock .chat-bubble {
+  border-radius: var(--hx-radius);
+  font-size: var(--hx-fs-body);
+  line-height: var(--hx-lh);
+  box-shadow: none;
+}
+#helix-e2e .chat-dock .chat-msg.user .chat-bubble {
+  border: 0;
+  border-bottom-right-radius: var(--hx-radius-chev);
+  background: var(--hx-accent);
+  color: var(--hx-on-accent);
+}
+#helix-e2e .chat-dock .chat-msg.assistant .chat-bubble {
+  border: 1px solid var(--hx-line);
+  border-bottom-left-radius: var(--hx-radius-chev);
+  background: var(--hx-surface);
+  color: var(--hx-ink);
+}
+#helix-e2e .chat-dock .chat-bubble p { margin: 0 0 var(--hx-sp-6); }
+#helix-e2e .chat-dock .chat-bubble p:last-child { margin-bottom: 0; }
+#helix-e2e .chat-dock .chat-bubble.typing { color: var(--hx-muted); font-style: normal; }
+#helix-e2e .chat-dock .proposed-card.hx-card {
+  padding: var(--hx-sp-16) var(--hx-sp-18);
+  border: 1px solid var(--hx-accent-ring);
+  border-radius: var(--hx-radius);
+  background: var(--hx-surface);
+  box-shadow: none;
+}
+#helix-e2e .chat-dock .proposed-head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--hx-sp-8); }
+#helix-e2e .chat-dock .proposed-head strong { color: var(--hx-accent); font-size: var(--hx-fs-meta); font-weight: var(--hx-fw-semibold); letter-spacing: var(--hx-tracking-kicker); text-transform: uppercase; }
+#helix-e2e .chat-dock .proposed-head span { color: var(--hx-muted); font-size: var(--hx-fs-meta); }
+#helix-e2e .chat-dock .proposed-body,
+#helix-e2e .chat-dock .proposed-body p { color: var(--hx-ink); font-family: var(--hx-serif); font-size: var(--hx-fs-body); line-height: var(--hx-lh-doc); }
+#helix-e2e .chat-dock .proposed-actions { display: flex; gap: var(--hx-sp-8); }
+#helix-e2e .chat-dock .hx-btn:not(.primary) { background: var(--hx-surface); border: 1px solid var(--hx-line); color: var(--hx-ink); }
+#helix-e2e .chat-dock .hx-btn:not(.primary):hover:not(:disabled) { background: var(--hx-surface-2); }
+#helix-e2e .chat-dock .chat-error.hx-notice { margin: 0 var(--hx-sp-16) var(--hx-sp-10); border: 0; }
+#helix-e2e .chat-dock .chat-input-row { gap: var(--hx-sp-8); border-top: 1px solid var(--hx-line-soft); background: var(--hx-surface); }
+#helix-e2e .chat-dock .chat-input {
+  min-height: var(--hx-control-h-sm);
+  padding: 0 var(--hx-sp-12);
+  border: 1px solid var(--hx-line);
+  border-radius: var(--hx-radius-control);
+  background: var(--hx-surface);
+  color: var(--hx-ink);
+  font-family: var(--hx-sans);
+  font-size: var(--hx-fs-body);
+}
+#helix-e2e .chat-dock .chat-input::placeholder { color: var(--hx-faint); }
+#helix-e2e .chat-dock .chat-input:focus-visible { outline: var(--hx-focus-outline); outline-offset: 1px; border-color: var(--hx-accent); }
