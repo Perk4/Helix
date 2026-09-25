@@ -10,9 +10,10 @@ With the flag on:
   their qualification_status is still "pending". No other package, status, or hash is
   affected, and the package files are never written.
 - The exact label "Demo: not qualified" is carried by the workspace payload
-  (demo_unqualified_packages), the run_requested event, and the exported artifacts of a
-  demo-frozen run. The review UI does not render a demo label; that is a separate
-  demo-hardening ticket.
+  (demo_unqualified_packages). The run_requested event of a demo-frozen run carries the
+  skipped package ids (DEMO_EVENT_DETAIL), not the label. If approved-export bytes are built
+  for such a run, demo_export_value marks them; whether a demo-frozen run may export at all
+  is DH-7 (#68). The review UI does not render a demo label; that is DH-7 too.
 - The freeze stays human-only. The flag never creates, triggers, or replays a Pinned Run;
   it only changes what the human freeze command accepts.
 - No qualification hash, skill hash, or package hash is fabricated. A skipped package has no
