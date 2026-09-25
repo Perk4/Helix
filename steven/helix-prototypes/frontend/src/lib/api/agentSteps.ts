@@ -14,7 +14,17 @@ import {
   runSectionAgent,
   runValidation,
 } from "@/lib/api";
-import type { JourneyStageId, PlannerMode, Workspace } from "@/lib/types";
+import type {
+  CandidateEvaluation,
+  CrossSectionQueryReceipt,
+  DataValidationExecution,
+  JourneyStageId,
+  PlannerMode,
+  SectionDraft,
+  SectionRunReceipt,
+  ValidationRun,
+  Workspace,
+} from "@/lib/types";
 
 export const BODY_WEIGHT_PACKAGE = "validation.body_weight";
 export const BODY_WEIGHT_SECTION = "section.5_2_3_body_weight";
@@ -33,6 +43,17 @@ export type AgentStep = {
   label: string;
   /** Section Agent run the command targets (draft-stage commands only). */
   runId?: string;
+  /** Data Validation only: the freeze already recorded the execution, so the call is an idempotent replay. */
+  replay?: boolean;
+};
+
+export type NextStepOptions = {
+  /**
+   * Pinned Run IDs whose freeze-created Data Validation execution this session has already
+   * confirmed through the command (an idempotent replay). Until then, Extract re-addresses
+   * the same run-scoped execution instead of silently trusting it.
+   */
+  confirmedDataValidationRuns?: ReadonlySet<string>;
 };
 
 export type AgentStop =
@@ -59,6 +80,8 @@ const ACTION_STAGE: Record<AgentAction, JourneyStageId> = {
   "section-promotion": "draft",
 };
 
+export const REPLAY_LABEL = "Confirm Data Validation receipt (idempotent replay)";
+
 function step(action: AgentAction, runId?: string): AgentStep {
   return { action, stageId: ACTION_STAGE[action], label: ACTION_LABELS[action], runId };
 }
@@ -73,7 +96,7 @@ export function hybridValidationCount(workspace: Workspace): number {
   return workspace.validations.filter((item) => !packageResultIds.has(item.result_id)).length;
 }
 
-export function nextAgentStep(workspace: Workspace): AgentStep | AgentStop {
+export function nextAgentStep(workspace: Workspace, options: NextStepOptions = {}): AgentStep | AgentStop {
   const pinned = workspace.pinned_run;
   if (!pinned) {
     return {
@@ -87,6 +110,11 @@ export function nextAgentStep(workspace: Workspace): AgentStep | AgentStop {
   );
   if (!execution) {
     return step("data-validation");
+  }
+  if (!options.confirmedDataValidationRuns?.has(pinned.run_id)) {
+    // Same Pinned Run and package, same run-scoped key as the freeze: the server returns the
+    // recorded execution with `idempotent_replay: true` and never runs the package twice.
+    return { ...step("data-validation"), label: REPLAY_LABEL, replay: true };
   }
   const eligibility = workspace.section_run_eligibility.find(
     (item) => item.section_package_id === BODY_WEIGHT_SECTION,
@@ -140,12 +168,32 @@ export function isAgentStep(value: AgentStep | AgentStop): value is AgentStep {
   return "action" in value;
 }
 
-// #17 run-scoped durable action IDs. A key names the study, Pinned Run, action,
-// subject, and attempt. A retry after an unknown result (network failure, 5xx)
-// reuses the pending key so the server can replay it; a definite answer (a receipt
-// or a 4xx rejection) settles it, and the next attempt gets a new key. A superseding
-// run has a new run ID, so its keys are new too.
-const STORE_KEY = "helix.agent-action-keys.v1";
+// #17 idempotency keys. A key is built from the governed resource identity (after freeze:
+// the Pinned Run, or the Section Run for commands on a run), the command name, the contract
+// or package version, and one durable action ID (`a<n>`). The pending key is persisted
+// (sessionStorage) while its result is unknown, so a network or 5xx retry reuses it; a
+// definite answer (a receipt, or a 4xx rejection) settles it and the next deliberate
+// attempt gets a new action ID. A superseding run has a new run ID, so its keys are new.
+//
+// Data Validation is the exception by design: the freeze command already executed the
+// package under the server's run-scoped key `dvp-<run_id>-validation.body_weight`
+// (backend app/manifest_authorization.py `freeze_data_validation_key`). Extract sends that
+// same key, so it either replays the freeze-created execution or, when freeze left it
+// absent, executes it once. There is one execution per Pinned Run and package.
+const STORE_KEY = "helix.agent-action-keys.v2";
+
+/** Contract versions for commands whose request carries no package version. */
+export const COMMAND_CONTRACT_VERSION: Record<Exclude<AgentAction, "data-validation" | "validation">, string> = {
+  "section-run": "section-run.v1",
+  "cross-section-query": "cross-section-query.v1",
+  "candidate-evaluation": "candidate-evaluation.v1",
+  "section-promotion": "section-promotion.v1",
+};
+
+/** Mirrors backend `freeze_data_validation_key(run_id)`: the freeze and every later call share it. */
+export function dataValidationKey(pinnedRunId: string): string {
+  return `dvp-${pinnedRunId}-${BODY_WEIGHT_PACKAGE}`;
+}
 
 type KeyRecord = { attempt: number; pending: string | null };
 
@@ -167,38 +215,38 @@ function writeStore(store: Record<string, KeyRecord>) {
   }
 }
 
-function slot(studyId: string, runId: string, action: AgentAction, subject: string) {
-  return `${studyId}:${runId}:${action}:${subject}`;
+/** Governed resource + command + version: one slot of durable action IDs. */
+export function actionSlot(studyId: string, workspace: Workspace, agentStep: AgentStep): string {
+  const pinnedRunId = workspace.pinned_run?.run_id ?? "unfrozen";
+  const action = agentStep.action as keyof typeof COMMAND_CONTRACT_VERSION;
+  if (action === "section-run") {
+    const node = workspace.pinned_run?.run_plan.nodes.find((item) => item.node_id === BODY_WEIGHT_SECTION);
+    const version = node?.package_version ?? COMMAND_CONTRACT_VERSION[action];
+    return `${studyId}:${pinnedRunId}/${BODY_WEIGHT_SECTION}:${action}:${version}`;
+  }
+  return `${studyId}:${agentStep.runId ?? pinnedRunId}:${action}:${COMMAND_CONTRACT_VERSION[action]}`;
 }
 
-export function actionKey(studyId: string, runId: string, action: AgentAction, subject: string): string {
+export function actionKey(slot: string): string {
   const store = readStore();
-  const id = slot(studyId, runId, action, subject);
-  const record = store[id] ?? { attempt: 0, pending: null };
+  const record = store[slot] ?? { attempt: 0, pending: null };
   if (record.pending) {
     return record.pending;
   }
   const attempt = record.attempt + 1;
-  const key = `workbench:${id}:a${attempt}`;
-  store[id] = { attempt, pending: key };
+  const key = `workbench:${slot}:a${attempt}`;
+  store[slot] = { attempt, pending: key };
   writeStore(store);
   return key;
 }
 
-export function settleActionKey(
-  studyId: string,
-  runId: string,
-  action: AgentAction,
-  subject: string,
-  outcome: "recorded" | "rejected" | "unknown",
-) {
+export function settleActionKey(slot: string, outcome: "recorded" | "rejected" | "unknown") {
   if (outcome === "unknown") {
     return; // keep the pending key: the retry must reuse it
   }
   const store = readStore();
-  const id = slot(studyId, runId, action, subject);
-  if (store[id]) {
-    store[id] = { ...store[id], pending: null };
+  if (store[slot]) {
+    store[slot] = { ...store[slot], pending: null };
     writeStore(store);
   }
 }
@@ -207,51 +255,70 @@ export function outcomeOf(cause: unknown): "rejected" | "unknown" {
   return cause instanceof ApiError && cause.status >= 400 && cause.status < 500 ? "rejected" : "unknown";
 }
 
-/** Run one governed command with its run-scoped key. Returns nothing: callers refresh. */
+/** What a command returned. Rendered as its receipt; the refreshed Workspace stays the authority. */
+export type AgentStepReceipt =
+  | { action: "data-validation"; value: DataValidationExecution }
+  | { action: "validation"; value: ValidationRun }
+  | { action: "section-run"; value: SectionRunReceipt }
+  | { action: "cross-section-query"; value: CrossSectionQueryReceipt }
+  | { action: "candidate-evaluation"; value: CandidateEvaluation }
+  | { action: "section-promotion"; value: SectionDraft };
+
+/** Run one governed command with its #17 key and return its receipt. Callers refresh. */
 export async function executeAgentStep(
   studyId: string,
   workspace: Workspace,
   agentStep: AgentStep,
   planner: PlannerMode,
-): Promise<void> {
+): Promise<AgentStepReceipt> {
   const runId = workspace.pinned_run?.run_id;
   if (!runId) {
-    throw new Error("No Pinned Run: freeze the manifest first.");
+    throw new Error("No Pinned Run: a person freezes the manifest at Human gate 1 first.");
   }
-  const subject = agentStep.runId ?? BODY_WEIGHT_SECTION;
-  const key = actionKey(studyId, runId, agentStep.action, subject);
+  switch (agentStep.action) {
+    case "data-validation":
+      // One server-defined run-scoped key; retries and replays always reuse it.
+      return { action: "data-validation", value: await runDataValidation(studyId, dataValidationKey(runId)) };
+    case "validation":
+      // ValidationRequest carries only `planner`; the endpoint takes no idempotency key.
+      return { action: "validation", value: await runValidation(studyId, planner) };
+    default:
+      break;
+  }
+  const slot = actionSlot(studyId, workspace, agentStep);
+  const key = actionKey(slot);
+  const subject = agentStep.runId ?? "";
   try {
+    let receipt: AgentStepReceipt;
     switch (agentStep.action) {
-      case "data-validation":
-        await runDataValidation(studyId, key);
-        break;
-      case "validation":
-        await runValidation(studyId, planner);
-        break;
       case "section-run":
-        await runSectionAgent(studyId, key);
+        receipt = { action: "section-run", value: await runSectionAgent(studyId, key) };
         break;
       case "cross-section-query":
-        await queryCrossSection(studyId, subject, key);
+        receipt = { action: "cross-section-query", value: await queryCrossSection(studyId, subject, key) };
         break;
       case "candidate-evaluation":
-        await evaluateCandidate(studyId, subject, key);
+        receipt = { action: "candidate-evaluation", value: await evaluateCandidate(studyId, subject, key) };
         break;
       case "section-promotion":
-        await promoteSectionDraft(studyId, subject, key);
+        receipt = { action: "section-promotion", value: await promoteSectionDraft(studyId, subject, key) };
         break;
     }
+    settleActionKey(slot, "recorded");
+    return receipt;
   } catch (cause) {
-    settleActionKey(studyId, runId, agentStep.action, subject, outcomeOf(cause));
+    settleActionKey(slot, outcomeOf(cause));
     throw cause;
   }
-  settleActionKey(studyId, runId, agentStep.action, subject, "recorded");
 }
 
 export type SequenceHooks = {
   fetchWorkspace: () => Promise<Workspace>;
   onWorkspace: (workspace: Workspace) => void;
   onStep: (agentStep: AgentStep | null) => void;
+  onReceipt?: (agentStep: AgentStep, receipt: AgentStepReceipt, before: Workspace, after: Workspace) => void;
+  /** Read before each decision, so a replay confirmed mid-sequence is honoured. */
+  options?: () => NextStepOptions;
 };
 
 /**
@@ -263,20 +330,22 @@ export async function runAgentSequence(
   studyId: string,
   planner: PlannerMode,
   hooks: SequenceHooks,
-  maxSteps = 8,
+  maxSteps = 9,
 ): Promise<AgentStop | null> {
   let workspace = await hooks.fetchWorkspace();
   hooks.onWorkspace(workspace);
   try {
     for (let index = 0; index < maxSteps; index += 1) {
-      const next = nextAgentStep(workspace);
+      const next = nextAgentStep(workspace, hooks.options?.());
       if (!isAgentStep(next)) {
         return next;
       }
       hooks.onStep(next);
-      await executeAgentStep(studyId, workspace, next, planner);
+      const receipt = await executeAgentStep(studyId, workspace, next, planner);
+      const before = workspace;
       workspace = await hooks.fetchWorkspace();
       hooks.onWorkspace(workspace);
+      hooks.onReceipt?.(next, receipt, before, workspace);
     }
     return null;
   } finally {
