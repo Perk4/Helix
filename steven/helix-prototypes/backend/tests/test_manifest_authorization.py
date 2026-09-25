@@ -11,8 +11,12 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.data_validation import DataValidationService
-from app.manifest_authorization import FREEZE_DATA_VALIDATION_FAILED, freeze_data_validation_key
-from app.models import RunEventRow
+from app.manifest_authorization import (
+    FREEZE_DATA_VALIDATION_FAILED,
+    HUMAN_FREEZE_REQUIRED,
+    freeze_data_validation_key,
+)
+from app.models import AuditEventRow, DataValidationRunRow, PinnedRunRow, RunEventRow, ValidationRunRow
 from tests.test_journey_run_events import BASE, build_client, journey, qualified_fixture_root, statuses
 
 FREEZE = {"actor": "Dr. Study Owner", "idempotency_key": "gate1-freeze-authorization-0001"}
@@ -50,6 +54,7 @@ def test_data_validation_failure_preserves_pinned_run_with_typed_retry(
         detail = response.json()["detail"]
         assert detail["code"] == FREEZE_DATA_VALIDATION_FAILED
         assert detail["pinned_run_preserved"] is True
+        assert "synthetic Data Validation outage" not in detail["reason"]
         run_id = detail["run_id"]
         assert detail["retry"]["operation"] == "run_data_validation"
         assert detail["retry"]["path"] == f"{BASE}/data-validation-packages"
@@ -61,6 +66,9 @@ def test_data_validation_failure_preserves_pinned_run_with_typed_retry(
         assert statuses(workspace["journey"])["upload"] == "complete"
         with Session(engine) as session:
             assert session.scalar(select(func.count()).select_from(RunEventRow)) > 0
+            failed = select(RunEventRow).where(RunEventRow.event_type == "command_failed")
+            failures = session.scalars(failed).all()
+            assert len(failures) == 1
 
         monkeypatch.undo()
         retry = client.post(
@@ -90,3 +98,52 @@ def test_new_authorization_key_after_freeze_does_not_create_second_run(tmp_path:
         assert second.status_code in {201, 409}, second.text
         workspace = client.get(f"{BASE}/workspace").json()
         assert workspace["pinned_run"]["run_id"] == first.json()["run_id"]
+
+
+def _row_counts(engine: object) -> dict[str, int]:
+    with Session(engine) as session:  # type: ignore[arg-type]
+        return {
+            row.__tablename__: session.scalar(select(func.count()).select_from(row)) or 0
+            for row in (PinnedRunRow, DataValidationRunRow, ValidationRunRow, AuditEventRow, RunEventRow)
+        }
+
+
+@pytest.mark.parametrize(
+    ("path", "body", "operation"),
+    [
+        ("validation-runs", {"planner": "fixture"}, "run_validation"),
+        (
+            "data-validation-packages",
+            {
+                "actor": "HELIX validation service",
+                "package_id": "validation.body_weight",
+                "idempotency_key": "dvp-no-human-freeze",
+            },
+            "run_data_validation",
+        ),
+    ],
+)
+def test_commands_without_a_human_freeze_refuse_and_never_auto_freeze(
+    tmp_path: Path, path: str, body: dict[str, str], operation: str
+) -> None:
+    """P1 on #22: validation paths must not pin the manifest as a service actor."""
+    client, engine = build_client(qualified_fixture_root(tmp_path))
+    with client:
+        before = _row_counts(engine)
+        response = client.post(f"{BASE}/{path}", json=body)
+        assert response.status_code == 409, response.text
+        detail = response.json()["detail"]
+        assert detail["code"] == HUMAN_FREEZE_REQUIRED
+        assert detail["operation"] == operation
+        assert detail["freeze"]["path"] == f"{BASE}/pinned-runs"
+
+        assert _row_counts(engine) == before
+        workspace = client.get(f"{BASE}/workspace").json()
+        assert workspace["pinned_run"] is None
+        assert statuses(workspace["journey"])["upload"] != "complete"
+
+        frozen = client.post(f"{BASE}/pinned-runs", json=FREEZE)
+        assert frozen.status_code == 201, frozen.text
+        with Session(engine) as session:
+            actors = session.scalars(select(AuditEventRow.actor)).all()
+        assert "HELIX validation service" not in actors

@@ -1,9 +1,9 @@
 {
-  "id": "upload-gate-light",
-  "title": "Human Gate 1 upload + authorization (#20)",
+  "id": "journey-progress-light",
+  "title": "Progress Bar in the shell (#19)",
   "lane": "A",
-  "issue": "#20",
-  "status": "report-only",
+  "issue": "#19",
+  "status": "enforced",
   "colorScheme": "light",
   "viewport": {
     "width": 1440,
@@ -13,18 +13,18 @@
   "reference": "research/helix-e2e-workbench-v1.html?stage=0",
   "pixelThreshold": 0.02,
   "maxDiffRatio": 0.01,
-  "ratio": 0.391851,
-  "diffPixels": 435057,
-  "comparedPixels": 1110260,
-  "maskedPixels": 377580,
+  "ratio": 0,
+  "diffPixels": 0,
+  "comparedPixels": 195840,
+  "maskedPixels": 0,
   "oursSize": {
     "width": 1360,
-    "height": 1094
+    "height": 144
   },
   "referenceSize": {
     "width": 1360,
-    "height": 880
+    "height": 144
   },
-  "sizeMismatch": true,
-  "pass": false
+  "sizeMismatch": false,
+  "pass": true
 }

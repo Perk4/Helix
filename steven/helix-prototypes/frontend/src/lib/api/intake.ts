@@ -50,6 +50,13 @@ export function freezeIdempotencyKey(studyId: string, manifestHash: string, auth
   return `${studyId}:${digest}:freeze-pinned-run:${FREEZE_CONTRACT_VERSION}:${authorizationId}`.slice(0, 160);
 }
 
+export const DATA_VALIDATION_PACKAGE_ID = "validation.body_weight";
+
+/** Run-scoped Data Validation key; mirrors backend ``freeze_data_validation_key``. */
+export function freezeDataValidationKey(runId: string): string {
+  return `dvp-${runId}-${DATA_VALIDATION_PACKAGE_ID}`;
+}
+
 export function newAuthorizationId(): string {
   const random =
     typeof crypto !== "undefined" && "randomUUID" in crypto

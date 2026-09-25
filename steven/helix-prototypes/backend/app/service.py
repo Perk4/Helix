@@ -33,6 +33,7 @@ from .journey import JourneyFacts, project_journey
 from .manifest_authorization import (
     DATA_VALIDATION_PACKAGE_ID,
     FreezeDataValidationFailedError,
+    HumanFreezeRequiredError,
     freeze_data_validation_key,
 )
 from .release_candidates import (
@@ -395,14 +396,22 @@ class StudyService:
                     execution = self.data_validation.execute(study_id, dv_command, commit=False)
                 except Exception as error:  # noqa: BLE001 - reported as a typed partial result
                     self.session.rollback()
-                    LOGGER.warning(
-                        "Data Validation failed after freezing %s on %s: %s",
-                        pinned_run.run_id,
-                        study_id,
-                        error,
+                    LOGGER.exception(
+                        "Data Validation failed after freezing %s on %s", pinned_run.run_id, study_id
                     )
+                    # Domain refusals are safe to show; anything else stays in the server log.
+                    reason = (
+                        str(error)
+                        if isinstance(error, DataValidationConflictError | UnknownValidationPackageError)
+                        else "Data Validation raised an internal error; see the server log."
+                    )
+                    try:
+                        self._record_command_failure(study_id, "freeze_run", "upload", reason)
+                    except SQLAlchemyError:
+                        self.session.rollback()
+                        LOGGER.exception("Could not record command_failed for freeze_run on %s", study_id)
                     raise FreezeDataValidationFailedError(
-                        study_id=study_id, run_id=pinned_run.run_id, reason=str(error)
+                        study_id=study_id, run_id=pinned_run.run_id, reason=reason
                     ) from error
         package = self.repository.get(study_id, for_update=True)
         assert_bound_pinned_run(package, pinned_run)
@@ -439,15 +448,9 @@ class StudyService:
     def _run_validation_command(self, study_id: str, request: ValidationRequest) -> ValidationRun:
         package = self.repository.get(study_id)
         if package.pinned_run is None:
-            pinned_run = self.pinned_runs.freeze(
-                study_id,
-                FreezeRunCommand(
-                    actor="HELIX validation service",
-                    idempotency_key=f"validation-freeze-{study_id}",
-                ),
-            )
-        else:
-            pinned_run = package.pinned_run
+            # Human Gate 1: only the audited freeze command may pin the manifest.
+            raise HumanFreezeRequiredError(study_id=study_id, operation="run_validation")
+        pinned_run = package.pinned_run
         if pinned_run.status != "planned":
             raise WorkflowConflictError("The Pinned Run requires study-type review")
         execution = self.data_validation.execute(

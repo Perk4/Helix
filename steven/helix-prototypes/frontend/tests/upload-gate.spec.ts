@@ -1,6 +1,16 @@
 import { expect, test, type Page, type Request } from "@playwright/test";
 
-import { apiRoot, freezeFixture, frozenWorkspace, liveWorkspace, regulatoryClaim, stageButtons, studyId, type Json } from "./lane-a-helpers";
+import {
+  apiRoot,
+  freezeFixture,
+  frozenWorkspace,
+  liveWorkspace,
+  regulatoryClaim,
+  serveWorkspace,
+  stageButtons,
+  studyId,
+  type Json,
+} from "./lane-a-helpers";
 
 // Lane A (#20): Human Gate 1 and the real freeze command. Freeze responses are mocked
 // because the shipped section packages are not qualified (the live API refuses with 422);
@@ -217,4 +227,38 @@ test("a Data Validation failure after freeze shows the partial state and retries
   expect(h.dvBodies[0].idempotency_key).toBe(retry.idempotency_key);
   expect(h.dvBodies[0].package_id).toBe("validation.body_weight");
   expect(h.freezeBodies).toHaveLength(1);
+});
+
+test("only Human Gate 1 can pin a run: legacy validation is hidden and the API refuses to auto-freeze", async ({ page, request }) => {
+  // P1 on #22, against the live API: no service actor may freeze the manifest.
+  await page.goto("/");
+  await expect(page.getByTestId("freeze-consent")).not.toBeChecked();
+  await expect(page.getByTestId("validation-locked")).toBeVisible();
+  await expect(page.getByTestId("run-validation")).toBeDisabled();
+  await expect(page.getByTestId("run-body-weight-validation")).toBeDisabled();
+
+  for (const [path, body, operation] of [
+    ["validation-runs", { planner: "fixture" }, "run_validation"],
+    [
+      "data-validation-packages",
+      { actor: "HELIX validation service", package_id: "validation.body_weight", idempotency_key: "dvp-e2e-no-human-freeze" },
+      "run_data_validation",
+    ],
+  ] as const) {
+    const response = await request.post(`${apiRoot}/studies/${studyId}/${path}`, { data: body });
+    expect(response.status()).toBe(409);
+    const detail = ((await response.json()) as { detail: Json }).detail;
+    expect(detail.code).toBe("human_freeze_required");
+    expect(detail.operation).toBe(operation);
+  }
+  const workspace = (await (await request.get(`${apiRoot}/studies/${studyId}/workspace`)).json()) as Json;
+  expect(workspace.pinned_run).toBeNull();
+});
+
+test("legacy validation unlocks once a human freeze has pinned the run", async ({ page }) => {
+  await serveWorkspace(page, (workspace) => frozenWorkspace(workspace));
+  await page.goto("/");
+  await expect(page.getByTestId("validation-locked")).toHaveCount(0);
+  await expect(page.getByTestId("run-validation")).toBeEnabled();
+  await expect(page.getByTestId("run-body-weight-validation")).toBeEnabled();
 });

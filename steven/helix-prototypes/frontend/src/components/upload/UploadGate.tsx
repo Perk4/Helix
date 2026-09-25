@@ -3,7 +3,9 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import {
+  DATA_VALIDATION_PACKAGE_ID,
   FreezeError,
+  freezeDataValidationKey,
   freezeIdempotencyKey,
   freezePinnedRun,
   manifestFingerprint,
@@ -23,7 +25,6 @@ import { PinnedRunDetail } from "./PinnedRunDetail";
 // the refreshed workspace; there is no local `frozen` authority flag.
 
 const ACTOR = "Synthetic study owner (demo identity)";
-const DATA_VALIDATION_PACKAGE = "validation.body_weight";
 
 type ManifestEntry = Workspace["manifest"][number];
 
@@ -48,7 +49,7 @@ export function UploadGate({
   const execution =
     (run &&
       workspace.data_validation_executions.find(
-        (item) => item.receipt.run_id === run.run_id && item.receipt.package_id === DATA_VALIDATION_PACKAGE,
+        (item) => item.receipt.run_id === run.run_id && item.receipt.package_id === DATA_VALIDATION_PACKAGE_ID,
       )) ||
     null;
   // Server-derived partial state: a planned run with no pinned Data Validation execution.
@@ -128,8 +129,8 @@ export function UploadGate({
             operation: "run_data_validation",
             method: "POST",
             path: `/api/v1/studies/${studyId}/data-validation-packages`,
-            package_id: DATA_VALIDATION_PACKAGE,
-            idempotency_key: `dvp-${run.run_id}-${DATA_VALIDATION_PACKAGE}`,
+            package_id: DATA_VALIDATION_PACKAGE_ID,
+            idempotency_key: freezeDataValidationKey(run.run_id),
           },
         },
         ACTOR,
@@ -189,7 +190,7 @@ export function UploadGate({
               {
                 key: "role",
                 header: "Role",
-                cell: (entry) => `${humanKind(entry.kind)} \u00b7 Tier ${entry.authority_tier}`,
+                cell: (entry) => humanKind(entry.kind),
                 cellClassName: "hx-cell-ink2",
               },
               {
@@ -312,7 +313,7 @@ export function UploadGate({
 
 function fileType(name: string): string {
   const match = /\.([a-z0-9]+)$/i.exec(name);
-  return match ? match[1].toLowerCase() : "file";
+  return match ? match[1].toUpperCase() : "FILE";
 }
 
 function humanKind(kind: string): string {
