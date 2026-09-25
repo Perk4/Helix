@@ -18,6 +18,7 @@ import {
 } from "@/lib/api";
 import type { ApprovalRole, PlannerMode, Workspace } from "@/lib/types";
 
+import { AgentStageView, isAgentStageId } from "./agent/AgentStageView";
 import { TraceabilityStageView } from "./traceability/TraceabilityStageView";
 import { useTraceabilityGate } from "./traceability/useTraceabilityGate";
 import { CloseIcon, RetryIcon } from "./icons";
@@ -355,6 +356,7 @@ export function HelixWorkbench({ studyId }: Props) {
             data-testid="stage-view"
             data-selected-stage={selectedStageId ?? undefined}
           >
+            {/* Stage-to-view switch: one small block per lane. */}
             {selectedStageId === "upload" && (
               <UploadGate workspace={workspace} onRefresh={refresh} onKeepView={() => selectStage("upload")}>
                 <IntakeUploadForm />
@@ -365,6 +367,16 @@ export function HelixWorkbench({ studyId }: Props) {
                 workspace={workspace}
                 onRecordDisposition={traceabilityGate.onRecordDisposition}
                 onContinue={traceabilityGate.onContinue}
+              />
+            )}
+            {isAgentStageId(selectedStageId) && (
+              // Lane B (#21): stages 2-7. Handlers live in agent/useAgentSteps.ts.
+              <AgentStageView
+                studyId={studyId}
+                workspace={workspace}
+                stageId={selectedStageId}
+                onWorkspace={setWorkspace}
+                otherBusy={busy !== null}
               />
             )}
             {/* Lanes B, C and D replace these legacy panels with their stage views. Until
