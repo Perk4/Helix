@@ -135,7 +135,7 @@ export function DraftCanvas({ workspace, section }: { workspace: Workspace; sect
 
       {usedReferenceIds.length === 0 && <p className="hx-sub hx-doc-disclaimer">{template.disclaimer}</p>}
 
-      <AgentState workspace={workspace} />
+      <AgentState workspace={workspace} section={section} />
       <p className="hx-sub hx-mono hx-doc-footer" data-testid="draft-footer">
         {workspace.study.study_id} · Protocol {workspace.study.protocol_version} · Synthetic working draft
       </p>
@@ -164,9 +164,28 @@ function LineageReadout({ chain }: { chain: EvidenceChainData }) {
   );
 }
 
-/** Candidate, evaluation, promotion, and disposition state from the server, when it exists. */
-function AgentState({ workspace }: { workspace: Workspace }) {
-  const runs = workspace.section_runs ?? [];
+// #30 Codex P2 (l53LX): the governed section packages and the template section each drafts,
+// as the server's review scaffold maps them (backend/app/review_scaffolds.py, template_contracts.py).
+const PACKAGE_TEMPLATE_SECTION: Record<string, string> = {
+  "section.5_2_3_body_weight": "S5",
+  "section.5_3_discussion": "S8",
+};
+
+/** Section runs that belong to this report section: by governed package, else by validated claim. */
+function runsForSection(workspace: Workspace, section: Section): Workspace["section_runs"] {
+  const claimIds = section.blocks.map((block) => block.claim_id).filter((id): id is string => Boolean(id));
+  return (workspace.section_runs ?? []).filter((run) => {
+    const mapped = PACKAGE_TEMPLATE_SECTION[run.candidate.section_package_id];
+    if (mapped) return mapped === section.section_id;
+    return (run.candidate.validated_claim_ids ?? []).some((id) =>
+      claimIds.some((claimId) => claimId === id || claimId.startsWith(`${id}-`)),
+    );
+  });
+}
+
+/** Candidate, evaluation, promotion, and disposition state for this section's latest run, when it exists. */
+function AgentState({ workspace, section }: { workspace: Workspace; section: Section }) {
+  const runs = runsForSection(workspace, section);
   if (runs.length === 0) return null;
   const latest = runs.at(-1);
   if (!latest) return null;

@@ -45,6 +45,8 @@ type Harness = {
   evidenceRequests: string[];
   /** Last live GET workspace; POST mocks reuse it and never forward a command to the backend. */
   live: Json | null;
+  /** Optional test-only edit applied to every served workspace. */
+  patch?: (workspace: Json) => void;
 };
 
 /** Real captured state for the phase, with approvals narrowed to the roles recorded so far. */
@@ -63,6 +65,7 @@ function stateFor(live: Json, h: Harness): Json {
   } else {
     delete workspace.demo_unqualified_packages;
   }
+  h.patch?.(workspace);
   return workspace;
 }
 
@@ -221,6 +224,34 @@ test("a slower evidence response for an earlier claim never overwrites the curre
   await page.waitForTimeout(2000);
   await expect(page.getByTestId("lineage-edges")).toHaveCount(0);
   await expect(page.getByTestId("lineage-readout")).not.toContainText("C-BW-HIGH-M");
+});
+
+test("section agent state follows the selected report section, not the latest run in the workspace (#30 l53LX)", async ({
+  page,
+}) => {
+  // One discussion-package run (maps to S8). The body-weight panels never read it, so it is safe
+  // to inject on the review fixture.
+  const run = {
+    candidate: {
+      candidate_id: "CAND-DISC-TEST",
+      section_package_id: "section.5_3_discussion",
+      attempt: 1,
+      drafting_cycle_id: "CYCLE-DISC-TEST",
+      validated_claim_ids: [],
+    },
+    receipt: { run_id: "RUN-DISC-TEST", section_package_id: "section.5_3_discussion", package_id: "PKG-DISC-TEST" },
+    envelope: {},
+    review_scaffold: {},
+  };
+  await harness(page, { patch: (workspace) => void (workspace.section_runs = [run]) });
+  await page.goto("/");
+  await page.getByTestId("review-section-S8").click();
+  await expect(page.getByTestId("section-agent-state")).toContainText("CAND-DISC-TEST");
+  await page.getByTestId("review-section-S5").click();
+  await expect(page.getByTestId("draft-canvas")).toContainText("In-life observations");
+  await expect(page.getByTestId("section-agent-state")).toHaveCount(0);
+  await page.getByTestId("review-section-S7").click();
+  await expect(page.getByTestId("section-agent-state")).toHaveCount(0);
 });
 
 test("records one role per call in any order; study director waits for the three priors; never exports", async ({
