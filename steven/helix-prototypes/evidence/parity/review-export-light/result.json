@@ -13,13 +13,13 @@
   "reference": "research/helix-e2e-workbench-v1.html?stage=8",
   "pixelThreshold": 0.02,
   "maxDiffRatio": 0.01,
-  "ratio": 0.836693,
-  "diffPixels": 801694,
-  "comparedPixels": 958170,
-  "maskedPixels": 968950,
+  "ratio": 0.808555,
+  "diffPixels": 660864,
+  "comparedPixels": 817340,
+  "maskedPixels": 999620,
   "oursSize": {
     "width": 1360,
-    "height": 1417
+    "height": 1336
   },
   "referenceSize": {
     "width": 1360,
