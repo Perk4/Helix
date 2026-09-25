@@ -122,7 +122,7 @@ export function TraceabilityStageView({ workspace, onRecordDisposition, onContin
   }
 
   return (
-    <div className="stack hx-trace" data-testid="traceability-stage-view">
+    <div className="stack hx-trace hx-v1" data-testid="traceability-stage-view">
       <div className="stack" data-testid="traceability-gate">
         <GateBanner
           gateNumber={2}
