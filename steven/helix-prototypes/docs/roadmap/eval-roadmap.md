@@ -105,8 +105,13 @@ Last updated 2026-09-25.
 |---|---|
 | Step 2 planner qualification suite | Step 2 is currently a non-agentic stub; ADR-0021 requires a paired suite once a real planner is implemented |
 | Rule 6 coverage (no cross-section reads from undeclared dependencies) | A-2 schema specifies the check; catching it live requires real CodexSectionAgent trajectories (Phase 1) |
-| Verdict producer (alongside wiring) | Design question open with Steven: when a judge verdict arrives after the attempt decision, does it attach as advisory note or recompute? |
 | G-1/G-2/A-1 against real candidates | Target sections (5.3.3, 5.3.4, 5.2.3 live output) don't exist yet; all three judges run against synthetic fixtures until Phase 5 |
+
+**T2.1 alongside wiring — design settled, stub authored (PR 166):**
+
+The verdict producer question is closed. Promptfoo results merge into the existing `StudyOutputEvaluationReceipt` slot on `CandidateEvaluation` — not a separate advisory annotation, not a recompute. Reasons: the contract already has the right slot; a separate write would invalidate `hashes.study_output_evaluation`; `next_attempt_decision()` already promotes a failed receipt to `stop_for_review` without any new logic.
+
+Implementation: the guardrails CI step writes `--output promptfoo-guardrails-result.json`; `evaluate_study_output()` reads the file when present and merges `llm-rubric` component results into `results[]`. No-op when absent (Phases 1–4). Phase 5 activates automatically when real candidates exist and the file lands before the evaluation POST fires.
 
 ## 4. Roadmap — eval work mapped to the 10-phase build
 
@@ -132,8 +137,8 @@ Overall build phases live in `docs/specifications/agentic-report-pipeline.md` (s
 ### Tier-2 study-output harness
 | # | Item | Phase |
 |---|---|---|
-| T2.1 | Make `study-output.yaml` executable — harness that applies advisory assertions to a Section Draft Candidate in a run | Phase 5 |
-| T2.2 | Implement GATE-006 — study-output fail → `review_required`; a pass changes no deterministic gate | Phase 5 |
+| T2.1 | Wire Promptfoo judge verdicts into `StudyOutputEvaluationReceipt` via alongside path — CI writes `--output promptfoo-guardrails-result.json`, backend merges at evaluation time | Phase 5 · **stub authored, no-op until Phase 5** |
+| T2.2 | GATE-006 — study-output fail → `review_required`; a pass changes no deterministic gate | Phase 5 · **`next_attempt_decision()` already handles this; activates with T2.1** |
 | T2.3 | Add the "Study Output Evaluation result" contract/receipt (§11 Phase-5 contract) | Phase 5 |
 | T2.4 | Rerun study-output eval for every candidate in a human redraft cycle (REVIEW-004) | Phase 8 |
 | T2.5 | Eval-suite version change → new fingerprint → forces fresh qualification / superseding run | Phase 9 |
