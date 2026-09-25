@@ -10,17 +10,17 @@ import {
   promoteSectionDraft,
   queryCrossSection,
   recordApproval,
-  recordDisposition,
   recordFinalStudyApproval,
   reviseSection,
   runDataValidation,
   runSectionAgent,
   runValidation,
 } from "@/lib/api";
-import type { DispositionCommand } from "@/lib/api/traceability";
 import type { ApprovalRole, PlannerMode, Workspace } from "@/lib/types";
 
 import { EvidenceChain } from "./EvidenceChain";
+import { TraceabilityStageView } from "./traceability/TraceabilityStageView";
+import { useTraceabilityGate } from "./traceability/useTraceabilityGate";
 import { CloseIcon, RetryIcon } from "./icons";
 import { ReportAssembly } from "./ReportAssembly";
 import { ProgressBar } from "./journey/ProgressBar";
@@ -55,6 +55,8 @@ export function HelixWorkbench({ studyId }: Props) {
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Lane C (#22): Gate 2 handlers live in the lane-C hook.
+  const traceabilityGate = useTraceabilityGate({ studyId, setWorkspace, selectStage, setNotice, setError });
 
   const refresh = useCallback(async () => {
     try {
@@ -240,20 +242,6 @@ export function HelixWorkbench({ studyId }: Props) {
     }
   }
 
-  // Lane C (#22): the typed disposition command from the Traceability form. Errors are
-  // rethrown so the form keeps them (and the reviewer's input) in its own live region.
-  async function resolve(resultId: string, command: DispositionCommand): Promise<Workspace> {
-    setNotice(null);
-    setError(null);
-    const next = await recordDisposition(studyId, resultId, command);
-    // Keep the reviewer on Gate 2 to see the recorded disposition; only Continue
-    // (or the Progress Bar) moves the view once the server reports Review reached.
-    selectStage("traceability");
-    setWorkspace(next);
-    setNotice(`Disposition recorded for ${resultId}. The blocker stays listed as a disposition.`);
-    return next;
-  }
-
   async function approve(role: ApprovalRole) {
     setBusy(role);
     setNotice(null);
@@ -380,6 +368,13 @@ export function HelixWorkbench({ studyId }: Props) {
               <UploadGate workspace={workspace} onRefresh={refresh} onKeepView={() => selectStage("upload")}>
                 <IntakeUploadForm />
               </UploadGate>
+            )}
+            {selectedStageId === "traceability" && (
+              <TraceabilityStageView
+                workspace={workspace}
+                onRecordDisposition={traceabilityGate.onRecordDisposition}
+                onContinue={traceabilityGate.onContinue}
+              />
             )}
             {/* Lanes B, C and D replace these legacy panels with their stage views. Until
                 then they remain the fallback so no stage loses its working controls. */}
