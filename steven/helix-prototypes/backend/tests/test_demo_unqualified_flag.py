@@ -359,7 +359,8 @@ def test_demo_frozen_export_refusal_helper() -> None:
     assert demo_frozen_export_refusal(None) is None
     assert demo_frozen_export_refusal(Run({})) is None
     assert demo_frozen_export_refusal(Run({DEMO_EVENT_DETAIL: ""})) is None
-    assert demo_frozen_export_refusal(Run({DEMO_EVENT_DETAIL: "section.5_3_discussion"})) == DEMO_EXPORT_REFUSAL
+    demo_run = Run({DEMO_EVENT_DETAIL: "section.5_3_discussion"})
+    assert demo_frozen_export_refusal(demo_run) == DEMO_EXPORT_REFUSAL
 
 
 def test_flag_off_export_bytes_carry_no_demo_label(tmp_path: Path) -> None:
