@@ -1,4 +1,6 @@
-"""Demo-only handling for the two unqualified section packages (HELIX_DEMO_UNQUALIFIED_PACKAGES).
+"""Package qualification gate and the demo-only unqualified-packages flag (Lane D).
+
+HELIX_DEMO_UNQUALIFIED_PACKAGES handles the two unqualified section packages.
 
 DEMO ONLY. THIS IS NOT QUALIFICATION. With the flag off (the default) nothing here is
 consulted and every gate behaves exactly as it does without this module.
@@ -7,11 +9,12 @@ With the flag on:
 - The Pinned Run gate accepts section.5_2_3_body_weight and section.5_3_discussion while
   their qualification_status is still "pending". No other package, status, or hash is
   affected, and the package files are never written.
-- For 5.2.3 only (option 2 of upstream commit 47c19c4), a table cell may cite the Section
-  Execution Envelope's executor receipt instead of a Validated Claim. The provenance compiler
-  binds such a cell only when every number in it is a value the executor computed.
 - Every surface that shows these sections carries the exact label "Demo: not qualified":
   the workspace payload, the UI, and the exported artifacts of a demo-frozen run.
+- The freeze stays human-only. The flag never creates, triggers, or replays a Pinned Run;
+  it only changes what the human freeze command accepts.
+- No qualification hash, skill hash, or package hash is fabricated. A skipped package has no
+  qualification receipt, so the receipt hash check simply has nothing to verify for it.
 """
 
 from __future__ import annotations
@@ -32,12 +35,8 @@ DEMO_UNQUALIFIED_PACKAGE_IDS: tuple[str, ...] = (
     "section.5_2_3_body_weight",
     "section.5_3_discussion",
 )
-# Option 2 (executor receipt backs a table cell) applies to 5.2.3 only.
-RECEIPT_BACKED_CELL_PACKAGE_IDS: frozenset[str] = frozenset({"section.5_2_3_body_weight"})
 # Recorded on the run_requested event of a demo-frozen Pinned Run (comma-separated ids).
 DEMO_EVENT_DETAIL = "demo_unqualified_packages"
-# Receipt facts that describe the run, not a table value (mirrors verify-claim-coverage.mjs).
-RECEIPT_METADATA_KEYS = frozenset({"recording_days", "duration_days", "unit", "groups", "grading_scale"})
 
 
 def demo_packages_of(pinned_run: Any) -> list[str]:
@@ -52,27 +51,18 @@ def demo_packages_of(pinned_run: Any) -> list[str]:
     return []
 
 
-def receipt_values(facts: object) -> list[float]:
-    """Every numeric leaf the executor computed, excluding run metadata."""
-    values: list[float] = []
 
-    def walk(node: object) -> None:
-        if isinstance(node, bool):
-            return
-        if isinstance(node, int | float):
-            values.append(float(node))
-        elif isinstance(node, list):
-            for item in node:
-                walk(item)
-        elif isinstance(node, dict):
-            for item in node.values():
-                walk(item)
+def skips_qualification(flag_on: bool, package_id: str, skill: dict[str, Any]) -> bool:
+    """True only when the demo flag lets this exact package pass the gate while "pending".
 
-    if isinstance(facts, dict):
-        for key, value in facts.items():
-            if key not in RECEIPT_METADATA_KEYS:
-                walk(value)
-    return values
+    Any other package, any other status (for example "failed"), or the flag off keeps the
+    strict ``invalid_package_qualification`` check.
+    """
+    return (
+        flag_on
+        and package_id in DEMO_UNQUALIFIED_PACKAGE_IDS
+        and skill.get("qualification_status") == "pending"
+    )
 
 
 def demo_notice(package_ids: list[str], titles: dict[str, str]) -> dict[str, object]:

@@ -2,7 +2,6 @@ import re
 from dataclasses import dataclass
 from uuid import uuid4
 
-from .demo_mode import receipt_values
 from .run_plans import canonical_hash
 from .schemas import (
     Claim,
@@ -24,35 +23,6 @@ class AllowedClaim:
     claim: Claim
     claim_hash: str
     artifact_hash: str
-
-
-@dataclass(frozen=True)
-class DemoReceiptBacking:
-    """DEMO ONLY (HELIX_DEMO_UNQUALIFIED_PACKAGES): an executor receipt that may back a table cell."""
-
-    receipt_id: str
-    receipt_hash: str
-    values: tuple[float, ...]
-
-
-def demo_receipt_backings(envelope: dict[str, object]) -> dict[str, DemoReceiptBacking]:
-    backings: dict[str, DemoReceiptBacking] = {}
-    receipts = envelope.get("executor_receipts")
-    if not isinstance(receipts, list):
-        return backings
-    for receipt in receipts:
-        if not isinstance(receipt, dict):
-            continue
-        receipt_id = str(receipt.get("artifact_id", ""))
-        receipt_hash = receipt.get("hash")
-        payload = {"facts": receipt.get("facts"), "provenance": receipt.get("provenance")}
-        # Bind only a receipt whose hash matches the payload it travels with.
-        if not receipt_id or receipt_hash != canonical_hash(payload):
-            continue
-        backings[receipt_id] = DemoReceiptBacking(
-            receipt_id, str(receipt_hash), tuple(receipt_values(receipt.get("facts")))
-        )
-    return backings
 
 
 def allowed_claims_for(
@@ -85,27 +55,11 @@ def compile_provenance(
     *,
     candidate_hash: str,
     receipt_id: str | None = None,
-    demo_receipts: dict[str, DemoReceiptBacking] | None = None,
 ) -> ProvenanceReceipt:
-    """Bind every factual span and table cell to exactly one allowed Validated Claim.
-
-    ``demo_receipts`` is DEMO ONLY (HELIX_DEMO_UNQUALIFIED_PACKAGES, 5.2.3 only). When given,
-    a location inside a table block may instead cite one of those executor receipts, and it
-    binds only if every number in it is a value the executor computed. It is None when the
-    flag is off, which leaves the strict behavior unchanged.
-    """
     bindings: list[ProvenanceBinding] = []
     blockers: list[ProvenanceBlocker] = []
     for location, text, claim_ids in _locations(candidate):
-        demo_backing = (
-            demo_receipts.get(claim_ids[0])
-            if demo_receipts and len(claim_ids) == 1 and location.startswith("table:")
-            else None
-        )
-        if demo_backing is not None:
-            binding, blocker = _bind_demo_receipt(location, text, demo_backing)
-        else:
-            binding, blocker = _bind(location, text, claim_ids, claims)
+        binding, blocker = _bind(location, text, claim_ids, claims)
         if binding is not None:
             bindings.append(binding)
         if blocker is not None:
@@ -192,34 +146,6 @@ def _bind(
             claim_id=claim_id,
             claim_hash=allowed.claim_hash,
             artifact_hash=allowed.artifact_hash,
-        ),
-        None,
-    )
-
-
-def _bind_demo_receipt(
-    location: str,
-    text: str,
-    backing: DemoReceiptBacking,
-) -> tuple[ProvenanceBinding | None, ProvenanceBlocker | None]:
-    numbers = NUMBER.findall(text)
-    computed = {_format_number(value) for value in backing.values} | {
-        f"{value:.1f}" for value in backing.values
-    }
-    if len(numbers) != 1 or numbers[0] not in computed:
-        return None, ProvenanceBlocker(
-            code="unsupported-content",
-            location=location,
-            text=text or "[empty]",
-            message=f"{location} is not a single value computed by executor receipt {backing.receipt_id}.",
-        )
-    return (
-        ProvenanceBinding(
-            location=location,
-            text=text,
-            claim_id=backing.receipt_id,
-            claim_hash=backing.receipt_hash,
-            artifact_hash=backing.receipt_hash,
         ),
         None,
     )

@@ -3,7 +3,7 @@ from pathlib import Path
 
 from .approved_exports import demo_export_value, receipt_content_hash
 from .contract_schema import draft202012_validator
-from .demo_mode import demo_packages_of
+from .qualification import demo_packages_of
 from .run_plans import canonical_hash
 from .schemas import (
     ApprovedArtifactHash,
