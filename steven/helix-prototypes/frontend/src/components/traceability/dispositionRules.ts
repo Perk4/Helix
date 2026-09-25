@@ -1,9 +1,9 @@
-import type { components } from "@/lib/api-schema";
+import type { DispositionCommand } from "@/lib/api/traceability";
 
 // Lane C (#22). Client-side mirror of the backend DispositionCommand limits. These give
 // immediate form feedback only; a server 422 stays authoritative and is always surfaced.
 
-export type DispositionCommand = components["schemas"]["DispositionCommand"];
+export type { DispositionCommand };
 export type DispositionDecisionChoice = DispositionCommand["decision"];
 
 export const DISPOSITION_DECISIONS: ReadonlyArray<{ value: DispositionDecisionChoice; label: string }> = [

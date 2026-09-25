@@ -17,6 +17,7 @@ import {
   runSectionAgent,
   runValidation,
 } from "@/lib/api";
+import type { DispositionCommand } from "@/lib/api/traceability";
 import type { ApprovalRole, PlannerMode, Workspace } from "@/lib/types";
 
 import { EvidenceChain } from "./EvidenceChain";
@@ -239,18 +240,15 @@ export function HelixWorkbench({ studyId }: Props) {
     }
   }
 
-  async function resolve(resultId: string, message: string) {
-    setBusy(resultId);
+  // Lane C (#22): the typed disposition command from the Traceability form. Errors are
+  // rethrown so the form keeps them (and the reviewer's input) in its own live region.
+  async function resolve(resultId: string, command: DispositionCommand): Promise<Workspace> {
     setNotice(null);
     setError(null);
-    try {
-      setWorkspace(await recordDisposition(studyId, resultId, message));
-      setNotice(`Synthetic review disposition recorded for ${resultId}.`);
-    } catch (cause) {
-      setError(messageFrom(cause));
-    } finally {
-      setBusy(null);
-    }
+    const next = await recordDisposition(studyId, resultId, command);
+    setWorkspace(next);
+    setNotice(`Disposition recorded for ${resultId}. The blocker stays listed as a disposition.`);
+    return next;
   }
 
   async function approve(role: ApprovalRole) {
@@ -413,7 +411,7 @@ export function HelixWorkbench({ studyId }: Props) {
               workspace={workspace}
               busy={busy}
               onInspectClaim={inspectClaim}
-              onResolve={(resultId, message) => void resolve(resultId, message)}
+              onResolve={() => selectStage("traceability")}
               onApprove={(role) => void approve(role)}
               onFinalStudyApproval={() => void approveFinalStudy()}
               onExport={() => void performExport()}
