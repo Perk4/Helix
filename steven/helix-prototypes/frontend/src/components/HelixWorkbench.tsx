@@ -21,9 +21,11 @@ import type { ApprovalRole, PlannerMode, Workspace } from "@/lib/types";
 import { AgentStageView, isAgentStageId } from "./agent/AgentStageView";
 import { TraceabilityStageView } from "./traceability/TraceabilityStageView";
 import { useTraceabilityGate } from "./traceability/useTraceabilityGate";
+import { DemoBanner } from "./DemoLabel";
 import { CloseIcon, RetryIcon } from "./icons";
 import { ReportAssembly } from "./ReportAssembly";
 import { ProgressBar } from "./journey/ProgressBar";
+import { ReviewStageView } from "./review/ReviewStageView";
 import { useSelectedStage } from "./journey/useSelectedStage";
 import { ShellHeader } from "./shell/ShellHeader";
 import { StudyJourney } from "./StudyJourney";
@@ -358,6 +360,8 @@ export function HelixWorkbench({ studyId }: Props) {
             data-selected-stage={selectedStageId ?? undefined}
           >
             {/* Stage-to-view switch: one small block per lane. */}
+            {/* Lane D demo flag: labels every stage, including the freeze gate. */}
+            {selectedStageId !== "review-export" && <DemoBanner workspace={workspace} />}
             {selectedStageId === "upload" && (
               <UploadGate workspace={workspace} onRefresh={refresh} onKeepView={() => selectStage("upload")}>
                 <IntakeUploadForm />
@@ -381,6 +385,9 @@ export function HelixWorkbench({ studyId }: Props) {
                 otherBusy={busy !== null || agentBusy}
                 onBusyChange={setAgentBusy}
               />
+            )}
+            {selectedStageId === "review-export" && (
+              <ReviewStageView workspace={workspace} onWorkspace={setWorkspace} onRefresh={refresh} />
             )}
             {/* Lanes B, C and D replace these legacy panels with their stage views. Until
                 then they remain the fallback so no stage loses its working controls. */}
