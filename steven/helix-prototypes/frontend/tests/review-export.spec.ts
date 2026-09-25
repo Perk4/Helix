@@ -242,7 +242,7 @@ test("export is enabled only by the server ready_for_export gate and is its own 
   await expect(page.getByTestId("export-final-package")).toBeDisabled();
   await page.getByTestId("approve-final-study").click();
   await expect(page.getByTestId("signoff-final-study-approval")).toHaveAttribute("data-signed", "true");
-  await expect(page.getByTestId("approval-current")).toHaveText("current");
+  await expect(page.getByTestId("approval-current")).toHaveAttribute("data-state", "current");
   await expect(page.getByTestId("approval-manifest-hash")).toHaveText(/^sha256:[a-f0-9]{64}$/);
   // Final Study Approval recorded; still no export until the explicit click.
   expect(h.exportPosts).toBe(0);

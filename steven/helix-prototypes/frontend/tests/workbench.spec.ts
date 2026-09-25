@@ -177,7 +177,7 @@ test("runs the synthetic study from validation through explicit export", async (
   await expect(page.getByText("FDA approved")).toHaveCount(0);
   await expect(page.getByTestId("final-study-approval-scope")).toBeVisible();
   await page.getByTestId("approve-final-study").click();
-  await expect(page.getByTestId("approval-current")).toHaveText("current");
+  await expect(page.getByTestId("approval-current")).toHaveAttribute("data-state", "current");
   await expect(page.getByTestId("approval-manifest-hash")).toHaveText(/^sha256:[a-f0-9]{64}$/);
   await expect(page.getByTestId("release-status")).toHaveText("Ready for export");
   await expect(page.getByTestId("export-final-package")).toBeEnabled();
@@ -445,7 +445,7 @@ test("renders the exact Final Study Approval scope from the workspace", async ({
   await page.goto("/");
   // Lane D (#23): the scope renders in the Human Gate 3 sign-off column.
   await expect(page.getByTestId("final-study-approval-scope")).toBeVisible();
-  await expect(page.getByTestId("approval-current")).toHaveText("current");
+  await expect(page.getByTestId("approval-current")).toHaveAttribute("data-state", "current");
   await expect(page.getByTestId("approval-manifest-hash")).toHaveText(INJECTED_HASH);
   await expect(page.getByTestId("approval-artifact-RUN-PRED00000001")).toHaveText(INJECTED_HASH);
   await expect(page.getByText("FDA approved")).toHaveCount(0);
