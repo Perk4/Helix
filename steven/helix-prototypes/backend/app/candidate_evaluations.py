@@ -165,12 +165,14 @@ class CandidateEvaluationService:
         suite = package_definition.get("study_output_eval_suite")
         if not isinstance(suite, dict):
             raise CandidateEvaluationConflictError("The Section Package is missing a study-output suite")
+        promptfoo_result = self.repository_root / "promptfoo-guardrails-result.json"
         study_output = evaluate_study_output(
             candidate,
             candidate_hash=candidate_hash,
             suite_id=str(suite["id"]),
             suite_version=str(suite["version"]),
             suite_path=self.repository_root / str(suite["path"]),
+            promptfoo_result_path=promptfoo_result,
         )
         template = json.loads(
             (self.repository_root / "backend" / "app" / "data" / "report-template.json").read_text()
