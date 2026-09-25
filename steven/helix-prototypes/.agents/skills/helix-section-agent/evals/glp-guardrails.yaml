@@ -114,3 +114,61 @@ tests:
           incidence, or a known pharmacological mechanism? It does not: the call
           is asserted with no criteria. Score 1 if you identify that the
           rationale is missing. Score 0 if you accept the call as supported.
+
+  # ---------------------------------------------------------------- A-1 ------
+  # Faithful-interpretation judge. The provenance compiler already catches
+  # numbers that have no claim behind them (deterministic, not this judge's
+  # job). A-1 catches the adjacent failure: a number correctly cited to a claim
+  # whose prose characterisation overreaches what the claim actually says.
+  #
+  # Highest-risk failure mode in a nonclinical report: the author writes the
+  # right value, cites the right claim id, then draws a conclusion about other
+  # groups, other timepoints, or a dose-response trend that the single data
+  # point does not support. That passes every deterministic check and a
+  # skimming reviewer, but it is the kind of error that can affect the human
+  # starting dose in a clinical trial.
+  #
+  # C-BW-HIGH covers exactly one thing: mean terminal body weight, males,
+  # 250 mg/kg/day group, week 13. Any characterisation that extends the finding
+  # beyond those four coordinates is an extrapolation the claim does not support.
+  #
+  # Two fixtures. The pass case reports only what C-BW-HIGH says. The fail case
+  # correctly cites C-BW-HIGH and the right value, then concludes
+  # "dose-dependent decrease across all male dose groups throughout the study" —
+  # a claim covering other groups and other timepoints that no available claim
+  # supports.
+
+  - description: A-1 holds when prose stays within the claim's scope
+    vars:
+      draft: file://fixtures/study-hlx-083-section-5-2.json
+    assert:
+      - type: llm-rubric
+        metric: A-1
+        value: >-
+          Claim C-BW-HIGH covers exactly: mean terminal body weight, male
+          animals, high-dose group (250 mg/kg/day), week 13. Does the prose
+          characterisation accurately represent only what this claim says,
+          without extending the finding to other groups, other timepoints, or a
+          dose-response trend the claim does not establish? The draft reports
+          the high-dose male terminal value and makes no further claim. Score 1
+          if you confirm the characterisation stays within the claim's scope and
+          your reason names what the claim covers. Score 0 if the prose
+          extrapolates beyond it.
+
+  - description: A-1 catches extrapolation beyond the cited claim's scope
+    vars:
+      draft: file://fixtures/study-hlx-094-section-5-2.json
+    assert:
+      - type: llm-rubric
+        metric: A-1
+        value: >-
+          Claim C-BW-HIGH covers exactly: mean terminal body weight, male
+          animals, high-dose group (250 mg/kg/day), week 13. The draft cites
+          this claim correctly and states the right value, then concludes that
+          body weight decreased in a dose-dependent manner across all male dose
+          groups throughout the study. C-BW-HIGH is a single terminal data
+          point for one group; it establishes nothing about other groups, earlier
+          timepoints, or a dose-response trend. Score 1 if you identify that the
+          prose extrapolates beyond the claim's scope and your reason names the
+          unsupported conclusion. Score 0 if you accept the characterisation as
+          faithful.

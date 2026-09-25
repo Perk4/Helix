@@ -96,6 +96,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/studies/{study_id}/chat": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Chat */
+        get: operations["get_chat_api_v1_studies__study_id__chat_get"];
+        put?: never;
+        /** Post Chat */
+        post: operations["post_chat_api_v1_studies__study_id__chat_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/studies/{study_id}/claims/{claim_id}/evidence": {
         parameters: {
             query?: never;
@@ -297,6 +315,126 @@ export interface paths {
         put?: never;
         /** Promote Section Draft */
         post: operations["promote_section_draft_api_v1_studies__study_id__section_runs__run_id__promotions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/studies/{study_id}/sections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Sections */
+        get: operations["list_sections_api_v1_studies__study_id__sections_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/studies/{study_id}/sections/{section_id}/apply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Apply Section Draft */
+        post: operations["apply_section_draft_api_v1_studies__study_id__sections__section_id__apply_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/studies/{study_id}/sections/{section_id}/discard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Discard Section Draft */
+        post: operations["discard_section_draft_api_v1_studies__study_id__sections__section_id__discard_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/studies/{study_id}/sections/{section_id}/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Section Draft */
+        get: operations["get_section_draft_api_v1_studies__study_id__sections__section_id__draft_get"];
+        put?: never;
+        /** Generate Section Draft */
+        post: operations["generate_section_draft_api_v1_studies__study_id__sections__section_id__draft_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/studies/{study_id}/sections/{section_id}/drafts/{version}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Section Draft Version */
+        get: operations["get_section_draft_version_api_v1_studies__study_id__sections__section_id__drafts__version__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/studies/{study_id}/sections/{section_id}/revise": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Revise Section Draft */
+        post: operations["revise_section_draft_api_v1_studies__study_id__sections__section_id__revise_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/studies/{study_id}/sections/{section_id}/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Verify Section Draft */
+        post: operations["verify_section_draft_api_v1_studies__study_id__sections__section_id__verify_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -601,6 +739,7 @@ export interface components {
             /** Section Package Id */
             section_package_id: string;
             study_output_evaluation_receipt: components["schemas"]["StudyOutputEvaluationReceipt"];
+            suite_fixture_guardrail_checks?: components["schemas"]["SuiteFixtureGuardrailChecks"] | null;
             template_conformance_receipt: components["schemas"]["TemplateConformanceReceipt"];
         };
         /** CandidateEvaluationCommand */
@@ -639,6 +778,57 @@ export interface components {
             /** Section Package Id */
             section_package_id: string;
             stored_run?: components["schemas"]["StoredSectionRun"] | null;
+        };
+        /** ChatMessage */
+        ChatMessage: {
+            /** Content */
+            content: string;
+            /** Created At */
+            created_at: string;
+            /** Draft Version */
+            draft_version?: number | null;
+            /**
+             * Intent
+             * @default ask
+             * @enum {string}
+             */
+            intent: "ask" | "revise";
+            /** Message Id */
+            message_id: number;
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "user" | "assistant";
+            /**
+             * Scope
+             * @enum {string}
+             */
+            scope: "section" | "study";
+            /** Section Id */
+            section_id?: string | null;
+        };
+        /** ChatRequest */
+        ChatRequest: {
+            /** Message */
+            message: string;
+            /**
+             * Scope
+             * @default section
+             * @enum {string}
+             */
+            scope: "section" | "study";
+            /** Section Id */
+            section_id?: string | null;
+        };
+        /**
+         * ChatTurn
+         * @description One assistant turn: the reply, plus a proposed rewrite when the model
+         *     read the message as an edit request (approved via Apply or Discard).
+         */
+        ChatTurn: {
+            message: components["schemas"]["ChatMessage"];
+            proposed?: components["schemas"]["SectionContentDraft"] | null;
         };
         /** Claim */
         Claim: {
@@ -929,6 +1119,11 @@ export interface components {
             sexes: ("M" | "F")[];
             /** Study Id */
             study_id: string;
+        };
+        /** DraftRequest */
+        DraftRequest: {
+            /** Feedback */
+            feedback?: string[];
         };
         /** DraftingCycle */
         DraftingCycle: {
@@ -1461,6 +1656,16 @@ export interface components {
             /** Reasons */
             reasons: string[];
         };
+        /** NoteBlock */
+        NoteBlock: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "note";
+            /** Text */
+            text: string;
+        };
         /** ParseReuse */
         ParseReuse: {
             /** Content Hash */
@@ -1597,6 +1802,16 @@ export interface components {
             schema_version: "helix.section-promotion-decision/v1";
             /** Warnings */
             warnings: string[];
+        };
+        /** ProseBlock */
+        ProseBlock: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "prose";
+            /** Markdown */
+            markdown: string;
         };
         /** ProvenanceBinding */
         ProvenanceBinding: {
@@ -1818,6 +2033,11 @@ export interface components {
             /** Timestamp */
             timestamp: string | null;
         };
+        /** ReviseRequest */
+        ReviseRequest: {
+            /** Feedback */
+            feedback: string;
+        };
         /** RunPausedEvent */
         RunPausedEvent: {
             /** Event Id */
@@ -1949,6 +2169,39 @@ export interface components {
             /** Title */
             title: string;
         };
+        /** SectionContentDraft */
+        SectionContentDraft: {
+            /** Blocks */
+            blocks: (components["schemas"]["ProseBlock"] | components["schemas"]["TableBlock"] | components["schemas"]["NoteBlock"])[];
+            /** Created At */
+            created_at: string;
+            /** Data Available */
+            data_available: boolean;
+            /** Feedback */
+            feedback?: string[];
+            /** Model */
+            model?: string | null;
+            /** Narrative Md */
+            narrative_md?: string | null;
+            /** Note */
+            note?: string | null;
+            /**
+             * Provenance Count
+             * @default 0
+             */
+            provenance_count: number;
+            /** Section Id */
+            section_id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "needs_review" | "proposed" | "verified" | "discarded" | "empty";
+            /** Title */
+            title: string;
+            /** Version */
+            version: number;
+        };
         /** SectionDraft */
         SectionDraft: {
             /** Bound Dispositions */
@@ -2025,6 +2278,28 @@ export interface components {
             /** Transitive */
             transitive: string[];
         };
+        /** SectionListItem */
+        SectionListItem: {
+            /** Data Available */
+            data_available?: boolean | null;
+            /** Has Verified Claims */
+            has_verified_claims: boolean;
+            /** Order */
+            order: number;
+            /** Section Id */
+            section_id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "needs_review" | "proposed" | "verified" | "discarded" | "empty";
+            /** Template Section */
+            template_section: string | null;
+            /** Title */
+            title: string;
+            /** Version */
+            version?: number | null;
+        };
         /** SectionRunCommand */
         SectionRunCommand: {
             /** Idempotency Key */
@@ -2092,6 +2367,11 @@ export interface components {
          * @enum {string}
          */
         SectionStatus: "validated" | "needs_review" | "reviewed";
+        /** SectionVersionRequest */
+        SectionVersionRequest: {
+            /** Version */
+            version: number;
+        };
         /** SourceRecord */
         SourceRecord: {
             /** Attributes */
@@ -2321,6 +2601,38 @@ export interface components {
             /** Study Type Id */
             study_type_id: string | null;
         };
+        /**
+         * SuiteFixtureGuardrailChecks
+         * @description Promptfoo guardrail verdicts from canned fixtures (``glp-guardrails.yaml``, echo provider).
+         *
+         *     A suite-level configuration check that qualifies the judges. It was never computed on the
+         *     evaluated candidate, so it sits beside the candidate receipts and never inside one.
+         */
+        SuiteFixtureGuardrailChecks: {
+            /**
+             * Candidate Evaluated
+             * @constant
+             */
+            candidate_evaluated: false;
+            /** Result Hash */
+            result_hash: string;
+            /** Result Path */
+            result_path: string;
+            /** Results */
+            results: components["schemas"]["StudyOutputAssertionResult"][];
+            /**
+             * Schema Version
+             * @constant
+             */
+            schema_version: "helix.suite-fixture-guardrail-checks/v1";
+            /**
+             * Scope
+             * @constant
+             */
+            scope: "suite_fixture";
+            /** Suite Path */
+            suite_path: string;
+        };
         /** SupersedingRunReceipt */
         SupersedingRunReceipt: {
             /** Carried Forward */
@@ -2356,6 +2668,20 @@ export interface components {
             predecessor_run_id: string;
             /** Reason */
             reason: string;
+        };
+        /** TableBlock */
+        TableBlock: {
+            /** Columns */
+            columns: string[];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "table";
+            /** Rows */
+            rows: string[][];
+            /** Title */
+            title: string;
         };
         /** TemplateConformanceReceipt */
         TemplateConformanceReceipt: {
@@ -2827,6 +3153,72 @@ export interface operations {
             };
         };
     };
+    get_chat_api_v1_studies__study_id__chat_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatMessage"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_chat_api_v1_studies__study_id__chat_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChatRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatTurn"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_evidence_api_v1_studies__study_id__claims__claim_id__evidence_get: {
         parameters: {
             query?: never;
@@ -3255,6 +3647,278 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SectionDraft"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_sections_api_v1_studies__study_id__sections_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SectionListItem"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    apply_section_draft_api_v1_studies__study_id__sections__section_id__apply_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+                section_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SectionVersionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SectionContentDraft"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    discard_section_draft_api_v1_studies__study_id__sections__section_id__discard_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+                section_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SectionVersionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SectionContentDraft"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_section_draft_api_v1_studies__study_id__sections__section_id__draft_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+                section_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SectionContentDraft"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generate_section_draft_api_v1_studies__study_id__sections__section_id__draft_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+                section_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DraftRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SectionContentDraft"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_section_draft_version_api_v1_studies__study_id__sections__section_id__drafts__version__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+                section_id: string;
+                version: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SectionContentDraft"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    revise_section_draft_api_v1_studies__study_id__sections__section_id__revise_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+                section_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviseRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SectionContentDraft"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    verify_section_draft_api_v1_studies__study_id__sections__section_id__verify_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+                section_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SectionContentDraft"];
                 };
             };
             /** @description Validation Error */

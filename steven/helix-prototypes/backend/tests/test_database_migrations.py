@@ -10,24 +10,22 @@ from alembic.runtime.migration import MigrationContext
 from sqlalchemy import Engine, create_engine, inspect, text
 from sqlalchemy.pool import StaticPool
 
-from app.database import RUN_EVENT_TABLES, upgrade_to_head
+from app.database import BASELINE_TABLES, MIGRATED_TABLES, RUN_EVENT_TABLES, upgrade_to_head
 from app.models import Base
 
-HEAD_REVISION = "9edd082c07ae"
+HEAD_REVISION = "c24154d7a8e9"  # drafts/chat, after run events (9edd082c07ae)
 
 
 def test_an_unversioned_baseline_schema_is_adopted_before_upgrading():
     engine = create_engine("sqlite+pysqlite:///:memory:", poolclass=StaticPool)
-    baseline_tables = [
-        table
-        for name, table in Base.metadata.tables.items()
-        if name != "intake_jobs" and name not in RUN_EVENT_TABLES
-    ]
+    baseline_tables = [Base.metadata.tables[name] for name in BASELINE_TABLES]
     Base.metadata.create_all(engine, tables=baseline_tables)
 
     upgrade_to_head(engine)
 
-    assert "intake_jobs" in inspect(engine).get_table_names()
+    schema = inspect(engine)
+    assert {"intake_jobs", "content_drafts", "chat_messages"} <= set(schema.get_table_names())
+    assert "draft_version" in {column["name"] for column in schema.get_columns("chat_messages")}
     with engine.connect() as connection:
         assert connection.scalar(text("SELECT version_num FROM alembic_version")) == HEAD_REVISION
 
@@ -124,7 +122,7 @@ def test_run_event_migration_downgrades_and_upgrades_cleanly(migration_engine: E
 
 def test_a_steven_workspace_create_all_schema_with_run_events_is_adopted(migration_engine: Engine) -> None:
     """feat/steven-workspace created run_events/run_journey_states via create_all, unversioned."""
-    pre_alembic = [table for name, table in Base.metadata.tables.items() if name != "intake_jobs"]
+    pre_alembic = [table for name, table in Base.metadata.tables.items() if name not in MIGRATED_TABLES]
     Base.metadata.create_all(migration_engine, tables=pre_alembic)
     with migration_engine.begin() as connection:
         connection.execute(
@@ -145,11 +143,7 @@ def test_a_steven_workspace_create_all_schema_with_run_events_is_adopted(migrati
 
 def test_a_drifted_run_event_table_is_not_falsely_stamped() -> None:
     engine = create_engine("sqlite+pysqlite:///:memory:", poolclass=StaticPool)
-    baseline = [
-        table
-        for name, table in Base.metadata.tables.items()
-        if name != "intake_jobs" and name not in RUN_EVENT_TABLES
-    ]
+    baseline = [Base.metadata.tables[name] for name in BASELINE_TABLES]
     Base.metadata.create_all(engine, tables=baseline)
     with engine.begin() as connection:
         connection.execute(text("CREATE TABLE run_events (id INTEGER PRIMARY KEY, event_id VARCHAR(120))"))

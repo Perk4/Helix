@@ -8,6 +8,7 @@ dependencies = [
   "fastapi>=0.116,<1",
   "httpx>=0.28,<1",
   "jsonschema>=4.25,<5",
+  "openai>=1.40,<2",
   "openai-codex>=0.155,<1",
   "openpyxl>=3.1.5",
   "psycopg[binary]>=3.2,<4",

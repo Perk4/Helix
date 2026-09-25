@@ -3,7 +3,86 @@ from pathlib import Path
 from uuid import uuid4
 
 from .run_plans import file_hash
-from .schemas import SectionDraftCandidate, StudyOutputAssertionResult, StudyOutputEvaluationReceipt
+from .schemas import (
+    SectionDraftCandidate,
+    StudyOutputAssertionResult,
+    StudyOutputEvaluationReceipt,
+    SuiteFixtureGuardrailChecks,
+)
+
+GUARDRAIL_SUITE_RELATIVE = ".agents/skills/helix-section-agent/evals/glp-guardrails.yaml"
+
+
+def load_promptfoo_guardrail_results(path: Path) -> list[StudyOutputAssertionResult]:
+    """Read the llm-rubric component verdicts from a promptfoo ``--output`` JSON file.
+
+    promptfoo writes an ``OutputFile``: ``{"evalId", "results": EvaluateSummaryV3, "config", ...}``
+    where ``EvaluateSummaryV3`` is ``{"version": 3, "timestamp", "results": [EvaluateResult],
+    "prompts", "stats"}``. The per-test rows are therefore at ``results.results[]`` and each
+    row's verdicts at ``gradingResult.componentResults[]``. Unreadable or unexpected files yield
+    no results instead of raising.
+    """
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return []
+    summary = data.get("results") if isinstance(data, dict) else None
+    rows = summary.get("results") if isinstance(summary, dict) else None
+    if not isinstance(rows, list):
+        return []
+    out: list[StudyOutputAssertionResult] = []
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        grading = row.get("gradingResult")
+        test_case = row.get("testCase")
+        description = test_case.get("description", "") if isinstance(test_case, dict) else ""
+        components = grading.get("componentResults") if isinstance(grading, dict) else None
+        for component in components or []:
+            if not isinstance(component, dict):
+                continue
+            assertion_info = component.get("assertion")
+            if not isinstance(assertion_info, dict):
+                assertion_info = {}
+            metric = assertion_info.get("metric") or assertion_info.get("type") or "llm-rubric"
+            label = f"{metric}:{description}" if description else str(metric)
+            out.append(
+                StudyOutputAssertionResult(
+                    assertion=label,
+                    status="passed" if component.get("pass") else "failed",
+                    message=component.get("reason") or "No reason provided.",
+                )
+            )
+    return out
+
+
+def suite_fixture_guardrail_checks(
+    result_path: Path, *, repository_root: Path
+) -> SuiteFixtureGuardrailChecks | None:
+    """Wrap the promptfoo guardrail verdicts as a suite-level fixture check.
+
+    ``glp-guardrails.yaml`` runs its judges with an ``echo`` provider over canned fixtures, so
+    its G-1/G-2/A-1 verdicts qualify the judge, not the evaluated candidate. They are kept for
+    the record, but never inside a candidate's study-output receipt.
+    """
+    if not result_path.is_file():
+        return None
+    results = load_promptfoo_guardrail_results(result_path)
+    if not results:
+        return None
+    try:
+        relative = result_path.resolve().relative_to(repository_root.resolve()).as_posix()
+    except ValueError:
+        relative = result_path.name
+    return SuiteFixtureGuardrailChecks(
+        schema_version="helix.suite-fixture-guardrail-checks/v1",
+        scope="suite_fixture",
+        candidate_evaluated=False,
+        suite_path=GUARDRAIL_SUITE_RELATIVE,
+        result_path=relative,
+        result_hash=file_hash(result_path),
+        results=results,
+    )
 
 
 def evaluate_study_output(

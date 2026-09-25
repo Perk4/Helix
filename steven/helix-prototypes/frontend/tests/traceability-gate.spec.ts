@@ -433,6 +433,33 @@ test("Inspect on a report statement opens Gate 2 on that statement's claim", asy
   await expect(page.getByTestId("trace-claim-kicker")).toContainText("Claim C-MI-LIVER");
 });
 
+test("a drafted section's Inspect opens Gate 2 on that section's own claim", async ({ page }) => {
+  await serveGate(page);
+  await openGate(page);
+  await expect(page.getByTestId("trace-claim-kicker")).toContainText("Claim C-BW-HIGH");
+  const navigator = page.getByRole("complementary", { name: "Report sections" });
+  const paperClaims = page.getByTestId("draft-section-claims");
+
+  // 5.3.3 Microscopic Findings maps to template section S7, whose only claim is C-MI-LIVER.
+  await navigator.getByRole("button", { name: /5\.3\.3 Microscopic Findings/ }).click();
+  const inspectLiver = paperClaims.getByTestId("inspect-claim-C-MI-LIVER");
+  await expect(inspectLiver).toHaveText("Inspect 4 provenance edges");
+  await expect(paperClaims.getByRole("button")).toHaveCount(1);
+  await inspectLiver.click();
+  await expect(page.getByTestId("trace-claim-kicker")).toContainText("Claim C-MI-LIVER");
+  await expect(page.getByTestId("claim-C-MI-LIVER")).toHaveAttribute("aria-pressed", "true");
+
+  // 5.2.3 Body Weight (S5) inspects C-BW-HIGH with its own edge count.
+  await navigator.getByRole("button", { name: /5\.2\.3 Body Weight/ }).click();
+  await expect(paperClaims.getByTestId("inspect-claim-C-BW-HIGH")).toHaveText("Inspect 10 provenance edges");
+  await paperClaims.getByTestId("inspect-claim-C-BW-HIGH").click();
+  await expect(page.getByTestId("trace-claim-kicker")).toContainText("Claim C-BW-HIGH");
+
+  // A section whose template section has no claims shows no Inspect button.
+  await navigator.getByRole("button", { name: /1\. Objective/ }).click();
+  await expect(page.getByTestId("draft-section-claims")).toHaveCount(0);
+});
+
 test("the Gate 2 evidence card shows source hashes, rule versions and exact reconciliation", async ({ page }) => {
   // Coverage moved from the removed EvidenceChain panel (workbench.spec full flow). The seed
   // has no source hashes until data validation runs after a qualified freeze, so C-BW-HIGH

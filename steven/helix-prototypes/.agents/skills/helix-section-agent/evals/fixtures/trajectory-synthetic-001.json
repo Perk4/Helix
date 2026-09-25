@@ -1,0 +1,83 @@
+{
+  "_comment": "Synthetic trajectory conforming to schemas/agent-trajectory.schema.json. NOT wired in CI — produced manually to specify what a bounded-path run looks like. Replace with real CodexSectionAgent output once Phase 1 is live.",
+  "trajectory_id": "TRAJ-SYNTHETIC-001",
+  "section_id": "5_2_3_body_weight",
+  "attempt": 1,
+  "registered_tools": ["read_file"],
+  "turns": [
+    {
+      "turn_id": 1,
+      "role": "assistant",
+      "content": "I will read the section skill and the presentation contract before drafting.",
+      "tool_calls": [
+        {
+          "tool_call_id": "tc_001",
+          "tool_name": "read_file",
+          "arguments": {
+            "path": ".agents/skills/helix-section-agent/SKILL.md"
+          }
+        }
+      ],
+      "tool_call_id": null,
+      "tool_name": null
+    },
+    {
+      "turn_id": 2,
+      "role": "tool",
+      "content": "<contents of SKILL.md>",
+      "tool_calls": null,
+      "tool_call_id": "tc_001",
+      "tool_name": "read_file"
+    },
+    {
+      "turn_id": 3,
+      "role": "assistant",
+      "content": "I will now read the presentation contract for section 5.2.3.",
+      "tool_calls": [
+        {
+          "tool_call_id": "tc_002",
+          "tool_name": "read_file",
+          "arguments": {
+            "path": ".agents/skills/helix-section-agent/references/section_skills/skill_5_2_3_body_weight.md"
+          }
+        }
+      ],
+      "tool_call_id": null,
+      "tool_name": null
+    },
+    {
+      "turn_id": 4,
+      "role": "tool",
+      "content": "<contents of skill_5_2_3_body_weight.md>",
+      "tool_calls": null,
+      "tool_call_id": "tc_002",
+      "tool_name": "read_file"
+    },
+    {
+      "turn_id": 5,
+      "role": "assistant",
+      "content": "{\"candidate_id\": \"SDC-SYNTHETIC-001\", \"drafting_cycle_id\": \"CYCLE-BW-001\", \"attempt\": 1, \"status\": \"draft\", \"validated_claim_ids\": [\"C-BW-HIGH\"], \"content_blocks\": [], \"factual_spans\": [], \"structured_failure\": null}",
+      "tool_calls": null,
+      "tool_call_id": null,
+      "tool_name": null
+    }
+  ],
+  "terminal_output": {
+    "candidate_id": "SDC-SYNTHETIC-001",
+    "drafting_cycle_id": "CYCLE-BW-001",
+    "attempt": 1,
+    "status": "draft",
+    "validated_claim_ids": ["C-BW-HIGH"],
+    "content_blocks": [],
+    "factual_spans": [],
+    "structured_failure": null
+  },
+  "registered_tools_used": ["read_file"],
+  "unregistered_tool_attempts": [],
+  "paths_accessed": [
+    ".agents/skills/helix-section-agent/SKILL.md",
+    ".agents/skills/helix-section-agent/references/section_skills/skill_5_2_3_body_weight.md"
+  ],
+  "paths_outside_dependencies": [],
+  "outcome": "draft"
+}

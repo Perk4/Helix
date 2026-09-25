@@ -51,6 +51,12 @@ function freezeSucceeds(h: Harness) {
   return { status: 201, body: freezeFixture.after.pinned_run };
 }
 
+// A route handler still awaiting route.fetch() when a test finishes otherwise fails the
+// teardown with "route.fetch: Test ended" (Helix Tester P2 on #29).
+test.afterEach(async ({ page }) => {
+  await page.unrouteAll({ behavior: "ignoreErrors" });
+});
+
 test("renders the manifest from the workspace and keeps freeze disabled until consent", async ({ page, request }) => {
   const workspace = (await (await request.get(`${apiRoot}/studies/${studyId}/workspace`)).json()) as {
     manifest: { artifact_id: string; name: string }[];

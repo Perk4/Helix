@@ -85,6 +85,13 @@
     "idempotent_replay": {
       "type": "boolean"
     },
+    "suite_fixture_guardrail_checks": {
+      "description": "Promptfoo guardrail verdicts from canned fixtures (glp-guardrails.yaml, echo provider). A suite-level configuration check that was never computed on this candidate, kept outside every candidate receipt.",
+      "oneOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/suite_fixture_guardrail_checks" }
+      ]
+    },
     "hashes": {
       "type": "object",
       "additionalProperties": false,
@@ -118,6 +125,33 @@
     "sha256": {
       "type": "string",
       "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "suite_fixture_guardrail_checks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "scope", "candidate_evaluated", "suite_path", "result_path", "result_hash", "results"],
+      "properties": {
+        "schema_version": { "const": "helix.suite-fixture-guardrail-checks/v1" },
+        "scope": { "const": "suite_fixture" },
+        "candidate_evaluated": { "const": false },
+        "suite_path": { "type": "string", "minLength": 1 },
+        "result_path": { "type": "string", "minLength": 1 },
+        "result_hash": { "$ref": "#/$defs/sha256" },
+        "results": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["assertion", "status", "message"],
+            "properties": {
+              "assertion": { "type": "string", "minLength": 1 },
+              "status": { "enum": ["passed", "failed"] },
+              "message": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      }
     }
   }
 }
