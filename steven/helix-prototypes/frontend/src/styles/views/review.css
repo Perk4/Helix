@@ -24,3 +24,31 @@
   font-size: var(--hx-fs-body);
 }
 #helix-e2e .hx-flag strong { color: var(--hx-warn); }
+
+/*
+ * DEMO ONLY (HELIX_DEMO_UNQUALIFIED_PACKAGES): "Demo: not qualified" labels.
+ * Ported from the parked demo-flag WIP (was in globals.css); tokens only.
+ */
+#helix-e2e .demo-label {
+  display: inline-block;
+  margin: 0 6px;
+  padding: 1px 8px;
+  border: 1px solid var(--hx-warn-line);
+  border-radius: 999px;
+  background: var(--hx-warn-soft);
+  color: var(--hx-warn);
+  font-size: var(--hx-fs-meta, 12px);
+  font-weight: var(--hx-fw-semibold);
+  white-space: nowrap;
+}
+#helix-e2e .demo-banner {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  padding: 4px 10px;
+  border: 1px solid var(--hx-warn-line);
+  border-radius: var(--hx-radius-control);
+  background: var(--hx-warn-soft);
+  color: var(--hx-warn);
+  font-size: var(--hx-fs-meta, 12px);
+}

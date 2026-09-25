@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 
 from .agents.codex_section_agent import SectionAgent
 from .approved_report_retrieval import add_report, get_all_examples
+from .demo_mode import RECEIPT_BACKED_CELL_PACKAGE_IDS
 from .drafting_cycles import (
     DRAFTING_CYCLE_ID,
     RejectAttempt,
@@ -72,8 +73,17 @@ def governed_versions_fingerprint(pinned_run: PinnedRun) -> str:
 
 
 class SectionRunService:
-    def __init__(self, session: Session, agent: SectionAgent | None, repository_root: Path):
+    def __init__(
+        self,
+        session: Session,
+        agent: SectionAgent | None,
+        repository_root: Path,
+        *,
+        demo_unqualified_packages: bool = False,
+    ):
         self.session = session
+        # DEMO ONLY (HELIX_DEMO_UNQUALIFIED_PACKAGES): see app/demo_mode.py.
+        self.demo_unqualified_packages = demo_unqualified_packages
         self.agent = agent
         self.repository_root = repository_root
         self.repository = StudyPackageRepository(session)
@@ -619,9 +629,13 @@ class SectionRunService:
                 raise CandidateValidationError(f"Codex candidate returned an invalid {field}")
         if candidate.validated_claim_ids != [CLAIM_ID]:
             raise CandidateValidationError("Codex candidate cited an unapproved claim")
-        for claim_ids in self._nested_claim_id_lists(candidate.content_blocks):
-            if not isinstance(claim_ids, list) or len(claim_ids) != 1 or set(claim_ids) != {CLAIM_ID}:
-                raise CandidateValidationError("Codex candidate content cited an unapproved claim")
+        receipt_cells = set(executor_receipt_ids) if self._demo_receipt_cells() else set()
+        for block in candidate.content_blocks:
+            # DEMO ONLY: inside a table block a cell may cite the envelope's executor receipt.
+            allowed = {CLAIM_ID} | receipt_cells if block.get("kind") == "table" else {CLAIM_ID}
+            for claim_ids in self._nested_claim_id_lists(block):
+                if not isinstance(claim_ids, list) or len(claim_ids) != 1 or not set(claim_ids) <= allowed:
+                    raise CandidateValidationError("Codex candidate content cited an unapproved claim")
         for block in candidate.content_blocks:
             content_fragments = self._content_fragments(block)
             factual_spans = block.get("factual_spans")
@@ -664,8 +678,31 @@ class SectionRunService:
             f"section_package_id {SECTION_PACKAGE_ID}, section_package_version 0.1.0, "
             f"drafting_cycle_id {drafting_cycle_id}, and attempt {attempt}. Cite only C-BW-HIGH. "
             "Write one factual span containing the exact text '286.2 g'. "
+            f"{self._demo_rule_3_override(envelope)}"
             f"{thread_receipt_instruction} Envelope: "
             f"{json.dumps(envelope, separators=(',', ':'), sort_keys=True)}"
+        )
+
+    def _demo_receipt_cells(self) -> bool:
+        return self.demo_unqualified_packages and SECTION_PACKAGE_ID in RECEIPT_BACKED_CELL_PACKAGE_IDS
+
+    def _demo_rule_3_override(self, envelope: dict[str, object]) -> str:
+        """DEMO ONLY (option 2 of 47c19c4). Empty when HELIX_DEMO_UNQUALIFIED_PACKAGES is off."""
+        if not self._demo_receipt_cells():
+            return ""
+        receipts = envelope.get("executor_receipts")
+        ids = (
+            [str(item["artifact_id"]) for item in receipts if isinstance(item, dict)]
+            if isinstance(receipts, list)
+            else []
+        )
+        if not ids:
+            return ""
+        return (
+            "DEMO MODE, NOT QUALIFIED: for this run, rule 3 accepts an executor receipt as provenance "
+            f"for a table cell. A table cell (and its matching factual span) may cite {ids[0]} "
+            "instead of a Validated Claim when its text is exactly one value that receipt computed. "
+            "Paragraph spans must still cite C-BW-HIGH. "
         )
 
     @staticmethod

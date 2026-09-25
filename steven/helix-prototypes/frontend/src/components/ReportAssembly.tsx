@@ -6,6 +6,7 @@ import { artifactDownloadUrl } from "@/lib/api";
 import type { ApprovalRole, ValidationResult, Workspace } from "@/lib/types";
 
 import { CheckIcon } from "./icons";
+import { DemoLabel, demoPackageFor } from "./DemoLabel";
 
 type Props = {
   workspace: Workspace;
@@ -104,6 +105,10 @@ export function ReportAssembly({
                   <span className="section-number">{String(index + 1).padStart(2, "0")}</span>
                   <span className="section-label">
                     <strong>{item.title}</strong>
+                    <DemoLabel
+                      item={demoPackageFor(workspace, { prototypeSectionId: item.section_id })}
+                      context="report-nav"
+                    />
                     <small>{item.required_field_count} required fields</small>
                   </span>
                   <span className={`section-state ${issueCount ? "issue" : item.status}`}>
@@ -125,6 +130,10 @@ export function ReportAssembly({
               <div>
                 <p className="eyebrow">Draft section {section.section_id.slice(1)}</p>
                 <h3>{section.title}</h3>
+                <DemoLabel
+                  item={demoPackageFor(workspace, { prototypeSectionId: section.section_id })}
+                  context="report-paper"
+                />
               </div>
               <span className={`document-status ${section.status}`}>{section.status.replaceAll("_", " ")}</span>
             </header>

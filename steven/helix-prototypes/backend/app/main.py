@@ -80,7 +80,7 @@ from .section_runs import (
     UnknownSectionPackageError,
 )
 from .seed import seed_database
-from .service import InvalidCommandError, StudyService, WorkflowConflictError
+from .service import InvalidCommandError, RunEventSyncError, StudyService, WorkflowConflictError
 from .validation import PlannerUnavailableError, PlannerUpstreamError
 
 
@@ -137,8 +137,13 @@ def create_app(
             session,
             active_section_agent,
             active_settings.codex_repository_root,
+            demo_unqualified_packages=active_settings.demo_unqualified_packages,
         )
-        pinned_runs = PinnedRunService(session, active_settings.codex_repository_root)
+        pinned_runs = PinnedRunService(
+            session,
+            active_settings.codex_repository_root,
+            demo_unqualified_packages=active_settings.demo_unqualified_packages,
+        )
         return StudyService(session, active_settings, section_runs, pinned_runs)
 
     ServiceDependency = Annotated[StudyService, Depends(service)]
@@ -148,12 +153,17 @@ def create_app(
             session,
             active_section_agent,
             active_settings.codex_repository_root,
+            demo_unqualified_packages=active_settings.demo_unqualified_packages,
         )
 
     SectionRunServiceDependency = Annotated[SectionRunService, Depends(section_run_service)]
 
     def candidate_evaluation_service(session: SessionDependency) -> CandidateEvaluationService:
-        return CandidateEvaluationService(session, active_settings.codex_repository_root)
+        return CandidateEvaluationService(
+            session,
+            active_settings.codex_repository_root,
+            demo_unqualified_packages=active_settings.demo_unqualified_packages,
+        )
 
     CandidateEvaluationServiceDependency = Annotated[
         CandidateEvaluationService, Depends(candidate_evaluation_service)
@@ -635,6 +645,12 @@ def _call[ResponseT](operation: Callable[[], ResponseT]) -> ResponseT:
         raise HTTPException(status_code=error.http_status, detail=error.as_detail()) from error
     except (PlannerUnavailableError, SectionRunUnavailableError) as error:
         raise HTTPException(status_code=503, detail=str(error)) from error
+    except RunEventSyncError as error:
+        # Typed, retryable: the command's transaction was rolled back, nothing was written.
+        raise HTTPException(
+            status_code=503,
+            detail={"code": RunEventSyncError.code, "message": str(error)},
+        ) from error
 
 
 app = create_app()
