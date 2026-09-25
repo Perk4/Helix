@@ -6,6 +6,32 @@ from .run_plans import file_hash
 from .schemas import SectionDraftCandidate, StudyOutputAssertionResult, StudyOutputEvaluationReceipt
 
 
+def _load_promptfoo_results(path: Path) -> list[StudyOutputAssertionResult]:
+    # Alongside wiring (T2.1): Promptfoo runs in CI before the evaluation POST
+    # fires, writes --output to this path, and the results are merged here so
+    # the llm-rubric verdicts (G-1, G-2, A-1) land in the same receipt as the
+    # deterministic checks rather than as a separate artifact.
+    # Output format: EvaluateSummaryV3 — results[].gradingResult.componentResults[].
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return []
+    out: list[StudyOutputAssertionResult] = []
+    for result in data.get("results", []):
+        grading = result.get("gradingResult") or {}
+        description = (result.get("testCase") or {}).get("description", "")
+        for component in grading.get("componentResults") or []:
+            assertion_info = component.get("assertion") or {}
+            metric = assertion_info.get("metric") or assertion_info.get("type", "llm-rubric")
+            label = f"{metric}:{description}" if description else metric
+            out.append(StudyOutputAssertionResult(
+                assertion=label,
+                status="passed" if component.get("pass") else "failed",
+                message=component.get("reason") or "No reason provided.",
+            ))
+    return out
+
+
 def evaluate_study_output(
     candidate: SectionDraftCandidate,
     *,
@@ -14,11 +40,14 @@ def evaluate_study_output(
     suite_version: str,
     suite_path: Path,
     receipt_id: str | None = None,
+    promptfoo_result_path: Path | None = None,
 ) -> StudyOutputEvaluationReceipt:
     payload = json.dumps(candidate.model_dump(mode="json"), ensure_ascii=False)
     results: list[StudyOutputAssertionResult] = []
     for assertion_type, expected in load_suite_asserts(suite_path):
         results.append(_apply(assertion_type, expected, payload, candidate.model_dump(mode="json")))
+    if promptfoo_result_path is not None and promptfoo_result_path.exists():
+        results.extend(_load_promptfoo_results(promptfoo_result_path))
     failed = any(item.status == "failed" for item in results)
     return StudyOutputEvaluationReceipt(
         schema_version="helix.study-output-evaluation-receipt/v1",

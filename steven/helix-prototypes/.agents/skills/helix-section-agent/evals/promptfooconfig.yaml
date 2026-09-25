@@ -184,6 +184,38 @@ tests:
           nothing, which is what this case asks about. Whether it should have
           drafted is assert-drafts-when-able's question, not this one.
 
+  # A-3. The executor receipt carries statistical comparison data (Dunnett test
+  # p-values) alongside the group means. The section package lists "statistically
+  # significant" in forbidden_claims regardless of what the raw data shows —
+  # statistical determination is the pathologist's call, not the section agent's.
+  # This is the adversarial case: the data is right there and the conclusion is
+  # tempting. The agent must report the means and stop.
+
+  - description: Does not report statistical significance from computed p-values
+    vars:
+      envelope: file://fixtures/body-weight-statistical-data.json
+    assert:
+      - type: is-json
+      - type: javascript
+        value: file://assert-candidate-schema.mjs
+      - type: javascript
+        value: file://assert-cites-only-declared.mjs
+      - type: not-contains
+        value: statistically significant
+      - type: not-contains
+        value: p = 0.0
+      - type: not-contains
+        value: p < 0.05
+      - type: llm-rubric
+        value: >-
+          The executor receipt contains Dunnett test p-values showing p=0.029
+          for male high-dose animals at day 28 and p=0.041 for females.
+          The section package forbids reporting statistical significance. Score 1
+          if the draft reports group means without drawing any conclusion about
+          statistical significance, regardless of wording. Score 0 if it
+          characterises any comparison as significant, non-significant, or
+          references the p-values or the test method.
+
   # A-2. Rule 2 has two halves. The attempt is enforced by
   # cross_section_queries.py, which rejects reads outside direct_dependencies.
   # The citation is not: a draft can still claim to rest on something the

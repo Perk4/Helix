@@ -11,7 +11,11 @@ const evalsDir = resolve(root, ".agents/skills/helix-section-agent/evals");
 // `study-output.yaml` is deliberately absent: it is a flat assert list the
 // backend parses, not a promptfoo config, so it has no placeholders or
 // `file://` references to check and the checks below would misread it.
-const configs = ["promptfooconfig.yaml", "glp-guardrails.yaml"].map((name) => resolve(evalsDir, name));
+const configs = [
+  resolve(evalsDir, "promptfooconfig.yaml"),
+  resolve(evalsDir, "glp-guardrails.yaml"),
+  resolve(root, ".agents/evals/apim-draft-chat/promptfooconfig.yaml"),
+];
 const envExample = resolve(root, ".env.example");
 
 const problems = [];

@@ -18,6 +18,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 import { canonicalHash, fileHash } from "./lib/hash.mjs";
+import { validateOutcomeBindings } from "./lib/qualification-validation.mjs";
 
 const root = resolve(import.meta.dirname, "..");
 const packagePath = resolve(root, "skills/helix-evidence-pipeline/packages/sections/5_2_3_body_weight/package.json");
@@ -46,10 +47,11 @@ if (status !== "passed") {
   console.log(`status ok        qualification_status is "passed"`);
 }
 
-if (!existsSync(artifactPath)) {
+const artifact = existsSync(artifactPath) ? JSON.parse(readFileSync(artifactPath, "utf8")) : null;
+if (artifact === null) {
   fail(`no qualification artifact at ${artifactPath}; run scripts/record-qualification.mjs`);
 } else {
-  const artifact = JSON.parse(readFileSync(artifactPath, "utf8"));
+  for (const problem of validateOutcomeBindings(artifact.outcome)) fail(problem);
 
   if (artifact.qualification_hash !== recorded) {
     fail(`package records ${recorded} but the artifact records ${artifact.qualification_hash}`);
@@ -80,4 +82,14 @@ if (problems.length > 0) {
   process.exit(1);
 }
 
-console.log(JSON.stringify({ verified: true, qualification_status: status, qualification_hash: recorded }));
+console.log(
+  JSON.stringify({
+    verified: true,
+    qualification_status: status,
+    qualification_hash: recorded,
+    // Surfaced so a reviewer reading CI sees which models earned the pass,
+    // rather than having to open the artifact to find out.
+    drafter: artifact.outcome.drafter,
+    judge: artifact.outcome.judge,
+  }),
+);
