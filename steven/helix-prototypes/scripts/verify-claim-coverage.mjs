@@ -44,7 +44,10 @@ const countValues = (node) => {
 
 // Facts that describe the run rather than the section's content. Counting them
 // as cells would overstate what needs a claim behind it.
-const METADATA_KEYS = new Set(["recording_days", "duration_days", "unit", "groups", "grading_scale"]);
+// `statistical_comparisons` holds p-values from the analysis method, not body
+// weight measurements. Each p-value would otherwise count as a cell requiring
+// a claim, which is not the intent — the section reports means, not test stats.
+const METADATA_KEYS = new Set(["recording_days", "duration_days", "unit", "groups", "grading_scale", "statistical_comparisons"]);
 
 const envelopeFor = (sectionId) =>
   readdirSync(fixturesDir)
