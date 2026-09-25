@@ -16,7 +16,7 @@ import {
   runSectionAgent,
   runValidation,
 } from "@/lib/api";
-import type { ApprovalRole, PlannerMode, Workspace } from "@/lib/types";
+import type { ApprovalRole, JourneyStageId, PlannerMode, Workspace } from "@/lib/types";
 
 import { AgentStageView, isAgentStageId } from "./agent/AgentStageView";
 import { TraceabilityStageView } from "./traceability/TraceabilityStageView";
@@ -50,10 +50,27 @@ const releasePresentation: Record<ReleaseStatus, { label: string; tone: Tone }> 
 
 export function HelixWorkbench({ studyId }: Props) {
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
-  const { selectedStageId, select: selectStage } = useSelectedStage(workspace?.journey);
   const [planner, setPlanner] = useState<PlannerMode>("fixture");
   const [busy, setBusy] = useState<string | null>(null);
   const [agentBusy, setAgentBusy] = useState(false); // lane B: agent command in flight
+  // DH-1: follow the server stage while the agent works; auto-start once after a freeze.
+  const [agentStage, setAgentStage] = useState<JourneyStageId | null>(null);
+  const [autoStart, setAutoStart] = useState(false);
+  const {
+    selectedStageId,
+    select: selectStage,
+    followServer,
+  } = useSelectedStage(workspace?.journey, { active: agentBusy, stageId: agentStage });
+  const onFrozen = useCallback(() => {
+    followServer();
+    setAutoStart(true);
+  }, [followServer]);
+  const consumeAutoStart = useCallback(() => setAutoStart(false), []);
+  // The one-shot never outlives the freeze: if the server's stage after the freeze is not
+  // an agent stage, there is nothing to start and the request is dropped.
+  useEffect(() => {
+    if (autoStart && workspace && !isAgentStageId(selectedStageId)) setAutoStart(false);
+  }, [autoStart, workspace, selectedStageId]);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   // Lane C (#22): Gate 2 handlers live in the lane-C hook.
@@ -360,7 +377,12 @@ export function HelixWorkbench({ studyId }: Props) {
           >
             {/* Stage-to-view switch: one small block per lane. */}
             {selectedStageId === "upload" && (
-              <UploadGate workspace={workspace} onRefresh={refresh} onKeepView={() => selectStage("upload")}>
+              <UploadGate
+                workspace={workspace}
+                onRefresh={refresh}
+                onKeepView={() => selectStage("upload")}
+                onFrozen={onFrozen}
+              >
                 <IntakeUploadForm />
               </UploadGate>
             )}
@@ -381,6 +403,9 @@ export function HelixWorkbench({ studyId }: Props) {
                 onWorkspace={setWorkspace}
                 otherBusy={busy !== null || agentBusy}
                 onBusyChange={setAgentBusy}
+                onInFlightStage={setAgentStage}
+                autoStart={autoStart}
+                onAutoStartConsumed={consumeAutoStart}
               />
             )}
             {selectedStageId === "review-export" && (

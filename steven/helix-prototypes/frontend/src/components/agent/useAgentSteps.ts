@@ -41,6 +41,11 @@ type Options = {
    * itself, not an effect, so it stays true if this view unmounts mid-command.
    */
   onBusyChange?: (busy: boolean) => void;
+  /**
+   * DH-1: reports the stage of the governed command in flight (null when none), so the
+   * workbench can follow the server stage while the agent works.
+   */
+  onInFlightStage?: (stageId: AgentStep["stageId"] | null) => void;
 };
 
 const CONFIRMED_KEY = "helix.agent-dv-confirmed.v1";
@@ -65,19 +70,30 @@ export function messageFrom(cause: unknown): string {
   return "The request failed.";
 }
 
-export function useAgentSteps({ studyId, workspace, onWorkspace, onBusyChange }: Options) {
+export function useAgentSteps({ studyId, workspace, onWorkspace, onBusyChange, onInFlightStage }: Options) {
   const [planner, setPlanner] = useState<PlannerMode>("fixture");
   const [inFlight, setInFlight] = useState<AgentStep | null>(null);
   const [message, setMessage] = useState<AgentMessage | null>(null);
   const [receipts, setReceipts] = useState<AgentReceipts>({});
   const [eligibilityChange, setEligibilityChange] = useState<EligibilityChange | null>(null);
   const [confirmed, setConfirmed] = useState<Set<string>>(() => new Set());
+  // DH-1: a running sequence and a pending operator stop. The stop is honoured before the
+  // next governed command; the command already sent to the server always settles.
+  const [sequenceRunning, setSequenceRunning] = useState(false);
+  const [stopRequested, setStopRequested] = useState(false);
+  const stopRef = useRef(false);
   const confirmedRef = useRef<Set<string>>(new Set());
   // Set synchronously before any await, so a double click cannot start a second command
   // or sequence before React re-renders the disabled button.
   const runningRef = useRef(false);
   const onBusyChangeRef = useRef(onBusyChange);
   onBusyChangeRef.current = onBusyChange;
+  const onInFlightStageRef = useRef(onInFlightStage);
+  onInFlightStageRef.current = onInFlightStage;
+  const inFlightStage = inFlight?.stageId ?? null;
+  useEffect(() => {
+    onInFlightStageRef.current?.(inFlightStage);
+  }, [inFlightStage]);
 
   const begin = useCallback((): boolean => {
     if (runningRef.current) return false;
@@ -196,6 +212,9 @@ export function useAgentSteps({ studyId, workspace, onWorkspace, onBusyChange }:
   const runSequence = useCallback(async () => {
     if (!begin()) return;
     setMessage(null);
+    stopRef.current = false;
+    setStopRequested(false);
+    setSequenceRunning(true);
     let current: AgentStep | null = null;
     try {
       const stop = await runAgentSequence(studyId, planner, {
@@ -207,6 +226,7 @@ export function useAgentSteps({ studyId, workspace, onWorkspace, onBusyChange }:
         },
         onReceipt: record,
         options,
+        shouldStop: () => stopRef.current,
       });
       if (stop) setMessage({ tone: "info", text: stop.message });
     } catch (cause) {
@@ -221,9 +241,17 @@ export function useAgentSteps({ studyId, workspace, onWorkspace, onBusyChange }:
         text: `${label ? `${label} failed. ` : ""}${messageFrom(cause)} The agent stopped; later steps did not run.`,
       });
     } finally {
+      stopRef.current = false;
+      setStopRequested(false);
+      setSequenceRunning(false);
       end();
     }
   }, [begin, end, refresh, studyId, planner, record, options]);
+
+  const stop = useCallback(() => {
+    stopRef.current = true;
+    setStopRequested(true);
+  }, []);
 
   return {
     planner,
@@ -236,5 +264,8 @@ export function useAgentSteps({ studyId, workspace, onWorkspace, onBusyChange }:
     next: nextAgentStep(workspace, { confirmedDataValidationRuns: confirmed }),
     runStep: () => void runStep(),
     runSequence: () => void runSequence(),
+    sequenceRunning,
+    stopRequested,
+    stop,
   };
 }

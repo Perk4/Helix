@@ -338,7 +338,18 @@ export type SequenceHooks = {
   onReceipt?: (agentStep: AgentStep, receipt: AgentStepReceipt, before: Workspace, after: Workspace) => void;
   /** Read before each decision, so a replay confirmed mid-sequence is honoured. */
   options?: () => NextStepOptions;
+  /**
+   * DH-1: read before each decision. When it returns true the sequence ends before the
+   * next governed command; a command already sent to the server is never cancelled.
+   */
+  shouldStop?: () => boolean;
 };
+
+/** DH-1: the operator stopped the sequence between governed commands. */
+export type OperatorStop = { kind: "operator-stop"; message: string };
+
+export const OPERATOR_STOP_MESSAGE =
+  "You stopped the agent. The last command finished on the server; no later step ran.";
 
 /**
  * Run governed commands in order until the agent must stop. Each command waits for
@@ -350,11 +361,14 @@ export async function runAgentSequence(
   planner: PlannerMode,
   hooks: SequenceHooks,
   maxSteps = 9,
-): Promise<AgentStop | null> {
+): Promise<AgentStop | OperatorStop | null> {
   let workspace = await hooks.fetchWorkspace();
   hooks.onWorkspace(workspace);
   try {
     for (let index = 0; index < maxSteps; index += 1) {
+      if (hooks.shouldStop?.()) {
+        return { kind: "operator-stop", message: OPERATOR_STOP_MESSAGE };
+      }
       const next = nextAgentStep(workspace, hooks.options?.());
       if (!isAgentStep(next)) {
         return next;
