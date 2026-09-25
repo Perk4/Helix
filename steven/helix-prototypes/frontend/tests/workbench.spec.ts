@@ -450,6 +450,38 @@ test("renders the exact Final Study Approval scope from the workspace", async ({
   await expect(page.getByText("FDA approved")).toHaveCount(0);
 });
 
+test("labels every approved export artifact kind instead of showing raw kinds", async ({ page }) => {
+  // The backend sets export_artifacts to these kinds once a release candidate exists
+  // (service.py, approved_exports.py); SLICE 11 labels them for the reviewer.
+  const labels: Record<string, string> = {
+    pinned_run: "Pinned run manifest",
+    data_validation_receipt: "Data validation receipt",
+    section_draft_candidate: "Section draft candidate",
+    section_draft: "Section draft",
+  };
+  await page.route("**/api/v1/studies/*/workspace", async (route) => {
+    const response = await route.fetch();
+    const workspace = (await response.json()) as { export_artifacts: Array<Record<string, unknown>> };
+    const template = workspace.export_artifacts[0];
+    workspace.export_artifacts = Object.keys(labels).map((kind, index) => ({
+      ...template,
+      artifact_id: `ART-${kind.toUpperCase()}`,
+      kind,
+      path: `exports/approved/${index + 1}.json`,
+      status: index % 2 === 0 ? "exported" : "pending",
+      checksum: index % 2 === 0 ? INJECTED_HASH : null,
+    }));
+    await route.fulfill({ status: response.status(), contentType: "application/json", body: JSON.stringify(workspace) });
+  });
+
+  await page.goto("/");
+  const names = page.locator(".export-card .artifact-list strong");
+  await expect(names).toHaveText(Object.values(labels));
+  for (const kind of Object.keys(labels)) {
+    await expect(page.locator(".export-card").getByText(kind, { exact: true })).toHaveCount(0);
+  }
+});
+
 test("renders backend promotion status and draft evidence without recalculating eligibility", async ({
   page,
 }) => {

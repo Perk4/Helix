@@ -650,6 +650,10 @@ function approvalDetail(role: ApprovalRole): string {
 function artifactLabel(kind: string): string {
   return (
     {
+      pinned_run: "Pinned run manifest",
+      data_validation_receipt: "Data validation receipt",
+      section_draft_candidate: "Section draft candidate",
+      section_draft: "Section draft",
       study_report_pdf: "Study report PDF",
       send_dataset_package: "Illustrative dataset archive",
       define_xml: "Illustrative define.xml",
