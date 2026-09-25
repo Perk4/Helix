@@ -69,8 +69,18 @@ test("generate, chat apply and discard, and verify all work from Gate 3 against 
   );
   await page.goto("/");
   const drafts = page.getByTestId("review-drafts-body");
-  const sectionId = decodeURIComponent(new URL((await firstDraft).url()).pathname.split("/").at(-2) ?? "");
+  const firstId = decodeURIComponent(new URL((await firstDraft).url()).pathname.split("/").at(-2) ?? "");
+  // Work on 5.3.2 Macroscopic Observations so the shared live DB keeps 5.2.3 Body Weight
+  // "needs review" for the other specs (e.g. the review-banner note test in traceability-gate).
+  const macroDraft = page.waitForResponse((response) => {
+    const path = new URL(response.url()).pathname;
+    return /\/sections\/[^/]+\/draft$/.test(path) && response.request().method() === "GET" && !path.includes(`/sections/${firstId}/`);
+  });
+  await drafts.getByRole("complementary", { name: "Report sections" }).getByRole("button", { name: /5\.3\.2 Macroscopic/ }).click();
+  const sectionId = decodeURIComponent(new URL((await macroDraft).url()).pathname.split("/").at(-2) ?? "");
   expect(sectionId).not.toBe("");
+  expect(sectionId).not.toBe(firstId);
+  await expect(drafts.locator(".report-paper-header h3")).toContainText("5.3.2 Macroscopic");
 
   // Generate (Regenerate) from Gate 3 writes a new draft; it stays honestly marked "needs review".
   await expect(drafts.getByTestId("generate-draft")).toHaveText(/Regenerate|Generate draft/);
