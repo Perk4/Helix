@@ -90,8 +90,8 @@ export function SignOffs({
             Final Study Approval (hash-bound)
           </ListRow>
           <div className="hx-signoff-detail">
-            <span className="hx-mono" data-testid="fsa-manifest-hash">
-              {workspace.final_study_approval?.manifest_hash ?? workspace.release_candidate?.content_hash ?? "No release candidate yet"}
+            <span className="hx-sub" data-testid="fsa-manifest-hash">
+              {workspace.release_candidate ? "Binds the exact hashes below." : "No release candidate yet"}
             </span>
             {!fsaCurrent && (
               <Button
