@@ -38,6 +38,8 @@ type Props = {
    */
   autoStart?: boolean;
   onAutoStartConsumed?: () => void;
+  /** Shown by the workbench: the view moves to the gate, so this stage unmounts. */
+  onGateStop?: (message: string) => void;
 };
 
 const CHIP: Record<JourneyStage["status"], [string, Tone]> = {
@@ -60,12 +62,14 @@ export function AgentStageView({
   onBusyChange,
   autoStart = false,
   onAutoStartConsumed,
+  onGateStop,
 }: Props) {
   const agent = useAgentSteps({
     studyId,
     workspace,
     onWorkspace,
     onBusyChange,
+    onGateStop,
   });
   const stage = workspace.journey.stages.find((item) => item.stage_id === stageId);
 
