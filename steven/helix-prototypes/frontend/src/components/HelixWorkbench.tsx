@@ -246,6 +246,9 @@ export function HelixWorkbench({ studyId }: Props) {
     setNotice(null);
     setError(null);
     const next = await recordDisposition(studyId, resultId, command);
+    // Keep the reviewer on Gate 2 to see the recorded disposition; only Continue
+    // (or the Progress Bar) moves the view once the server reports Review reached.
+    selectStage("traceability");
     setWorkspace(next);
     setNotice(`Disposition recorded for ${resultId}. The blocker stays listed as a disposition.`);
     return next;
