@@ -192,6 +192,9 @@ test("records one role per call in any order; study director waits for the three
   await page.goto("/");
   const director = page.getByTestId("approve-study_director");
   await expect(director).toBeDisabled();
+  // The reason is visible text tied to the button, not a tooltip.
+  await expect(page.getByTestId("signoff-hint-study_director")).toHaveText("Unlocks after the three sign-offs above.");
+  await expect(director).toHaveAttribute("aria-describedby", "hx-hint-study_director");
   await expect(page.getByTestId("export-final-package")).toBeDisabled();
   // Non-canonical order on purpose.
   for (const role of ["qau", "pathologist", "peer_reviewer"]) {
@@ -230,7 +233,8 @@ test("a server-refused approval shows the server detail and leaves the sign-off 
   );
   await page.goto("/");
   await page.getByTestId("approve-pathologist").click();
-  await expect(page.getByTestId("review-message")).toContainText(String(fx.director_first_error.body.detail));
+  await expect(page.getByTestId("signoff-error-pathologist")).toContainText(String(fx.director_first_error.body.detail));
+  await expect(page.getByTestId("signoff-error-pathologist")).toHaveAttribute("role", "alert");
   await expect(page.getByTestId("signoff-pathologist")).toHaveAttribute("data-signed", "false");
   expect(fx.director_first_error.status).toBe(409);
 });

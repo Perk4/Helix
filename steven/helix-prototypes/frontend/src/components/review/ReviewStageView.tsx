@@ -37,7 +37,9 @@ export function ReviewStageView({
       "",
   );
   const [busy, setBusy] = useState<string | null>(null);
-  const [message, setMessage] = useState<{ tone: "info" | "block"; text: string } | null>(null);
+  // Successes are announced politely; refusals render next to the control that caused them.
+  const [announcement, setAnnouncement] = useState("");
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [exportState, setExportState] = useState<ExportState>({ kind: "idle" });
 
   const section = sections.find((item) => item.section_id === selectedId) ?? sections[0];
@@ -51,13 +53,14 @@ export function ReviewStageView({
 
   async function approve(role: ApprovalRole) {
     setBusy(role);
-    setMessage(null);
+    setAnnouncement("");
+    setErrors({});
     try {
       // Records exactly one role. Never exports.
       onWorkspace(await recordApproval(studyId, role));
-      setMessage({ tone: "info", text: `${APPROVAL_POLICY[role].label} recorded in the synthetic audit trail.` });
+      setAnnouncement(`${APPROVAL_POLICY[role].label} signed.`);
     } catch (cause) {
-      setMessage({ tone: "block", text: messageFrom(cause) });
+      setErrors({ [role]: messageFrom(cause) });
     } finally {
       setBusy(null);
     }
@@ -65,13 +68,14 @@ export function ReviewStageView({
 
   async function approveFinalStudy() {
     setBusy("final-study-approval");
-    setMessage(null);
+    setAnnouncement("");
+    setErrors({});
     try {
       const key = `workbench-${studyId}-fsa-${workspace.release_candidate?.content_hash?.slice(-12) ?? "pending"}`;
       onWorkspace(await recordFinalStudyApproval(studyId, key));
-      setMessage({ tone: "info", text: "Final Study Approval recorded for the exact release-candidate hashes." });
+      setAnnouncement("Final Study Approval signed for the files listed.");
     } catch (cause) {
-      setMessage({ tone: "block", text: messageFrom(cause) });
+      setErrors({ "final-study-approval": messageFrom(cause) });
     } finally {
       setBusy(null);
     }
@@ -79,7 +83,8 @@ export function ReviewStageView({
 
   async function performExport() {
     setExportState({ kind: "loading" });
-    setMessage(null);
+    setAnnouncement("");
+    setErrors({});
     try {
       const receipt = await exportPackage(studyId);
       setExportState({ kind: "success", receipt });
@@ -93,11 +98,9 @@ export function ReviewStageView({
     <div className="stack" data-testid="review-stage" data-gate-status={gateStatus ?? undefined}>
       <GateBanner gateNumber={3} passed={passed} title="Review sections, sign and export" right={hint} data-testid="review-gate-banner" />
       <DemoBanner workspace={workspace} />
-      {message && (
-        <div className={`hx-notice t-${message.tone}`} role="status" data-testid="review-message">
-          <span>{message.text}</span>
-        </div>
-      )}
+      <p className="hx-visually-hidden" aria-live="polite" data-testid="review-message">
+        {announcement}
+      </p>
       {section ? (
         <div className="g-review">
           <SectionList workspace={workspace} selectedId={section.section_id} onSelect={setSelectedId} />
@@ -108,6 +111,7 @@ export function ReviewStageView({
               busy={busy ?? (exportState.kind === "loading" ? "export" : null)}
               onApprove={(role) => void approve(role)}
               onFinalStudyApproval={() => void approveFinalStudy()}
+              errors={errors}
             />
             <ExportPanel workspace={workspace} state={exportState} onExport={() => void performExport()} />
           </Card>
@@ -128,5 +132,5 @@ export function ReviewStageView({
 
 function messageFrom(cause: unknown): string {
   if (cause instanceof ApiError || cause instanceof Error) return cause.message;
-  return "An unexpected review error occurred.";
+  return "Something went wrong. Nothing was signed. Try again.";
 }

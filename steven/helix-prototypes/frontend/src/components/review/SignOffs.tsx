@@ -18,9 +18,12 @@ export function SignOffs({
   busy,
   onApprove,
   onFinalStudyApproval,
+  errors = {},
 }: {
   workspace: Workspace;
   busy: string | null;
+  /** Server refusals keyed by role (or "final-study-approval"), shown next to that control. */
+  errors?: Record<string, string>;
   onApprove: (role: ApprovalRole) => void;
   onFinalStudyApproval: () => void;
 }) {
@@ -28,6 +31,12 @@ export function SignOffs({
   const priorsDone = priorApprovalsRecorded(workspace);
   const directorRecorded = latestApproval(workspace, "study_director") !== null;
   const fsaCurrent = workspace.approval_current;
+  const fsaHint =
+    fsaCurrent || !workspace.release_candidate
+      ? null
+      : !directorRecorded
+        ? "Unlocks after the study director signs."
+        : null;
   return (
     <div className="stack" data-testid="sign-offs">
       <div>
@@ -69,7 +78,7 @@ export function SignOffs({
                   <Button
                     size="sm"
                     disabled={busy !== null || blockedByOrder}
-                    title={blockedByOrder ? "Needs pathologist, peer reviewer, and QAU approvals first" : undefined}
+                    aria-describedby={blockedByOrder ? `hx-hint-${role}` : undefined}
                     onClick={() => onApprove(role)}
                     data-testid={`approve-${role}`}
                   >
@@ -77,6 +86,16 @@ export function SignOffs({
                   </Button>
                 )}
               </div>
+              {!approval && blockedByOrder && (
+                <p id={`hx-hint-${role}`} className="hx-sub hx-signoff-hint" data-testid={`signoff-hint-${role}`}>
+                  Unlocks after the three sign-offs above.
+                </p>
+              )}
+              {errors[role] && (
+                <p className="hx-notice t-block hx-signoff-error" role="alert" data-testid={`signoff-error-${role}`}>
+                  {errors[role]}
+                </p>
+              )}
             </div>
           );
         })}
@@ -99,6 +118,7 @@ export function SignOffs({
               <Button
                 size="sm"
                 disabled={busy !== null || !directorRecorded || !workspace.release_candidate}
+                aria-describedby={fsaHint ? "hx-hint-final-study-approval" : undefined}
                 onClick={onFinalStudyApproval}
                 data-testid="approve-final-study"
               >
@@ -106,6 +126,16 @@ export function SignOffs({
               </Button>
             )}
           </div>
+          {fsaHint && (
+            <p id="hx-hint-final-study-approval" className="hx-sub hx-signoff-hint" data-testid="signoff-hint-final-study-approval">
+              {fsaHint}
+            </p>
+          )}
+          {errors["final-study-approval"] && (
+            <p className="hx-notice t-block hx-signoff-error" role="alert" data-testid="signoff-error-final-study-approval">
+              {errors["final-study-approval"]}
+            </p>
+          )}
           {workspace.release_candidate && (
             // Scope of the hash-bound record: the exact release-candidate manifest and artifact
             // hashes (the recorded approval's copy once it exists). Each full hash stays in the
