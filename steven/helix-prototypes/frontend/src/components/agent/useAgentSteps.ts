@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { ApiError, getWorkspace } from "@/lib/api";
+import { ApiError, getWorkspace, reviseSection, runSectionAgent } from "@/lib/api";
 import {
   BODY_WEIGHT_SECTION,
   executeAgentStep,
@@ -15,6 +15,8 @@ import {
 } from "@/lib/api/agentSteps";
 import { streamRunEvents } from "@/lib/runEvents";
 import type { PlannerMode, Workspace } from "@/lib/types";
+
+import { humanDecisions, type HumanDecision, type HumanDecisionId } from "./humanDecisions";
 
 // Lane B (#21). The Agent Step command handlers, kept out of the shared workbench.
 // The server is the authority: every decision reads a freshly fetched Workspace, one
@@ -68,6 +70,7 @@ export function messageFrom(cause: unknown): string {
 export function useAgentSteps({ studyId, workspace, onWorkspace, onBusyChange }: Options) {
   const [planner, setPlanner] = useState<PlannerMode>("fixture");
   const [inFlight, setInFlight] = useState<AgentStep | null>(null);
+  const [humanInFlight, setHumanInFlight] = useState<HumanDecision | null>(null);
   const [message, setMessage] = useState<AgentMessage | null>(null);
   const [receipts, setReceipts] = useState<AgentReceipts>({});
   const [eligibilityChange, setEligibilityChange] = useState<EligibilityChange | null>(null);
@@ -143,7 +146,7 @@ export function useAgentSteps({ studyId, workspace, onWorkspace, onBusyChange }:
   const cursor = workspace.journey.run?.latest_event_id ?? null;
   const cursorRef = useRef(cursor);
   cursorRef.current = cursor;
-  const following = Boolean(inFlight);
+  const following = Boolean(inFlight || humanInFlight);
   useEffect(() => {
     if (!following || !runId) return;
     const controller = new AbortController();
@@ -242,10 +245,62 @@ export function useAgentSteps({ studyId, workspace, onWorkspace, onBusyChange }:
     setStopRequested(true);
   }, []);
 
+  // DH-2 (#66): a person's Draft-stage decision (retry, revise, first attempt in a new cycle),
+  // formerly offered only by the legacy StudyJourney. Same one-command lock as the agent, and
+  // availability is re-read from a fresh Workspace before anything is sent.
+  const runHumanDecision = useCallback(
+    async (id: HumanDecisionId) => {
+      if (!begin()) return;
+      setMessage(null);
+      let chosen: HumanDecision | null = null;
+      try {
+        const before = await refresh();
+        chosen = humanDecisions(studyId, before).find((item) => item.id === id) ?? null;
+        if (!chosen) {
+          setMessage({ tone: "info", text: "The server no longer offers that decision; nothing was sent." });
+          return;
+        }
+        setHumanInFlight(chosen);
+        if (chosen.id === "revise") {
+          const receipt = await reviseSection(studyId, chosen.idempotencyKey);
+          await refresh();
+          setMessage({
+            tone: "info",
+            text: `${receipt.cycle.cycle_id} opened from ${receipt.cycle.predecessor_cycle_id ?? "no predecessor"}.`,
+          });
+        } else {
+          const receipt = await runSectionAgent(studyId, chosen.idempotencyKey);
+          const after = await refresh();
+          record(
+            { action: "section-run", stageId: "draft", label: chosen.label },
+            { action: "section-run", value: receipt },
+            before,
+            after,
+          );
+          setMessage({ tone: "info", text: `${chosen.label}: ${receipt.candidate_id} recorded by the server.` });
+        }
+      } catch (cause) {
+        try {
+          await refresh();
+        } catch {
+          // Keep the last server state; the error below explains what failed.
+        }
+        setMessage({ tone: "block", text: `${chosen ? `${chosen.label} failed. ` : ""}${messageFrom(cause)}` });
+      } finally {
+        setHumanInFlight(null);
+        end();
+      }
+    },
+    [begin, end, refresh, studyId, record],
+  );
+
   return {
     planner,
     setPlanner,
     inFlight,
+    humanInFlight,
+    humanDecisions: humanDecisions(studyId, workspace),
+    runHumanDecision: (id: HumanDecisionId) => void runHumanDecision(id),
     message,
     dismissMessage: () => setMessage(null),
     receipts,

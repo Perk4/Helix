@@ -87,7 +87,7 @@ export function AgentStageView({
 
   const { next, inFlight } = agent;
   const actionable = stage.status === "current" || stage.status === "blocked";
-  const busy = Boolean(inFlight) || otherBusy;
+  const busy = Boolean(inFlight) || Boolean(agent.humanInFlight) || otherBusy;
   const llm = workspace.planner_capabilities.find((item) => item.mode === "openai_compatible");
   const [chipText, chipTone] = inFlight?.stageId === stage.stage_id ? (["Running", "accent"] as const) : CHIP[stage.status];
 
@@ -210,6 +210,26 @@ export function AgentStageView({
               >
                 {agent.stopRequested ? "Stopping after this step…" : "Stop agent"}
               </Button>
+            </div>
+          )}
+          {stage.stage_id === "draft" && agent.humanDecisions.length > 0 && (
+            // DH-2 (#66): the Draft-stage decisions the agent stops at, offered here instead of
+            // the legacy StudyJourney panel. Shown on the Draft stage whatever its server status,
+            // because the server reports Draft complete once validation passes.
+            <div className="hx-agent-commands" data-testid="agent-human-decisions">
+              <p className="hx-stage-note">
+                <PersonIcon size={16} /> Human decision. The agent never retries, revises or opens a cycle on its own.
+              </p>
+              {agent.humanDecisions.map((decision) => (
+                <Button
+                  key={decision.id}
+                  disabled={busy}
+                  onClick={() => agent.runHumanDecision(decision.id)}
+                  data-testid={`agent-human-${decision.id}`}
+                >
+                  {agent.humanInFlight?.id === decision.id ? `${decision.label}…` : decision.label}
+                </Button>
+              ))}
             </div>
           )}
           {!actionable && stage.status === "complete" && (
