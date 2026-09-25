@@ -31,10 +31,8 @@ export function buildSteps(chain: EvidenceChainData, evaluation: CandidateEvalua
   const first = sources.at(0);
   const last = sources.at(-1);
   const authority = chain.lineage?.at(0)?.authority_tier;
-  const hashes = chain.source_hashes?.length ? chain.source_hashes : (claim.source_hashes ?? []);
-  const ruleVersions = Object.entries(chain.rule_versions ?? claim.rule_versions ?? {})
-    .map(([rule, version]) => `${rule}@${version}`)
-    .join(" · ");
+  const hashes = sourceHashes(chain);
+  const ruleVersions = ruleVersionList(chain).join(" · ");
   const bindings = evaluation?.provenance_receipt.bindings.filter((binding) => binding.claim_id === claim.claim_id) ?? [];
   const conformance = evaluation?.template_conformance_receipt;
 
@@ -137,4 +135,18 @@ export function displayGrain(grain: string): string {
 
 export function formatNumber(value: number): string {
   return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(value);
+}
+
+/** Source hashes the server returned: the chain's, else the claim's, else the lineage edges'. */
+export function sourceHashes(chain: EvidenceChainData): string[] {
+  if (chain.source_hashes?.length) return chain.source_hashes;
+  if (chain.claim.source_hashes?.length) return chain.claim.source_hashes;
+  return [...new Set((chain.lineage ?? []).map((edge) => edge.source_hash).filter((hash): hash is string => Boolean(hash)))];
+}
+
+/** Rule versions the server returned: the chain's map, else the claim's, else each attached result's. */
+export function ruleVersionList(chain: EvidenceChainData): string[] {
+  const map = Object.keys(chain.rule_versions ?? {}).length ? chain.rule_versions : chain.claim.rule_versions;
+  if (map && Object.keys(map).length > 0) return Object.entries(map).map(([rule, version]) => `${rule}@${version}`);
+  return [...new Set(chain.validations.map((result) => `${result.rule_id}@${result.rule_version}`))];
 }

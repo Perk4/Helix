@@ -72,6 +72,9 @@
   color: var(--hx-ink-2);
 }
 
+/* Collapsed rows keep their panel (aria-controls target) but hidden. */
+#helix-e2e .hx-acc-panel[hidden] { display: none; }
+
 /* Lane C (#22) view layout. Reference values from research/helix-e2e-workbench-v1.html
    viewTrace inline styles; tokens only, no new design system. */
 #helix-e2e .hx-trace-head { display: flex; justify-content: space-between; align-items: flex-end; gap: var(--hx-sp-24); flex-wrap: wrap; }

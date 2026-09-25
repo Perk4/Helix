@@ -1,7 +1,7 @@
 import type { EvidenceChainData } from "@/lib/types";
 
 import { Card, DataTable, Kicker } from "../ui";
-import { displayGrain, formatNumber, shortHash } from "./TraceFlow";
+import { displayGrain, formatNumber, ruleVersionList, shortHash, sourceHashes } from "./TraceFlow";
 
 // Lane C (#22). The full `getEvidence` record for the selected claim: source rows,
 // recomputation, transform and versions, hashes, report text, and lineage edges.
@@ -11,8 +11,8 @@ type Edge = NonNullable<EvidenceChainData["lineage"]>[number];
 
 export function ClaimEvidence({ chain }: { chain: EvidenceChainData }) {
   const { claim } = chain;
-  const hashes = chain.source_hashes?.length ? chain.source_hashes : (claim.source_hashes ?? []);
-  const versions = Object.entries(chain.rule_versions ?? {});
+  const hashes = sourceHashes(chain);
+  const versions = ruleVersionList(chain);
   return (
     <Card stack aria-labelledby="hx-evidence-h" data-testid="claim-evidence">
       <div>
@@ -49,7 +49,7 @@ export function ClaimEvidence({ chain }: { chain: EvidenceChainData }) {
         </div>
         <div>
           <dt>Rule versions</dt>
-          <dd className="hx-mono">{versions.length > 0 ? versions.map(([rule, version]) => `${rule}@${version}`).join(" · ") : "None"}</dd>
+          <dd className="hx-mono">{versions.length > 0 ? versions.join(" · ") : "None"}</dd>
         </div>
         <div>
           <dt>Report text</dt>
