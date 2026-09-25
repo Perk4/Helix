@@ -369,6 +369,12 @@ def test_route_returns_typed_status_for_upstream_4xx(
         llm_model="gpt-6-luna",
     )
     with TestClient(create_app(settings, create_database_engine(settings))) as client:
+        # Lane A gate: validation requires an audited human freeze (pinned run) first.
+        frozen = client.post(
+            "/api/v1/studies/STUDY-HLX-028/pinned-runs",
+            json={"actor": "Dr. Study Owner", "idempotency_key": f"planner-4xx-freeze-{upstream}"},
+        )
+        assert frozen.status_code == 201, frozen.text
         response = client.post(
             "/api/v1/studies/STUDY-HLX-028/validation-runs", json={"planner": "openai_compatible"}
         )
