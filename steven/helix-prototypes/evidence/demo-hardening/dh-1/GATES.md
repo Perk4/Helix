@@ -17,3 +17,12 @@ Screenshots in this folder come from `tests/dh1-auto-run.spec.ts`.
 - The Gate 2 stop message is shown as the workbench notice after the view moves to Traceability.
 - Gates at this tip: hermetic DH-1, upload-gate, agent-steps and journey-progress specs 80/80 with `--repeat-each=2`; qualified `verify-live.sh` 86 passed, three runs in a row (`verify-live-qualified.log`); shipped `verify-live.sh` fails only the two base-red tests (`verify-live-shipped.log`); pytest 84 failures and ruff 5, both identical to base; `tsc --noEmit` clean.
 - New screenshot: `freeze-reload-needed.png`.
+
+## Merge of base 3590d47a (after #40 and #37 DH-4 phase 1)
+
+- Conflict was one hunk in `HelixWorkbench.tsx`. I kept #37's Gate 3 `draftsBody` (ReportAssembly and ChatDock inside `ReviewStageView`) and passed it `onRefresh={refreshQuietly}`. The l8Aj5 reload retry, the Gate 2 stop notice and this file's ruff count are unchanged on top.
+- `tsc --noEmit`: clean. `next build`: runs inside every verify-live below.
+- verify-live, same ports and dist, base `3590d47a` compared with tip (logs and passed-test lists are in `merge-3590d47a/`):
+  - Flag OFF (`HELIX_DEMO_UNQUALIFIED_PACKAGES` unset): base 90 passed and 2 failed, tip 92 passed and the same 2 failed (the full synthetic flow and predecessor-run tests, which also fail on base).
+  - Flag ON (`HELIX_DEMO_UNQUALIFIED_PACKAGES=1`): base 92 passed and 0 failed, tip 94 passed and 0 failed.
+- No functional loss: every test that passes on base also passes on the tip, in both modes. The only gains are the 2 new `dh1-auto-run` reload-failure tests.
