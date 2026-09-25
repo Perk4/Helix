@@ -52,6 +52,7 @@ export function HelixWorkbench({ studyId }: Props) {
   const { selectedStageId, select: selectStage } = useSelectedStage(workspace?.journey);
   const [planner, setPlanner] = useState<PlannerMode>("fixture");
   const [busy, setBusy] = useState<string | null>(null);
+  const [agentBusy, setAgentBusy] = useState(false); // lane B: agent command in flight
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   // Lane C (#22): Gate 2 handlers live in the lane-C hook.
@@ -376,7 +377,8 @@ export function HelixWorkbench({ studyId }: Props) {
                 workspace={workspace}
                 stageId={selectedStageId}
                 onWorkspace={setWorkspace}
-                otherBusy={busy !== null}
+                otherBusy={busy !== null || agentBusy}
+                onBusyChange={setAgentBusy}
               />
             )}
             {/* Lanes B, C and D replace these legacy panels with their stage views. Until
@@ -391,6 +393,7 @@ export function HelixWorkbench({ studyId }: Props) {
               queryBusy={busy === "cross-section-query"}
               promotionBusy={busy === "section-promotion"}
               revisionBusy={busy === "section-revision"}
+              agentBusy={agentBusy}
               onPlannerChange={setPlanner}
               onValidate={() => void validate()}
               onExecuteBodyWeight={() => void executeBodyWeight()}

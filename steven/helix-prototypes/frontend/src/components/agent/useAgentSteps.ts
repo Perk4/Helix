@@ -18,7 +18,7 @@ import type { PlannerMode, Workspace } from "@/lib/types";
 
 // Lane B (#21). The Agent Step command handlers, kept out of the shared workbench.
 // The server is the authority: every decision reads a freshly fetched Workspace, one
-// command runs at a time, and a failure stops the sequence. While a command is in
+// command runs at a time (shared with the legacy controls via onBusyChange), and a failure stops the sequence. While a command is in
 // flight the hook follows #25's run-event stream for the Pinned Run and refreshes the
 // Workspace on each server event, so activity rows come from the projection, never
 // from local progress. Nothing here runs on a timer.
@@ -35,6 +35,12 @@ type Options = {
   studyId: string;
   workspace: Workspace;
   onWorkspace: (workspace: Workspace) => void;
+  /**
+   * Reports whether an agent command is in flight, so the workbench can disable the legacy
+   * StudyJourney controls (one command at a time across both). Called from the command
+   * itself, not an effect, so it stays true if this view unmounts mid-command.
+   */
+  onBusyChange?: (busy: boolean) => void;
 };
 
 const CONFIRMED_KEY = "helix.agent-dv-confirmed.v1";
@@ -59,7 +65,7 @@ export function messageFrom(cause: unknown): string {
   return "The request failed.";
 }
 
-export function useAgentSteps({ studyId, workspace, onWorkspace }: Options) {
+export function useAgentSteps({ studyId, workspace, onWorkspace, onBusyChange }: Options) {
   const [planner, setPlanner] = useState<PlannerMode>("fixture");
   const [inFlight, setInFlight] = useState<AgentStep | null>(null);
   const [message, setMessage] = useState<AgentMessage | null>(null);
@@ -67,6 +73,42 @@ export function useAgentSteps({ studyId, workspace, onWorkspace }: Options) {
   const [eligibilityChange, setEligibilityChange] = useState<EligibilityChange | null>(null);
   const [confirmed, setConfirmed] = useState<Set<string>>(() => new Set());
   const confirmedRef = useRef<Set<string>>(new Set());
+  // Set synchronously before any await, so a double click cannot start a second command
+  // or sequence before React re-renders the disabled button.
+  const runningRef = useRef(false);
+  const onBusyChangeRef = useRef(onBusyChange);
+  onBusyChangeRef.current = onBusyChange;
+
+  const begin = useCallback((): boolean => {
+    if (runningRef.current) return false;
+    runningRef.current = true;
+    onBusyChangeRef.current?.(true);
+    return true;
+  }, []);
+  const end = useCallback(() => {
+    runningRef.current = false;
+    onBusyChangeRef.current?.(false);
+  }, []);
+
+  // Last-wins Workspace refreshes. Every fetch this hook starts (commands and run events)
+  // takes a sequence number, and a response is shown only if no newer fetch was shown, so a
+  // slow older projection never overwrites a newer one. Decisions always use the fetch's
+  // own result.
+  const issuedRef = useRef(0);
+  const appliedRef = useRef(0);
+  const onWorkspaceRef = useRef(onWorkspace);
+  onWorkspaceRef.current = onWorkspace;
+  const showIfNewest = useCallback((seq: number, next: Workspace) => {
+    if (seq <= appliedRef.current) return;
+    appliedRef.current = seq;
+    onWorkspaceRef.current(next);
+  }, []);
+  const refresh = useCallback(async (): Promise<Workspace> => {
+    const seq = ++issuedRef.current;
+    const next = await getWorkspace(studyId);
+    showIfNewest(seq, next);
+    return next;
+  }, [studyId, showIfNewest]);
 
   useEffect(() => {
     const stored = readConfirmed();
@@ -76,7 +118,7 @@ export function useAgentSteps({ studyId, workspace, onWorkspace }: Options) {
 
   const options = useCallback((): NextStepOptions => ({ confirmedDataValidationRuns: confirmedRef.current }), []);
 
-  const record = useCallback((agentStep: AgentStep, receipt: AgentStepReceipt, before: Workspace, after: Workspace) => {
+  const record = useCallback((_step: AgentStep, receipt: AgentStepReceipt, before: Workspace, after: Workspace) => {
     setReceipts((current) => ({ ...current, [receipt.action]: receipt.value }));
     if (receipt.action === "validation") {
       setEligibilityChange({ before: eligibilityOf(before), after: eligibilityOf(after) });
@@ -88,7 +130,6 @@ export function useAgentSteps({ studyId, workspace, onWorkspace }: Options) {
       setConfirmed(next);
       window.sessionStorage.setItem(CONFIRMED_KEY, JSON.stringify([...next]));
     }
-    void agentStep;
   }, []);
 
   // #25: follow the server's run events while a command is in flight; each event refreshes
@@ -107,49 +148,59 @@ export function useAgentSteps({ studyId, workspace, onWorkspace }: Options) {
       lastEventId: cursorRef.current,
       signal: controller.signal,
       onEvent: () => {
-        void getWorkspace(studyId).then(onWorkspace, () => undefined);
+        void refresh().catch(() => undefined);
       },
-      onWorkspaceRefresh: onWorkspace,
+      onWorkspaceRefresh: (next) => showIfNewest(++issuedRef.current, next),
     }).catch(() => undefined); // The command's own refresh stays the fallback authority.
     return () => controller.abort();
-  }, [following, runId, studyId, onWorkspace]);
+  }, [following, runId, studyId, refresh, showIfNewest]);
 
   const runStep = useCallback(async () => {
-    const next = nextAgentStep(workspace, options());
-    if (!isAgentStep(next)) return;
+    if (!begin()) return;
     setMessage(null);
-    setInFlight(next);
+    let next: AgentStep | null = null;
     try {
-      const receipt = await executeAgentStep(studyId, workspace, next, planner);
-      const after = await getWorkspace(studyId);
-      onWorkspace(after);
-      record(next, receipt, workspace, after);
+      // Decide from a freshly fetched Workspace, never the (possibly stale) rendered one.
+      const before = await refresh();
+      const decided = nextAgentStep(before, options());
+      if (!isAgentStep(decided)) {
+        setMessage({ tone: "info", text: decided.message });
+        return;
+      }
+      next = decided;
+      setInFlight(decided);
+      const receipt = await executeAgentStep(studyId, before, decided, planner);
+      const after = await refresh();
+      record(decided, receipt, before, after);
       setMessage({
         tone: "info",
         text:
           receipt.action === "data-validation" && receipt.value.receipt.idempotent_replay
-            ? `${next.label}: the server returned the recorded execution ${receipt.value.receipt.receipt_id} as an idempotent replay.`
-            : `${next.label}: recorded by the server.`,
+            ? `${decided.label}: the server returned the recorded execution ${receipt.value.receipt.receipt_id} as an idempotent replay.`
+            : `${decided.label}: recorded by the server.`,
       });
     } catch (cause) {
       try {
-        onWorkspace(await getWorkspace(studyId));
+        await refresh();
       } catch {
         // Keep the last server state; the error below explains what failed.
       }
-      setMessage({ tone: "block", text: `${next.label} failed. ${messageFrom(cause)}` });
+      const label = (next as AgentStep | null)?.label;
+      setMessage({ tone: "block", text: `${label ? `${label} failed. ` : ""}${messageFrom(cause)}` });
     } finally {
       setInFlight(null);
+      end();
     }
-  }, [workspace, options, studyId, planner, onWorkspace, record]);
+  }, [begin, end, refresh, options, studyId, planner, record]);
 
   const runSequence = useCallback(async () => {
+    if (!begin()) return;
     setMessage(null);
     let current: AgentStep | null = null;
     try {
       const stop = await runAgentSequence(studyId, planner, {
-        fetchWorkspace: () => getWorkspace(studyId),
-        onWorkspace,
+        fetchWorkspace: refresh, // shown last-wins as it arrives
+        onWorkspace: () => undefined,
         onStep: (value) => {
           if (value) current = value;
           setInFlight(value);
@@ -161,7 +212,7 @@ export function useAgentSteps({ studyId, workspace, onWorkspace }: Options) {
     } catch (cause) {
       const label = (current as AgentStep | null)?.label;
       try {
-        onWorkspace(await getWorkspace(studyId));
+        await refresh();
       } catch {
         // Keep the last server state.
       }
@@ -169,8 +220,10 @@ export function useAgentSteps({ studyId, workspace, onWorkspace }: Options) {
         tone: "block",
         text: `${label ? `${label} failed. ` : ""}${messageFrom(cause)} The agent stopped; later steps did not run.`,
       });
+    } finally {
+      end();
     }
-  }, [studyId, planner, onWorkspace, record, options]);
+  }, [begin, end, refresh, studyId, planner, record, options]);
 
   return {
     planner,

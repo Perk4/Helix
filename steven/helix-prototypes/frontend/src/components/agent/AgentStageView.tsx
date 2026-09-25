@@ -28,6 +28,8 @@ type Props = {
   onWorkspace: (workspace: Workspace) => void;
   /** Another workbench command is running; governed commands here wait. */
   otherBusy?: boolean;
+  /** Tells the workbench an agent command is in flight, so legacy controls wait. */
+  onBusyChange?: (busy: boolean) => void;
 };
 
 const CHIP: Record<JourneyStage["status"], [string, Tone]> = {
@@ -38,8 +40,8 @@ const CHIP: Record<JourneyStage["status"], [string, Tone]> = {
   pending: ["Not started", "muted"],
 };
 
-export function AgentStageView({ studyId, workspace, stageId, onWorkspace, otherBusy = false }: Props) {
-  const agent = useAgentSteps({ studyId, workspace, onWorkspace });
+export function AgentStageView({ studyId, workspace, stageId, onWorkspace, otherBusy = false, onBusyChange }: Props) {
+  const agent = useAgentSteps({ studyId, workspace, onWorkspace, onBusyChange });
   const stage = workspace.journey.stages.find((item) => item.stage_id === stageId);
   if (!stage || !isAgentStageId(stage.stage_id)) return null;
 
