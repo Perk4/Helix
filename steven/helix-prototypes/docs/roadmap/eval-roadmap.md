@@ -81,8 +81,32 @@ Terminology consistency (Study Director vs. PI), formulation-stability language,
 
 ## 3. Current eval build state
 
-- **Authored:** Tier-1 suite (`.agents/skills/helix-section-agent/evals/promptfooconfig.yaml`, 2 cases / 8 string-JSON assertions), Tier-2 fragment (`study-output.yaml`), `prompt.txt`, one fixture (`fixtures/body-weight-envelope.json`); contracts require qualification metadata.
-- **Not wired:** no runner (`make evals`/CI — no `.github/`), provider unbound (`${HELIX_PROMPTFOO_PROVIDER}` absent from `.env.example`), `qualification_status: pending`, `study-output.yaml` headless, single-section coverage only.
+Last updated 2026-09-25.
+
+**Built and on `main`:**
+- Tier-1 qualification suite (`promptfooconfig.yaml`): 6 cases, 8+ assertions per case, covering claim citation, provenance preservation, interpretive-language injection, leading-exemplar resistance, steep-decline refusal, undeclared-context rejection
+- G-1 and G-2 guardrail judges + A-1 faithful-interpretation judge (`glp-guardrails.yaml`): 6 fixtures, `echo` provider + cross-family judge; run standalone and in CI via `npm run evals:guardrails`
+- `prompt.txt` with `SKILL.md`, presentation contract, meta-prompt, and candidate schema inlined — matches what production supplies
+- All assertion scripts (`assert-candidate-schema.mjs`, `assert-provenance-untouched.mjs`, `assert-cites-only-declared.mjs`, `assert-drafts-when-able.mjs`, `assert-no-unsupported-value.mjs`)
+- Tier-1 suite has 7 cases: claim citation, provenance, interpretive-language injection, leading-exemplar resistance, steep-decline refusal, statistical-significance refusal (with p-values in executor receipt), undeclared-context rejection
+- A-2 trajectory schema (`evals/schemas/agent-trajectory.schema.json`) + synthetic fixture (`evals/fixtures/trajectory-synthetic-001.json`) authored as design artifact for Phase 1 CodexSectionAgent; out of CI
+- `verify-claim-coverage.mjs` excludes `statistical_comparisons` from the cell count (p-values are analysis metadata, not measurements requiring claim backing)
+- `scripts/record-qualification.mjs`: runs suite, refuses on red, hashes inputs, writes drafter + judge identity into the certificate
+- `scripts/verify-qualification.mjs`: PKG-005 gate; static, no provider call; surfaces drafter and judge in CI output
+- `scripts/verify-evals-config.mjs`: catches undocumented placeholders, broken `file://` refs, missing SKILL.md, fixture drift, blinding leaks
+- `scripts/verify-claim-coverage.mjs`: static mismatch check — executor cell count vs declared required_claims; currently FAILs for 5.2.3 (claims gap, §0)
+- `azure-pipelines.yml`: runs static checks → tier-1 suite → G-1/G-2 judges, reads keys from `helix-evals` variable group
+- `.gitattributes`: pins all hashed inputs to LF so the digest is checkout-independent
+- `qualification_status: pending` on 5.2.3 — deliberately, until the claims gap closes (§0)
+
+**Open gaps (not yet buildable):**
+
+| Gap | Reason blocked |
+|---|---|
+| Step 2 planner qualification suite | Step 2 is currently a non-agentic stub; ADR-0021 requires a paired suite once a real planner is implemented |
+| Rule 6 coverage (no cross-section reads from undeclared dependencies) | A-2 schema specifies the check; catching it live requires real CodexSectionAgent trajectories (Phase 1) |
+| Verdict producer (alongside wiring) | Design question open with Steven: when a judge verdict arrives after the attempt decision, does it attach as advisory note or recompute? |
+| G-1/G-2/A-1 against real candidates | Target sections (5.3.3, 5.3.4, 5.2.3 live output) don't exist yet; all three judges run against synthetic fixtures until Phase 5 |
 
 ## 4. Roadmap — eval work mapped to the 10-phase build
 
@@ -121,9 +145,9 @@ Each is a specific judge or fixture set that rides the Tier-2 harness (or Tier-1
 |---|---|---|---|---|
 | **G-1** | NOAEL/LOAEL consistency (§2b) | Tier-2 `llm-rubric` | Author now (fixtures) → live Phase 5 | Colleague GLP doc v1.0 · **in scope, top priority** |
 | **G-2** | Adaptive/non-adverse rationale (§2b) | Tier-2 `llm-rubric` | Author now (fixtures) → live Phase 5 | Colleague GLP doc v1.0 · in scope |
-| **A-1** | Faithfulness judge — prose grounded in Validated Claims only, zero invented numbers | Tier-2 `llm-rubric` | Seed Stage 0 → live Phase 5 | Teams assurance-gap · **pending team agreement** |
-| **A-2** | Bounded-path trajectory eval — cites only envelope claim IDs, registered tools only, ≤3 attempts, no unrelated-data access, no self-promotion | Tier-1 agent-behavior | Author now → validated once Phase 1 yields trajectories | Teams assurance-gap · pending |
-| **A-3** | Framing/interpretation injection — adversarial fixtures inducing adversity/"treatment related"/"significant"; assert refusal | Tier-1 harden (S0.4) + Tier-2 | Stage 0 + Phase 5 | Teams assurance-gap · pending |
+| **A-1** | Faithful-interpretation judge — prose characterisation stays within cited claim's scope (no extrapolation to other groups, timepoints, or severity levels not supported by the claim) | Tier-2 `llm-rubric` | Seed Stage 0 → live Phase 5 | Teams assurance-gap · **authored, in `glp-guardrails.yaml`** |
+| **A-2** | Bounded-path trajectory eval — registered tools only, no reads outside direct_dependencies, no sandbox escapes | Tier-1 agent-behavior | Schema + synthetic fixture authored; CI wiring deferred until Phase 1 yields real trajectories | Teams assurance-gap · **schema in `evals/schemas/`, fixture in `evals/fixtures/`, out of CI** |
+| **A-3** | Framing/interpretation injection — adversarial fixtures inducing adversity/"treatment related"/"significant"; assert refusal | Tier-1 harden (S0.4) | Stage 0 | Teams assurance-gap · **closed — covered by cases 2, 4, 5, 6 in promptfooconfig.yaml** |
 
 ### Deterministic rules (tracked for completeness — validation workstream, not Promptfoo)
 | # | Item | Phase |
