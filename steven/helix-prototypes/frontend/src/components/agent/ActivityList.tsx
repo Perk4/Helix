@@ -46,11 +46,11 @@ export function ActivityList({ stage, inFlightLabel }: { stage: JourneyStage; in
               <span className="ic" aria-hidden="true">
                 {recorded && tag === "Blocker" ? (
                   <span className="hx-agent-ic block">
-                    <WarnIcon size={16} />
+                    <WarnIcon />
                   </span>
                 ) : recorded ? (
                   <span className="hx-agent-ic pass">
-                    <CheckIcon size={16} />
+                    <CheckIcon />
                   </span>
                 ) : (
                   <span className="hx-hollow" />
