@@ -39,6 +39,7 @@ const approvalOrder: ApprovalRole[] = ["pathologist", "peer_reviewer", "qau", "s
 export function ReportAssembly({
   workspace,
   busy,
+  onInspectClaim,
   onResolve,
   onApprove,
   onFinalStudyApproval,
@@ -126,6 +127,17 @@ export function ReportAssembly({
     }
   }
 
+  // Claim-backed report sections (server report projection). Each keeps its Inspect entry
+  // into Gate 2 (lane C, onInspectClaim) alongside the drafted-section view.
+  const claimSections = workspace.report.sections.flatMap((item) => {
+    const seen = new Set<string>();
+    return item.blocks.flatMap((block) =>
+      block.claim_id && !seen.has(block.claim_id) && seen.add(block.claim_id)
+        ? [{ sectionId: item.section_id, title: item.title, claimId: block.claim_id, edges: block.provenance_count }]
+        : [],
+    );
+  });
+
   const selectedMeta = sections.find((item) => item.section_id === selectedSectionId);
   const selectedTitle = draft?.title ?? selectedMeta?.title ?? selectedSectionId;
 
@@ -189,6 +201,21 @@ export function ReportAssembly({
             ))}
             {!sections.length && <div className="empty-copy">Loading sections…</div>}
           </div>
+          {claimSections.length > 0 && (
+            <div className="template-note" data-testid="claim-traceability">
+              <strong>Claim traceability</strong>
+              {claimSections.map((item) => (
+                <div key={`${item.sectionId}-${item.claimId}`}>
+                  <p>
+                    {item.title} · {item.claimId}
+                  </p>
+                  <button type="button" className="lineage-button" onClick={() => onInspectClaim(item.claimId)}>
+                    Inspect {item.edges} provenance edges
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
           <div className="template-note">
             <strong>Template boundary</strong>
             <p>{workspace.report.template.disclaimer}</p>
@@ -370,6 +397,46 @@ export function ReportAssembly({
                 );
               })}
             </div>
+          </section>
+
+          <section className="panel approval-card" data-testid="final-study-approval-scope">
+            <div className="panel-heading compact">
+              <div>
+                <p className="eyebrow">Hash-bound record</p>
+                <h3>Final Study Approval</h3>
+              </div>
+              <span className="count-chip" data-testid="approval-current">
+                {workspace.approval_current
+                  ? "current"
+                  : workspace.final_study_approval
+                    ? "stale"
+                    : "ready for signature"}
+              </span>
+            </div>
+            <p>
+              Approval applies only to the exact release-candidate manifest and included artifact
+              hashes. Language stays at ready for signature / ready for export — never a regulator
+              approval claim.
+            </p>
+            {workspace.release_candidate && (
+              <div className="artifact-list">
+                <div>
+                  <strong>Manifest</strong>
+                  <code data-testid="approval-manifest-hash">
+                    {workspace.final_study_approval?.manifest_hash ?? workspace.release_candidate.content_hash}
+                  </code>
+                </div>
+                {(
+                  workspace.final_study_approval?.included_artifact_hashes ??
+                  workspace.release_candidate.included_artifacts
+                ).map((item) => (
+                  <div key={item.artifact_id}>
+                    <strong>{item.artifact_id}</strong>
+                    <code data-testid={`approval-artifact-${item.artifact_id}`}>{item.content_hash}</code>
+                  </div>
+                ))}
+              </div>
+            )}
             {workspace.approval_current ? (
               <span className="approval-check">
                 <CheckIcon size={14} />
@@ -396,7 +463,7 @@ export function ReportAssembly({
 
           <section className="panel export-card">
             <p className="eyebrow">Explicit action</p>
-            <h3>Submission-support package</h3>
+            <h3>Approved artifact export</h3>
             <div className="artifact-list">
               {workspace.export_artifacts.map((artifact) => (
                 <div key={artifact.artifact_id}>
@@ -411,7 +478,9 @@ export function ReportAssembly({
                         download
                       >
                         <strong>{artifactLabel(artifact.kind)}</strong>
-                        <code>Download · {artifact.path}</code>
+                        <code data-testid={`export-checksum-${artifact.artifact_id}`}>
+                          Download · {artifact.checksum}
+                        </code>
                       </a>
                     ) : (
                       <>
@@ -431,12 +500,15 @@ export function ReportAssembly({
               data-testid="export-package"
             >
               {workspace.release_gate.status === "exported"
-                ? "Synthetic package exported"
+                ? "Approved artifacts exported"
                 : busy === "export"
-                  ? "Checksumming artifacts…"
-                  : "Export synthetic package"}
+                  ? "Exporting approved hashes…"
+                  : "Export approved artifacts"}
             </button>
-            <p className="fine-print">A prepared or exported prototype package is not FDA acceptance.</p>
+            <p className="fine-print">
+              Export packages only Final Study Approval hashes. Status language stays at exported —
+              never a regulator approval claim.
+            </p>
           </section>
         </aside>
       </div>
