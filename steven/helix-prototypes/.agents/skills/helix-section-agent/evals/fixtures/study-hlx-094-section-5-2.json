@@ -7,8 +7,11 @@
       "claim_id": "C-BW-HIGH",
       "value": 286.2,
       "unit": "g",
+      "group": "high dose (250 mg/kg/day)",
+      "sex": "male",
+      "timepoint": "terminal (week 13)",
       "description": "Mean terminal body weight, males, high-dose group (250 mg/kg/day)"
     }
   ],
-  "draft_text": "Mean terminal body weight in male animals at the high dose (250 mg/kg/day) was 286.2 g, representing a 4.6% decrease from the control mean of 298.9 g. No other groups showed body weight differences of note."
+  "draft_text": "Mean terminal body weight in male animals at the high dose (250 mg/kg/day) was 286.2 g (C-BW-HIGH), indicating a dose-dependent decrease in body weight across all male dose groups throughout the study."
 }

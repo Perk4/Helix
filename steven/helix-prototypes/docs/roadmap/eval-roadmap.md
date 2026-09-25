@@ -142,7 +142,7 @@ Each is a specific judge or fixture set that rides the Tier-2 harness (or Tier-1
 |---|---|---|---|---|
 | **G-1** | NOAEL/LOAEL consistency (§2b) | Tier-2 `llm-rubric` | Author now (fixtures) → live Phase 5 | Colleague GLP doc v1.0 · **in scope, top priority** |
 | **G-2** | Adaptive/non-adverse rationale (§2b) | Tier-2 `llm-rubric` | Author now (fixtures) → live Phase 5 | Colleague GLP doc v1.0 · in scope |
-| **A-1** | Faithfulness judge — prose grounded in Validated Claims only, zero invented numbers | Tier-2 `llm-rubric` | Seed Stage 0 → live Phase 5 | Teams assurance-gap · **authored, in `glp-guardrails.yaml`** |
+| **A-1** | Faithful-interpretation judge — prose characterisation stays within cited claim's scope (no extrapolation to other groups, timepoints, or severity levels not supported by the claim) | Tier-2 `llm-rubric` | Seed Stage 0 → live Phase 5 | Teams assurance-gap · **authored, in `glp-guardrails.yaml`** |
 | **A-2** | Bounded-path trajectory eval — cites only envelope claim IDs, registered tools only, ≤3 attempts, no unrelated-data access, no self-promotion | Tier-1 agent-behavior | Author now → validated once Phase 1 yields trajectories | Teams assurance-gap · pending |
 | **A-3** | Framing/interpretation injection — adversarial fixtures inducing adversity/"treatment related"/"significant"; assert refusal | Tier-1 harden (S0.4) + Tier-2 | Stage 0 + Phase 5 | Teams assurance-gap · pending |
 
