@@ -144,24 +144,43 @@ export function nextAgentStep(workspace: Workspace, options: NextStepOptions = {
     return step("candidate-evaluation", run.run_id);
   }
   const decision = evaluation.next_attempt_decision;
-  if (decision.action === "retry" || decision.action === "hold") {
+  if (decision.action === "retry") {
     return {
       kind: "human-decision",
       stageId: "draft",
-      message:
-        decision.action === "retry"
-          ? `Candidate evaluation asks for another attempt (attempt ${decision.attempt}). A person chooses whether to retry.`
-          : "Candidate evaluation put the draft on hold for a person.",
+      message: `Candidate evaluation asks for another attempt (attempt ${decision.attempt} of ${decision.max_attempts}). A person chooses whether to retry.`,
     };
   }
-  if (!(workspace.promotion_decisions ?? []).some((item) => item.run_id === run.run_id)) {
-    return step("section-promotion", run.run_id);
+  if (decision.action === "stop_for_review") {
+    // Attempt cap reached with blockers: the candidate needs a person's review and has no
+    // Section Draft, so the agent stops here and never reports Traceability.
+    return {
+      kind: "human-decision",
+      stageId: "draft",
+      message: `Candidate evaluation stopped for review after ${decision.attempt} of ${decision.max_attempts} attempts. A person reviews the blockers; no Section Draft was promoted.`,
+    };
   }
-  return {
-    kind: "gate",
-    stageId: "traceability",
-    message: "The agent stops at Traceability review. Only a person can pass Human gate 2.",
-  };
+  // `hold`: the deterministic gates passed. Traceability is reached only once the server has
+  // recorded a promoted Section Draft for this run.
+  if ((workspace.section_drafts ?? []).some((item) => item.run_id === run.run_id)) {
+    return {
+      kind: "gate",
+      stageId: "traceability",
+      message: "The agent stops at Traceability review. Only a person can pass Human gate 2.",
+    };
+  }
+  // Evaluation always records a promotion decision for the run (backend
+  // candidate_evaluations.py -> record_decision_for_evaluation), so its presence says
+  // nothing; its outcome does. The latest decision decides whether promotion can run.
+  const promotion = (workspace.promotion_decisions ?? []).filter((item) => item.run_id === run.run_id).at(-1);
+  if (promotion && !promotion.eligible) {
+    return {
+      kind: "human-decision",
+      stageId: "draft",
+      message: `Promotion is not eligible (${promotion.failed_condition_ids.join(", ") || "no condition recorded"}). A person resolves it before a Section Draft can be promoted.`,
+    };
+  }
+  return step("section-promotion", run.run_id);
 }
 
 export function isAgentStep(value: AgentStep | AgentStop): value is AgentStep {
