@@ -109,10 +109,6 @@ export function HelixWorkbench({ studyId }: Props) {
   useEffect(() => {
     void refresh();
   }, [refresh]);
-  const refreshQuietly = useCallback(async () => {
-    await refresh();
-  }, [refresh]);
-
   async function validate() {
     setBusy("validation");
     setNotice(null);
@@ -436,14 +432,7 @@ export function HelixWorkbench({ studyId }: Props) {
               />
             )}
             {selectedStageId === "review-export" && (
-              <ReviewStageView
-                workspace={workspace}
-                onWorkspace={setWorkspace}
-                onRefresh={refreshQuietly}
-                draftsBody={
-                  // DH-4 phase 1: the HITL per-section drafts and grounded chat (Steven's
-                  // ReportAssembly + ChatDock) are part of the Gate 3 body, not a second stack
-                  // under every stage view. Same component, props and handlers as before.
+              <ReviewStageView workspace={workspace}>
                   <ReportAssembly
                     workspace={workspace}
                     busy={busy}
@@ -453,8 +442,7 @@ export function HelixWorkbench({ studyId }: Props) {
                     onFinalStudyApproval={() => void approveFinalStudy()}
                     onExport={() => void performExport()}
                   />
-                }
-              />
+              </ReviewStageView>
             )}
             {/* DH-2 (#66): the legacy StudyJourney is off the default path; its governed
                 commands live on the stage views. Its read-only records (attempt history,

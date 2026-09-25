@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -25,6 +25,8 @@ type Props = {
 
 export function ChatDock({ studyId, sectionId, sectionTitle, onApplied }: Props) {
   const [open, setOpen] = useState(false);
+  const [height, setHeight] = useState(420);
+  const dragRef = useRef<{ startY: number; startHeight: number } | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [proposed, setProposed] = useState<SectionContentDraft | null>(null);
   const [input, setInput] = useState("");
@@ -155,8 +157,51 @@ export function ChatDock({ studyId, sectionId, sectionTitle, onApplied }: Props)
     .map((block) => (block.kind === "prose" ? block.markdown : ""))
     .join("\n\n");
 
+  function resizeBy(amount: number) {
+    setHeight((current) => Math.max(240, Math.min(window.innerHeight - 72, current + amount)));
+  }
+
+  function startResize(event: PointerEvent<HTMLDivElement>) {
+    dragRef.current = { startY: event.clientY, startHeight: height };
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }
+
+  function moveResize(event: PointerEvent<HTMLDivElement>) {
+    if (!dragRef.current) return;
+    const next = dragRef.current.startHeight + dragRef.current.startY - event.clientY;
+    setHeight(Math.max(240, Math.min(window.innerHeight - 72, next)));
+  }
+
+  function keyResize(event: KeyboardEvent<HTMLDivElement>) {
+    if (event.key === "ArrowUp" || event.key === "ArrowDown") {
+      event.preventDefault();
+      resizeBy(event.key === "ArrowUp" ? 40 : -40);
+    }
+  }
+
   return (
-    <div className={open ? "chat-dock open" : "chat-dock"} data-testid="chat-dock">
+    <div
+      className={open ? "chat-dock open" : "chat-dock"}
+      data-testid="chat-dock"
+      style={open ? { height, maxHeight: "calc(100dvh - 72px)" } : undefined}
+    >
+      {open && (
+        <div
+          className="chat-resize-handle"
+          role="separator"
+          aria-label="Resize chat"
+          aria-orientation="horizontal"
+          tabIndex={0}
+          onPointerDown={startResize}
+          onPointerMove={moveResize}
+          onPointerUp={() => { dragRef.current = null; }}
+          onPointerCancel={() => { dragRef.current = null; }}
+          onKeyDown={keyResize}
+          data-testid="chat-resize-handle"
+        >
+          <span aria-hidden="true" />
+        </div>
+      )}
       <div className="chat-header">
         <button
           type="button"
@@ -179,6 +224,17 @@ export function ChatDock({ studyId, sectionId, sectionTitle, onApplied }: Props)
             <ChevronIcon />
           </span>
         </button>
+        {open && (
+          <button
+            type="button"
+            className="chat-size-button"
+            onClick={() => setHeight((current) => current >= window.innerHeight * 0.7 ? 420 : Math.round(window.innerHeight * 0.85))}
+            aria-label={height >= window.innerHeight * 0.7 ? "Restore chat size" : "Expand chat"}
+            data-testid="chat-size-button"
+          >
+            {height >= window.innerHeight * 0.7 ? "Restore size" : "Expand chat"}
+          </button>
+        )}
       </div>
 
       {open && (

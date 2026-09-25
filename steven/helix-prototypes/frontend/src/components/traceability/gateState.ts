@@ -12,7 +12,7 @@ export type GateStage = Pick<JourneyStage, "stage_id" | "status" | "selectable" 
  * The slice of the workspace Gate 2 reads. The full `Workspace` satisfies it; the parity
  * fixture supplies only this slice, so it never has to fake unrelated run state.
  */
-export type TraceabilityWorkspace = Pick<Workspace, "claims" | "validations" | "dispositions" | "candidate_evaluations"> & {
+export type TraceabilityWorkspace = Pick<Workspace, "claims" | "validations" | "dispositions" | "candidate_evaluations" | "allowed_dispositions"> & {
   study: Pick<Workspace["study"], "study_id">;
   journey: { stages: GateStage[] };
   release_gate: Pick<Workspace["release_gate"], "blocking_result_ids">;

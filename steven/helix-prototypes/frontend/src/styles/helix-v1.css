@@ -116,6 +116,11 @@
   --hx-focus-outline: 2px solid var(--hx-accent);
 }
 
+html[data-theme="light"],
+html[data-theme="light"] #helix-e2e { color-scheme: light; }
+html[data-theme="dark"],
+html[data-theme="dark"] #helix-e2e { color-scheme: dark; }
+
 /* 2. Base ------------------------------------------------------------------ */
 #helix-e2e {
   color-scheme: light dark;
@@ -173,6 +178,23 @@
 #helix-e2e .hx-study span { font-size: var(--hx-fs-meta); color: var(--hx-muted); }
 
 #helix-e2e .hx-top-meta { display: flex; align-items: center; gap: var(--hx-sp-12); flex-shrink: 0; }
+
+#helix-e2e .hx-theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--hx-sp-8);
+  min-height: 34px;
+  padding: 0 var(--hx-sp-10);
+  border: 1px solid var(--hx-line);
+  border-radius: var(--hx-radius-control);
+  background: var(--hx-surface-2);
+  color: var(--hx-ink);
+  cursor: pointer;
+  font-size: var(--hx-fs-meta);
+  white-space: nowrap;
+}
+#helix-e2e .hx-theme-toggle:hover { background: var(--hx-accent-soft); }
+#helix-e2e .hx-theme-toggle span:first-child { font-size: var(--hx-fs-h3); line-height: 1; }
 
 #helix-e2e .hx-synthetic {
   font-size: var(--hx-fs-meta);

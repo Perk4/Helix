@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import { HelixLogo, PersonIcon } from "../icons";
+import { ThemeToggle } from "./ThemeToggle";
 
 // v1 shell header (HANDOFF section 5.1). OWNER: step 0 (shell layout).
 // Brand, study identity, the synthetic badge, the server-owned release pill,
@@ -41,6 +42,7 @@ export function ShellHeader({ studyId, descriptor, loaded, title, releasePill }:
         )}
       </div>
       <div className="hx-top-meta">
+        <ThemeToggle />
         <span className="hx-synthetic" data-testid="synthetic-badge">
           {SYNTHETIC_BADGE}
         </span>

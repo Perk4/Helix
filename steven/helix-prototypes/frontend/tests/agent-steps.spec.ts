@@ -382,9 +382,8 @@ test.describe("next agent step after candidate evaluation", () => {
   });
 });
 
-// P1 (Codex PRRT_kwDOUohZWs6l2RQT): one command at a time across the agent and the legacy
-// StudyJourney controls, and a double click starts one command.
-test("legacy commands wait while an agent command is in flight; no duplicate POST /validation-runs", async ({ page }) => {
+// A double click starts one governed command, even while its response is held.
+test("one agent command in flight sends one POST /validation-runs", async ({ page }) => {
   await confirmFreezeExecution(page);
   const h = await harness(page);
   let release: () => void = () => undefined;
@@ -419,17 +418,10 @@ test("legacy commands wait while an agent command is in flight; no duplicate POS
   await expect.poll(() => h.bodies.validation?.length ?? 0).toBe(1);
   await expect(run).toBeDisabled();
   await expect(page.getByTestId("agent-run-sequence")).toBeDisabled();
-  for (const id of ["run-validation", "run-body-weight-validation", "draft-body-weight"]) {
-    const control = page.getByTestId(id);
-    if ((await control.count()) > 0) await expect(control).toBeDisabled();
-  }
-  await expect(page.getByTestId("run-validation")).toHaveCount(1);
-  await page.getByTestId("run-validation").click({ force: true }).catch(() => undefined);
+  await expect(page.getByText("Evidence-to-report control plane")).toHaveCount(0);
   release();
   await expect(live(page)).toContainText("Run deterministic and hybrid validation: recorded by the server.");
   expect(commands.filter((item) => item.endsWith("/validation-runs"))).toEqual([
     "POST /api/v1/studies/STUDY-HLX-028/validation-runs",
   ]);
-  // Settled: the legacy controls are usable again.
-  await expect(page.getByTestId("run-validation")).toBeEnabled();
 });

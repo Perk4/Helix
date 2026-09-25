@@ -25,7 +25,9 @@ export function ReviewParityFixture() {
       <main className="hx-main">
         <ProgressBar journey={workspace.journey} selectedStageId="review-export" onSelect={() => undefined} />
         <section className="hx-stage-view" aria-label="Stage view" data-testid="stage-view" data-selected-stage="review-export">
-          <ReviewStageView workspace={workspace} onWorkspace={() => undefined} onRefresh={async () => undefined} />
+          <ReviewStageView workspace={workspace}>
+            <div className="panel report-paper hx-card">Section drafts and template details</div>
+          </ReviewStageView>
         </section>
       </main>
     </div>

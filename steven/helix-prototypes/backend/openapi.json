@@ -6857,6 +6857,16 @@
       "WorkspaceResponse": {
         "additionalProperties": false,
         "properties": {
+          "allowed_dispositions": {
+            "additionalProperties": {
+              "items": {
+                "$ref": "#/components/schemas/DispositionDecision"
+              },
+              "type": "array"
+            },
+            "title": "Allowed Dispositions",
+            "type": "object"
+          },
           "approval_current": {
             "default": false,
             "title": "Approval Current",

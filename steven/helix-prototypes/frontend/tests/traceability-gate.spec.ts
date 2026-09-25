@@ -140,6 +140,8 @@ async function openGate(page: Page) {
   await stageButtons(page).nth(7).click();
   await expect(page.getByTestId("traceability-stage-view")).toBeVisible();
   await expect(page.getByTestId("rule-accordion")).toBeVisible();
+  await expect(page.getByTestId("claim-picker")).not.toHaveAttribute("open", "");
+  await page.getByTestId("claim-picker").locator("summary").click();
 }
 
 // #70: Gate 2 shows no blocker, rule or panel tallies; per-rule badges and the blocker
@@ -215,6 +217,8 @@ test("loads getEvidence per claim and shows the five-step flow, lineage, and rec
   await expect(flow.locator("li.f-block")).toHaveCount(3);
 
   const evidence = page.getByTestId("claim-evidence");
+  await expect(evidence.getByTestId("evidence-disclosure")).not.toHaveAttribute("open", "");
+  await evidence.getByTestId("evidence-disclosure").locator("summary").click();
   await expect(evidence.getByTestId("source-records").getByRole("row")).toHaveCount(11);
   // Lineage edges start collapsed (#70) and open on demand with every edge.
   await expect(evidence.getByTestId("lineage-disclosure")).not.toHaveAttribute("open", "");
@@ -251,7 +255,7 @@ test("loads getEvidence per claim and shows the five-step flow, lineage, and rec
   expect(evidenceCalls.some((path) => path.endsWith("/claims/C-MI-LIVER/evidence"))).toBeTruthy();
 });
 
-test("mirrors server limits client-side and keeps server rejections in the form", async ({ page }) => {
+test("shows the server's permitted decision and keeps server rejections in the form", async ({ page }) => {
   const commands = trackCommands(page);
   // Live: the server rejects this command (409) and stores nothing.
   await serveGate(page, undefined, { live: true });
@@ -261,27 +265,18 @@ test("mirrors server limits client-side and keeps server rejections in the form"
   const form = page.getByTestId("disposition-form-VR-004");
   await expect(form).toBeVisible();
 
+  await expect(form.getByRole("radio", { name: "Corrected" })).toBeChecked();
+  await expect(form.getByRole("radio", { name: "Approved exception" })).toHaveCount(0);
   // Client feedback: nothing is sent.
   await form.getByTestId("disposition-submit").click();
-  await expect(form.locator(".hx-disp-error").getByText("Choose a decision.")).toBeVisible();
   await expect(form.locator(".hx-disp-error").getByText(/Reason must be 8 to 500 characters/)).toBeVisible();
   await expect(form.locator(".hx-disp-error").getByText(/Reviewer must be 2 to 120 characters/)).toBeVisible();
-  await expect(form.getByTestId("disposition-live")).toContainText("3 fields need attention");
-  await expect(form.getByRole("radio", { name: "Corrected" })).toBeFocused();
+  await expect(form.getByTestId("disposition-live")).toContainText("2 fields need attention");
   expect(commands).toEqual([]);
 
-  // Server 409: the server decides which decision is allowed for this blocker.
-  await form.getByRole("radio", { name: "Approved exception" }).check();
+  // A server field rejection stays attached to the form.
   await form.getByLabel("Reason").fill("Synthetic reviewer note for the grain blocker.");
   await form.getByLabel("Reviewer").fill("Dr. Lane C Reviewer");
-  await form.getByTestId("disposition-submit").click();
-  await expect(form.getByTestId("disposition-server-error")).toContainText("not allowed for VR-004");
-  await expect(form.getByTestId("disposition-live")).toContainText("Server rejected the disposition");
-  await expect(form.getByLabel("Reason")).toHaveValue("Synthetic reviewer note for the grain blocker.");
-  await expect(page.getByTestId("rule-badge-VR-004")).toHaveText("Blocked");
-  expect(commands).toEqual([`POST /api/v1/studies/${studyId}/validation-results/VR-004/dispositions`]);
-
-  // Server 422 (FastAPI field errors) stays attached to the field.
   await page.route("**/validation-results/VR-004/dispositions", (route) =>
     route.fulfill({
       status: 422,
@@ -291,12 +286,12 @@ test("mirrors server limits client-side and keeps server rejections in the form"
       }),
     }),
   );
-  await form.getByRole("radio", { name: "Corrected" }).check();
   await form.getByTestId("disposition-submit").click();
   await expect(form.getByTestId("disposition-server-error")).toContainText("(422)");
   await expect(form.locator(".hx-disp-error").getByText("String should have at least 2 characters", { exact: true })).toBeVisible();
   await expect(form.getByLabel("Reviewer")).toHaveAttribute("aria-invalid", "true");
   await expect(form.getByLabel("Reviewer")).toBeFocused();
+  expect(commands).toEqual([`POST /api/v1/studies/${studyId}/validation-results/VR-004/dispositions`]);
 });
 
 test("a recorded disposition keeps the blocker and shows Disposition, never Pass", async ({ page, request }) => {
@@ -349,6 +344,7 @@ test("a recorded disposition keeps the blocker and shows Disposition, never Pass
   // Reload restores the disposition from getWorkspace.
   await page.reload();
   await stageButtons(page).nth(7).click();
+  await page.getByTestId("claim-picker").locator("summary").click();
   await page.getByTestId("claim-C-BW-HIGH").click();
   await expect(page.getByTestId("rule-badge-VR-004")).toHaveText("Disposition");
 });
@@ -370,6 +366,7 @@ test("Continue waits for server-reported dispositions and Review, then only chan
     await expect(page.getByTestId("continue-to-review")).toBeDisabled();
     await page.getByTestId(`record-disposition-${resultId}`).click();
     const form = page.getByTestId(`disposition-form-${resultId}`);
+    await expect(form.getByRole("radio")).toHaveCount(1);
     await form.getByRole("radio", { name: decision }).check();
     await form.getByLabel("Reason").fill(`Synthetic reviewer disposition for ${resultId}.`);
     await form.getByLabel("Reviewer").fill("Dr. Lane C Reviewer");
@@ -450,6 +447,7 @@ const reportReachable = (workspace: Json): Json => {
 async function openReport(page: Page) {
   await stageButtons(page).nth(8).click();
   await expect(page.getByTestId("review-drafts-body")).toBeVisible();
+  await page.getByTestId("review-drafts-body").locator("summary").click();
 }
 
 test("Inspect on a report statement opens Gate 2 on that statement's claim", async ({ page }) => {
@@ -466,6 +464,7 @@ test("Inspect on a report statement opens Gate 2 on that statement's claim", asy
   await expect(page.getByTestId("claim-C-MI-LIVER")).toHaveAttribute("aria-pressed", "true");
 
   // Inspecting the same statement again reselects it after the reviewer switched away.
+  await page.getByTestId("claim-picker").locator("summary").click();
   await page.getByTestId("claim-C-BW-HIGH").click();
   await expect(page.getByTestId("trace-claim-kicker")).toContainText("Claim C-BW-HIGH");
   await openReport(page);
@@ -561,6 +560,7 @@ test("the Gate 2 evidence card shows source hashes, rule versions and exact reco
   await openGate(page);
 
   const evidence = page.getByTestId("claim-evidence");
+  await evidence.getByTestId("evidence-disclosure").locator("summary").click();
   await expect(evidence).toContainText("Claim evidence · C-BW-HIGH");
   await expect(evidence.getByTestId("evidence-source-hashes")).toContainText(/sha256:[0-9a-f]{12}/);
   await expect(evidence.getByTestId("evidence-rule-versions")).toContainText("body-weight-summary-recompute@1.0.0");

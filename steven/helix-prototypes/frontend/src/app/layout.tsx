@@ -14,7 +14,7 @@ import "../styles/views/upload.css";
 import "../styles/views/agent.css";
 import "../styles/views/traceability.css";
 import "../styles/views/review.css";
-// Legacy pre-v1 panels (removed as lanes replace them).
+// Draft section panel styles still used inside Review.
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -28,7 +28,14 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try { const saved = localStorage.getItem("helix-theme"); document.documentElement.dataset.theme = saved === "light" || saved === "dark" ? saved : matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"; } catch { document.documentElement.dataset.theme = "light"; }`,
+          }}
+        />
+      </head>
       <body>{children}</body>
     </html>
   );

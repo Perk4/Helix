@@ -1263,6 +1263,7 @@ class WorkspaceResponse(StrictModel):
     summary: WorkspaceSummary
     claims: list[Claim]
     validations: list[ValidationResult]
+    allowed_dispositions: dict[str, list[DispositionDecision]] = Field(default_factory=dict)
     dispositions: list[ReviewDisposition]
     approvals: list[Approval]
     release_gate: GateDecision

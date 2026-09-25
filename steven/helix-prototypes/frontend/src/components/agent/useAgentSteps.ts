@@ -20,7 +20,7 @@ import { humanDecisions, type HumanDecision, type HumanDecisionId } from "./huma
 
 // Lane B (#21). The Agent Step command handlers, kept out of the shared workbench.
 // The server is the authority: every decision reads a freshly fetched Workspace, one
-// command runs at a time (shared with the legacy controls via onBusyChange), and a failure stops the sequence. While a command is in
+// command runs at a time, and a failure stops the sequence. While a command is in
 // flight the hook follows #25's run-event stream for the Pinned Run and refreshes the
 // Workspace on each server event, so activity rows come from the projection, never
 // from local progress. Nothing here runs on a timer.

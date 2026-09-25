@@ -69,6 +69,17 @@
 #helix-e2e .hx-doc-agent ul { list-style: none; margin: 0; padding: 0; }
 #helix-e2e .hx-doc-refs li { padding: var(--hx-sp-4) 0; }
 #helix-e2e .hx-doc-refs a { color: var(--hx-accent); font-weight: var(--hx-fw-semibold); }
+#helix-e2e .hx-doc-refs > summary,
+#helix-e2e .report-view .template-note > summary {
+  cursor: pointer;
+  color: var(--hx-accent);
+  font-size: var(--hx-fs-row);
+  font-weight: var(--hx-fw-semibold);
+}
+#helix-e2e .hx-doc-refs > summary:focus-visible,
+#helix-e2e .report-view .template-note > summary:focus-visible { outline: var(--hx-focus-outline); outline-offset: 2px; }
+#helix-e2e .hx-doc-refs[open] > summary,
+#helix-e2e .report-view .template-note[open] > summary { margin-bottom: var(--hx-sp-16); }
 #helix-e2e .hx-so-title { margin-top: var(--hx-sp-4); }
 #helix-e2e .hx-signoff-detail {
   display: flex;
@@ -92,8 +103,6 @@
 #helix-e2e .hx-export-hashes { margin: var(--hx-sp-4) 0 0; padding: 0; list-style: none; display: grid; gap: var(--hx-sp-4); }
 #helix-e2e .hx-export-hashes code { overflow-wrap: anywhere; font-size: var(--hx-fs-meta); }
 #helix-e2e .hx-review-disclaimer { text-align: center; }
-/* DH-4 phase 1: the HITL section drafts sit inside the Gate 3 body, after downloads. */
-#helix-e2e .hx-review-drafts { border-top: 1px solid var(--hx-line-soft); padding-top: var(--hx-sp-16); }
 /* .hx-doc p is the serif report body; references, disclaimers, and meta stay in the UI face. */
 #helix-e2e .hx-doc .hx-doc-refs p,
 #helix-e2e .hx-doc p.hx-sub { font-family: var(--hx-sans); font-size: var(--hx-fs-row); }
@@ -158,7 +167,66 @@
  * handlers, testids, and class names; these rules map them onto helix-v1 tokens and the UI kit
  * (hx-card, hx-kicker, hx-chip, hx-btn, hx-banner, hx-fsa-scope). Tokens only, no hex values.
  * ------------------------------------------------------------------------------------------- */
-#helix-e2e .report-view { color: var(--hx-ink); font-family: var(--hx-sans); }
+#helix-e2e .report-view {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  color: var(--hx-ink);
+  font-family: var(--hx-sans);
+}
+#helix-e2e .report-view .report-layout {
+  grid-template-columns: clamp(260px, 18vw, 360px) minmax(0, 1fr);
+  gap: var(--hx-sp-20);
+}
+#helix-e2e .report-view .report-intro-tools { display: flex; align-items: center; gap: var(--hx-sp-12); flex-wrap: wrap; }
+#helix-e2e .report-view .report-controls-toggle,
+#helix-e2e .report-view .report-controls-heading button {
+  border: 1px solid var(--hx-line);
+  border-radius: var(--hx-radius-control);
+  background: var(--hx-surface);
+  color: var(--hx-ink);
+  cursor: pointer;
+  padding: var(--hx-sp-10) var(--hx-sp-12);
+  font-size: var(--hx-fs-row);
+  font-weight: var(--hx-fw-semibold);
+  white-space: nowrap;
+}
+#helix-e2e .report-view .report-controls-toggle:hover,
+#helix-e2e .report-view .report-controls-heading button:hover { background: var(--hx-accent-soft); }
+#helix-e2e .report-view .report-controls-toggle span { margin-left: var(--hx-sp-8); color: var(--hx-muted); font-weight: var(--hx-fw-medium); }
+#helix-e2e .report-view .report-controls-drawer {
+  position: fixed;
+  z-index: 45;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(440px, 100vw);
+  display: block;
+  overflow-y: auto;
+  padding: var(--hx-sp-16);
+  background: var(--hx-bg);
+  border-left: 1px solid var(--hx-line);
+  box-shadow: -12px 0 32px rgb(0 0 0 / 0.18);
+}
+#helix-e2e .report-view .report-controls-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--hx-sp-12);
+  margin-bottom: var(--hx-sp-16);
+}
+#helix-e2e .report-view .report-controls-heading h3 { margin: 0; font-size: var(--hx-fs-h2); }
+#helix-e2e .report-view .report-controls-drawer > section { margin-bottom: var(--hx-sp-14); }
+#helix-e2e .report-view .report-center-column,
+#helix-e2e .report-view .report-paper { min-width: 0; }
+@media (max-width: 1250px) {
+  #helix-e2e .report-view .report-layout { grid-template-columns: 260px minmax(0, 1fr); }
+  #helix-e2e .report-view .release-column { grid-column: 1 / -1; }
+}
+@media (max-width: 850px) {
+  #helix-e2e .report-view .report-layout { grid-template-columns: minmax(0, 1fr); }
+  #helix-e2e .report-view .release-column { grid-column: auto; }
+}
 #helix-e2e .report-view .eyebrow.hx-kicker { margin: 0 0 var(--hx-sp-4); font-size: var(--hx-fs-meta); color: var(--hx-muted); }
 #helix-e2e .report-view h2 { margin: 0 0 var(--hx-sp-6); font-size: var(--hx-fs-h1); font-weight: var(--hx-fw-semibold); color: var(--hx-ink); }
 #helix-e2e .report-view h3 { color: var(--hx-ink); }
@@ -366,6 +434,35 @@
   color: var(--hx-ink);
   font-family: var(--hx-sans);
 }
+#helix-e2e .chat-dock .chat-resize-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 14px;
+  flex: none;
+  cursor: ns-resize;
+  touch-action: none;
+  background: var(--hx-surface);
+}
+#helix-e2e .chat-dock .chat-resize-handle span {
+  width: 48px;
+  height: 4px;
+  border-radius: var(--hx-radius-pill);
+  background: var(--hx-faint);
+}
+#helix-e2e .chat-dock .chat-resize-handle:hover span,
+#helix-e2e .chat-dock .chat-resize-handle:focus-visible span { background: var(--hx-accent); }
+#helix-e2e .chat-dock .chat-size-button {
+  flex: none;
+  border: 1px solid var(--hx-line);
+  border-radius: var(--hx-radius-control);
+  background: var(--hx-surface-2);
+  color: var(--hx-ink);
+  padding: var(--hx-sp-6) var(--hx-sp-10);
+  cursor: pointer;
+  font-size: var(--hx-fs-meta);
+}
+#helix-e2e .chat-dock .chat-size-button:hover { background: var(--hx-accent-soft); }
 #helix-e2e .chat-dock .chat-header { border-bottom: 1px solid var(--hx-line-soft); background: var(--hx-surface); }
 #helix-e2e .chat-dock .chat-title-button {
   gap: var(--hx-sp-10);

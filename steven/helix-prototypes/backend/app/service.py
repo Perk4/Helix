@@ -1174,6 +1174,10 @@ class StudyService:
             ),
             claims=package.claims,
             validations=self._workspace_validations(package),
+            allowed_dispositions={
+                result_id: sorted(decisions, key=lambda decision: decision.value)
+                for result_id, decisions in ALLOWED_DISPOSITIONS.items()
+            },
             dispositions=package.review_dispositions,
             approvals=package.approvals,
             release_gate=gate,

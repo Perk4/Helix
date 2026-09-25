@@ -251,14 +251,13 @@ test("a Data Validation failure after freeze shows the partial state and retries
   expect(h.freezeBodies).toHaveLength(1);
 });
 
-test("only Human Gate 1 can pin a run: legacy validation is hidden and the API refuses to auto-freeze", async ({ page, request }) => {
+test("only Human Gate 1 can pin a run; the API refuses to auto-freeze", async ({ page, request }) => {
   // P1 on #22, against the live API: no service actor may freeze the manifest.
   await page.goto("/");
   await openLegacyJourney(page);
   await expect(page.getByTestId("freeze-consent")).not.toBeChecked();
-  await expect(page.getByTestId("validation-locked")).toBeVisible();
-  await expect(page.getByTestId("run-validation")).toBeDisabled();
-  await expect(page.getByTestId("run-body-weight-validation")).toBeDisabled();
+  await expect(page.getByText("Evidence-to-report control plane")).toHaveCount(0);
+  await expect(page.getByTestId("agent-stage-view")).toHaveCount(0);
 
   for (const [path, body, operation] of [
     ["validation-runs", { planner: "fixture" }, "run_validation"],
@@ -278,7 +277,7 @@ test("only Human Gate 1 can pin a run: legacy validation is hidden and the API r
   expect(workspace.pinned_run).toBeNull();
 });
 
-test("legacy validation unlocks once a human freeze has pinned the run", async ({ page }) => {
+test("the agent stage opens once a human freeze has pinned the run", async ({ page }) => {
   await serveWorkspace(page, (workspace) => frozenWorkspace(workspace));
   await page.goto("/");
   await openLegacyJourney(page);

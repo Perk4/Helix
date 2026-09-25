@@ -30,6 +30,7 @@ const DECISION_LABEL: Record<string, string> = {
 type Props = {
   chain: EvidenceChainData;
   results: ValidationResult[];
+  allowedDispositions: Record<string, string[]>;
   dispositions: Map<string, Disposition>;
   openResultId: string | null;
   onToggle: (resultId: string) => void;
@@ -42,6 +43,7 @@ type Props = {
 export function RuleAccordion({
   chain,
   results,
+  allowedDispositions,
   dispositions,
   openResultId,
   onToggle,
@@ -118,6 +120,7 @@ export function RuleAccordion({
                     <DispositionForm
                       resultId={result.result_id}
                       ruleLabel={label}
+                      allowedDecisions={allowedDispositions[result.result_id]}
                       onSubmit={(command) => onRecord(result.result_id, command)}
                       onCancel={() => onOpenForm(null)}
                     />

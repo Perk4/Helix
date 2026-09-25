@@ -1,15 +1,13 @@
 /*
- * Legacy pre-v1 panel styles.
+ * Draft section panel styles.
  * The v1 design tokens and shared components live in src/styles/helix-v1.css
- * (owned by UI step 0; see docs/ui-lanes-ownership.md). This file keeps only
- * the pre-v1 panels that still render beneath the one-page shell until the
- * lanes replace them. Do not add new v1 component styles here.
+ * (owned by UI step 0; see docs/ui-lanes-ownership.md). The Review stage still
+ * uses these styles for section drafts and grounded chat.
  */
 :root {
   /*
-   * Legacy aliases. The pre-v1 workbench panels still render beneath the new
-   * shell until later UI slices replace them; these aliases route their
-   * colors through the v1 tokens so both themes stay coherent.
+   * Legacy aliases for the section draft panel. Route its colors through
+   * the v1 tokens so Review stays coherent.
    */
   --navy-950: var(--hx-ink);
   --navy-900: var(--hx-ink);
@@ -1900,7 +1898,7 @@ samp {
   flex-direction: column;
 }
 .chat-dock.open {
-  max-height: 60vh;
+  max-height: calc(100dvh - 72px);
 }
 .chat-header {
   display: flex;
@@ -1964,6 +1962,8 @@ samp {
   overflow: hidden;
 }
 .chat-messages {
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding: 0.85rem 1.25rem;
   display: flex;

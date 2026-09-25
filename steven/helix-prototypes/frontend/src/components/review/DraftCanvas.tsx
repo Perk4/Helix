@@ -108,8 +108,8 @@ export function DraftCanvas({ workspace, section }: { workspace: Workspace; sect
       </p>
 
       {usedReferenceIds.length > 0 && (
-        <section className="hx-doc-refs" aria-labelledby="hx-doc-refs-h" data-testid="regulatory-references">
-          <h3 id="hx-doc-refs-h">Regulatory references</h3>
+        <details className="hx-doc-refs" data-testid="regulatory-references">
+          <summary>Regulatory references · {usedReferenceIds.length}</summary>
           <p className="hx-sub">
             Context for reviewers only. A cited reference is not a regulatory claim about this synthetic draft.
           </p>
@@ -130,7 +130,7 @@ export function DraftCanvas({ workspace, section }: { workspace: Workspace; sect
             })}
           </ul>
           <p className="hx-sub hx-doc-disclaimer">{template.disclaimer}</p>
-        </section>
+        </details>
       )}
 
       {usedReferenceIds.length === 0 && <p className="hx-sub hx-doc-disclaimer">{template.disclaimer}</p>}

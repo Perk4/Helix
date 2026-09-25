@@ -20,6 +20,9 @@ export function ClaimEvidence({ chain }: { chain: EvidenceChainData }) {
         <h2 id="hx-evidence-h">Source records and recomputation</h2>
         <p className="hx-sub">Recomputed by the backend from the frozen source IDs. Read-only.</p>
       </div>
+      <details className="hx-evidence-disclosure" data-testid="evidence-disclosure">
+        <summary>View claim values and {chain.sources.length} source records</summary>
+        <div className="hx-evidence-disclosure-body">
       <dl className="hx-evidence-facts" data-testid="claim-lineage">
         <div>
           <dt>Stored claim</dt>
@@ -111,6 +114,8 @@ export function ClaimEvidence({ chain }: { chain: EvidenceChainData }) {
           />
         </details>
       )}
+        </div>
+      </details>
     </Card>
   );
 }

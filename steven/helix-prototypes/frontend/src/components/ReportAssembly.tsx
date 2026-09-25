@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -54,6 +54,24 @@ export function ReportAssembly({
   const [draftLoading, setDraftLoading] = useState(false);
   const [draftBusy, setDraftBusy] = useState(false);
   const [draftError, setDraftError] = useState<string | null>(null);
+  const [controlsOpen, setControlsOpen] = useState(false);
+  const controlsToggleRef = useRef<HTMLButtonElement>(null);
+  const controlsCloseRef = useRef<HTMLButtonElement>(null);
+
+  const closeControls = useCallback(() => {
+    setControlsOpen(false);
+    controlsToggleRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    if (!controlsOpen) return;
+    controlsCloseRef.current?.focus();
+    const onEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") closeControls();
+    };
+    window.addEventListener("keydown", onEscape);
+    return () => window.removeEventListener("keydown", onEscape);
+  }, [controlsOpen, closeControls]);
 
   const refreshSections = useCallback(async () => {
     try {
@@ -154,22 +172,35 @@ export function ReportAssembly({
     <section className="view-content report-view" aria-labelledby="report-heading">
       <div className="view-intro report-intro">
         <div>
-          <p className="eyebrow hx-kicker">Drafted from verified study data</p>
+          <p className="eyebrow hx-kicker">Section drafts and template details</p>
           <h2 id="report-heading">Read each section as it will appear in the report.</h2>
           <p>
             Tables are drawn directly from the verified numbers; the narrative is written around them.
             Sections still marked <strong>needs review</strong> await your verification.
           </p>
         </div>
-        <div className="template-identity">
-          <div>
-            <span>Template</span>
-            <strong>{workspace.report.template.template_id}</strong>
+        <div className="report-intro-tools">
+          <div className="template-identity">
+            <div>
+              <span>Template</span>
+              <strong>{workspace.report.template.template_id}</strong>
+            </div>
+            <div>
+              <span>CTD location</span>
+              <strong>{workspace.report.template.ctd_location}</strong>
+            </div>
           </div>
-          <div>
-            <span>CTD location</span>
-            <strong>{workspace.report.template.ctd_location}</strong>
-          </div>
+          <button
+            type="button"
+            className="report-controls-toggle"
+            ref={controlsToggleRef}
+            onClick={() => setControlsOpen(true)}
+            aria-expanded={controlsOpen}
+            aria-controls="report-controls-panel"
+            data-testid="review-controls-toggle"
+          >
+            Review controls <span>{approvalRoles.size}/4 signed</span>
+          </button>
         </div>
       </div>
 
@@ -200,8 +231,8 @@ export function ReportAssembly({
             {!sections.length && <div className="empty-copy">Loading sections…</div>}
           </div>
           {claimSections.length > 0 && (
-            <div className="template-note" data-testid="claim-traceability">
-              <strong>Claim traceability</strong>
+            <details className="template-note" data-testid="claim-traceability">
+              <summary>Claim traceability · {claimSections.length} claims</summary>
               {claimSections.map((item) => (
                 <div key={`${item.sectionId}-${item.claimId}`}>
                   <p>
@@ -212,12 +243,12 @@ export function ReportAssembly({
                   </button>
                 </div>
               ))}
-            </div>
+            </details>
           )}
-          <div className="template-note">
-            <strong>Template boundary</strong>
+          <details className="template-note" data-testid="template-boundary">
+            <summary>Template boundary</summary>
             <p>{workspace.report.template.disclaimer}</p>
-          </div>
+          </details>
         </aside>
 
         <div className="report-center-column">
@@ -313,7 +344,14 @@ export function ReportAssembly({
           </article>
         </div>
 
-        <aside className="release-column">
+        {controlsOpen && <aside className="release-column report-controls-drawer" id="report-controls-panel" aria-label="Review and export controls" data-testid="review-controls-drawer">
+          <div className="report-controls-heading">
+            <div>
+              <p className="eyebrow hx-kicker">Review & export</p>
+              <h3>Release controls</h3>
+            </div>
+            <button type="button" ref={controlsCloseRef} onClick={closeControls} aria-label="Close review controls" data-testid="review-controls-close">Close</button>
+          </div>
           <section className="panel release-card hx-card">
             <div className="panel-heading">
               <div>
@@ -548,7 +586,7 @@ export function ReportAssembly({
               never a regulator approval claim.
             </p>
           </section>
-        </aside>
+        </aside>}
       </div>
 
       <ChatDock

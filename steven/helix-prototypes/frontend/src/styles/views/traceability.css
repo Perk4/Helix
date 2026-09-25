@@ -95,7 +95,18 @@
 #helix-e2e .hx-acc-loading { display: flex; align-items: center; gap: var(--hx-sp-10); padding: var(--hx-sp-16) var(--hx-sp-20); color: var(--hx-muted); }
 #helix-e2e .hx-trace-detail { display: grid; grid-template-columns: minmax(0, 360px) minmax(0, 1fr); gap: var(--hx-gap); align-items: start; }
 #helix-e2e .hx-trace-claims { display: flex; flex-wrap: wrap; gap: var(--hx-sp-8); }
+#helix-e2e .hx-trace-claim-picker .hx-trace-claims { margin-top: var(--hx-sp-12); }
 #helix-e2e .hx-trace-claims .hx-btn.is-selected { background: var(--hx-accent-soft); border-color: var(--hx-accent); color: var(--hx-accent); }
+#helix-e2e .hx-trace-claim-picker > summary,
+#helix-e2e .hx-evidence-disclosure > summary {
+  cursor: pointer;
+  color: var(--hx-accent);
+  font-size: var(--hx-fs-row);
+  font-weight: var(--hx-fw-semibold);
+}
+#helix-e2e .hx-trace-claim-picker > summary:focus-visible,
+#helix-e2e .hx-evidence-disclosure > summary:focus-visible { outline: var(--hx-focus-outline); outline-offset: 2px; }
+#helix-e2e .hx-evidence-disclosure-body { display: grid; gap: var(--hx-sp-16); margin-top: var(--hx-sp-16); }
 #helix-e2e .hx-receipt-bindings { margin: 0; padding-left: var(--hx-sp-18); font-size: var(--hx-fs-row); color: var(--hx-ink-2); }
 #helix-e2e .hx-receipt-hashes,
 #helix-e2e .hx-evidence-facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: var(--hx-sp-10) var(--hx-sp-16); margin: 0; font-size: var(--hx-fs-meta); }

@@ -23,13 +23,17 @@ import {
 type Props = {
   resultId: string;
   ruleLabel: string;
+  allowedDecisions?: readonly string[];
   onSubmit: (command: DispositionCommand) => Promise<unknown>;
   onCancel: () => void;
 };
 
-export function DispositionForm({ resultId, ruleLabel, onSubmit, onCancel }: Props) {
+export function DispositionForm({ resultId, ruleLabel, allowedDecisions, onSubmit, onCancel }: Props) {
   const id = useId();
-  const [decision, setDecision] = useState<string>("");
+  const choices = DISPOSITION_DECISIONS.filter((choice) => !allowedDecisions || allowedDecisions.includes(choice.value));
+  const [decision, setDecision] = useState<DispositionCommand["decision"] | "">(
+    choices.length === 1 ? choices[0].value : "",
+  );
   const [reason, setReason] = useState("");
   const [reviewer, setReviewer] = useState("");
   const [fieldErrors, setFieldErrors] = useState<DispositionFieldErrors>({});
@@ -49,11 +53,11 @@ export function DispositionForm({ resultId, ruleLabel, onSubmit, onCancel }: Pro
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (submitting) return;
-    const errors = validateDisposition({ decision, reason, reviewer });
+    const errors = validateDisposition({ decision, reason, reviewer }, choices);
     setFormError(null);
     setFieldErrors(errors);
     const count = Object.keys(errors).length;
-    if (count > 0) {
+    if (count > 0 || decision === "") {
       setStatus(`${count} ${count === 1 ? "field needs" : "fields need"} attention: ${Object.values(errors).join(" ")}`);
       focusFirst(errors);
       return;
@@ -62,7 +66,7 @@ export function DispositionForm({ resultId, ruleLabel, onSubmit, onCancel }: Pro
     setStatus(`Recording disposition for ${resultId}…`);
     try {
       await onSubmit({
-        decision: decision as DispositionCommand["decision"],
+        decision,
         reason: reason.trim(),
         reviewer: reviewer.trim(),
       });
@@ -100,7 +104,7 @@ export function DispositionForm({ resultId, ruleLabel, onSubmit, onCancel }: Pro
       <fieldset className="hx-disp-field" aria-describedby={describe("decision")} aria-invalid={Boolean(fieldErrors.decision) || undefined}>
         <legend>Decision</legend>
         <div className="hx-disp-options">
-          {DISPOSITION_DECISIONS.map((choice, index) => (
+          {choices.map((choice, index) => (
             <label key={choice.value} className="hx-disp-option">
               <input
                 ref={index === 0 ? decisionRef : undefined}

@@ -23,9 +23,9 @@ export function validateDisposition(draft: {
   decision: string;
   reason: string;
   reviewer: string;
-}): DispositionFieldErrors {
+}, choices: ReadonlyArray<{ value: DispositionDecisionChoice }> = DISPOSITION_DECISIONS): DispositionFieldErrors {
   const errors: DispositionFieldErrors = {};
-  if (!DISPOSITION_DECISIONS.some((choice) => choice.value === draft.decision)) {
+  if (!choices.some((choice) => choice.value === draft.decision)) {
     errors.decision = "Choose a decision.";
   }
   const reason = draft.reason.trim();

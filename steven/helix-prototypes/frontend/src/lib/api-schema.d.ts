@@ -2927,6 +2927,10 @@ export interface components {
         };
         /** WorkspaceResponse */
         WorkspaceResponse: {
+            /** Allowed Dispositions */
+            allowed_dispositions?: {
+                [key: string]: components["schemas"]["DispositionDecision"][];
+            };
             /**
              * Approval Current
              * @default false

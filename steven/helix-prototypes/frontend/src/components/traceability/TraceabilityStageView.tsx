@@ -208,6 +208,7 @@ export function TraceabilityStageView({
           <RuleAccordion
             chain={current}
             results={results}
+            allowedDispositions={workspace.allowed_dispositions ?? {}}
             dispositions={dispositions}
             openResultId={openResultId}
             onToggle={(resultId) => {
@@ -280,20 +281,23 @@ function GateBlockers({
           );
         })}
       </div>
-      <div className="hx-trace-claims" role="group" aria-label="Claims in this gate">
-        {workspace.claims.map((claim) => (
-          <button
-            key={claim.claim_id}
-            type="button"
-            className={cx("hx-btn", "sm", claim.claim_id === claimId && "is-selected")}
-            aria-pressed={claim.claim_id === claimId}
-            onClick={() => onSelect(claim.claim_id)}
-            data-testid={`claim-${claim.claim_id}`}
-          >
-            {claim.claim_id}
-          </button>
-        ))}
-      </div>
+      <details className="hx-trace-claim-picker" data-testid="claim-picker">
+        <summary>Browse all {workspace.claims.length} claims</summary>
+        <div className="hx-trace-claims" role="group" aria-label="Claims in this gate">
+          {workspace.claims.map((claim) => (
+            <button
+              key={claim.claim_id}
+              type="button"
+              className={cx("hx-btn", "sm", claim.claim_id === claimId && "is-selected")}
+              aria-pressed={claim.claim_id === claimId}
+              onClick={() => onSelect(claim.claim_id)}
+              data-testid={`claim-${claim.claim_id}`}
+            >
+              {claim.claim_id}
+            </button>
+          ))}
+        </div>
+      </details>
     </Card>
   );
 }
