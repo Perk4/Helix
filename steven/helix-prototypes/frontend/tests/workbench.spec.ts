@@ -35,6 +35,17 @@ test("rejects a workspace response from an incompatible API", async ({ page }) =
   expect(browserErrors).toEqual([]);
 });
 
+/** DH-7: true when the server's pinned run was frozen with the demo flag (skipped packages recorded). */
+async function isDemoFrozen(request: import("@playwright/test").APIRequestContext): Promise<boolean> {
+  const response = await request.get(`${apiRoot}/studies/STUDY-HLX-028/workspace`);
+  const workspace = (await response.json()) as {
+    pinned_run?: { event_history: { event: string; details?: Record<string, unknown> }[] } | null;
+  };
+  const requested = workspace.pinned_run?.event_history.find((event) => event.event === "run_requested");
+  const value = requested?.details?.demo_unqualified_packages;
+  return typeof value === "string" && value.length > 0;
+}
+
 test("runs the synthetic study from validation through explicit export", async ({ page, request }) => {
   const browserErrors: string[] = [];
   page.on("console", (message) => {
@@ -155,8 +166,9 @@ test("runs the synthetic study from validation through explicit export", async (
   await page.screenshot({ path: "../evidence/helix-body-weight-lineage.png", fullPage: true });
 
   // Lane C (#22): dispositions are typed reviewer commands recorded at Human Gate 2.
-  // The legacy report button only routes there; it never fabricates a command.
-  await page.getByRole("button", { name: /Record (synthetic|Gate 2) disposition/ }).first().click();
+  // DH-4: the legacy report (and its routing button) now renders only in the Gate 3 body, so the
+  // reviewer opens Gate 2 from the journey Progress Bar; still no command is fabricated.
+  await page.getByRole("navigation", { name: "Journey progress" }).getByRole("button").nth(7).click();
   await expect(page.getByTestId("traceability-stage-view")).toBeVisible();
   for (const [resultId, decision] of [
     ["VR-004", "Corrected"],
@@ -198,6 +210,33 @@ test("runs the synthetic study from validation through explicit export", async (
   // The legacy ReportAssembly FSA card stays in sync with the same server record.
   await expect(page.getByTestId("approval-current")).toHaveText("current");
   await expect(page.getByTestId("release-status")).toHaveText("Ready for export");
+  if (await isDemoFrozen(request)) {
+    // DH-7 (#68), flag ON on the shipped pending tree: the run was frozen with the demo flag, so
+    // export fails closed. The button is disabled with its reason and the API refuses with a 409.
+    await expect(page.getByTestId("export-final-package")).toBeDisabled();
+    await expect(page.getByTestId("export-disabled-reason")).toHaveAttribute("data-gate", "demo_not_qualified");
+    const refused = await request.post(`${apiRoot}/studies/STUDY-HLX-028/exports`, {
+      data: { actor: "Dr. Sam Director", idempotency_key: "workbench-demo-frozen-export" },
+    });
+    expect(refused.status()).toBe(409);
+    expect(((await refused.json()) as { detail: { code: string } }).detail.code).toBe("demo_not_qualified");
+    const refusedWorkspace = (await (await request.get(`${apiRoot}/studies/STUDY-HLX-028/workspace`)).json()) as {
+      release_gate: { status: string };
+      export_artifacts: { artifact_id: string; status: string }[];
+    };
+    expect(refusedWorkspace.release_gate.status).not.toBe("exported");
+    for (const artifact of refusedWorkspace.export_artifacts) {
+      expect(artifact.status).not.toBe("exported");
+      const download = await request.get(
+        `${apiRoot}/studies/STUDY-HLX-028/exports/${encodeURIComponent(artifact.artifact_id)}`,
+      );
+      expect(download.status()).toBe(409);
+    }
+    await expect(page.getByTestId("release-status")).not.toHaveText("Package exported");
+    await expect(page.getByTestId("export-receipt")).toHaveCount(0);
+    expect(browserErrors).toEqual([]);
+    return;
+  }
   await expect(page.getByTestId("export-final-package")).toBeEnabled();
   await page.getByTestId("export-final-package").click();
   await expect(page.getByTestId("release-status")).toHaveText("Package exported");
@@ -494,7 +533,8 @@ test("labels every approved export artifact kind instead of showing raw kinds", 
       status: index % 2 === 0 ? "exported" : "pending",
       checksum: index % 2 === 0 ? INJECTED_HASH : null,
     }));
-    await route.fulfill({ status: response.status(), contentType: "application/json", body: JSON.stringify(workspace) });
+    // DH-4: the legacy export card renders in the Gate 3 body, so project Gate 3 as current.
+    await route.fulfill({ status: response.status(), contentType: "application/json", body: JSON.stringify(withReviewStage(workspace)) });
   });
 
   await page.goto("/");
