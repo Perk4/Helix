@@ -111,7 +111,7 @@ async function harness(page: Page, init: Partial<Harness> = {}): Promise<Harness
   await page.route("**/api/v1/studies/*/exports", async (route) => {
     h.exportPosts += 1;
     if (h.exportRefusal) {
-      await json(route, 409, { detail: h.exportRefusal });
+      await json(route, 409, { detail: { code: "demo_not_qualified", message: h.exportRefusal } });
       return;
     }
     if (h.exportFailuresLeft > 0) {
@@ -459,7 +459,9 @@ test("demo-frozen run: only a small 'Not qualified' status label; no demo chrome
   expect(await page.locator("body").innerText()).not.toMatch(regulatoryClaim);
 });
 
-test("demo-frozen run: export fails closed; the server refusal is shown and nothing is downloaded", async ({ page }) => {
+test("demo-frozen run: export is disabled with a visible reason; no refused click, no retry, nothing downloaded", async ({
+  page,
+}) => {
   const h = await harness(page, {
     demo: true,
     phase: "fsa",
@@ -469,10 +471,21 @@ test("demo-frozen run: export fails closed; the server refusal is shown and noth
   await page.goto("/");
   await expect(page.getByTestId("run-not-qualified")).toHaveText(NOT_QUALIFIED);
   const button = page.getByTestId("export-final-package");
-  await expect(button).toBeEnabled();
-  await button.click();
-  await expect(page.getByTestId("export-error")).toContainText(DEMO_EXPORT_REFUSAL);
-  expect(h.exportPosts).toBe(1);
+  // DH-7 P2 (Tester): the server refuses every export of this run, so the button never invites it.
+  await expect(button).toBeDisabled();
+  await expect(button).toHaveText("Export final package");
+  const reason = page.getByTestId("export-disabled-reason");
+  await expect(reason).toBeVisible();
+  await expect(reason).toHaveAttribute("data-gate", "demo_not_qualified");
+  await expect(reason).toContainText("Export is refused for this run");
+  const panel = page.getByTestId("export-panel");
+  await expect(panel).not.toContainText(/ready for export/i);
+  await expect(panel).not.toContainText("Retry export");
+  await expect(page.getByTestId("export-error")).toHaveCount(0);
+  await button.click({ force: true }).catch(() => undefined);
+  expect(h.exportPosts).toBe(0);
+  // The label stays in the Gate 3 banner only.
+  await expect(page.getByText(NOT_QUALIFIED, { exact: true })).toHaveCount(1);
   await expect(page.getByTestId("downloads")).toHaveCount(0);
   await expect(page.getByTestId("review-stage")).not.toHaveAttribute("data-gate-status", "complete");
 });
