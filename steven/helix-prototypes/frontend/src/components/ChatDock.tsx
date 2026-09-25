@@ -14,6 +14,8 @@ import {
 } from "@/lib/api";
 import type { ChatMessage, SectionContentDraft } from "@/lib/types";
 
+import { CheckIcon, ChevronIcon, CloseIcon, FileIcon } from "./icons";
+
 type Props = {
   studyId: string;
   sectionId: string;
@@ -163,14 +165,18 @@ export function ChatDock({ studyId, sectionId, sectionTitle, onApplied }: Props)
           aria-expanded={open}
         >
           <span className="chat-glyph" aria-hidden="true">
-            💬
+            <FileIcon />
           </span>
           <span className="chat-title">
             Assistant
             <strong>{sectionTitle}</strong>
           </span>
-          <span className="chat-chevron" aria-hidden="true">
-            {open ? "⌄" : "⌃"}
+          <span
+            className="chat-chevron"
+            aria-hidden="true"
+            style={{ display: "inline-flex", transform: open ? "rotate(90deg)" : "rotate(-90deg)" }}
+          >
+            <ChevronIcon />
           </span>
         </button>
       </div>
@@ -181,8 +187,8 @@ export function ChatDock({ studyId, sectionId, sectionTitle, onApplied }: Props)
             {messages.length === 0 && !proposed && (
               <p className="chat-empty">
                 Ask about the study or this section, or describe a change to “{sectionTitle}”. I
-                answer questions, and when you ask for a change I propose a rewrite you approve with
-                👍 / 👎.
+                answer questions, and when you ask for a change I propose a rewrite you Apply or
+                Discard.
               </p>
             )}
             {messages.map((message) => (
@@ -220,7 +226,7 @@ export function ChatDock({ studyId, sectionId, sectionTitle, onApplied }: Props)
                     disabled={busy !== null}
                     data-testid="apply-proposed"
                   >
-                    👍 Apply
+                    <CheckIcon size={14} /> Apply
                   </button>
                   <button
                     className="button small thumbs-down"
@@ -229,7 +235,7 @@ export function ChatDock({ studyId, sectionId, sectionTitle, onApplied }: Props)
                     disabled={busy !== null}
                     data-testid="discard-proposed"
                   >
-                    👎 Discard
+                    <CloseIcon size={14} /> Discard
                   </button>
                 </div>
               </div>
