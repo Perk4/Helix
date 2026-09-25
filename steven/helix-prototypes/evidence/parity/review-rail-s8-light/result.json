@@ -1,10 +1,10 @@
 {
-  "id": "review-export-dark",
-  "title": "Human Gate 3 Review and export, full panel (#23, dark)",
+  "id": "review-rail-s8-light",
+  "title": "Gate 3 Progress Bar at stage 8 (#23, light)",
   "lane": "D",
   "issue": "#23",
-  "status": "report-only",
-  "colorScheme": "dark",
+  "status": "enforced",
+  "colorScheme": "light",
   "viewport": {
     "width": 1440,
     "height": 900
@@ -13,18 +13,18 @@
   "reference": "research/helix-e2e-workbench-v1.html?stage=8",
   "pixelThreshold": 0.02,
   "maxDiffRatio": 0.01,
-  "ratio": 0.836737,
-  "diffPixels": 801736,
-  "comparedPixels": 958170,
-  "maskedPixels": 968950,
+  "ratio": 0,
+  "diffPixels": 0,
+  "comparedPixels": 195840,
+  "maskedPixels": 0,
   "oursSize": {
     "width": 1360,
-    "height": 1417
+    "height": 144
   },
   "referenceSize": {
     "width": 1360,
-    "height": 541
+    "height": 144
   },
-  "sizeMismatch": true,
-  "pass": false
+  "sizeMismatch": false,
+  "pass": true
 }
