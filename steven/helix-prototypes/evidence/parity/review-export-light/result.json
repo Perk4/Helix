@@ -3,23 +3,23 @@
   "title": "Human Gate 3 Review and export (#23)",
   "lane": "D",
   "issue": "#23",
-  "status": "pending",
+  "status": "report-only",
   "colorScheme": "light",
   "viewport": {
     "width": 1440,
     "height": 900
   },
-  "ours": "<base>/",
+  "ours": "<base>/parity/review",
   "reference": "research/helix-e2e-workbench-v1.html?stage=8",
   "pixelThreshold": 0.02,
   "maxDiffRatio": 0.01,
-  "ratio": 0.692633,
-  "diffPixels": 622462,
-  "comparedPixels": 898690,
-  "maskedPixels": 740110,
+  "ratio": 0.75619,
+  "diffPixels": 856363,
+  "comparedPixels": 1132470,
+  "maskedPixels": 794650,
   "oursSize": {
     "width": 1360,
-    "height": 1205
+    "height": 1417
   },
   "referenceSize": {
     "width": 1360,

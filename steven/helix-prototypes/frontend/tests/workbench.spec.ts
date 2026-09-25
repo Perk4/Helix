@@ -149,7 +149,7 @@ test("runs the synthetic study from validation through explicit export", async (
   await expect(page.getByText("agent source severity match", { exact: true })).toBeVisible();
 
   for (let remaining = 3; remaining > 0; remaining -= 1) {
-    const buttons = page.getByRole("button", { name: "Record synthetic disposition" });
+    const buttons = page.getByRole("button", { name: "Record Gate 2 disposition" });
     await expect(buttons).toHaveCount(remaining);
     await buttons.first().click();
     await expect(buttons).toHaveCount(remaining - 1);

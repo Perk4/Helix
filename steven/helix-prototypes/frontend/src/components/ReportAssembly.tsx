@@ -82,7 +82,7 @@ export function ReportAssembly({ workspace, busy, onResolve }: Props) {
                         disabled={busy !== null}
                         onClick={() => onResolve(result.result_id, result.message)}
                       >
-                        {busy === result.result_id ? "Recording…" : "Record synthetic disposition"}
+                        {busy === result.result_id ? "Recording…" : "Record Gate 2 disposition"}
                       </button>
                     )}
                   </div>
