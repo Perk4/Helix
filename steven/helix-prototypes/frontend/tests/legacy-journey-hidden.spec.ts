@@ -34,7 +34,15 @@ const LEGACY_CONTROLS = [
 
 type DraftState = {
   cycles: string[];
-  attempts: Array<{ cycle: string; attempt: number; action: "retry" | "stop_for_review"; maxAttempts?: number }>;
+  attempts: Array<{
+    cycle: string;
+    attempt: number;
+    action: "retry" | "stop_for_review";
+    maxAttempts?: number;
+    /** False until the server records a cross-section query / evaluation for this attempt. */
+    queried?: boolean;
+    evaluated?: boolean;
+  }>;
   canRevise: boolean;
 };
 
@@ -139,7 +147,7 @@ function draftWorkspace(live: Json, state: DraftState): Json {
       entry.section_package_id === BW ? { ...entry, eligible: true, reasons: [] } : entry,
     ),
     section_runs: state.attempts.map((item) => storedAttempt(item.cycle, item.attempt)),
-    cross_section_queries: state.attempts.map((item) => ({
+    cross_section_queries: state.attempts.filter((item) => item.queried !== false).map((item) => ({
       query_id: `CSQ-${runId(item.cycle, item.attempt)}`,
       run_id: runId(item.cycle, item.attempt),
       status: "returned",
@@ -147,7 +155,9 @@ function draftWorkspace(live: Json, state: DraftState): Json {
       returned: [],
       rejected_artifact_ids: [],
     })),
-    candidate_evaluations: state.attempts.map((item) => evaluation(item.cycle, item.attempt, item.action, item.maxAttempts)),
+    candidate_evaluations: state.attempts
+      .filter((item) => item.evaluated !== false)
+      .map((item) => evaluation(item.cycle, item.attempt, item.action, item.maxAttempts)),
     promotion_decisions: [],
     section_drafts: [],
     drafting_cycles: state.cycles.map((id, index) => cycle(id, index === 0 ? null : state.cycles[index - 1])),
@@ -156,10 +166,85 @@ function draftWorkspace(live: Json, state: DraftState): Json {
   });
 }
 
-type Bodies = { sectionRuns: Json[]; revisions: Json[] };
+type Bodies = { sectionRuns: Json[]; revisions: Json[]; queries: string[]; evaluations: string[] };
 
-async function serveDraft(page: Page, state: DraftState): Promise<Bodies> {
-  const bodies: Bodies = { sectionRuns: [], revisions: [] };
+/** A receipt shape the client accepts (assertCrossSectionQuery). */
+function queryReceipt(id: string): Json {
+  return {
+    schema_version: "helix.cross-section-query-receipt/v1",
+    query_id: `CSQ-${id}`,
+    run_id: id,
+    section_package_id: BW,
+    requested_artifact_ids: ["claim:C-BW-HIGH", "validation.body_weight"],
+    returned: [
+      { artifact_id: "claim:C-BW-HIGH", kind: "claim", hash: hash("b0b0") },
+      { artifact_id: "validation.body_weight", kind: "fact", hash: hash("a11e") },
+    ],
+    rejected_artifact_ids: [],
+    status: "returned",
+  };
+}
+
+/** An evaluation the client accepts (assertCandidateEvaluation). */
+function evaluationReceipt(id: string, attempt: number, action: "retry" | "stop_for_review"): Json {
+  const receipt = (kind: string) => ({ receipt_id: `${kind}-${id}`, candidate_id: `SDC-${id}`, candidate_hash: hash("cafe") });
+  return {
+    schema_version: "helix.candidate-evaluation/v1",
+    evaluation_id: `CEV-${id}`,
+    run_id: id,
+    candidate_id: `SDC-${id}`,
+    candidate_hash: hash("cafe"),
+    section_package_id: BW,
+    provenance_receipt: {
+      schema_version: "helix.provenance-receipt/v1",
+      ...receipt("PRV"),
+      status: "failed",
+      enforcement_class: "hard_blocker",
+      waivable: false,
+      bindings: [],
+      blockers: [],
+    },
+    study_output_evaluation_receipt: {
+      schema_version: "helix.study-output-evaluation-receipt/v1",
+      ...receipt("SOE"),
+      suite_id: "helix-section-study-output",
+      suite_version: "0.1.0",
+      suite_hash: hash("a11e"),
+      status: "passed",
+      enforcement_class: "review_required",
+      waivable: false,
+      results: [],
+    },
+    template_conformance_receipt: {
+      schema_version: "helix.template-conformance-receipt/v1",
+      ...receipt("TCF"),
+      section_package_id: BW,
+      status: "passed",
+      results: [],
+    },
+    next_attempt_decision: {
+      action,
+      attempt,
+      max_attempts: 3,
+      reasons: ["Provenance compilation failed"],
+      blocking_receipt_ids: [`PRV-${id}`],
+    },
+    hashes: {
+      candidate: hash("cafe"),
+      provenance: hash("b0b0"),
+      study_output_evaluation: hash("a11e"),
+      template_conformance: hash("b0b0"),
+      evaluation: hash("eeee"),
+    },
+  };
+}
+
+/**
+ * `bare`: like the real server, POST /section-runs records only the candidate. The query and
+ * the evaluation for that attempt exist only once their own commands are sent.
+ */
+async function serveDraft(page: Page, state: DraftState, options: { bare?: boolean } = {}): Promise<Bodies> {
+  const bodies: Bodies = { sectionRuns: [], revisions: [], queries: [], evaluations: [] };
   await page.route("**/api/v1/studies/*/workspace", async (route) => {
     const live = await serverWorkspace(route);
     if (live) await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(draftWorkspace(live, state)) });
@@ -175,11 +260,35 @@ async function serveDraft(page: Page, state: DraftState): Promise<Bodies> {
     const match = /-body-weight-(CYCLE-[A-Z0-9-]+)-attempt-(\d+)$/.exec(key);
     const cycleId = match?.[1] ?? "CYCLE-BW-001";
     const attempt = Number(match?.[2] ?? 1);
-    state.attempts.push({ cycle: cycleId, attempt, action: "retry" });
+    state.attempts.push(
+      options.bare
+        ? { cycle: cycleId, attempt, action: "retry", queried: false, evaluated: false }
+        : { cycle: cycleId, attempt, action: "retry" },
+    );
     await route.fulfill({
       status: 201,
       contentType: "application/json",
       body: JSON.stringify(storedAttempt(cycleId, attempt).receipt),
+    });
+  });
+  const attemptFor = (url: string) => {
+    const id = decodeURIComponent(new URL(url).pathname.split("/").at(-2) ?? "");
+    return { id, item: state.attempts.find((entry) => runId(entry.cycle, entry.attempt) === id) };
+  };
+  await page.route("**/api/v1/studies/*/section-runs/*/cross-section-queries", async (route) => {
+    const { id, item } = attemptFor(route.request().url());
+    bodies.queries.push(id);
+    if (item) item.queried = true;
+    await route.fulfill({ status: 201, contentType: "application/json", body: JSON.stringify(queryReceipt(id)) });
+  });
+  await page.route("**/api/v1/studies/*/section-runs/*/evaluations", async (route) => {
+    const { id, item } = attemptFor(route.request().url());
+    bodies.evaluations.push(id);
+    if (item) item.evaluated = true;
+    await route.fulfill({
+      status: 201,
+      contentType: "application/json",
+      body: JSON.stringify(evaluationReceipt(id, item?.attempt ?? 1, item?.action ?? "retry")),
     });
   });
   await page.route("**/api/v1/studies/*/section-revisions", async (route) => {
@@ -214,6 +323,14 @@ async function expectNoLegacyJourney(page: Page) {
 }
 
 const live = (page: Page) => page.getByTestId("agent-live");
+
+/** The agent confirmed the freeze-created Extract receipt earlier in this session. */
+async function confirmDataValidation(page: Page) {
+  await page.addInitScript(
+    ([key, value]) => window.sessionStorage.setItem(key, JSON.stringify([value])),
+    ["helix.agent-dv-confirmed.v1", freezeFixture.after.pinned_run.run_id] as const,
+  );
+}
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => window.sessionStorage.clear());
@@ -330,6 +447,79 @@ test("retry is hidden on the Draft stage exactly when StudyJourney hid it (legac
   await expect(page.getByTestId("candidate-attempt-CYCLE-BW-001-3")).toBeVisible();
   await expect(page.getByTestId("retry-body-weight")).toHaveCount(0);
   expect(commands).toEqual([]);
+});
+
+// P1 (Codex PRRT_kwDOUohZWs6l85Fw): /section-runs records only the candidate. After a person's
+// retry, the next governed steps (query, then evaluation) must be reachable on the Draft stage
+// with the legacy toggle OFF, although the server reports Draft (and later stages) complete.
+test("after a person's retry the Draft stage offers the query, then the evaluation, with the legacy panel closed", async ({ page }) => {
+  await confirmDataValidation(page); // in session: the agent already confirmed the Extract receipt
+  const state: DraftState = { cycles: ["CYCLE-BW-001"], attempts: [{ cycle: "CYCLE-BW-001", attempt: 1, action: "retry" }], canRevise: false };
+  const bodies = await serveDraft(page, state, { bare: true });
+  const commands = trackCommands(page);
+  await openDraftStage(page);
+  await page.getByTestId("agent-human-retry").click();
+  await expect(live(page)).toContainText("recorded by the server");
+  const attemptTwo = runId("CYCLE-BW-001", 2);
+  await expect(page.getByTestId("evidence-query")).toContainText("not run");
+  const run = page.getByTestId("agent-run-step");
+  await expect(run).toHaveText("Query declared dependencies");
+  await expect(run).toBeEnabled();
+  await run.click();
+  await expect(live(page)).toContainText("Query declared dependencies: recorded by the server.");
+  await expect(page.getByTestId("agent-stage-view")).toHaveAttribute("data-stage", "draft");
+  await expect(run).toHaveText("Evaluate candidate");
+  await run.click();
+  await expect(live(page)).toContainText("Evaluate candidate: recorded by the server.");
+  await expect(page.getByTestId("agent-stage-view")).toHaveAttribute("data-stage", "draft");
+  // Evaluated: the agent stops for a person again, and the next retry is offered.
+  await expect(page.getByTestId("agent-run-step")).toHaveCount(0);
+  await expect(page.getByTestId("agent-human-retry")).toHaveText("Retry candidate (attempt 3 of 3)");
+  await expectNoLegacyJourney(page);
+  expect(bodies.queries).toEqual([attemptTwo]);
+  expect(bodies.evaluations).toEqual([attemptTwo]);
+  expect(commands.filter((item) => !item.endsWith("/workspace"))).toEqual([
+    `POST /api/v1/studies/${studyId}/section-runs`,
+    `POST /api/v1/studies/${studyId}/section-runs/${attemptTwo}/cross-section-queries`,
+    `POST /api/v1/studies/${studyId}/section-runs/${attemptTwo}/evaluations`,
+  ]);
+});
+
+test("after a reload, a person's first attempt in a new cycle leads through the Extract replay to the query on the Draft stage", async ({ page }) => {
+  // New session: the Extract receipt is not confirmed yet, so the agent's real next step is its
+  // idempotent replay. The Draft view still offers it, then the query, with the legacy panel closed.
+  const state: DraftState = {
+    cycles: ["CYCLE-BW-001", REVISED],
+    attempts: [1, 2, 3].map((attempt) => ({ cycle: "CYCLE-BW-001", attempt, action: attempt === 3 ? "stop_for_review" : "retry" })),
+    canRevise: false,
+  };
+  const bodies = await serveDraft(page, state, { bare: true });
+  await openDraftStage(page);
+  const replays: Json[] = [];
+  await page.route("**/api/v1/studies/*/data-validation-packages", async (route) => {
+    replays.push((route.request().postDataJSON() ?? {}) as Json);
+    const execution = (freezeFixture.after.data_validation_executions as Json[])[0];
+    await route.fulfill({
+      status: 201,
+      contentType: "application/json",
+      body: JSON.stringify({ ...execution, receipt: { ...(execution.receipt as Json), idempotent_replay: true } }),
+    });
+  });
+  await page.getByTestId("agent-human-draft-cycle").click();
+  await expect(live(page)).toContainText("recorded by the server");
+  const run = page.getByTestId("agent-run-step");
+  await expect(run).toHaveText("Confirm Data Validation receipt (idempotent replay)");
+  await run.click();
+  await expect(live(page)).toContainText("idempotent replay");
+  await expect(page.getByTestId("agent-stage-view")).toHaveAttribute("data-stage", "draft");
+  await expect(run).toHaveText("Query declared dependencies");
+  await run.click();
+  await expect(run).toHaveText("Evaluate candidate");
+  expect(replays).toEqual([
+    expect.objectContaining({ idempotency_key: `dvp-${freezeFixture.after.pinned_run.run_id}-validation.body_weight` }),
+  ]);
+  expect(bodies.queries).toEqual([runId(REVISED, 1)]);
+  await expectNoLegacyJourney(page);
 });
 
 test("the legacy records stay reachable behind one toggle and hide again", async ({ page }) => {

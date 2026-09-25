@@ -165,8 +165,10 @@ export function useAgentSteps({ studyId, workspace, onWorkspace, onBusyChange }:
     return () => controller.abort();
   }, [following, runId, studyId, refresh, showIfNewest]);
 
-  const runStep = useCallback(async () => {
-    if (!begin()) return;
+  // `follow` false: started from a Draft follow-up on a completed Draft stage (DH-2), so the
+  // view stays on Draft instead of following the server stage (DH-1).
+  const runStep = useCallback(async (follow = true) => {
+    if (!begin(follow)) return;
     setMessage(null);
     let next: AgentStep | null = null;
     try {
@@ -203,8 +205,8 @@ export function useAgentSteps({ studyId, workspace, onWorkspace, onBusyChange }:
     }
   }, [begin, end, refresh, options, studyId, planner, record]);
 
-  const runSequence = useCallback(async () => {
-    if (!begin()) return;
+  const runSequence = useCallback(async (follow = true) => {
+    if (!begin(follow)) return;
     setMessage(null);
     stopRef.current = false;
     setStopRequested(false);
@@ -308,8 +310,9 @@ export function useAgentSteps({ studyId, workspace, onWorkspace, onBusyChange }:
     receipts,
     eligibilityChange,
     next: nextAgentStep(workspace, { confirmedDataValidationRuns: confirmed }),
-    runStep: () => void runStep(),
-    runSequence: () => void runSequence(),
+    // A click passes an event here, so only an explicit `false` turns following off.
+    runStep: (follow?: unknown) => void runStep(follow !== false),
+    runSequence: (follow?: unknown) => void runSequence(follow !== false),
     sequenceRunning,
     stopRequested,
     stop,

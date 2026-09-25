@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 
-import { isAgentStep } from "@/lib/api/agentSteps";
+import { isAgentStep, nextAgentStep, type AgentAction } from "@/lib/api/agentSteps";
 import type { JourneyStage, JourneyStageId, Workspace } from "@/lib/types";
 
 import { PersonIcon, ShieldIcon } from "../icons";
@@ -48,6 +48,9 @@ const CHIP: Record<JourneyStage["status"], [string, Tone]> = {
   pending: ["Not started", "muted"],
 };
 
+/** Governed steps on an already recorded Section Run (StudyJourney: query, evaluate, promote). */
+const DRAFT_FOLLOW_UPS: ReadonlySet<AgentAction> = new Set(["cross-section-query", "candidate-evaluation", "section-promotion"]);
+
 export function AgentStageView({
   studyId,
   workspace,
@@ -86,7 +89,26 @@ export function AgentStageView({
   if (!stage || !isAgentStageId(stage.stage_id)) return null;
 
   const { next, inFlight } = agent;
-  const actionable = stage.status === "current" || stage.status === "blocked";
+  // P1 (Codex PRRT_kwDOUohZWs6l85Fw): the server reports Draft complete once validation passes,
+  // but after a person's retry or new-cycle attempt the run still needs its query, evaluation
+  // and promotion. StudyJourney offered those on any recorded run; the Draft view offers the
+  // agent's next governed step for them, and running it keeps the view on Draft. In a new
+  // session the next step is first the idempotent Extract replay (confirmation is per session);
+  // visibility is decided by the step after it, and the button still runs the real next step.
+  const pinnedRunId = workspace.pinned_run?.run_id;
+  const afterReplay =
+    isAgentStep(next) && next.replay && pinnedRunId
+      ? nextAgentStep(workspace, { confirmedDataValidationRuns: new Set([pinnedRunId]) })
+      : next;
+  const draftFollowUp =
+    stage.stage_id === "draft" &&
+    stage.status !== "current" &&
+    stage.status !== "blocked" &&
+    isAgentStep(next) &&
+    isAgentStep(afterReplay) &&
+    afterReplay.stageId === "draft" &&
+    DRAFT_FOLLOW_UPS.has(afterReplay.action);
+  const actionable = stage.status === "current" || stage.status === "blocked" || draftFollowUp;
   const busy = Boolean(inFlight) || Boolean(agent.humanInFlight) || otherBusy;
   const llm = workspace.planner_capabilities.find((item) => item.mode === "openai_compatible");
   const [chipText, chipTone] = inFlight?.stageId === stage.stage_id ? (["Running", "accent"] as const) : CHIP[stage.status];
@@ -171,13 +193,13 @@ export function AgentStageView({
                   <Button
                     variant="primary"
                     disabled={busy || (next.stageId !== stage.stage_id && !next.replay)}
-                    onClick={agent.runStep}
+                    onClick={() => agent.runStep(!draftFollowUp)}
                     data-testid="agent-run-step"
                   >
                     {inFlight ? `${inFlight.label}…` : next.label}
                   </Button>
                   {!agent.sequenceRunning && (
-                    <Button disabled={busy} onClick={agent.runSequence} data-testid="agent-run-sequence">
+                    <Button disabled={busy} onClick={() => agent.runSequence(!draftFollowUp)} data-testid="agent-run-sequence">
                       Run agent steps to the next stop
                     </Button>
                   )}
