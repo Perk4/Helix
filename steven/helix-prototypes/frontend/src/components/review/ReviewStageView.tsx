@@ -44,10 +44,10 @@ export function ReviewStageView({
   const gateStatus = stageStatus(workspace, "review-export");
   const passed = gateStatus === "complete";
   const hint = passed
-    ? "Export recorded by the server. Journey complete."
+    ? "Export recorded. Journey complete."
     : gateStatus === "pending"
       ? "Opens after the traceability gate."
-      : "Record each sign-off, then export.";
+      : "Record sign-offs, then export.";
 
   async function approve(role: ApprovalRole) {
     setBusy(role);
