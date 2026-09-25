@@ -53,6 +53,7 @@ export function HelixWorkbench({ studyId }: Props) {
   const [planner, setPlanner] = useState<PlannerMode>("fixture");
   const [busy, setBusy] = useState<string | null>(null);
   const [agentBusy, setAgentBusy] = useState(false); // lane B: agent command in flight
+  const [legacyOpen, setLegacyOpen] = useState(false); // DH-2 (#66): legacy records, off the default path
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   // DH-1: follow the server stage while the agent works; auto-start once after a freeze.
@@ -416,8 +417,18 @@ export function HelixWorkbench({ studyId }: Props) {
             {selectedStageId === "review-export" && (
               <ReviewStageView workspace={workspace} onWorkspace={setWorkspace} onRefresh={refresh} />
             )}
-            {/* Lanes B, C and D replace these legacy panels with their stage views. Until
-                then they remain the fallback so no stage loses its working controls. */}
+            {/* DH-2 (#66): the legacy StudyJourney is off the default path; its governed
+                commands live on the stage views. Its read-only records (attempt history,
+                cycles, contract gates, scaffold history) stay one click away. */}
+            <Button
+              size="sm"
+              aria-expanded={legacyOpen}
+              onClick={() => setLegacyOpen((open) => !open)}
+              data-testid="legacy-journey-toggle"
+            >
+              {legacyOpen ? "Hide legacy journey records" : "Show legacy journey records"}
+            </Button>
+            {legacyOpen && (
             <StudyJourney
               workspace={workspace}
               planner={planner}
@@ -439,6 +450,7 @@ export function HelixWorkbench({ studyId }: Props) {
               onQueryCrossSection={() => void queryBodyWeightFacts()}
               onPromoteSectionDraft={() => void promoteBodyWeight()}
             />
+            )}
             <ReportAssembly
               workspace={workspace}
               busy={busy}
