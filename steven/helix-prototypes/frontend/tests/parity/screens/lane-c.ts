@@ -2,12 +2,11 @@ import type { ParityScreen } from "../types";
 
 // OWNER: Lane C (#22 Traceability Review gate).
 //
-// Stays "pending": the seeded synthetic backend the kit starts sits at Upload and cannot
-// reach Gate 2 without a qualified freeze and a Codex section run, so `/` never renders
-// the Traceability view in a default run. Lane C captures it with
-// HELIX_PARITY_INCLUDE_PENDING=1 HELIX_PARITY_ONLY=traceability-gate-light against its own
-// servers, whose API journey is projected to Gate 2 over the live dispositions (see the
-// PR evidence). Enforcing needs a step-0 Gate 2 fixture or seed (escalated in the PR).
+// The seeded synthetic backend sits at Upload and cannot reach Gate 2 without a qualified
+// freeze and a Codex section run, so this screen renders the real TraceabilityStageView at
+// the lane C fixture route `/parity/traceability`. That route 404s unless the server runs
+// with HELIX_PARITY_FIXTURES=1, holds display state only (the reference `?stage=7` claim,
+// C-BW-HIGH with four rules and one blocked grain rule), and never calls the API.
 
 export const laneCScreens: ParityScreen[] = [
   {
@@ -15,15 +14,15 @@ export const laneCScreens: ParityScreen[] = [
     title: "Human Gate 2 Traceability Review (#22)",
     lane: "C",
     issue: "#22",
-    status: "pending",
+    status: "enforced",
     colorScheme: "light",
     reference: { path: "?stage=7", selector: "#hx-panel" },
     ours: {
-      path: "/",
+      path: "/parity/traceability",
       selector: '[data-testid="traceability-gate"]',
       waitFor: '[data-testid="trace-flow"]',
     },
     notes:
-      "Banner, claim header, chips, accordion and five-step flow match the reference structure. Row content is server data (2 rules for C-BW-HIGH: VR-003 pass, VR-004 blocked) instead of the reference's 4 static rules, and the flow shows real record pointers, so the rule rows and flow text differ by design.",
+      "Fixture display state mirrors the reference RULES/TRACE copy. Remaining text differences are data-driven: rule labels come from server rule ids (e.g. 'Grain sex stratified' for 'Expected grain'), the evidence column prefixes the linked-ID count, and the transform detail lists the claim's grain key and input count.",
   },
 ];
