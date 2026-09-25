@@ -473,6 +473,9 @@ export function HelixWorkbench({ studyId }: Props) {
               onPromoteSectionDraft={() => void promoteBodyWeight()}
             />
             )}
+            {/* DH-2 x #37: on Gate 3 the fixed chat dock would cover the legacy toggle, which now
+                ends the page; keep the room ReportAssembly reserved below it before #37. */}
+            {selectedStageId === "review-export" && <div aria-hidden="true" style={{ height: 120 }} />}
           </section>
 
           <footer className="hx-footer">
