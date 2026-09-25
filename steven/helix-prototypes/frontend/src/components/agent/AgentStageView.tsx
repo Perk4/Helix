@@ -32,8 +32,6 @@ type Props = {
   otherBusy?: boolean;
   /** Tells the workbench an agent command is in flight, so legacy controls wait. */
   onBusyChange?: (busy: boolean) => void;
-  /** DH-1: reports the in-flight command's stage so the workbench can follow it. */
-  onInFlightStage?: (stageId: JourneyStageId | null) => void;
   /**
    * DH-1: set once by the workbench right after a successful human freeze. The view starts
    * the governed sequence at most once, then calls onAutoStartConsumed.
@@ -57,7 +55,6 @@ export function AgentStageView({
   onWorkspace,
   otherBusy = false,
   onBusyChange,
-  onInFlightStage,
   autoStart = false,
   onAutoStartConsumed,
 }: Props) {
@@ -66,7 +63,6 @@ export function AgentStageView({
     workspace,
     onWorkspace,
     onBusyChange,
-    onInFlightStage,
   });
   const stage = workspace.journey.stages.find((item) => item.stage_id === stageId);
 

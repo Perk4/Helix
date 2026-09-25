@@ -41,11 +41,6 @@ type Options = {
    * itself, not an effect, so it stays true if this view unmounts mid-command.
    */
   onBusyChange?: (busy: boolean) => void;
-  /**
-   * DH-1: reports the stage of the governed command in flight (null when none), so the
-   * workbench can follow the server stage while the agent works.
-   */
-  onInFlightStage?: (stageId: AgentStep["stageId"] | null) => void;
 };
 
 const CONFIRMED_KEY = "helix.agent-dv-confirmed.v1";
@@ -70,7 +65,7 @@ export function messageFrom(cause: unknown): string {
   return "The request failed.";
 }
 
-export function useAgentSteps({ studyId, workspace, onWorkspace, onBusyChange, onInFlightStage }: Options) {
+export function useAgentSteps({ studyId, workspace, onWorkspace, onBusyChange }: Options) {
   const [planner, setPlanner] = useState<PlannerMode>("fixture");
   const [inFlight, setInFlight] = useState<AgentStep | null>(null);
   const [message, setMessage] = useState<AgentMessage | null>(null);
@@ -88,12 +83,6 @@ export function useAgentSteps({ studyId, workspace, onWorkspace, onBusyChange, o
   const runningRef = useRef(false);
   const onBusyChangeRef = useRef(onBusyChange);
   onBusyChangeRef.current = onBusyChange;
-  const onInFlightStageRef = useRef(onInFlightStage);
-  onInFlightStageRef.current = onInFlightStage;
-  const inFlightStage = inFlight?.stageId ?? null;
-  useEffect(() => {
-    onInFlightStageRef.current?.(inFlightStage);
-  }, [inFlightStage]);
 
   const begin = useCallback((): boolean => {
     if (runningRef.current) return false;

@@ -16,7 +16,7 @@ import {
   runSectionAgent,
   runValidation,
 } from "@/lib/api";
-import type { ApprovalRole, JourneyStageId, PlannerMode, Workspace } from "@/lib/types";
+import type { ApprovalRole, PlannerMode, Workspace } from "@/lib/types";
 
 import { AgentStageView, isAgentStageId } from "./agent/AgentStageView";
 import { TraceabilityStageView } from "./traceability/TraceabilityStageView";
@@ -53,26 +53,32 @@ export function HelixWorkbench({ studyId }: Props) {
   const [planner, setPlanner] = useState<PlannerMode>("fixture");
   const [busy, setBusy] = useState<string | null>(null);
   const [agentBusy, setAgentBusy] = useState(false); // lane B: agent command in flight
+  const [notice, setNotice] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   // DH-1: follow the server stage while the agent works; auto-start once after a freeze.
-  const [agentStage, setAgentStage] = useState<JourneyStageId | null>(null);
   const [autoStart, setAutoStart] = useState(false);
   const {
     selectedStageId,
     select: selectStage,
     followServer,
-  } = useSelectedStage(workspace?.journey, { active: agentBusy, stageId: agentStage });
-  const onFrozen = useCallback(() => {
-    followServer();
-    setAutoStart(true);
-  }, [followServer]);
+  } = useSelectedStage(workspace?.journey, { active: agentBusy });
+  const onFrozen = useCallback(
+    (announcement: string) => {
+      // The freeze confirmation stays on screen as the workbench notice after the view
+      // moves off Upload to the server's current stage.
+      setError(null);
+      setNotice(announcement);
+      followServer();
+      setAutoStart(true);
+    },
+    [followServer],
+  );
   const consumeAutoStart = useCallback(() => setAutoStart(false), []);
   // The one-shot never outlives the freeze: if the server's stage after the freeze is not
   // an agent stage, there is nothing to start and the request is dropped.
   useEffect(() => {
     if (autoStart && workspace && !isAgentStageId(selectedStageId)) setAutoStart(false);
   }, [autoStart, workspace, selectedStageId]);
-  const [notice, setNotice] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
   // Lane C (#22): Gate 2 handlers live in the lane-C hook.
   const traceabilityGate = useTraceabilityGate({ studyId, setWorkspace, selectStage, setNotice, setError });
 
@@ -353,7 +359,7 @@ export function HelixWorkbench({ studyId }: Props) {
           </div>
 
           {(notice || error) && (
-            <div className={error ? "hx-notice t-block" : "hx-notice t-info"} role="status">
+            <div className={error ? "hx-notice t-block" : "hx-notice t-info"} role="status" data-testid="workbench-notice">
               <span>{error ?? notice}</span>
               <Button
                 size="sm"
@@ -403,7 +409,6 @@ export function HelixWorkbench({ studyId }: Props) {
                 onWorkspace={setWorkspace}
                 otherBusy={busy !== null || agentBusy}
                 onBusyChange={setAgentBusy}
-                onInFlightStage={setAgentStage}
                 autoStart={autoStart}
                 onAutoStartConsumed={consumeAutoStart}
               />
