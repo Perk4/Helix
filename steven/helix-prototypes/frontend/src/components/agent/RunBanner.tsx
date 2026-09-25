@@ -1,58 +1,81 @@
-import type { JourneyStage, WorkbenchJourney } from "@/lib/types";
+import type { WorkbenchJourney } from "@/lib/types";
 
-import { Banner, Button, Spinner } from "../ui";
-import { ClockIcon } from "../icons";
+import { Banner, Button, Spinner, StatusDot } from "../ui";
+import { AGENT_STAGE_IDS } from "./stages";
 
-// Lane B (#21). Run banner for an Agent Step. Tone and text come from the server stage
-// status plus whether an HTTP request is in flight. Pause and Resume stay disabled:
-// no server command exists for them until #26.
+// Lane B (#21). Run banner from research/helix-e2e-workbench-v1.html (section 5.5), driven by
+// the server journey: the stage the SERVER reports as current, plus whether this page has a
+// governed HTTP request in flight. Pause and Resume stay disabled until #26 adds commands.
 
-const STATUS_TEXT: Record<JourneyStage["status"], string> = {
-  complete: "Done",
-  current: "Agent step",
-  blocked: "Blocked",
-  paused: "Paused",
-  pending: "Not started",
-};
+const NEXT_GATE = "Traceability review";
 
-export function RunBanner({
-  journey,
-  stage,
-  requestInFlight,
-}: {
-  journey: WorkbenchJourney;
-  stage: JourneyStage;
-  requestInFlight: boolean;
-}) {
-  const tone = requestInFlight
-    ? "running"
-    : stage.status === "complete"
-      ? "passed"
-      : stage.status === "paused"
-        ? "paused"
-        : "awaiting";
-  const status = requestInFlight ? "Request in progress" : STATUS_TEXT[stage.status];
+function PauseControl({ paused }: { paused: boolean }) {
+  return (
+    <>
+      <Button
+        size="sm"
+        variant={paused ? "primary" : undefined}
+        disabled
+        aria-describedby="agent-pause-note"
+        data-testid="agent-pause"
+      >
+        {paused ? "Resume agent" : "Pause"}
+      </Button>
+      <span id="agent-pause-note" className="hx-sr">
+        Pause and resume are unavailable: the server has no pause or resume command yet.
+      </span>
+    </>
+  );
+}
+
+export function RunBanner({ journey, inFlightLabel }: { journey: WorkbenchJourney; inFlightLabel: string | null }) {
+  const agentStages = journey.stages.filter((stage) => (AGENT_STAGE_IDS as readonly string[]).includes(stage.stage_id));
+  const current = agentStages.find((stage) => stage.status !== "complete");
+  const total = journey.stages.length;
+
+  if (!current) {
+    const gate = journey.stages.find((stage) => stage.kind === "human_gate" && stage.status !== "complete");
+    return (
+      <Banner
+        tone="passed"
+        data-testid="agent-run-banner"
+        leading={<StatusDot color="var(--hx-pass)" />}
+        kicker="Agent run complete"
+        title={`Stages 2–7 finished.${gate ? ` Waiting at human gate: ${gate.name}` : ""}`}
+      />
+    );
+  }
+  if (inFlightLabel) {
+    return (
+      <Banner
+        tone="running"
+        data-testid="agent-run-banner"
+        leading={<Spinner />}
+        kicker={`Agent working · Stage ${current.sequence} of ${total}`}
+        title={`${current.name} — ${inFlightLabel}`}
+        right={
+          <>
+            Next human gate: {NEXT_GATE}
+            <PauseControl paused={false} />
+          </>
+        }
+      />
+    );
+  }
+  const paused = current.status === "paused";
+  const blocked = current.status === "blocked";
   return (
     <Banner
-      tone={tone}
+      tone="paused"
       data-testid="agent-run-banner"
-      leading={requestInFlight ? <Spinner /> : <ClockIcon size={20} />}
-      kicker={`Stage ${stage.sequence} of ${journey.stages.length} · ${status}`}
-      title={stage.name}
+      leading={<StatusDot color={blocked ? "var(--hx-block)" : "var(--hx-muted)"} />}
+      kicker={`${paused ? "Agent paused" : blocked ? "Agent blocked" : "Agent waiting"} · Stage ${current.sequence} of ${total}`}
+      title={current.name}
       right={
-        <span className="hx-agent-banner-meta">
-          {journey.run && (
-            <span className="hx-mono" data-testid="agent-run-id">
-              {journey.run.run_id}
-            </span>
-          )}
-          <Button size="sm" disabled aria-describedby="agent-pause-note" data-testid="agent-pause">
-            Pause
-          </Button>
-          <span id="agent-pause-note" className="hx-sr">
-            Pause and resume are unavailable: the server has no pause or resume command yet.
-          </span>
-        </span>
+        <>
+          Next human gate: {NEXT_GATE}
+          <PauseControl paused={paused} />
+        </>
       }
     />
   );
