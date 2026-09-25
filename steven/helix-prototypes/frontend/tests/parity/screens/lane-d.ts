@@ -3,11 +3,10 @@ import type { ParityScreen } from "../types";
 // OWNER: Lane D (#23 review/approval/export/downloads + demo-unqualified flag).
 //
 // Human Gate 3 is reachable only after a human freeze, validation, and traceability
-// dispositions, so a fresh seed (the kit's throwaway server) never shows it. These screens
-// stay `pending` in default runs. Capture them against a server driven to review-export:
-//   HELIX_PARITY_BASE_URL=<web> HELIX_PARITY_INCLUDE_PENDING=1 \
-//   HELIX_PARITY_ONLY=review-export-light,review-export-dark ./scripts/verify-parity.sh
-// (see evidence/ui-lane-d-23-review-demo-flag.md for the exact lane-D run).
+// dispositions, so a fresh seed (the kit's throwaway server) never shows it. "Ours" is the
+// lane-D fixture route /parity/review (HELIX_PARITY_FIXTURES=1 only; display state captured
+// from a real review-export workspace, demo flag off). The same selectors also work against a
+// live server driven to review-export with path "/".
 
 const masks = {
   // Server report text and identities differ from the reference copy by design (#23 renders
@@ -23,28 +22,28 @@ export const laneDScreens: ParityScreen[] = [
     title: "Human Gate 3 Review and export (#23)",
     lane: "D",
     issue: "#23",
-    status: "pending",
+    status: "report-only",
     colorScheme: "light",
     reference: { path: "?stage=8", selector: "#hx-panel", mask: masks.reference },
     ours: {
-      path: "/",
+      path: "/parity/review",
       selector: '[data-testid="review-stage"]',
       waitFor: '[data-testid="review-stage"]',
       mask: masks.ours,
     },
     notes:
-      "Needs a server at review-export (not a fresh seed). Masked: server report canvas, per-role sign-off rows, and export controls, which #23 changes on purpose.",
+      "Report-only: server report copy and section titles differ from the reference copy, and the canvas is taller. Masked: server report canvas, per-role sign-off rows, and export controls, which #23 changes on purpose.",
   },
   {
     id: "review-export-dark",
     title: "Human Gate 3 Review and export, dark (#23)",
     lane: "D",
     issue: "#23",
-    status: "pending",
+    status: "report-only",
     colorScheme: "dark",
     reference: { path: "?stage=8", selector: "#hx-panel", mask: masks.reference },
     ours: {
-      path: "/",
+      path: "/parity/review",
       selector: '[data-testid="review-stage"]',
       waitFor: '[data-testid="review-stage"]',
       mask: masks.ours,

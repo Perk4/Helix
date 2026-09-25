@@ -1,0 +1,31 @@
+
+> helix-workbench@0.1.0 test:parity
+> playwright test -c playwright.parity.config.ts
+
+
+Running 18 tests using 1 worker
+
+(node:59933) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 tests/parity/parity.spec.ts:161:7 › shell-header-light [enforced] lane step0 (573ms)
+  ✓   2 tests/parity/parity.spec.ts:161:7 › shell-header-dark [enforced] lane step0 (513ms)
+  ✓   3 tests/parity/parity.spec.ts:161:7 › component-stage-rail-s0-light [enforced] lane step0 (454ms)
+  ✓   4 tests/parity/parity.spec.ts:161:7 › component-stage-rail-s7-light [enforced] lane step0 (437ms)
+  ✓   5 tests/parity/parity.spec.ts:161:7 › component-stage-rail-s0-dark [enforced] lane step0 (435ms)
+  ✓   6 tests/parity/parity.spec.ts:161:7 › component-gate-banner-light [enforced] lane step0 (394ms)
+  ✓   7 tests/parity/parity.spec.ts:161:7 › component-file-table-light [enforced] lane step0 (539ms)
+  ✓   8 tests/parity/parity.spec.ts:161:7 › component-auth-card-light [enforced] lane step0 (424ms)
+  ✓   9 tests/parity/parity.spec.ts:161:7 › component-upload-composition-light [enforced] lane step0 (698ms)
+  ✓  10 tests/parity/parity.spec.ts:161:7 › shell-viewport-light [report-only] lane step0 (917ms)
+  ✓  11 tests/parity/parity.spec.ts:161:7 › journey-progress-light [enforced] lane A (530ms)
+  ✓  12 tests/parity/parity.spec.ts:161:7 › upload-gate-light [report-only] lane A (997ms)
+  -  13 tests/parity/parity.spec.ts:161:7 › agent-step-light [pending] lane B
+  -  14 tests/parity/parity.spec.ts:161:7 › traceability-gate-light [pending] lane C
+  ✓  15 tests/parity/parity.spec.ts:161:7 › review-export-light [report-only] lane D (1.0s)
+  ✓  16 tests/parity/parity.spec.ts:161:7 › review-export-dark [report-only] lane D (1.0s)
+  ✓  17 tests/parity/parity.spec.ts:275:9 › design-tokens-light [enforced] lane step0 (200ms)
+  ✓  18 tests/parity/parity.spec.ts:275:9 › design-tokens-dark [enforced] lane step0 (192ms)
+
+  2 skipped
+  16 passed (9.9s)
+exit=0
