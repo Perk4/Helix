@@ -24,8 +24,30 @@ import {
 // every disposition POST hit the real backend, and the projected Gate 2 actions are
 // rebuilt from the live dispositions on every workspace read. The UI never decides.
 //
-// Tests share one backend and run serially; later tests build on earlier dispositions.
+// Tests run serially; later tests build on earlier dispositions.
+//
+// The shared e2e backend must stay at the fresh seed for the specs that run after this
+// one (workbench.spec expects "Release blocked"), so by default ACCEPTED disposition
+// writes go to a test-local double that echoes the typed command into the live workspace.
+// Rejected writes (409) always hit the live server, which stores nothing. Set
+// HELIX_LANE_C_LIVE_WRITES=1 against a lane-owned database to send every write live.
 test.describe.configure({ mode: "serial" });
+
+const LIVE_WRITES = process.env.HELIX_LANE_C_LIVE_WRITES === "1";
+const doubled: Json[] = [];
+
+function withDoubled(workspace: Json): Json {
+  if (LIVE_WRITES || doubled.length === 0) return workspace;
+  const gate = workspace.release_gate as Json & { blocking_result_ids: string[] };
+  return {
+    ...workspace,
+    dispositions: [...(workspace.dispositions as Json[]), ...doubled],
+    release_gate: {
+      ...gate,
+      blocking_result_ids: gate.blocking_result_ids.filter((id) => !doubled.some((item) => item.result_id === id)),
+    },
+  };
+}
 
 const REQUIRED = ["VR-004", "VR-005", "VR-006"];
 const RECORDED = new Set(["corrected", "explained_in_nsdrg", "approved_exception"]);
@@ -67,19 +89,47 @@ function gateJourney(workspace: Json): Journey {
   return journey;
 }
 
-async function serveGate(page: Page, extra: (workspace: Json) => Json = (workspace) => workspace) {
+async function serveGate(
+  page: Page,
+  extra: (workspace: Json) => Json = (workspace) => workspace,
+  { live = LIVE_WRITES }: { live?: boolean } = {},
+) {
+  const project = (workspace: Json) => {
+    const current = withDoubled(workspace);
+    return extra({ ...current, journey: gateJourney(current) });
+  };
   await page.route("**/api/v1/studies/*/workspace", async (route) => {
     const workspace = await liveWorkspace(route);
     if (!workspace) return;
-    const patched = extra({ ...workspace, journey: gateJourney(workspace) });
-    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(patched) });
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(project(workspace)) });
   });
   // The disposition POST returns the updated workspace; project Gate 2 over it too.
   await page.route("**/api/v1/studies/*/validation-results/*/dispositions", async (route) => {
-    const response = await route.fetch();
-    const body = (await response.json()) as Json;
-    const patched = response.ok() ? extra({ ...body, journey: gateJourney(body) }) : body;
-    await route.fulfill({ status: response.status(), contentType: "application/json", body: JSON.stringify(patched) });
+    if (live) {
+      const response = await route.fetch();
+      const body = (await response.json()) as Json;
+      const patched = response.ok() ? project(body) : body;
+      await route.fulfill({ status: response.status(), contentType: "application/json", body: JSON.stringify(patched) });
+      return;
+    }
+    const url = new URL(route.request().url());
+    const resultId = decodeURIComponent(url.pathname.split("/").at(-2) ?? "");
+    const command = route.request().postDataJSON() as Json;
+    doubled.push({
+      disposition_id: `RD-DOUBLE-${doubled.length + 1}`,
+      result_id: resultId,
+      decision: command.decision,
+      reason: command.reason,
+      reviewer: command.reviewer,
+      timestamp: new Date().toISOString(),
+      artifact_id: null,
+      artifact_hash: null,
+      dependency_fingerprint: null,
+    });
+    const workspaceUrl = url.href.replace(/\/validation-results\/.*$/, "/workspace");
+    const response = await route.fetch({ url: workspaceUrl, method: "GET", postData: undefined });
+    const workspace = (await response.json()) as Json;
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(project(workspace)) });
   });
 }
 
@@ -178,7 +228,8 @@ test("loads getEvidence per claim and shows the five-step flow, lineage, and rec
 
 test("mirrors server limits client-side and keeps server rejections in the form", async ({ page }) => {
   const commands = trackCommands(page);
-  await serveGate(page);
+  // Live: the server rejects this command (409) and stores nothing.
+  await serveGate(page, undefined, { live: true });
   await openGate(page);
 
   await page.getByTestId("record-disposition-VR-004").click();
@@ -225,6 +276,10 @@ test("mirrors server limits client-side and keeps server rejections in the form"
 
 test("a recorded disposition keeps the blocker and shows Disposition, never Pass", async ({ page, request }) => {
   const commands = trackCommands(page);
+  const posted: unknown[] = [];
+  page.on("request", (item) => {
+    if (item.method() === "POST" && item.url().includes("/dispositions")) posted.push(item.postDataJSON());
+  });
   await serveGate(page);
   await openGate(page);
 
@@ -242,20 +297,26 @@ test("a recorded disposition keeps the blocker and shows Disposition, never Pass
   await expect(note).toContainText("Disposition:");
   await expect(note).toContainText("Corrected. Re-run mean-v1 by sex before release.");
   await expect(note).toContainText("Reviewer Dr. Lane C Reviewer");
-  await expect(note).toContainText(/RD-/);
+  await expect(note).toContainText(/RD-[A-Z0-9-]+/);
   await expect(page.getByTestId("trace-summary")).toContainText("1 disposition");
   await expect(page.getByTestId("rule-accordion").getByText("Pass", { exact: true })).toHaveCount(1); // VR-003 only
   await expect(page.getByTestId("continue-to-review")).toBeDisabled();
   expect(commands).toEqual([`POST /api/v1/studies/${studyId}/validation-results/VR-004/dispositions`]);
 
-  // The server stored exactly what the reviewer typed, and the validation still fails.
-  const workspace = (await (await request.get(`${apiRoot}/studies/${studyId}/workspace`)).json()) as Json;
-  const stored = (workspace.dispositions as Array<Json>).filter((item) => item.result_id === "VR-004").at(-1);
-  expect(stored).toMatchObject({
+  // The wire command is exactly what the reviewer typed: no injected decision, reason
+  // prefix, or fixed reviewer.
+  expect(posted.at(-1)).toEqual({
     decision: "corrected",
     reason: "Re-run mean-v1 by sex before release. Flag kept in section 5.",
     reviewer: "Dr. Lane C Reviewer",
   });
+  const workspace = (await (await request.get(`${apiRoot}/studies/${studyId}/workspace`)).json()) as Json;
+  if (LIVE_WRITES) {
+    // The server stored the same command.
+    const stored = (workspace.dispositions as Array<Json>).filter((item) => item.result_id === "VR-004").at(-1);
+    expect(stored).toMatchObject(posted.at(-1) as Json);
+  }
+  // The blocker is still a failing validation on the server.
   const validation = (workspace.validations as Array<Json>).find((item) => item.result_id === "VR-004");
   expect(validation?.status).toBe("fail");
 
@@ -306,7 +367,8 @@ test("Continue stays disabled when the server has not opened Review", async ({ p
   await page.route("**/api/v1/studies/*/workspace", async (route) => {
     const workspace = await liveWorkspace(route);
     if (!workspace) return;
-    const held = clone(gateJourney(workspace));
+    const current = withDoubled(workspace);
+    const held = clone(gateJourney(current));
     held.stages = held.stages.map((stage) =>
       stage.stage_id === "review-export"
         ? { ...stage, status: "pending", selectable: false }
@@ -315,7 +377,7 @@ test("Continue stays disabled when the server has not opened Review", async ({ p
           : stage,
     );
     held.current_stage_id = "traceability";
-    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ...workspace, journey: held }) });
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ...current, journey: held }) });
   });
   await openGate(page);
   await expect(page.getByTestId("continue-to-review")).toBeDisabled();
